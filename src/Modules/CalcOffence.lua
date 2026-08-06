@@ -610,6 +610,7 @@ function calcs.offence(env, actor, activeSkill)
 	end
 	if skillModList:Flag(nil, "EvasionAppliesToSpellDamage") then
 		-- The Unblinking Eye evasion rating to spell damage conversion
+		-- Must run before SpellDamageAppliesToAttacks so the generated spell mods can chain into attacks
 		for i, value in ipairs(skillModList:Tabulate("INC", { }, "Evasion")) do
 			local mod = value.mod
 			skillModList:NewMod("Damage", mod.type, mod.value, mod.source, ModFlag.Spell, mod.keywordFlags, unpack(mod))
