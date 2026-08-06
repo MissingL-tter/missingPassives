@@ -1406,6 +1406,10 @@ return {
 	mod("ProjectileCount", "BASE", nil),
 	base = -1,
 },
+["triggered_ghost_cannons_base_number_of_cannons_to_fire"] = {
+	mod("ProjectileCount", "BASE", nil),
+	base = -1,
+},
 ["number_of_additional_projectiles"] = {
 	mod("ProjectileCount", "BASE", nil),
 },
