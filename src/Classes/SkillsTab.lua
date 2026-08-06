@@ -260,7 +260,7 @@ local SkillsTabClass = newClass("SkillsTab", "UndoHandler", "ControlHost", "Cont
 		local maxSockets = (item.base.socketLimit or 0) - abyssalSocketCount
 		for _, group in ipairs(self.socketGroupList) do
 			local colours = { "R", "G", "B" }
-			if group.slot == groupSlot.slotName then
+			if group.slot == groupSlot.slotName and group.source == nil then
 				for _, gem in ipairs(group.gemList) do
 					local grantedEffect = gem.grantedEffect or (gem.gemData and gem.gemData.grantedEffect)
 					if grantedEffect and maxSockets > 0 then
@@ -1214,7 +1214,7 @@ function SkillsTabClass:UpdateSocketGroups()
 		for _, gemInstance in ipairs(socketGroup.gemList) do
 			gemInstance.matchesSocket = false
 		end
-		if socketGroup.slot then
+		if socketGroup.slot and socketGroup.source == nil then
 			local gemOffset = (slotSocketedCounts[socketGroup.slot] or 0)
 			for i, gemInstance in ipairs(socketGroup.gemList) do
 				-- add quality for matching sockets by looking up linked item
