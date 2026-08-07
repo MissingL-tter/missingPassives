@@ -769,41 +769,6 @@ function main:SaveSettings()
 	end
 end
 
-function main:OpenPathPopup(invalidPath, errMsg, ignoreBuild)
-	local controls = { }
-	local defaultLabelPlacementX = 8
-
-	controls.label = new("LabelControl", { "TOPLEFT", nil, "TOPLEFT" }, { defaultLabelPlacementX, 20, 206, 16 }, function()
-		return "^7User settings path cannot be loaded: ".. errMsg ..
-		"\nCurrent Path: "..invalidPath:gsub("?", "^1?^7").."/Path of Building/"..
-		"\nIf this location is managed by OneDrive, navigate to that folder and manually try" ..
-		"\nto open Settings.xml in a text editor before re-opening Path of Building" ..
-		"\nOtherwise, specify a new location for your Settings.xml:"
-	end)
-	controls.userPath = new("EditControl", { "TOPLEFT", controls.label, "TOPLEFT" }, { 0, 60, 206, 20 }, invalidPath, nil, nil, nil, function(buf)
-		invalidPath = sanitiseText(buf)
-		if not invalidPath:match("?") then
-			controls.save.enabled = true
-		else
-			controls.save.enabled = false
-		end
-	end)
-	controls.save = new("ButtonControl", { "TOPLEFT", controls.userPath, "TOPLEFT" }, { 0, 26, 206, 20 }, "Save", function()
-		local res, msg = MakeDir(controls.userPath.buf)
-		if not res and msg ~= "No error" then
-			self:OpenMessagePopup("Error", "Couldn't create '"..controls.userPath.buf.."' : "..msg)
-		else
-			self:ChangeUserPath(controls.userPath.buf, ignoreBuild)
-			self:ClosePopup()
-		end
-	end)
-	controls.save.enabled = false
-	controls.cancel = new("ButtonControl", nil, { 0, 0, 0, 0 }, "Cancel", function()
-		-- Do nothing, require user to enter a location
-	end)
-	self:OpenPopup(600, 150, "Change Settings Path", controls, "save", nil, "cancel")
-end
-
 function main:ChangeUserPath(newUserPath, ignoreBuild)
 	self.userPath = newUserPath
 	MakeDir(self.userPath)
