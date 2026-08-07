@@ -7,6 +7,43 @@ describe("TestSkills", function()
 		-- newBuild() takes care of resetting everything in setup()
 	end)
 
+	-- A support gem that restricts the channelling skill's weapon types makes that skill unusable.
+	-- The triggered spell must not fall back to a Self-Cast estimate, which reports *higher* DPS
+	-- for a setup that cannot trigger at all, making the support look like a large upgrade.
+	describe("Cast while Channelling with a disabled channelling skill", function()
+		local function socket(extraGems)
+			newBuild()
+			-- a Dagger is excluded by Close Combat (axe/sword only) and Shockwave (mace/staff only)
+			build.itemsTab:CreateDisplayItemFromRaw("New Item\nSlot: Weapon 1\nAmbusher\n")
+			build.itemsTab:AddDisplayItem()
+			build.skillsTab:PasteSocketGroup("Slot: Body Armour\nShock Nova of Procession 21/20  1\nCyclone 20/0  1\nCast while Channelling 20/0  1" .. (extraGems or ""))
+			runCallback("OnFrame")
+		end
+
+		it("triggers normally without a weapon-restricting support", function()
+			socket()
+			assert.is_true(not build.calcsTab.mainEnv.player.mainSkill.skillFlags.disable)
+			assert.is_true(build.calcsTab.mainOutput.TotalDPS > 0)
+			assert.is_true(build.calcsTab.mainOutput.SkillTriggerRate ~= nil)
+		end)
+
+		for _, gem in ipairs({ "Close Combat", "Shockwave", "Void Shockwave" }) do
+			it("disables the triggered spell rather than assuming Self-Cast with " .. gem, function()
+				socket()
+				local triggeredDPS = build.calcsTab.mainOutput.TotalDPS
+
+				socket("\n" .. gem .. " 20/0  1")
+				local mainSkill = build.calcsTab.mainEnv.player.mainSkill
+
+				assert.is_true(mainSkill.skillFlags.disable)
+				assert.is_true(mainSkill.infoMessage2 ~= "DPS reported assuming Self-Cast")
+				assert.are.equals("Cyclone is disabled", mainSkill.disableReason)
+				-- the bug reported a DPS *increase* here
+				assert.is_true((build.calcsTab.mainOutput.TotalDPS or 0) <= triggeredDPS)
+			end)
+		end
+	end)
+
 	it("adds envy, ensures +1 level keeps level 25 Envy", function()
 		build.itemsTab:CreateDisplayItemFromRaw("New Item\nAssassin Bow\nGrants Level 1 Summon Raging Spirit\nGrants Level 25 Envy Skill")
 		build.itemsTab:AddDisplayItem()

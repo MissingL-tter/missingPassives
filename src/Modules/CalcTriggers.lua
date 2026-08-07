@@ -220,6 +220,7 @@ local function CWCHandler(env)
 	if not env.player.mainSkill.skillFlags.minion and not env.player.mainSkill.skillFlags.disable then
 		local triggeredSkills = {}
 		local source = nil
+		local disabledSource = nil
 		local triggerName = "Cast While Channeling"
 		local output = env.player.output
 		local breakdown = env.player.breakdown
@@ -229,13 +230,23 @@ local function CWCHandler(env)
 				local canSupport = env.player.mainSkill.triggeredBy.gemData and calcLib.canGrantedEffectSupportActiveSkill(env.player.mainSkill.triggeredBy.gemData.grantedEffect, skill)
 				if skill.skillData.triggerTime and canSupport and skill ~= env.player.mainSkill and slotMatch and not isTriggered(skill) then
 					source = skill
+				elseif not disabledSource and canSupport and skill.skillFlags.disable and skill.skillTypes[SkillType.Channel] and skill ~= env.player.mainSkill and slotMatch then
+					-- A channelling skill is socketed but unusable (commonly a support gem restricting its weapon types).
+					-- Remember it so we don't fall through to the Self-Cast estimate below, which would report a *higher*
+					-- DPS for a setup that cannot actually trigger at all.
+					disabledSource = skill
 				end
 			end
 			if skill.skillData.triggeredWhileChannelling and slotMatch then
 				t_insert(triggeredSkills, packageSkillDataForSimulation(skill, env))
 			end
 		end
-		if not source or #triggeredSkills < 1 then
+		if not source and disabledSource then
+			env.player.mainSkill.skillFlags.disable = true
+			env.player.mainSkill.disableReason = s_format("%s is disabled", disabledSource.activeEffect.grantedEffect.name)
+			env.player.mainSkill.infoMessage = s_format("%s Triggering Skill is disabled", triggerName)
+			env.player.mainSkill.infoTrigger = ""
+		elseif not source or #triggeredSkills < 1 then
 			env.player.mainSkill.skillData.triggered = nil
 			env.player.mainSkill.infoMessage2 = "DPS reported assuming Self-Cast"
 			env.player.mainSkill.infoMessage = s_format("No %s Triggering Skill Found", triggerName)
