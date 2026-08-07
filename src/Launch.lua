@@ -74,11 +74,6 @@ function launch:OnInit()
 			self:ShowErrMsg("In 'Init': %s", errMsg)
 		end
 	end
-
-	if not self.devMode and not firstRunFile then
-		-- Run a background update check if developer mode is off
-		self:CheckForUpdate(true)
-	end
 end
 
 function launch:CanExit()
@@ -127,10 +122,6 @@ function launch:OnFrame()
 		SetDrawColor(1, 1, 1)
 		DrawString(0, screenH/2, "CENTER", 24, "FIXED", self.doRestart)
 		Restart()
-	end
-	if not self.devMode and (GetTime() - self.lastUpdateCheck) > 1000*60*60*12 then
-		-- Do an update check every 12 hours if the user keeps the program open
-		self:CheckForUpdate(true)
 	end
 end
 
