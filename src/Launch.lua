@@ -141,10 +141,6 @@ function launch:OnKeyDown(key, doubleClick)
 			profiler.start()
 			profiling = true
 		end
-	elseif key == "u" and IsKeyDown("CTRL") then
-		if not self.devMode then
-			self:CheckForUpdate()
-		end
 	elseif key == "PRINTSCREEN" and IsKeyDown("CTRL") then
 		TakeScreenshot()
 	elseif self.promptMsg then
