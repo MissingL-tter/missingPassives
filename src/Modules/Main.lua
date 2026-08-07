@@ -83,18 +83,8 @@ function main:Init()
 	if not ignoreBuild then
 		self:SetMode("BUILD", false, "Unnamed build")
 	end
-	if launch.devMode or (GetScriptPath() == GetRuntimePath() and not launch.installedMode) then
-		-- If running in dev mode or standalone mode, put user data in the script path
-		self.userPath = GetScriptPath().."/"
-	else
-		local invalidPath, errMsg
-		self.userPath, invalidPath, errMsg = GetUserPath()
-		if not self.userPath then
-			self:OpenPathPopup(invalidPath, errMsg, ignoreBuild)
-		else
-			self.userPath = self.userPath.."/Path of Building/"
-		end
-	end
+	-- Always put user data in the script path
+	self.userPath = GetScriptPath().."/"
 
 	self.buildSortMode = "NAME"
 	self.connectionProtocol = 0
