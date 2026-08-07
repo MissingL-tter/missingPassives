@@ -612,6 +612,10 @@ return {
 	{ var = "animateWeaponLingeringBlade", type = "check", label = "Are you animating Lingering Blades?", ifSkill = {"Animate Weapon", "Animate Weapon of Ranged Arms"}, tooltip = "Enables additional damage given to Lingering Blades\nThe exact weapon is unknown but should be similar to Glass Shank", apply = function(val, modList, enemyModList)
 		modList:NewMod("Condition:AnimatingLingeringBlades", "FLAG", true, "Config")
 	end },
+	{ label = "Returning Projectiles:", ifFlag = "ProjectilesReturn" },
+	{ var = "returningProjectileHits", type = "count", label = "# of Returning Projectiles that Hit:", ifFlag = "ProjectilesReturn", tooltip = "The number of Projectiles that hit the enemy again on their way back to you.\nTheir damage is added to your DPS, after any 'less Damage while Returning' modifiers.\nSources of Return that only apply to a portion of your Projectiles (such as Shrapnel Specialist)\nare accounted for by lowering this number.", apply = function(val, modList, enemyModList)
+		modList:NewMod("Multiplier:ReturningProjectileHits", "BASE", val, "Config")
+	end },
 	{ label = "Shrapnel Ballista:", ifSkill = "Shrapnel Ballista", includeTransfigured = true },
 	{ var = "ShrapnelBallistaProjectileOverlap", type = "count", label = "# of Shotgunning Projectiles:", tooltip = "Maximum is limited by the number of Projectiles., default of 1, if Arrow nova then default of maximum projectiles", ifSkill = "Shrapnel Ballista", includeTransfigured = true, apply = function(val, modList, enemyModList)
 		modList:NewMod("SkillData", "LIST", { key = "ShrapnelBallistaProjectileOverlap", value = val }, "Config", { type = "SkillName", skillName = "Shrapnel Ballista", includeTransfigured = true })

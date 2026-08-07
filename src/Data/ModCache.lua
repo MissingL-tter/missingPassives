@@ -10596,8 +10596,7 @@ c["Projectiles Pierce 5 additional Targets while you have Phasing"]={{[1]={[1]={
 c["Projectiles Pierce all Burning Enemies"]={{[1]={[1]={actor="enemy",type="ActorCondition",var="Burning"},flags=0,keywordFlags=0,name="PierceAllTargets",type="FLAG",value=true}},nil}
 c["Projectiles Pierce all Targets while you have Phasing"]={{[1]={[1]={type="Condition",var="Phasing"},flags=0,keywordFlags=0,name="PierceAllTargets",type="FLAG",value=true}},nil}
 c["Projectiles Pierce an additional Target"]={{[1]={flags=0,keywordFlags=0,name="PierceCount",type="BASE",value=1}},nil}
-c["Projectiles Return to you"]={nil,"Return to you "}
-c["Projectiles Return to you Projectiles are fired in random directions"]={nil,"Return to you Projectiles are fired in random directions "}
+c["Projectiles Return to you"]={{[1]={flags=0,keywordFlags=0,name="ProjectilesReturn",type="FLAG",value=true}},nil}
 c["Projectiles Return to you from final target"]={nil,"Return to you from final target "}
 c["Projectiles are fired in random directions"]={nil,"fired in random directions "}
 c["Projectiles cannot Pierce, Fork or Chain"]={{[1]={flags=1024,keywordFlags=0,name="CannotPierce",type="FLAG",value=true},[2]={flags=1024,keywordFlags=0,name="CannotChain",type="FLAG",value=true},[3]={flags=1024,keywordFlags=0,name="CannotFork",type="FLAG",value=true}},nil}
@@ -10635,8 +10634,7 @@ c["Projectiles have 4% chance to be able to Chain when colliding with terrain pe
 c["Projectiles have 5 metres maximum Direct Flight"]={{}," metres maximum Direct Flight "}
 c["Projectiles have 5 metres maximum Direct Flight 40% more Projectile Speed"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileSpeed",type="BASE",value=5}}," metres maximum Direct Flight 40% more  "}
 c["Projectiles have 50% chance for an additional Projectile when Forking"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileCount",type="BASE",value=50}}," for an additional  when Forking "}
-c["Projectiles have 50% chance to Return to you"]={{}," to Return to you "}
-c["Projectiles have 50% chance to Return to you Projectiles are fired in random directions"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileCount",type="BASE",value=50}}," to Return to you  are fired in random directions "}
+c["Projectiles have 50% chance to Return to you"]={{[1]={flags=0,keywordFlags=0,name="ProjectilesReturn",type="FLAG",value=true}},nil}
 c["Projectiles that have Chained gain 20% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=20}},nil}
 c["Projectiles that have Chained gain 28% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=28}},nil}
 c["Projectiles that have Chained gain 35% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=35}},nil}

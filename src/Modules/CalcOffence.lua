@@ -2428,6 +2428,29 @@ function calcs.offence(env, actor, activeSkill)
 	if env.configInput.repeatMode == "FINAL" or skillModList:Flag(nil, "OnlyFinalRepeat") then
 		skillData.dpsMultiplier = skillData.dpsMultiplier / (output.Repeats or 1)
 	end
+	-- Returning Projectiles hit the enemy again on the way back, at reduced damage for some sources of Return.
+	-- Skipped while viewing a skill part that already represents the returning Projectile, as that would count it twice.
+	if skillFlags.projectile and skillModList:Flag(skillCfg, "ProjectilesReturn")
+	   and not activeSkill.skillTypes[SkillType.ProjectileCannotReturn] and not skillModList:Flag(skillCfg, "Condition:ReturningProjectile") then
+		local returnHits = skillModList:Sum("BASE", skillCfg, "Multiplier:ReturningProjectileHits")
+		if returnHits > 0 then
+			output.ReturningProjectileHits = returnHits
+			-- calcLib.mod so that "increased/reduced" sources that apply only while Returning are picked up
+			-- alongside the "more/less" ones, rather than silently ignored
+			output.ReturningProjectileDamageMod = calcLib.mod(skillModList, skillCfg, "ReturningProjectileDamage")
+			local returnMultiplier = 1 + returnHits * output.ReturningProjectileDamageMod
+			skillData.dpsMultiplier = skillData.dpsMultiplier * returnMultiplier
+			output.SkillDPSMultiplier = (output.SkillDPSMultiplier or 1) * returnMultiplier
+			if breakdown then
+				breakdown.SkillDPSMultiplier = {
+					"DPS multiplier from Returning Projectiles",
+					"^8= 1 + ^7returning Projectiles that hit^8 * ^7damage multiplier while returning",
+					s_format("^8= 1 +^7 %d^8 *^7 %.2f", returnHits, output.ReturningProjectileDamageMod),
+					s_format("^8=^7 %.3f", returnMultiplier),
+				}
+			end
+		end
+	end
 	if skillModList:Flag(nil, "TriggeredBySnipe") then
 		skillFlags.channelRelease = true
 	end

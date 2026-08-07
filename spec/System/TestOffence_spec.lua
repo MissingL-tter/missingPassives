@@ -33,6 +33,81 @@ describe("TestOffence", function()
 		assert.are.equals(0, build.calcsTab.calcsOutput.PhysicalMin or 0)
 	end)
 
+	describe("returning projectiles", function()
+		local function baselineDPS()
+			newBuild()
+			build.skillsTab:PasteSocketGroup("Fireball 20/0  1")
+			runCallback("OnFrame")
+			return build.calcsTab.mainOutput.TotalDPS
+		end
+
+		it("adds no damage without a source of Return", function()
+			local baseline = baselineDPS()
+			build.configTab.input.returningProjectileHits = 10
+			build.configTab:BuildModList()
+			runCallback("OnFrame")
+
+			assert.are.equals(baseline, build.calcsTab.mainOutput.TotalDPS)
+		end)
+
+		for _, case in ipairs({
+			{ source = "Projectiles Return to you", label = "Nimis" },
+			{ source = "Projectiles have 50% chance to Return to you", label = "Shrapnel Specialist" },
+		}) do
+			it("adds full damage per returning projectile from " .. case.label, function()
+				local baseline = baselineDPS()
+				build.configTab.input.customMods = case.source
+				build.configTab.input.returningProjectileHits = 10
+				build.configTab:BuildModList()
+				runCallback("OnFrame")
+
+				assert.are.equals(11, build.calcsTab.mainOutput.SkillDPSMultiplier)
+				assertNearRelative(baseline * 11, build.calcsTab.mainOutput.TotalDPS, 0.0001, "Total DPS")
+			end)
+		end
+
+		it("applies the less damage multiplier of Returning Projectiles Support", function()
+			local baseline = baselineDPS()
+			newBuild()
+			build.skillsTab:PasteSocketGroup("Fireball 20/0  1\nReturning Projectiles 20/0  1")
+			build.configTab.input.returningProjectileHits = 10
+			build.configTab:BuildModList()
+			runCallback("OnFrame")
+
+			-- Level 20 Returning Projectiles Support grants 66% less Damage while Returning
+			assert.are.equals(0.34, build.calcsTab.mainOutput.ReturningProjectileDamageMod)
+			assertNearRelative(baseline * (1 + 10 * 0.34), build.calcsTab.mainOutput.TotalDPS, 0.0001, "Total DPS")
+		end)
+
+		-- Venom Gyre models its return as a skill part of its own, which would otherwise be counted twice
+		local function venomGyrePart(part, hits)
+			newBuild()
+			build.itemsTab:CreateDisplayItemFromRaw("New Item\nSlot: Weapon 1\nAmbusher\n")
+			build.itemsTab:AddDisplayItem()
+			build.skillsTab:PasteSocketGroup("Venom Gyre 20/0  1")
+			runCallback("OnFrame")
+			build.calcsTab.mainEnv.player.mainSkill.activeEffect.srcInstance.skillPart = part
+			build.configTab.input.returningProjectileHits = hits
+			build.configTab:BuildModList()
+			runCallback("OnFrame")
+			return build.calcsTab.mainOutput
+		end
+
+		it("counts returning projectiles on the outgoing part of Venom Gyre", function()
+			local outgoing = venomGyrePart(1, 0).TotalDPS
+			local withReturns = venomGyrePart(1, 4)
+
+			assert.are.equals(0.25, withReturns.ReturningProjectileDamageMod)
+			assertNearRelative(outgoing * (1 + 4 * 0.25), withReturns.TotalDPS, 0.0001, "Total DPS")
+		end)
+
+		it("does not count returning projectiles on the returning part of Venom Gyre", function()
+			local returning = venomGyrePart(2, 0).TotalDPS
+
+			assert.are.equals(returning, venomGyrePart(2, 4).TotalDPS)
+		end)
+	end)
+
 	it("does not apply arrow damage modifiers to Fireball", function()
 		build.skillsTab:PasteSocketGroup("Fireball 20/0  1")
 		build.configTab.input.customMods = "Projectiles Pierce an additional Target"

@@ -1444,8 +1444,17 @@ return {
 	flag("ForkTwice"),
 	mod("ForkCountMax", "BASE", nil),
 },
+["projectiles_return"] = {
+	flag("ProjectilesReturn"),
+},
+-- "Damage" applies to skills that model the return as a skill part of their own (Venom Gyre),
+-- "ReturningProjectileDamage" to the returning Projectiles counted by the Skill Options config
 ["active_skill_returning_projectile_damage_+%_final"] = {
 	mod("Damage", "MORE", nil, 0, 0, { type = "Condition", var = "ReturningProjectile" }),
+	mod("ReturningProjectileDamage", "MORE", nil),
+},
+["support_return_returning_projectiles_damage_+%_final"] = {
+	mod("ReturningProjectileDamage", "MORE", nil),
 },
 ["returning_projectiles_always_pierce"] = {
 	flag("PierceAllTargets", { type = "Condition", var = "ReturningProjectile" }),
