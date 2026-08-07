@@ -3,6 +3,8 @@
 -- Module: Main
 -- Main module of program.
 --
+local dkjson = require "dkjson"
+
 local ipairs = ipairs
 local t_insert = table.insert
 local t_remove = table.remove
@@ -206,16 +208,16 @@ function main:Init()
 		return launch.updateAvailable and launch.updateAvailable ~= "none"
 	end
 	self.controls.checkUpdate = new("ButtonControl", {"BOTTOMLEFT",self.anchorMain,"BOTTOMLEFT"}, {0, -24, 140, 20}, "", function()
-		launch:CheckForUpdate()
+		self:CheckCommitsBehind()
 	end)
-	self.controls.checkUpdate.shown = function()
-		return not launch.devMode and (not launch.updateAvailable or launch.updateAvailable == "none")
-	end
 	self.controls.checkUpdate.label = function()
-		return launch.updateCheckRunning and launch.updateProgress or "Check for Update"
+		return self.commitCheckLabel or "Check for Update"
 	end
 	self.controls.checkUpdate.enabled = function()
-		return not launch.updateCheckRunning
+		return not self.commitCheckRunning
+	end
+	self.controls.checkUpdate.tooltipText = function()
+		return self.commitCheckTooltip
 	end
 	self.controls.forkLabel = new("LabelControl", {"BOTTOMLEFT",self.anchorMain,"BOTTOMLEFT"}, {148, -26, 0, 16}, "")
 	self.controls.forkLabel.label = function()
@@ -1250,6 +1252,80 @@ function main:SetManifestBranch(branchName)
 		end
 	end
 	xml.SaveXMLFile(localManXML[1], manifestLocation)
+end
+
+--- Resolves the commit that the local repository is checked out at
+--- @return string|nil sha, string|nil errMsg
+function main:GetLocalCommit()
+	local gitPath = GetScriptPath().."/../.git/"
+	local headFile = io.open(gitPath.."HEAD", "r")
+	if not headFile then
+		return nil, "No '.git' folder found; this only works on a repository checkout"
+	end
+	local head = headFile:read("*a")
+	headFile:close()
+	local ref = head:match("ref:%s*(%S+)")
+	if not ref then
+		-- Detached head, so the commit is in the file itself
+		local sha = head:match("%x%x%x%x%x%x%x+")
+		return sha, not sha and "Couldn't read a commit from '.git/HEAD'" or nil
+	end
+	local refFile = io.open(gitPath..ref, "r")
+	if refFile then
+		local sha = refFile:read("*a"):match("%x%x%x%x%x%x%x+")
+		refFile:close()
+		if sha then
+			return sha
+		end
+	end
+	-- Branch may only exist in the packed refs
+	local packedFile = io.open(gitPath.."packed-refs", "r")
+	if packedFile then
+		for line in packedFile:lines() do
+			local packedSha, packedRef = line:match("^(%x+)%s+(%S+)")
+			if packedRef == ref then
+				packedFile:close()
+				return packedSha
+			end
+		end
+		packedFile:close()
+	end
+	return nil, "Couldn't resolve '"..ref.."' to a commit"
+end
+
+--- Asks GitHub how many commits the local checkout is behind the upstream branch
+function main:CheckCommitsBehind()
+	if self.commitCheckRunning then
+		return
+	end
+	local sha, errMsg = self:GetLocalCommit()
+	if not sha then
+		self.commitCheckLabel = "^xFF0000Check failed"
+		self.commitCheckTooltip = errMsg
+		return
+	end
+	self.commitCheckRunning = true
+	self.commitCheckLabel = "Checking..."
+	self.commitCheckTooltip = nil
+	local repo = "PathOfBuildingCommunity/PathOfBuilding"
+	local branch = "master"
+	launch:DownloadPage("https://api.github.com/repos/"..repo.."/compare/"..branch.."..."..sha, function(response, downloadErrMsg)
+		self.commitCheckRunning = false
+		local data = response and response.body and dkjson.decode(response.body)
+		if not data or not data.behind_by then
+			self.commitCheckLabel = "^xFF0000Check failed"
+			self.commitCheckTooltip = (data and data.message) or downloadErrMsg or "Unexpected response from GitHub"
+			return
+		end
+		local behind, ahead = data.behind_by, data.ahead_by or 0
+		if behind == 0 then
+			self.commitCheckLabel = "^x50E050Up to date"
+		else
+			self.commitCheckLabel = "^xFF7700Behind by "..behind
+		end
+		self.commitCheckTooltip = string.format("Local commit %s\n%d commit%s behind %s/%s\n%d commit%s ahead",
+			sha:sub(1, 7), behind, behind == 1 and "" or "s", repo, branch, ahead, ahead == 1 and "" or "s")
+	end)
 end
 
 function main:OpenUpdatePopup()
