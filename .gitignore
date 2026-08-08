@@ -40,3 +40,7 @@ runtime/imgui.ini
 runtime/SimpleGraphic/SimpleGraphic.log
 
 src/poe_api_response.json
+
+# Build requests are personal; the blank form is not
+.claude/skills/cook/recipes/*
+!.claude/skills/cook/recipes/template.txt
