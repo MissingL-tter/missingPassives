@@ -1,0 +1,12 @@
+# A blank field means no preference - Claude decides it and says what it chose and why.
+# Anything after a # is a comment and is ignored.
+
+CLASS:            # Scion | Marauder | Ranger | Witch | Duelist | Templar | Shadow
+ASCENDANCY:       # see data/ascendancies.md
+SKILL:            # e.g. Arc - see data/skills.md
+SKILL TYPE:       # only if SKILL is blank: spell | ranged attack | melee | trap |
+                  #   mine | totem | brand | triggered | ...
+DPS:              # minimum Total DPS, e.g. 10m
+REQUIRED ITEMS:   # e.g. Mageblood
+DEFENCE MINIMUMS: # e.g. 85% max res, 7000 ES, survives 5 pinnacle hits
+NOTES:            # anything else - playstyle, budget, one-button, skills to avoid
