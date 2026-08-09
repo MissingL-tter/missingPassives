@@ -2,11 +2,11 @@
 -- Run from src/:
 --   luajit ../.claude/skills/cook/tools/dump-ascendancies.lua
 --
--- Writes the file itself rather than to stdout: PoB's loader prints its startup banner
--- to stdout, so a shell redirect lands that in the middle of the data.
+-- Writes the file itself, not stdout: PoB's loader prints its startup banner to stdout, so a
+-- shell redirect lands that in the middle of the data.
 --
--- Primary and secondary are in one file because they draw on the same 8 points: a
--- Bloodline node is only ever evaluable against the class node it displaces.
+-- Primary and secondary share one file because they draw on the same 8 points: a Bloodline
+-- node is only ever evaluable against the class node it displaces.
 --
 -- Everything is listed. Do not filter on isNotable - major nodes such as Assassin's
 -- "Knife in the Back" are not flagged notable and would be silently dropped.

@@ -3,8 +3,8 @@
 --
 -- Obtainability is PoB's own flag, not a heuristic. ItemDBControl.lua:114 computes it as
 --   not (source == "No longer obtainable" or item.league == "Race Events")
--- from the item's `Source:` / `League:` lines (Item.lua:807 / :767). Items are built as
--- real Item objects here so the parse matches PoB's exactly.
+-- from the item's `Source:` / `League:` lines (Item.lua:807 / :767). Items are built as real
+-- Item objects here so the parse matches PoB's exactly.
 local pob = dofile("../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
@@ -107,9 +107,9 @@ for _, it in ipairs(perMod) do
 end
 
 ------------------------------------------------------------------ foulborn
--- data.foulbornMap[unique] maps originalModId -> foulbornModId: the Foulborn version
--- REPLACES a normal mod rather than adding one. Text comes from itemMods.ItemExclusive
--- (original) and itemMods.Foulborn (replacement).
+-- data.foulbornMap[unique] maps originalModId -> foulbornModId: the Foulborn version REPLACES
+-- a normal mod rather than adding one. Text: itemMods.ItemExclusive (original),
+-- itemMods.Foulborn (replacement).
 local exclusive, foulPool = data.itemMods.ItemExclusive, data.itemMods.Foulborn
 local foul, nPairs = {}, 0
 for title, map in pairs(data.foulbornMap or {}) do
