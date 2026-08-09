@@ -2,13 +2,19 @@
 --   luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 -- Exit status is 0 only when it reports 0 problems.
 --
--- Five checks, each with a stated source of truth:
---   1. gems      grantedEffect.legacy       -> Standard-only (GemTooltip.lua)
---   2. gem level naturalMaxLevel + 1 (every gem can be corrupted one level past max)
---   3. uniques   selected variant must be the last one, and not "no longer obtainable"
---   4. uniques   each hand-written mod line must exist on a current variant, in range
---   5. rare/magic each explicit mod must match a mod that can actually spawn on that base,
---                in range, by drop / bench / essence - plus the two silent affix failures
+-- Checks, each with its source of truth:
+--   gems        grantedEffect.legacy -> Standard-only (GemTooltip.lua); level cap is
+--               naturalMaxLevel + 1 (one corruption level, no exceptions)
+--   uniques     no legacy-named variant selected; every active mod line must exist on a
+--               current variant, in range
+--   rare/magic  every explicit mod must match a mod that can actually spawn on that base,
+--               in range, by drop / bench / essence; no shared mod groups; bench craft
+--               limits; no elevated mods; no Scourge mods (gone from the game, but still
+--               in the pools at full weight); T1 rolls capped at 0.85; plus the silent
+--               affix-authoring failures (unknown id dropped, affixes past the limit
+--               ignored, authored-but-never-crafted items contributing nothing)
+--   enchants    no labyrinth enchants (removed from the game; PoB keeps the tables)
+--   tree        PointsUsed / AscUsed / SecondaryAscUsed within Build.lua:884's budgets
 local BUILD = arg[1] or os.getenv("BUILDXML")
 assert(BUILD, "usage: luajit validate.lua <path to build .xml>")
 local pob = dofile("../.claude/skills/cook/tools/pob.lua")
@@ -21,8 +27,8 @@ local function bad(fmt, ...)
 	print("  !! " .. string.format(fmt, ...))
 end
 
--- Split stat text into a literal skeleton + value specs, so a rolled line can be
--- matched against a range: "Adds (29-39) to (49-61) Cold Damage"
+-- Split stat text into a literal skeleton + value specs so a rolled line can be matched
+-- against a range: "Adds (29-39) to (49-61) Cold Damage"
 --   -> "Adds # to # Cold Damage", {{29,39},{49,61}}
 local function parse(text)
 	local specs = {}
@@ -47,10 +53,10 @@ local function inRange(specs, vals, scalar)
 	return true
 end
 
--- Rings, amulets and belts can be catalysed, which multiplies every mod carrying a
--- matching tag by 1 + quality/100. A game export therefore shows values above the mod's
--- printed range: Mageblood's +(25-35) Strength reads +42 at Intrinsic 20. Mirrors the
--- file-local getCatalystScalar (Item.lua:31); catalystTags is its table verbatim.
+-- Rings, amulets and belts can be catalysed: every mod carrying a matching tag is multiplied
+-- by 1 + quality/100, so a game export shows values above the mod's printed range -
+-- Mageblood's +(25-35) Strength reads +42 at Intrinsic 20. Mirrors the file-local
+-- getCatalystScalar (Item.lua:31); catalystTags is its table verbatim.
 local catalystTags = {
 	{ "attack" }, { "speed" }, { "suffix" }, { "life", "mana", "resource" }, { "caster" },
 	{ "jewellery_attribute", "attribute" }, { "physical_damage", "chaos_damage" },
@@ -73,7 +79,7 @@ local function clean(line)
 	return (line:gsub("{[^}]*}", ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
------------------------------------------------------------------- 1+2. gems
+------------------------------------------------------------------ gems
 print("=== GEMS ===")
 for _, sg in ipairs(build.skillsTab.socketGroupList) do
 	for _, gem in ipairs(sg.gemList) do
@@ -105,14 +111,14 @@ for _, sg in ipairs(build.skillsTab.socketGroupList) do
 	end
 end
 
------------------------------------------------------------------- 3+4. uniques
+------------------------------------------------------------------ uniques
 print("=== UNIQUES ===")
 
--- A variant is not a version. On Watcher's Eye each one is a different aura mod and
--- several are selected at once ("Discipline: ES Per Hit" is variant 24 of 106), so
--- "must be the last variant" is meaningless. PoB marks an actually-legacy roll in the
--- variant NAME - "Clarity: Mana Added As ES (Pre 3.12.0)" - so ask that instead, and
--- only look at the mod lines the selected variants really grant.
+-- A variant is not a version. On Watcher's Eye each is a different aura mod and several are
+-- selected at once ("Discipline: ES Per Hit" is variant 24 of 106), so "must be the last
+-- variant" is meaningless. PoB marks an actually-legacy roll in the variant NAME - "Clarity:
+-- Mana Added As ES (Pre 3.12.0)" - so ask that instead, and only look at the mod lines the
+-- selected variants really grant.
 local uniqueIndex = {}
 for _, list in pairs(data.uniques) do
 	if type(list) == "table" then
@@ -199,27 +205,36 @@ local function checkUnique(label, item)
 	end
 end
 
------------------------------------------------------------------- 5. rare/magic mods
--- Legality is ItemClass:GetModSpawnWeight (Item.lua:1654), NOT pool membership. Armour
--- bases have no dedicated pool, so Item.lua:1008 falls back to data.itemMods.Item - every
--- mod in the game. A mod can sit in the base's pool at weight 0 and be impossible to roll
--- there: that is how body-armour-only "+(91-100) to maximum Energy Shield" reached gloves.
+------------------------------------------------------------------ rare/magic mods
+-- Legality is ItemClass:GetModSpawnWeight (Item.lua:1654), NOT pool membership. Armour bases
+-- have no dedicated pool, so Item.lua:1008 falls back to data.itemMods.Item - every mod in
+-- the game. A mod can sit in the base's pool at weight 0 and be impossible to roll there:
+-- that is how body-armour-only "+(91-100) to maximum Energy Shield" reached gloves.
 --
 -- Three legal routes onto a rare, each with its own gate:
 --   drop     item.affixes and GetModSpawnWeight > 0    (influence-aware)
 --   bench    data.masterMods, types[item.type]         (empty weightKey, so weight is 0)
 --   essence  essence.mods[item.type]                   (weight 0 everywhere by design)
 --
--- This checks generated text, so it covers both authoring styles: an affix-id item has
--- its lines written by Craft() from the real pool, and a weight-0 affix still fails here.
--- Rare-like uniques are craftable, so they come through here too. PoB already merges the
--- right pool into item.affixes - the full explicit pool for Dread Captain's Cutlass, the
--- veiled pool for The Crimson Storm, abyss jewel mods for Subsume the Source - and
--- CanHaveMod weighs a mod against rareLikeUnique.validBases (Item.lua:2668) rather than
--- the unique's own base, which is what lets a Cutlass roll One Handed Sword mods.
+-- Checks generated text, so it covers both authoring styles: an affix-id item has its lines
+-- written by Craft() from the real pool, and a weight-0 affix still fails here. Rare-like
+-- uniques are craftable, so they come through too. PoB already merges the right pool into
+-- item.affixes - full explicit pool for Dread Captain's Cutlass, veiled pool for The Crimson
+-- Storm, abyss jewel mods for Subsume the Source - and CanHaveMod weighs a mod against
+-- rareLikeUnique.validBases (Item.lua:2668) rather than the unique's own base, which is what
+-- lets a Cutlass roll One Handed Sword mods.
 local function checkMods(label, item)
 	if not item or not item.base then return end
 	if item.rarity == "UNIQUE" and not item.rareLikeUnique then return end
+
+	-- Cluster jewel notables are gated on the jewel's enchant skill tag, which is not a base
+	-- tag - the craft UI passes it as an extra include tag (ItemsTab.lua:2150). Without this
+	-- every legal notable reads as spawn weight 0.
+	local extraTags = {}
+	if item.clusterJewel and item.clusterJewelSkill then
+		local skill = item.clusterJewel.skills[item.clusterJewelSkill]
+		if skill then extraTags[skill.tag] = true end
+	end
 
 	-- Affix-id authoring fails silently in two ways, so catch both here.
 	-- An unknown modId is reset to "None" (Item.lua:1467) and vanishes from the item.
@@ -227,19 +242,80 @@ local function checkMods(label, item)
 		local spec = line:match("^Prefix: (.+)$") or line:match("^Suffix: (.+)$")
 		if spec then
 			local id = spec:gsub("^{fractured}", ""):gsub("^{range:[^}]*}", "")
-			if id ~= "None" and not (item.affixes or {})[id] then
+			local mod = (item.affixes or {})[id]
+			if id ~= "None" and not mod then
 				bad("%s: unknown affix id %q - PoB drops it silently", label, id)
+			end
+			-- Elevated (Maven-crafted) influence mods are legal but so expensive that a
+			-- build resting on one is not a build anyone can assemble.
+			if mod and (mod.affix or ""):match("Elevated") then
+				bad("%s: %s is an elevated mod (%q) - legal but too expensive, use the "
+					.. "unelevated tier", label, id, mod.affix)
+			end
+			-- Scourge mods sit in the pools at full weight but are gone from the game.
+			if mod and data.itemMods.Scourge[id] then
+				bad("%s: %s is a Scourge mod - Scourge is gone from the game", label, id)
+			end
+			-- Realism policy: author the T2 tier at {range:1}. T1 is allowed when the recipe
+			-- demands it, but never above {range:0.85} - a perfectly rolled top tier is not
+			-- an item anyone assembles. Only drop mods have tiers, so bench and essence mods
+			-- (empty weightKey) are exempt, as are fixed-value mods ("+1 to Level of all
+			-- Skill Gems") where there is nothing to roll.
+			local rolls = false
+			for _, st in ipairs(mod or {}) do
+				if type(st) == "string" and st:match("%(%-?[%d%.]+%-%-?[%d%.]+%)") then
+					rolls = true
+					break
+				end
+			end
+			if mod and rolls and mod.weightKey and mod.group then
+				-- Same type only: Scourge "HellscapeUpside" mods share drop-mod groups at
+				-- weight 1000 but are neither Prefix nor Suffix, and would mask the real
+				-- top tier (they hid Seething on gloves).
+				local topLevel = mod.level or 0
+				for _, other in pairs(item.affixes) do
+					if type(other) == "table" and other.group == mod.group
+						and other.type == mod.type
+						and other.weightKey and item:GetModSpawnWeight(other, extraTags) > 0 then
+						topLevel = math.max(topLevel, other.level or 0)
+					end
+				end
+				if (mod.level or 0) >= topLevel then
+					local worst = 0
+					for r in (spec:match("{range:([^}]+)}") or "0.5"):gmatch("[^,]+") do
+						worst = math.max(worst, tonumber(r) or 0.5)
+					end
+					if worst > 0.85 then
+						bad("%s: %s is the top tier at {range:%.2f} - T1 rolls cap at 0.85",
+							label, id, worst)
+					end
+				end
 			end
 		end
 	end
 	-- Craft() only reads up to the limit (Item.lua:2031), so extra affixes are ignored.
 	if item.crafted then
+		local named = 0
 		for _, ty in ipairs({ "prefixes", "suffixes" }) do
 			local list, n = item[ty] or {}, 0
 			for _, a in ipairs(list) do if a.modId and a.modId ~= "None" then n = n + 1 end end
+			named = named + n
 			local lim = list.limit or (item.affixLimit and item.affixLimit / 2) or 3
 			if n > lim then
 				bad("%s: %d %s exceed the limit of %d - PoB ignores the extras", label, n, ty, lim)
+			end
+		end
+		-- Craft() is UI-only (ItemsTab.lua:808), never run on load. An authored item with
+		-- affix ids but no generated mod text parses and equips fine while adding NOTHING to
+		-- the calcs, so every measurement lies. tools/craft.lua bakes the text in.
+		if named > 0 then
+			local generated = 0
+			for _, v in ipairs(item.explicitModLines or {}) do
+				if v.prefix or v.suffix then generated = generated + 1 end
+			end
+			if generated == 0 then
+				bad("%s: %d affixes but no generated mod text - item is INERT in calcs, "
+					.. "run tools/craft.lua", label, named)
 			end
 		end
 	end
@@ -255,13 +331,22 @@ local function checkMods(label, item)
 			end
 		end
 	end
+	-- Scourge mods are gone from the game but still sit in the pools at full spawn weight
+	-- (data.itemMods.Scourge is merged into itemMods.Item), so weight alone would accept
+	-- them. Divert to their own bucket for a precise error.
+	local removed = {}
 	local rlu = item.rareLikeUnique ~= nil
-	for _, mod in pairs(item.affixes or {}) do
+	for id, mod in pairs(item.affixes or {}) do
 		if type(mod) == "table" then
-			-- The veiled and abyss pools carry no weightKey: they are already specific to
-			-- the item, so membership is the whole test. Everything else must weigh in.
-			local ok = mod.weightKey and item:CanHaveMod(mod) or (not mod.weightKey and rlu)
-			add(ok and legal or blocked, mod, rlu and "unique pool" or "drop")
+			if data.itemMods.Scourge[id] then
+				add(removed, mod, "scourge")
+			else
+				-- The veiled and abyss pools carry no weightKey: they are already specific to
+				-- the item, so membership is the whole test. Everything else must weigh in.
+				local ok = mod.weightKey and item:CanHaveMod(mod, extraTags)
+					or (not mod.weightKey and rlu)
+				add(ok and legal or blocked, mod, rlu and "unique pool" or "drop")
+			end
 		end
 	end
 	-- a rare-like unique's own fixed lines are in the unique DB, not the affix pool
@@ -273,8 +358,8 @@ local function checkMods(label, item)
 				tags = cand.tags })
 		end
 	end
-	-- bench mods are indexed separately as well: a {crafted} line has to be matched against
-	-- this pool specifically, since its text often also exists as a drop mod
+	-- bench mods are also indexed separately: a {crafted} line must be matched against this
+	-- pool specifically, since its text often also exists as a drop mod
 	local benchIndex = {}
 	for _, craft in ipairs(data.masterMods or {}) do
 		if craft.types and craft.types[item.type] then
@@ -297,9 +382,9 @@ local function checkMods(label, item)
 		end
 		return best and best.text
 	end
-	-- One item cannot carry two affixes from the same group; PoB's craft UI filters the
-	-- list by group (ItemsTab.lua:3411) and blocks a bench craft whose group is taken.
-	-- Subsume the Source is the only thing allowed to repeat one.
+	-- One item cannot carry two affixes from the same group; PoB's craft UI filters the list
+	-- by group (ItemsTab.lua:3411) and blocks a bench craft whose group is taken. Subsume the
+	-- Source is the only thing allowed to repeat one.
 	local groups = {}
 	local function claimGroup(group, who)
 		if not group or (item.rareLikeUnique and item.rareLikeUnique.allowDuplicateGroups) then
@@ -322,6 +407,9 @@ local function checkMods(label, item)
 			return hit
 		elseif legal[skel] then
 			bad("%s: %-56s out of range, best on this base: %s", label, text, bestOf(legal[skel]))
+		elseif removed[skel] then
+			bad("%s: %-56s only matches a Scourge mod - Scourge is gone from the game",
+				label, text)
 		elseif blocked[skel] then
 			bad("%s: %-56s CANNOT ROLL on %s (spawn weight 0): %s", label, text,
 				item.baseName or "?", bestOf(blocked[skel]))
@@ -331,10 +419,10 @@ local function checkMods(label, item)
 	end
 
 	if item.crafted then
-		-- Affix-authored: check the ids, not the text. Craft() sums two mods that share a
-		-- statOrder into one line (Item.lua:2046), so Incorporeal + Hummingbird's renders as
-		-- a single "152% increased Evasion and Energy Shield" that matches no single mod.
-		-- The ids are unambiguous, so text matching is not needed and would misfire.
+		-- Affix-authored: check the ids, not the text. Craft() sums two mods sharing a
+		-- statOrder into one line (Item.lua:2046), so Incorporeal + Hummingbird's renders as a
+		-- single "152% increased Evasion and Energy Shield" matching no single mod. The ids
+		-- are unambiguous, so text matching is not needed and would misfire.
 		for _, ty in ipairs({ "prefixes", "suffixes" }) do
 			for _, affix in ipairs(item[ty] or {}) do
 				local mod = affix.modId ~= "None" and (item.affixes or {})[affix.modId]
@@ -342,7 +430,7 @@ local function checkMods(label, item)
 					local lines = {}
 					for _, s in ipairs(mod) do if type(s) == "string" then lines[#lines + 1] = s end end
 					local stat = table.concat(lines, " / ")
-					if mod.weightKey and not item:CanHaveMod(mod) then
+					if mod.weightKey and not item:CanHaveMod(mod, extraTags) then
 						bad("%s: %s CANNOT ROLL on %s (spawn weight 0): %s", label, affix.modId,
 							item.baseName or "?", stat)
 					else
@@ -383,12 +471,44 @@ local function checkMods(label, item)
 	end
 end
 
+-- Labyrinth enchants are gone from the game, but PoB still ships the tables for old builds,
+-- so nothing else rejects them. Slot is the wrong test: the legal sources (Harvest, Heist,
+-- Dedication, Instilling / Enkindling, amulet anoints) use the same {enchant} tag.
+-- data.enchantments (Data.lua:665) is keyed by source, so ask it instead. The lab keys are
+-- its four difficulties, NORMAL included - on gloves that tier is "Trigger Word of ...",
+-- climbing to Edict / Decree / Commandment, all of it lab. Non-lab sources pass untouched.
+local LAB_KEYS = { NORMAL = true, CRUEL = true, MERCILESS = true, ENDGAME = true }
+local labEnchants = {}
+for _, byType in pairs(data.enchantments or {}) do
+	for key, list in pairs(byType) do
+		if LAB_KEYS[key] then
+			for _, text in ipairs(list) do labEnchants[text] = true end
+		end
+	end
+end
+
+local function checkEnchants(label, item)
+	if not item then return end
+	for _, line in ipairs(item.rawLines or {}) do
+		if line:match("^{enchant}") then
+			local text = line:gsub("^{enchant}", ""):gsub("^{crafted}", "")
+			if labEnchants[text] then
+				bad("%s: labyrinth enchant %q - no longer in the game", label, text)
+			end
+		end
+	end
+end
+
 ------------------------------------------------------------------ walk every slot
 local order = { "Weapon 1", "Weapon 2", "Helmet", "Body Armour", "Gloves", "Boots", "Amulet",
 	"Ring 1", "Ring 2", "Belt", "Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5" }
 for _, s in ipairs(order) do
 	local slot = build.itemsTab.slots[s]
-	if slot then checkUnique(s, build.itemsTab.items[slot.selItemId or 0]) end
+	if slot then
+		local item = build.itemsTab.items[slot.selItemId or 0]
+		checkUnique(s, item)
+		checkEnchants(s, item)
+	end
 end
 for nodeId, sock in pairs(build.itemsTab.sockets or {}) do
 	checkUnique("Jewel@" .. nodeId, build.itemsTab.items[sock.selItemId or 0])
@@ -400,6 +520,33 @@ for _, s in ipairs(order) do
 end
 for nodeId, sock in pairs(build.itemsTab.sockets or {}) do
 	checkMods("Jewel@" .. nodeId, build.itemsTab.items[sock.selItemId or 0])
+end
+
+------------------------------------------------------------------ tree budget
+-- Mirrors Build.lua:884: usedMax = 99 + 23 + ExtraPoints (bandit / quest extras land in
+-- ExtraPoints); ascendancy and Bloodline each cap at 8 and DRAW ON THE SAME 8 - ascUsed
+-- already includes every Bloodline node. A 9th point loads and calcs fine, PoB only puts a
+-- warning in a UI corner, so it must be an error here.
+print("=== TREE ===")
+do
+	local used, ascUsed, secondaryAscUsed = build.spec:CountAllocNodes()
+	local extra = (build.calcsTab.mainOutput or {}).ExtraPoints or 0
+	local usedMax = 99 + 23 + extra
+	local before = problems
+	if used > usedMax then
+		bad("tree: %d passive points, budget is %d (99 levels + 23 quest + %d extra)",
+			used, usedMax, extra)
+	end
+	if ascUsed > 8 then
+		bad("tree: %d ascendancy points (Bloodline included), budget is 8", ascUsed)
+	end
+	if secondaryAscUsed > 8 then
+		bad("tree: %d Bloodline points, budget is 8", secondaryAscUsed)
+	end
+	if problems == before then
+		print(string.format("  ok  %d/%d points, %d/8 ascendancy (%d Bloodline)",
+			used, usedMax, ascUsed, secondaryAscUsed))
+	end
 end
 
 print(string.format("\n=== TOTAL PROBLEMS: %d ===", problems))
