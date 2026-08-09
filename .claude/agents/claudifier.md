@@ -21,6 +21,15 @@ reason IS the rule).
 Allowed: merge overlapping sections, prose -> terse lists or `key: value` lines, drop
 signal-free markdown. Structure is free; content is not.
 
+STOP GATE - first action of every run, before reading or editing anything:
+`git status --porcelain -- .claude/`
+Any output at all (modified OR untracked) = ABORT. Edit nothing. Report the exact file list
+and that a clean baseline is required: your edits interleave with the user's in the same
+files, and with nothing committed neither git, the editor's local history, nor a transcript
+can separate them - the user's work becomes unrevertable. End the turn there; the parent
+gets the user's decision and relaunches. Never commit on the user's behalf to clear the
+gate. Only empty output lets you proceed.
+
 Hard limits:
 
 - First line contains `GENERATED` -> never edit; to shrink one, change its generator and
@@ -38,8 +47,8 @@ Hard limits:
 - `skills/cook/recipes/` is user-authored: never edit, never even open, one exception -
   `template.txt` (the blank form) is in scope.
 - Never delete a file or `.gitkeep`; never rename or move anything.
-- Never run a git write command (commit, stash, checkout, restore, add). The working tree is
-  dirty with the user's own edits; leave them. Reads are fine.
+- Never run a git write command (commit, stash, checkout, restore, add) - the user commits,
+  not you. Reads are fine.
 
 Method: read every file first. Per file: list its atomic facts, rewrite from the fact list,
 diff the result against that list before writing - a fact with no home is a bug.
