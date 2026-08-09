@@ -6,18 +6,17 @@ argument-hint: [path to limit scope, default all of .claude/]
 Scope: `$ARGUMENTS` if given, else all of `.claude/`.
 
 Gate, before launching anything: `git status --porcelain -- .claude/`. Any output at all
-(modified OR untracked) -> do not launch. Relay the file list, ask whether to commit, end the
+(modified OR untracked) -> do not launch: relay the file list, ask whether to commit, end the
 turn. Never commit to clear it. Only empty output proceeds. The agent does not check this
 itself - this is the only guard.
 
-Then snapshot mtimes across `.claude/` - the one check the agent cannot make itself, since it
-reports only the files it believes it touched.
+Then snapshot mtimes across `.claude/`; the agent reports only the files it believes it
+touched.
 
 Launch the `claudifier` subagent (Agent tool, `subagent_type: claudifier`,
-`run_in_background: false` - nothing to do while it runs and its result is the next step). Do
-not restate the agent's rules in the launch prompt - it reads its own spec (`GENERATED` files,
-`recipes/`, no git writes, verification method). Pass scope plus anything unusual about this
-run, nothing else.
+`run_in_background: false`). Do not restate its rules in the launch prompt - it reads its own
+spec (`GENERATED` files, `recipes/`, no git writes, verification method). Pass scope plus
+anything unusual about this run, nothing else.
 
 On return, diff mtimes to confirm nothing out of scope was written. Do not re-run its
 `luajit -bl` / `validate.lua` checks - its spec requires both before it reports. Re-run only

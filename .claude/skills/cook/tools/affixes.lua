@@ -8,7 +8,9 @@
 -- (+91-100 ES) is in the Gloves pool at weight 0 and cannot roll there. Weight is the filter.
 --
 -- Prints modIds; author the item with them (see SKILL.md) so PoB writes the values.
--- Default listing is the top two tiers per group; author the T2 at {range:1}.
+-- Default listing: top two tiers per group. Author the T2 at {range:1} (realistic; true T1
+-- left as upgrade room). Use T1 only when the recipe cannot be met without it, capped at
+-- {range:0.85}, and say so in the report.
 --
 -- flags: --tiers   every tier, not just the top two per group
 --        --shaper --elder --adjudicator --basilisk --crusader --eyrie --cleansing --tangle
@@ -96,9 +98,7 @@ end
 for _, ty in ipairs({ "Prefix", "Suffix" }) do
 	local list = byType[ty]
 	if not flags.tiers then
-		-- Top two tiers per group. Convention: author the T2 line at {range:1} - realistic to
-		-- obtain, true T1 left as upgrade room. Use T1 only when the recipe cannot be met
-		-- without it, capped at {range:0.85}, and say so in the report.
+		-- Top two tiers per group; the T2/{range:1} convention is in the header comment.
 		local byGroup = {}
 		for _, e in ipairs(list) do
 			local g = e.mod.group or e.id

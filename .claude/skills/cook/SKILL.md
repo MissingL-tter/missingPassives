@@ -4,35 +4,33 @@ description: Build a Path of Exile 1 character in Path of Building from a recipe
 disable-model-invocation: true
 ---
 
-Build a Path of Exile 1 character meeting the request named by the argument, verified in
-headless Path of Building, saved as an `.xml` in `src/Builds/` so it opens in PoB. Name the
-file for the build - tree version, skill, ascendancy, defence:
-`3.29 CoC Blazing Salvo Assassin CI.xml`, never `salvo.xml`. Do not overwrite an existing
-file in `src/Builds/` without asking.
+Build a PoE1 character meeting the request named by the argument, verified in headless PoB,
+saved as an `.xml` in `src/Builds/`. Filename = tree version, skill, ascendancy, defence:
+`3.29 CoC Blazing Salvo Assassin CI.xml`, never `salvo.xml`. Ask before overwriting an
+existing file in `src/Builds/`.
 
-Use any resources available - headless PoB for anything measurable, `data/` for what is
-obtainable, the web for mechanics. Ask questions as they arise.
+Sources: headless PoB for anything measurable, `data/` for what is obtainable, the web for
+mechanics. Ask questions as they arise.
 
-Every build starts from an empty file. Never use another build in `src/Builds/` as a
-skeleton: an inherited tree paths for the old skill, and patching it node-by-node keeps
-routing that serves nothing. Path the tree fresh; derive gear and links from the recipe.
+Every build starts from an empty file; never skeleton off another `src/Builds/` build. Path
+the tree fresh; derive gear and links from the recipe.
 
 ## The request
 
 The argument names a file in this skill's `recipes/`, without extension: `/cook cocnova`
-reads `recipes/cocnova.txt`. Read it first, before anything else.
+reads `recipes/cocnova.txt`. Read it before anything else.
 
 - No argument: list `recipes/*.txt` minus `template.txt`, ask which to cook.
 - No such file: say so, list what is there, offer to make one from `template.txt`.
 - `template.txt` is the blank form, never itself a build.
 - Fields: `CLASS`, `ASCENDANCY`, `SKILL`, `SKILL TYPE`, `DPS`, `REQUIRED ITEMS`,
   `DEFENCE MINIMUMS`, `NOTES`. Text after `#` is a comment.
-- A blank field is yours to decide - choose well and say what you chose and why.
+- Blank field = yours to decide - choose well and say what you chose and why.
 - `SKILL TYPE` applies only when `SKILL` is blank.
-- An entirely blank file: point at it rather than inventing a request.
+- Entirely blank file: point at it rather than inventing a request.
 
-Echo the request back as a constraint checklist before building; report a measured figure
-against every line at the end, including any that fell short.
+Echo the request back as a constraint checklist before building; at the end report a
+measured figure against every line, shortfalls included.
 
 ## Measuring
 
@@ -43,12 +41,12 @@ config: enemyLevel = 84, enemyIsBoss = "Pinnacle"
 stat:   mainOutput.WithDotDPS or mainOutput.TotalDPS   -- WithDotDPS is nil without a DoT
 ```
 
-Never report `CombinedDPS` (it adds culling). Every figure comes from `mainOutput`, not from
-adding up mods by hand. Sweep permutations instead of reasoning about them - trigger builds
-do not behave the way the mod text reads. Probe hypothetical stats via
+Never report `CombinedDPS` (it adds culling). Every figure comes from `mainOutput`, never
+from adding up mods by hand. Sweep permutations instead of reasoning about them - trigger
+builds do not behave as the mod text reads. Probe hypothetical stats via
 `configTab.input.customMods = "..."` + `configTab:BuildModList()` before hunting them on
 gear: trigger cooldowns snap to server ticks, so a stat can be +24% DPS at one number and
-worth zero just below it.
+zero just below it.
 
 ## Items
 
@@ -90,7 +88,7 @@ In PoB's data but not in the game (`validate.lua` rejects all of it):
 - Scourge (Hellscape) mods - still in the pools at full spawn weight.
 - Elevated (Maven) influence mods - technically obtainable, too expensive to assume.
 
-Rules PoB will not enforce while you type: no two affixes may share a mod `group`; one
+PoB does not enforce, while you type: no two affixes may share a mod `group`; one
 bench craft unless the item has "Can have up to 3 Crafted Modifiers"; an unknown affix id
 is silently dropped; affixes past 3 prefixes / 3 suffixes are silently ignored.
 `validate.lua` catches all of these, plus inert never-crafted items, T1 rolls over 0.85,
@@ -123,8 +121,8 @@ ingredients here *before* designing around them.
 - `data/uniques.md` - unobtainable uniques, variant traps, Foulborn.
 - `data/ascendancies.md` - every ascendancy and Bloodline node, and the shared 8-point rule.
 - `data/cluster-jewels.md` - sizes, skills, notables with stats, the authoring recipe,
-  and measured point economics. Read before pathing any tree - a Large cluster whose
-  enchant stat is live competes with the tree's own wheels.
+  measured point economics. Read before pathing any tree - a Large cluster whose enchant
+  stat is live competes with the tree's own wheels.
 
 ## Tools
 
