@@ -1,10 +1,8 @@
--- Headless PoB bootstrap. Every tool in this directory starts with:
+-- Headless PoB bootstrap. Every tool here starts with:
 --     local pob = dofile("../.claude/skills/cook/tools/pob.lua")
 -- Requires cwd == src/ (HeadlessWrapper.lua resolves relatively).
---
--- Without the cpath line you get "module 'lua-utf8' not found"; without the path
--- line, "module 'xml' not found". Pure-Lua deps live in runtime/lua/, native ones
--- are .dll files loose in runtime/.
+-- No cpath line -> "module 'lua-utf8' not found"; no path line -> "module 'xml' not found".
+-- Pure-Lua deps live in runtime/lua/, native ones are .dll files loose in runtime/.
 package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path
 package.cpath = "../runtime/?.dll;" .. package.cpath
 
@@ -33,6 +31,17 @@ function pob.refresh()
 	_G.build.buildFlag = true
 	runCallback("OnFrame")
 	return _G.build.calcsTab.mainOutput or {}
+end
+
+-- Serialize the loaded build to disk through PoB's own writer. Items save from
+-- itemsTab.items (+ itemOrderList for anything added at runtime); slot assignments save
+-- from the item SETS, so mutating slot.selItemId alone is lost.
+function pob.save(path)
+	local xml = _G.build:SaveDB(path)
+	assert(xml and #xml > 1000, "SaveDB returned nothing")
+	local f = assert(io.open(path, "w"))
+	f:write(xml)
+	f:close()
 end
 
 return pob
