@@ -6,8 +6,8 @@ _Generated from PoB tree data `3.29`. Regenerate after any data update._
 Rules covering both categories. Active gems are in `skills.md`, supports in
 `supports.md` - both list only obtainable gems.
 
-Nothing in PoB's UI or file format stops you picking an unobtainable gem, so this
-list is the only guard.
+Nothing in PoB's UI or file format stops you picking an unobtainable gem. Check here
+while choosing; `validate.lua` catches it after the fact, when it costs a rebuild.
 
 ## Not obtainable
 

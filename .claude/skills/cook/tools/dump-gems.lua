@@ -1,13 +1,13 @@
 -- Regenerates data/gems.md, data/skills.md and data/supports.md from PoB's gem database.
 -- Run from src/:  luajit ../.claude/skills/cook/tools/dump-gems.lua
 --
--- The split mirrors the game's own: gems.md holds the rules that cut across both
--- categories, skills.md the active gems, supports.md the supports.
+-- Split mirrors the game's own: gems.md = rules cutting across both categories,
+-- skills.md = active gems, supports.md = supports.
 --
--- Obtainability source of truth: grantedEffect.legacy, the flag GemTooltip.lua renders
--- as "Gem only exists in Standard League". It lives in Data/Skills/sup_*.lua; the tags
--- live in Data/Gems.lua, which is why answering "obtainable supports with tag X" needs
--- a join across four files and is worth precomputing.
+-- Obtainability source of truth: grantedEffect.legacy, the flag GemTooltip.lua renders as
+-- "Gem only exists in Standard League". It lives in Data/Skills/sup_*.lua; the tags live in
+-- Data/Gems.lua - "obtainable supports with tag X" is a join across four files, hence the
+-- precompute.
 local data = dofile("../.claude/skills/cook/tools/pob.lua").data()
 local OUT = "../.claude/skills/cook/data/"
 
@@ -60,8 +60,8 @@ do
 	w(STAMP .. "\n")
 	w("Rules covering both categories. Active gems are in `skills.md`, supports in")
 	w("`supports.md` - both list only obtainable gems.\n")
-	w("Nothing in PoB's UI or file format stops you picking an unobtainable gem, so this")
-	w("list is the only guard.\n")
+	w("Nothing in PoB's UI or file format stops you picking an unobtainable gem. Check here")
+	w("while choosing; `validate.lua` catches it after the fact, when it costs a rebuild.\n")
 
 	w("## Not obtainable\n")
 	w("Unobtainable in a fresh league - do not put these in a build. Grouped by category;")
