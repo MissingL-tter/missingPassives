@@ -7,22 +7,26 @@
 -- every mod in the game. "In the pool" therefore means nothing: LocalIncreasedEnergyShield11
 -- (+91-100 ES) is in the Gloves pool at weight 0 and cannot roll there. Weight is the filter.
 --
--- Print modIds, then author the item with them (see SKILL.md) so PoB writes the values.
+-- Prints modIds; author the item with them (see SKILL.md) so PoB writes the values.
+-- Default listing is the top two tiers per group; author the T2 at {range:1}.
 --
--- flags: --tiers   every tier, not just the highest per group
+-- flags: --tiers   every tier, not just the top two per group
 --        --shaper --elder --adjudicator --basilisk --crusader --eyrie --cleansing --tangle
 local INFLUENCE = { "shaper", "elder", "adjudicator", "basilisk", "crusader", "eyrie",
 	"cleansing", "tangle" }
 
 -- Parse args before loading PoB: HeadlessWrapper clears the global `arg`.
-local baseName, pattern, flags = nil, nil, {}
+local baseName, pattern, flags, skillTag = nil, nil, {}, nil
 for i = 1, #arg do
+	local s = arg[i]:match("^%-%-skill=(.+)")
 	local f = arg[i]:match("^%-%-(.+)")
-	if f then flags[f] = true
+	if s then skillTag = s
+	elseif f then flags[f] = true
 	elseif not baseName then baseName = arg[i]
 	else pattern = arg[i] end
 end
-assert(baseName, 'usage: luajit affixes.lua "<base name>" [pattern] [--tiers] [--shaper ...]')
+assert(baseName, 'usage: luajit affixes.lua "<base name>" [pattern] [--tiers] [--shaper ...]'
+	.. ' [--skill=<cluster skill tag>]')
 
 local pob = dofile("../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
@@ -32,6 +36,25 @@ assert(item.base, "unknown base: " .. baseName)
 local influences = {}
 for _, k in ipairs(INFLUENCE) do
 	if flags[k] then item[k] = true; influences[#influences + 1] = k end
+end
+
+-- Cluster jewel notables are gated on the jewel's enchant skill tag, so the pool is
+-- meaningless without one. No --skill: list the base's skills, stop.
+local extraTags = {}
+if item.clusterJewel then
+	if not skillTag or not item.clusterJewel.skills[skillTag] then
+		print(string.format("# %s needs --skill=<tag>; its skills:", baseName))
+		local tags = {}
+		for id in pairs(item.clusterJewel.skills) do tags[#tags + 1] = id end
+		table.sort(tags)
+		for _, id in ipairs(tags) do
+			local sk = item.clusterJewel.skills[id]
+			print(string.format("  %-42s %s", id, table.concat(sk.stats or {}, " / ")))
+		end
+		os.exit(skillTag and 1 or 0)
+	end
+	item.clusterJewelSkill = skillTag
+	extraTags[item.clusterJewel.skills[skillTag].tag] = true
 end
 
 local function matches(mod, id)
@@ -56,45 +79,58 @@ table.sort(tags)
 print(string.format("# %s  (type %s)", baseName, tostring(item.type)))
 print(string.format("  tags: %s", table.concat(tags, ", ")))
 if #influences > 0 then print(string.format("  influence: %s", table.concat(influences, ", "))) end
-print(string.format("  %s tier per group%s\n", flags.tiers and "every" or "highest",
+print(string.format("  %s per group%s - author the T2 at {range:1}\n",
+	flags.tiers and "every tier" or "top two tiers",
 	pattern and (", matching " .. string.format("%q", pattern)) or ""))
 
 ------------------------------------------------------------------ drop pool
+-- Elevated (Maven-crafted) mods are omitted entirely: legal in-game, but policy is never to
+-- use them (too expensive to assume), and validate.lua rejects them anyway.
 local byType = { Prefix = {}, Suffix = {} }
 for id, mod in pairs(item.affixes or {}) do
-	if type(mod) == "table" and byType[mod.type] and item:GetModSpawnWeight(mod) > 0
-		and matches(mod, id) then
+	if type(mod) == "table" and byType[mod.type] and item:GetModSpawnWeight(mod, extraTags) > 0
+		and not (mod.affix or ""):match("Elevated") and matches(mod, id) then
 		table.insert(byType[mod.type], { id = id, mod = mod })
 	end
 end
 for _, ty in ipairs({ "Prefix", "Suffix" }) do
 	local list = byType[ty]
-	if not flags.tiers then -- one entry per group, the highest ilvl tier
-		local best = {}
+	if not flags.tiers then
+		-- Top two tiers per group. Convention: author the T2 line at {range:1} - realistic to
+		-- obtain, true T1 left as upgrade room. Use T1 only when the recipe cannot be met
+		-- without it, capped at {range:0.85}, and say so in the report.
+		local byGroup = {}
 		for _, e in ipairs(list) do
 			local g = e.mod.group or e.id
-			if not best[g] or (e.mod.level or 0) > (best[g].mod.level or 0) then best[g] = e end
+			byGroup[g] = byGroup[g] or {}
+			table.insert(byGroup[g], e)
 		end
 		list = {}
-		for _, e in pairs(best) do list[#list + 1] = e end
+		for _, tiers in pairs(byGroup) do
+			table.sort(tiers, function(a, b) return (a.mod.level or 0) > (b.mod.level or 0) end)
+			for i = 1, math.min(2, #tiers) do
+				tiers[i].tier = "T" .. i
+				list[#list + 1] = tiers[i]
+			end
+		end
 	end
 	table.sort(list, function(a, b)
 		local ga, gb = a.mod.group or a.id, b.mod.group or b.id
 		if ga ~= gb then return ga < gb end
-		return (a.mod.level or 0) < (b.mod.level or 0)
+		return (a.mod.level or 0) > (b.mod.level or 0)
 	end)
 	print(string.format("## %ses (%d)", ty, #list))
 	for _, e in ipairs(list) do
-		print(string.format("  ilvl %-3d  %-44s %-18s %s", e.mod.level or 0, e.id,
-			e.mod.affix or "", stats(e.mod)))
+		print(string.format("  %-3s ilvl %-3d  %-44s %-18s %s", e.tier or "", e.mod.level or 0,
+			e.id, e.mod.affix or "", stats(e.mod)))
 	end
 	print("")
 end
 
 ------------------------------------------------------------------ bench crafts
--- ItemsTab.lua:3421 gates these on craft.types[item.type], and blocks any craft whose
--- group already exists on the item. Bench mods have an empty weightKey, so spawn weight
--- is always 0 for them - they are legal by a different route and must be checked here.
+-- ItemsTab.lua:3421 gates these on craft.types[item.type], and blocks any craft whose group
+-- already exists on the item. Bench mods have an empty weightKey, so their spawn weight is
+-- always 0 - legal by a different route, so they must be listed here.
 local bench = {}
 for _, craft in ipairs(data.masterMods) do
 	if craft.types and craft.types[item.type] and matches(craft, craft.affix or "") then
@@ -112,8 +148,8 @@ end
 print("")
 
 ------------------------------------------------------------------ essences
--- essence.mods maps item type -> modId. Essence mods sit at weight 0 everywhere: they
--- never roll, so they are only obtainable by using the essence.
+-- essence.mods maps item type -> modId. Essence mods sit at weight 0 everywhere: they never
+-- roll, so they are only obtainable by using the essence.
 local ess = {}
 for _, e in pairs(data.essences or {}) do
 	local id = e.mods and e.mods[item.type]
