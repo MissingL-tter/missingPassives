@@ -18,7 +18,7 @@ the tree fresh; derive gear and links from the recipe.
 ## The request
 
 The argument names a file in this skill's `recipes/`, without extension: `/cook cocnova`
-reads `recipes/cocnova.txt`. Read it before anything else.
+reads `recipes/cocnova.txt`.
 
 - No argument: list `recipes/*.txt` minus `template.txt`, ask which to cook.
 - No such file: say so, list what is there, offer to make one from `template.txt`.
@@ -29,8 +29,16 @@ reads `recipes/cocnova.txt`. Read it before anything else.
 - `SKILL TYPE` applies only when `SKILL` is blank.
 - Entirely blank file: point at it rather than inventing a request.
 
-Echo the request back as a constraint checklist before building; at the end report a
-measured figure against every line, shortfalls included.
+Once the recipe resolves, read all three before anything else, every build, no exceptions:
+
+1. `recipes/<argument>.txt` - the request
+2. `preferences.md` - standing preferences binding every build; a recipe overrides one only
+   by saying so explicitly, your judgement never does
+3. `data/gems.md` - unobtainable gems, upgraded support tiers, level caps
+
+Echo the request back as a constraint checklist before building, headed by those three reads
+marked done - cannot mark one, have not read it, go read it. At the end report a measured
+figure against every line, shortfalls included.
 
 ## Measuring
 
@@ -115,7 +123,7 @@ accepted. Gotchas:
 Generated from PoB's database; regenerate with the matching `tools/dump-*.lua`. Check
 ingredients here *before* designing around them.
 
-- `data/gems.md` - unobtainable gems, upgraded support tiers, level caps. Read every build.
+- `data/gems.md` - unobtainable gems, upgraded support tiers, level caps. Opening-step read.
 - `data/skills.md` - obtainable active gems, with tags.
 - `data/supports.md` - obtainable supports, with tags and descriptions.
 - `data/uniques.md` - unobtainable uniques, variant traps, Foulborn.
