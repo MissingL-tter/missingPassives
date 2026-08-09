@@ -1,0 +1,27 @@
+---
+description: Compress .claude instruction files via the claudifier subagent.
+argument-hint: [path to limit scope, default all of .claude/]
+---
+
+Scope: `$ARGUMENTS` if given, else all of `.claude/`.
+
+Gate, before launching anything: `git status --porcelain -- .claude/`. Any output at all
+(modified OR untracked) -> do not launch. Relay the file list, ask whether to commit, end the
+turn. Never commit to clear it. Only empty output proceeds. The agent re-checks this itself
+and aborts identically; checking here just saves a wasted launch.
+
+Then snapshot mtimes across `.claude/` - the one check the agent cannot make itself, since it
+reports only the files it believes it touched.
+
+Launch the `claudifier` subagent (Agent tool, `subagent_type: claudifier`,
+`run_in_background: false` - nothing to do while it runs and its result is the next step). Do
+not restate the agent's rules in the launch prompt - it reads its own spec (stop gate,
+`GENERATED` files, `recipes/`, no git writes, verification method). Pass scope plus anything
+unusual about this run, nothing else.
+
+On return, diff mtimes to confirm nothing out of scope was written. Do not re-run its
+`luajit -bl` / `validate.lua` checks - its spec requires both before it reports. Re-run only
+if it reports a failure, says it skipped one, or edited `.lua` without mentioning them.
+
+Relay: bytes before -> after per file, the mtime diff, and the facts it flagged for the user
+to rule on.
