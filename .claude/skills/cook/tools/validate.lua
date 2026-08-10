@@ -511,10 +511,12 @@ local function checkEnchants(label, item)
 end
 
 ------------------------------------------------------------------ eldritch implicits
--- influences.md, enforced: at most one Exarch + one Eater implicit per item, armour slots
--- only, no coexistence with base implicits or influence, both sides t5+ impossible. A line
--- is treated as eldritch when it text-matches a ModEldritch entry (rare bases don't share
--- those texts). Uniques are skipped: the few with eldritch lines ship that way.
+-- influences.md, enforced: an ELDRITCH ITEM (cleansing/tangle mark or any eldritch implicit)
+-- and an influenced item are mutually exclusive categories; at most one Exarch + one Eater
+-- implicit per item, armour slots only, no coexistence with base implicits, both sides t5+
+-- impossible. A line is treated as eldritch when it text-matches a ModEldritch entry after
+-- the base's own implicit gets first claim. Uniques are skipped: the few with eldritch
+-- lines ship that way.
 local ELDRITCH_SLOTS = { ["Body Armour"] = true, ["Helmet"] = true, ["Gloves"] = true,
 	["Boots"] = true }
 local INFLUENCES = { "shaper", "elder", "crusader", "basilisk", "eyrie", "adjudicator" }
@@ -530,6 +532,23 @@ for id, mod in pairs(data.itemMods.Eldritch or {}) do
 					{ specs = specs, side = mod.type, tier = tier, id = id })
 			end
 		end
+	end
+end
+-- Influence end-states (influences.md): at most two different influences per item (two only
+-- exists via Awakener's Orb); checkEldritch owns the eldritch/influence exclusion.
+-- Spawn-weight legality of the influenced MODS is already GetModSpawnWeight's job in
+-- checkMods; uniques are skipped - a few (Disintegrator et al) carry influence flags by
+-- design. Fracturing is deliberately NOT checked: it is a crafting route, the user's domain.
+local ELDRITCH_FLAGS = { "cleansing", "tangle" }
+local function checkInfluences(label, item)
+	if not item or not item.base or item.rarity == "UNIQUE" then return end
+	local flags = {}
+	for _, inf in ipairs(INFLUENCES) do
+		if item[inf] then flags[#flags + 1] = inf end
+	end
+	if #flags > 2 then
+		bad("%s: %d influences (%s) - the cap is two, and two only via Awakener's Orb",
+			label, #flags, table.concat(flags, ", "))
 	end
 end
 local function checkEldritch(label, item)
@@ -563,7 +582,21 @@ local function checkEldritch(label, item)
 			plainImplicits = plainImplicits + 1
 		end
 	end
-	if not (count.Exarch or count.Eater) then return end
+	local marks = {}
+	for _, m in ipairs(ELDRITCH_FLAGS) do
+		if item[m] then marks[#marks + 1] = m end
+	end
+	local hasLines = (count.Exarch or count.Eater) ~= nil
+	if not hasLines and #marks == 0 then return end
+	-- an ELDRITCH ITEM (marked cleansing/tangle or carrying eldritch implicits) and an
+	-- influenced item are mutually exclusive categories, in both directions
+	for _, inf in ipairs(INFLUENCES) do
+		if item[inf] then
+			bad("%s: eldritch item carries %s influence - influenced items cannot be eldritch and vice versa",
+				label, inf)
+		end
+	end
+	if not hasLines then return end
 	for _, side in ipairs({ "Exarch", "Eater" }) do
 		if (count[side] or 0) > 1 then
 			bad("%s: %d %s implicits - an item holds at most one per side", label, count[side], side)
@@ -576,11 +609,6 @@ local function checkEldritch(label, item)
 	if plainImplicits > 0 then
 		bad("%s: eldritch implicit alongside %d other implicit(s) - eldritch REPLACES the base implicit",
 			label, plainImplicits)
-	end
-	for _, inf in ipairs(INFLUENCES) do
-		if item[inf] then
-			bad("%s: eldritch implicit on a %s-influenced item - mutually exclusive", label, inf)
-		end
 	end
 	if (tier.Exarch or 0) >= 5 and (tier.Eater or 0) >= 5 then
 		bad("%s: both eldritch implicits t5+ (t%d/t%d) - IMPOSSIBLE, cap is t6/t4 or t5/t4",
@@ -614,10 +642,14 @@ end
 for nodeId, sock in pairs(build.itemsTab.sockets or {}) do
 	checkMods("Jewel@" .. nodeId, build.itemsTab.items[sock.selItemId or 0])
 end
-print("=== ELDRITCH ===")
+print("=== ELDRITCH / INFLUENCE ===")
 for _, s in ipairs(order) do
 	local slot = build.itemsTab.slots[s]
-	if slot then checkEldritch(s, build.itemsTab.items[slot.selItemId or 0]) end
+	if slot then
+		local item = build.itemsTab.items[slot.selItemId or 0]
+		checkEldritch(s, item)
+		checkInfluences(s, item)
+	end
 end
 
 ------------------------------------------------------------------ build state

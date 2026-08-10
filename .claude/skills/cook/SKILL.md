@@ -87,7 +87,8 @@ While a Pinnacle Atlas Boss is in your Presence, Inflict Fire Exposure on Hit, a
 - Bench crafts have no spawn weight - add those as `{crafted}` text lines.
 - Influence/eldritch implicit legality: `influences.md` - one Exarch + one Eater implicit max
   per item, sides in `ModEldritch.lua`; eldritch replaces base implicits and excludes other
-  influences. `validate.lua` does not check any of it.
+  influences. `validate.lua` enforces the end states; read `influences.md` BEFORE authoring
+  so items are legal on the first pass, not after a validator round-trip.
 
 In PoB's data but not in the game (`validate.lua` rejects all of it):
 
