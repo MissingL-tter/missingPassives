@@ -1,7 +1,10 @@
 ###############################################################################
 # Set default behavior to automatically normalize line endings.
+# eol=lf checks text files out with LF on every platform, making working
+# copies match the repository (which already stores everything as LF) and
+# silencing autocrlf conversion warnings regardless of local git config.
 ###############################################################################
-* text=auto
+* text=auto eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.
