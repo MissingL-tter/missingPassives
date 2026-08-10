@@ -1,7 +1,7 @@
 # FAQ - the did-you-miss-it checklist
 
-Run this list against every build BEFORE the final craft/validate/export. Each entry exists
-because it was actually missed once.
+Run against every build BEFORE the final craft/validate/export. Each entry was actually
+missed once.
 
 ## Free value left on the table
 
@@ -21,7 +21,7 @@ because it was actually missed once.
 
 ## Reading and reasoning errors
 
-- An item or gem name from memory is a HYPOTHESIS. Confirm it against a whitelist before
+- An item or gem name from memory is a HYPOTHESIS. Confirm against a whitelist before
   designing around it: uniques via the Obtainable section of `data/uniques.md`, gems via
   `data/skills.md` / `data/supports.md`. One grep - hit means exists and legal, miss means
   no, whatever the reason. Never reason from absence in a trap-list.
