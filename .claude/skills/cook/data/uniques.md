@@ -3,199 +3,10 @@
 
 _Generated from PoB tree data `3.29`. Regenerate after any data update._
 
-Two separate hazards: an item that cannot drop at all, and an obtainable item whose
-older variant is the one you wrote down.
-
-## Not obtainable
-
-181 of 1325 uniques. Check here before putting any unique in a spec.
-
-### No longer obtainable (170)
-
-- Amplification Rod
-- Anatomical Knowledge
-- Ancient Waystones
-- Apparitions
-- Asenath's Chant
-- Assassin's Haste
-- Atziri's Mirror
-- Bisco's Collar
-- Blood Sacrifice
-- Bloodboil
-- Brawn
-- Brittle Barrier
-- Chaber Cairn
-- Cheap Construction
-- Chitus' Needle
-- Clear Mind
-- Coated Shrapnel
-- Cold Steel
-- Collateral Damage
-- Combustibles
-- Conqueror's Efficiency
-- Conqueror's Longevity
-- Conqueror's Potency
-- Corona Solaris
-- Corrupted Energy
-- Cragfall
-- Crystal Vault
-- Death's Opus
-- Deidbellow
-- Divine Inferno
-- Doedre's Malevolence
-- Doomfletch's Prism
-- Dreadbeak
-- Dreadsurge
-- Duskblight
-- Eldritch Knowledge
-- Endless Misery
-- Ezomyte Hold
-- Fight for Survival
-- Fireborn
-- First Snow
-- Fleshrender
-- Fortified Legion
-- Fox's Fortune
-- Fragile Bloom
-- From Dust
-- Frostferno
-- Frozen Trail
-- Geofri's Devotion
-- Geofri's Legacy
-- Glitterdisc
-- Greedtrap
-- Growing Agony
-- Hair Trigger
-- Hazardous Research
-- Honoured Alliance
-- Hotheaded
-- Hrimburn
-- Hrimnor's Dirge
-- Hungry Abyss
-- Hyrri's Demise
-- Inevitability
-- Iron Heart
-- Izaro's Dilemma
-- Izaro's Turmoil
-- Kaltensoul
-- Kaom's Way
-- Karui Charge
-- Khatal's Geyser
-- Khatal's Weeping
-- Lord of Steel
-- Malachai's Awakening
-- Malicious Intent
-- Mantra of Flames
-- Martial Artistry
-- Martyr's Crown
-- Might and Influence
-- Might in All Forms
-- Mirebough
-- Mutated Growth
-- Ngamahu Tiki
-- Omen on the Winds
-- Overwhelming Odds
-- Panquetzaliztli
-- Pitch Darkness
-- Poacher's Aim
-- Pugilist
-- Queen's Escape
-- Rapid Expansion
-- Realm Ender
-- Replica Blood Sacrifice
-- Replica Cheap Construction
-- Replica Conqueror's Efficiency
-- Replica Fragile Bloom
-- Replica Hotheaded
-- Replica Pure Talent
-- Replica Soul Taker
-- Replica Unstable Payload
-- Ring of Blades
-- Rolling Flames
-- Rotting Legion
-- Sacrificial Harvest
-- Sanguine Gambol
-- Saresh's Darkness
-- Screams of the Desiccated
-- Serle's Masterwork
-- Shattered Chains
-- Shavronne's Gambit
-- Silverbough
-- Skysunder
-- Solerai's Radiance
-- Soul's Wick
-- Spine of the First Claimant
-- Spire of Stone
-- Spirit Guards
-- Spirited Response
-- Spreading Rot
-- Static Electricity
-- Steel Spirit
-- Sudden Ignition
-- Sunspite
-- Survival Instincts
-- Survival Secrets
-- Survival Skills
-- The Ascetic
-- The Bane of Hope
-- The Broken Elegy
-- The Cauteriser
-- The Dancing Duo
-- The Desecrated Chalice
-- The Effigon
-- The Flame of Hope
-- The Flow Untethered
-- The Fracturing Spinner
-- The Goddess Unleashed
-- The Gryphon
-- The Long Winter
-- The Nomad
-- The Oak
-- The Perandus Pact
-- The Peregrine
-- The Rippling Thoughts
-- The Sacred Chalice
-- The Sands of Time
-- The Signal Fire
-- The Stormwall
-- The Tactician
-- The Tempest
-- The Tempest's Binding
-- The Vigil
-- Thirst for Horrors
-- Timetwist
-- Unstable Payload
-- Vaal Sentencing
-- Violent Dead
-- Viper's Scales
-- Voidheart
-- Volley Fire
-- Wall of Brambles
-- Warlord's Reach
-- Warrior's Tale
-- Weight of Sin
-- Weight of the Empire
-- Whakatutuki o Matua
-- Wildfire
-- Wildwrap
-- Windshriek
-- Winter Burial
-- Winter's Bounty
-- Worldcarver
-
-### Race Events (11)
-
-- Ashes of the Sun
-- Blood of Summer
-- Fragment of Eternity
-- Relic of the Cycle
-- Remnant of Empires
-- Rust of Winter
-- Scar of Fate
-- Slivers of Providence
-- Splinter of the Moon
-- Thunder of the Dawn
-- Vestige of Divinity
+A unique may be designed around IF AND ONLY IF its exact name appears in the Obtainable
+whitelist at the end of this file. Memory-sourced names are hypotheses - one grep of the
+whitelist settles existence and legality together; a miss, for any reason, means no.
+The sections before it document traps ON obtainable items.
 
 
 ## Variants
@@ -609,3 +420,1153 @@ mod line, which PoB cannot represent (`Item.lua:999`).
 |  | Socketed Gems are Supported by Level 20 Ignite Proliferation | Socketed Gems are Supported by Level 30 Immolate |
 | Ylfeban's Trickery | Trigger Level 10 Shock Ground when Hit | Retaliation Skills have 200% Arcane Might |
 | Zahndethus' Cassock | 25% increased Light Radius | Create Profane Ground instead of Consecrated Ground |
+
+## Obtainable (whitelist)
+
+The only name-list in this file, by design: a grep hit here is atomic proof the unique
+exists and is legal. Grep it - never read it whole. 1144 names.
+
+- Abberath's Hooves
+- Abberath's Horn
+- Abhorrent Interrogation
+- Abyssus
+- Actum
+- Admiral's Arrogance
+- Advancing Fortress
+- Aegis Aurora
+- Agnerod East
+- Agnerod North
+- Agnerod South
+- Agnerod West
+- Ahkeli's Meadow
+- Ahkeli's Mountain
+- Ahkeli's Valley
+- Ahn's Contempt
+- Ahn's Heritage
+- Ahn's Might
+- Ahuana's Bite
+- Akoya's Gaze
+- Al Dhih
+- Alberon's Warpath
+- Algor Mortis
+- Allelopathy
+- Allure
+- Alpha's Howl
+- Amanamu's Gaze
+- Ambu's Charge
+- Anathema
+- Ancestral Vision
+- Ancient Skull
+- Andvarius
+- Annihilation's Approach
+- Apep's Rage
+- Apep's Slumber
+- Apep's Supremacy
+- Apex Mode
+- Arakaali's Fang
+- Araku Tiki
+- Arborix
+- Architect's Hand
+- Arn's Anguish
+- Ascent From Flesh
+- Asenath's Gentle Touch
+- Asenath's Mark
+- Ashcaller
+- Ashes of the Stars
+- Ashrend
+- Asphyxia's Wrath
+- Assailum
+- Astral Projector
+- Astramentis
+- Atziri's Acuity
+- Atziri's Disfavour
+- Atziri's Foible
+- Atziri's Promise
+- Atziri's Reflection
+- Atziri's Reign
+- Atziri's Rule
+- Atziri's Splendour
+- Atziri's Step
+- Augyre
+- Aukuna's Will
+- Aul's Uprising
+- Aurseize
+- Aurumvorax
+- Auxium
+- Axiom Perpetuum
+- Azadi Crest
+- Badge of the Brotherhood
+- Balefire
+- Baleful Dominion
+- Bated Breath
+- Beacon of Madness
+- Bear's Girdle
+- Belly of the Beast
+- Belt of the Deceiver
+- Beltimber Blade
+- Berek's Grip
+- Berek's Pass
+- Berek's Respite
+- Betrayal's Sting
+- Binds of Bloody Vengeance
+- Bino's Kitchen Knife
+- Bisco's Leash
+- Bitter Instinct
+- Bitterbind Point
+- Bitterdream
+- Black Sun Crest
+- Black Zenith
+- Blackflame
+- Blackgleam
+- Blackheart
+- Blasphemer's Grasp
+- Blightwell
+- Blood Price
+- Blood of Corruption
+- Blood of the Karui
+- Bloodbond
+- Bloodgrip
+- Bloodnotch
+- Bloodplay
+- Bloodseeker
+- Bloodsoaked Medallion
+- Blunderbore
+- Bonemeld
+- Bones of Ullr
+- Bottled Faith
+- Bound Fate
+- Bound by Destiny
+- Brain Rattler
+- Bramblejack
+- Breath of the Council
+- Breathstealer
+- Brightbeak
+- Brinerot Flag
+- Brinerot Mark
+- Brinerot Whalers
+- Briskwrap
+- Broken Faith
+- Bronn's Lithe
+- Brutal Restraint
+- Brute Force Solution
+- Brutus' Lead Sprinkler
+- Bubonic Trail
+- Cadigan's Authority
+- Cadigan's Crown
+- Calamitous Visions
+- Call of the Brotherhood
+- Call of the Void
+- Callinellus Malleus
+- Cameria's Avarice
+- Cameria's Maul
+- Cane of Kulemak
+- Cane of Unravelling
+- Carcass Jack
+- Careful Planning
+- Carnage Heart
+- Ceaseless Feast
+- Ceinture of Benevolence
+- Cerberus Limb
+- Chain of Endurance
+- Chains of Command
+- Chains of Emancipation
+- Chalice of Horrors
+- Chernobog's Pillar
+- Cherrubim's Maleficence
+- Chill of Corruption
+- Chin Sol
+- Chitus' Apex
+- Chober Chaber
+- Choir of the Storm
+- Cinderswallow Urn
+- Circle of Ambition
+- Circle of Anguish
+- Circle of Fear
+- Circle of Guilt
+- Circle of Nostalgia
+- Circle of Regret
+- Clayshaper
+- Cloak of Defiance
+- Cloak of Flame
+- Cloak of Tawm'r Isley
+- Coiling Whisper
+- Cold Iron Point
+- Combat Focus
+- Command of the Pit
+- Coralito's Signature
+- Corpsewalker
+- Coruscating Elixir
+- Cospri's Malice
+- Cospri's Will
+- Coward's Chains
+- Coward's Legacy
+- Cowards' Wail
+- Cowl of the Ceraunophile
+- Cowl of the Cryophile
+- Cowl of the Thermophile
+- Craghead
+- Craiceann's Carapace
+- Craiceann's Chitin
+- Craiceann's Pincers
+- Craiceann's Tracks
+- Crest of Desire
+- Crest of Perandus
+- Crown of Eyes
+- Crown of Thorns
+- Crown of the Inward Eye
+- Crown of the Pale King
+- Crown of the Tyrant
+- Crystallised Omniscience
+- Curtain Call
+- Cybil's Paw
+- Cyclopean Coil
+- Dance of the Offered
+- Daresso's Courage
+- Daresso's Defiance
+- Daresso's Passion
+- Daresso's Salute
+- Darkness Enthroned
+- Darkray Vectors
+- Darkscorn
+- Dawnbreaker
+- Dawnstrider
+- Dead Reckoning
+- Death Rush
+- Death's Door
+- Death's Hand
+- Death's Harp
+- Death's Oath
+- Debeon's Dirge
+- Deerstalker
+- Defiance of Destiny
+- Deidbell
+- Demon Stitcher
+- Dendrobate
+- Destructive Aspiration
+- Devoto's Devotion
+- Dialla's Malefaction
+- Disintegrator
+- Dissolution of the Flesh
+- Divinarius
+- Divination Distillate
+- Doedre's Damning
+- Doedre's Elixir
+- Doedre's Scorn
+- Doedre's Skin
+- Doedre's Tenure
+- Doedre's Tongue
+- Doomfletch
+- Doomsower
+- Doon Cuebiyari
+- Doppelganger Guise
+- Doryani's Catalyst
+- Doryani's Delusion
+- Doryani's Fist
+- Doryani's Invitation
+- Doryani's Prototype
+- Dread Captain's Cutlass
+- Dreadarc
+- Dream Fragments
+- Dreamfeather
+- Drillneck
+- Duskdawn
+- Dusktoe
+- Dyadian Dawn
+- Dyadus
+- Dying Breath
+- Dying Sun
+- Earendel's Embrace
+- Eber's Unification
+- Echoes of Creation
+- Echoforge
+- Eclipse Solaris
+- Edge of Madness
+- Efficient Training
+- El'Abin's Visage
+- Elegant Hubris
+- Elevore
+- Elixir of the Unbroken Circle
+- Emberwake
+- Emperor's Cunning
+- Emperor's Mastery
+- Emperor's Might
+- Emperor's Vigilance
+- Emperor's Wit
+- Empire's Grasp
+- Energised Armour
+- Energy From Within
+- Enmity's Embrace
+- Entropic Devastation
+- Ephemeral Edge
+- Esh's Mirror
+- Esh's Visage
+- Essence Worm
+- Essentia Sanguis
+- Eternal Damnation
+- Ewar's Mirage
+- Expedition's End
+- Extinguishing Grasp
+- Extractor Mentis
+- Eye of Chayula
+- Eye of Innocence
+- Eye of Malice
+- Eyes of the Greatwolf
+- Ezomyte Peak
+- Facebreaker
+- Fairgraves' Tricorne
+- Faithguard
+- Faminebind
+- Farrul's Bite
+- Farrul's Chase
+- Farrul's Fur
+- Farrul's Pounce
+- Fate of the Vaal
+- Fated End
+- Feastbind
+- Femurs of the Saints
+- Fencoil
+- Fenumus' Shroud
+- Fenumus' Spinnerets
+- Fenumus' Toxins
+- Fenumus' Weave
+- Fertile Mind
+- Festering Resentment
+- Festering Vengeance
+- Fevered Mind
+- Fidelitas' Spike
+- Firesong
+- Flamesight
+- Flesh and Spirit
+- Flesh-Eater
+- Fleshcrafter
+- Fluid Motion
+- Font of Thunder
+- Forbidden Flame
+- Forbidden Flesh
+- Forbidden Shako
+- Forbidden Taste
+- Fortress Covenant
+- Foxshade
+- Fractal Thoughts
+- Fragility
+- Frostbreath
+- Fury Valve
+- Galesight
+- Gamblesprint
+- Gang's Momentum
+- Garb of the Ephemeral
+- Garukhan's Flight
+- Geofri's Baptism
+- Geofri's Crest
+- Geofri's Sanctuary
+- Ghostwrithe
+- Giantsbane
+- Gifts from Above
+- Glimpse of Chaos
+- Gloomfang
+- Glorious Vanity
+- Gluttony
+- Goblinedge
+- Goldrim
+- Goldwyrm
+- Gorebreaker
+- Goredrill
+- Gorgon's Gaze
+- Grace of the Goddess
+- Grand Spectrum
+- Grasping Nightshade
+- Grattus Signet
+- Gravebind
+- Graven's Secret
+- Great Old One's Tentacles
+- Great Old One's Ward
+- Greed's Embrace
+- Grelwood Shank
+- Grip of the Council
+- Gruthkul's Pelt
+- Haemophilia
+- Hale Negator
+- Hand of Heresy
+- Hand of Thought and Motion
+- Hand of Wisdom and Action
+- Hand of the Fervent
+- Hand of the Lords
+- Hands of the High Templar
+- Hateforge
+- Haunting Memories
+- Headhunter
+- Healthy Mind
+- Heartbound Loop
+- Heartbreaker
+- Heatshiver
+- Hegemony's Era
+- Heretic's Veil
+- Heroic Tragedy
+- Hezmana's Bloodlust
+- Hidden Potential
+- Hiltless
+- Hinekora's Sight
+- Honourhome
+- Hopeshredder
+- Howlcrack
+- Hrimnor's Hymn
+- Hrimnor's Resolve
+- Hrimsorrow
+- Hyaon's Fury
+- Hyperboreus
+- Hyrri's Bite
+- Hyrri's Ire
+- Hyrri's Truth
+- Icefang Orbit
+- Icetomb
+- Ichimonji
+- Ikiaho's Promise
+- Immortal Flesh
+- Immutable Force
+- Impossible Escape
+- Impresence
+- Incandescent Heart
+- Indigon
+- Inertia
+- Inextricable Fate
+- Infernal Mantle
+- Infractem
+- Innsbury Edge
+- Inpulsa's Broken Heart
+- Inspired Learning
+- Intuitive Leap
+- Invictus Solaris
+- Inya's Epiphany
+- Iron Commander
+- Ixchel's Temptation
+- Jack, the Axe
+- Jaws of Agony
+- Jiquani's Potential
+- Jorrhast's Blacksteel
+- Kahuturoa's Certainty
+- Kalandra's Touch
+- Kalisa's Grace
+- Kaltenhalt
+- Kaom's Binding
+- Kaom's Command
+- Kaom's Heart
+- Kaom's Primacy
+- Kaom's Roots
+- Kaom's Sign
+- Kaom's Spirit
+- Karui Ward
+- Kiara's Determination
+- Kikazaru
+- Kiloava's Bluster
+- Kingmaker
+- Kingsguard
+- Kintsugi
+- Kitava's Feast
+- Kitava's Teachings
+- Kitava's Thirst
+- Kondo's Pride
+- Kongming's Stratagem
+- Kongor's Undying Rage
+- Kurgal's Gaze
+- Lakishu's Blade
+- Last Resort
+- Lavianga's Spirit
+- Lavianga's Wisdom
+- Law of the Wilds
+- Le Heup of All
+- Leadership's Price
+- Leash of Oblation
+- Leer Cast
+- Legacy of Fury
+- Legacy of the Rose
+- Leper's Alms
+- Lethal Pride
+- Lifesprig
+- Light of Lunaris
+- Lightbane Raiment
+- Lightning Coil
+- Lightpoacher
+- Limbsplit
+- Lion's Roar
+- Lioneye's Fall
+- Lioneye's Glare
+- Lioneye's Paws
+- Lioneye's Remorse
+- Lioneye's Vision
+- Lochtonial Caress
+- Loreweave
+- Lori's Lantern
+- Lost Unity
+- Lycosidae
+- Maata's Teaching
+- Machina Mitts
+- Mageblood
+- Magna Eclipsis
+- Mahuxotl's Machination
+- Malachai's Artifice
+- Malachai's Loop
+- Malachai's Mark
+- Malachai's Simula
+- Malachai's Vision
+- Maligaro's Cruelty
+- Maligaro's Lens
+- Maligaro's Restraint
+- Maligaro's Virtuosity
+- Maloney's Mechanism
+- Maloney's Nightfall
+- Manastorm
+- March of the Legion
+- Mark of Submission
+- Mark of the Doubting Knight
+- Mark of the Elder
+- Mark of the Red Covenant
+- Mark of the Shaper
+- Marohi Erqi
+- Martyr of Innocence
+- Marylene's Fallacy
+- Mask of the Spirit Drinker
+- Mask of the Stitched Demon
+- Mask of the Tribunal
+- Matua Tupuna
+- Maw of Conquest
+- Maw of Mischief
+- Medved's Challenge
+- Megalomaniac
+- Meginord's Girdle
+- Meginord's Vise
+- Melding of the Flesh
+- Memory Vault
+- Mercenary's Lot
+- Midnight Bargain
+- Might of the Meek
+- Mightblood Ire
+- Mightflay
+- Militant Faith
+- Mind of the Council
+- Mindspiral
+- Ming's Heart
+- Mistwall
+- Mjolner
+- Mokou's Embrace
+- Mon'tregul's Grasp
+- Moonbender's Wing
+- Moonsorrow
+- Mortem Morsu
+- Mother's Embrace
+- Mutewind Pennant
+- Mutewind Seal
+- Mutewind Whispersteps
+- Mystic Refractor
+- Nadir Mode
+- Nametaker
+- Natural Affinity
+- Natural Hierarchy
+- Nebulis
+- Nebuloch
+- Nevalius Inheritance
+- Ngamahu's Flame
+- Ngamahu's Sign
+- Night's Hold
+- Nightgrip
+- Nimis
+- Nomic's Storm
+- Null and Void
+- Null's Inclination
+- Nuro's Harp
+- Nycta's Lantern
+- Obliteration
+- Obscurantis
+- Offering to the Serpent
+- Olesya's Delight
+- Olroth's Charge
+- Olroth's Resolve
+- Omeyocan
+- Ondar's Clasp
+- One With Nothing
+- Oni-Goroshi
+- Orbala's Stand
+- Oriath's End
+- Original Sin
+- Ornament of the East
+- Oro's Sacrifice
+- Oskarm
+- Pacifism
+- Painseeker
+- Paradoxica
+- Perandus Blazon
+- Perandus Signet
+- Perepiteia
+- Perfidy
+- Perquil's Toe
+- Perseverance
+- Pillar of the Caged God
+- Piscator's Vigil
+- Pledge of Hands
+- Plume of Pursuit
+- Polaric Devastation
+- Powerlessness
+- Pragmatism
+- Praxis
+- Precursor's Emblem
+- Presence of Chayula
+- Primordial Eminence
+- Primordial Harmony
+- Primordial Might
+- Prism Guardian
+- Prismatic Eclipse
+- Prismweave
+- Profane Proxy
+- Progenesis
+- Prospero's Protection
+- Pure Talent
+- Putembo's Meadow
+- Putembo's Mountain
+- Putembo's Valley
+- Pyre
+- Pyroshock Clasp
+- Qotra's Regulator
+- Quecholli
+- Queen of the Forest
+- Queen's Decree
+- Quickening Covenant
+- Quill Rain
+- Rain of Splinters
+- Rainbowstride
+- Rakiata's Dance
+- Ralakesh's Impatience
+- Rashkaldor's Patience
+- Rat's Nest
+- Rathpith Globe
+- Rational Doctrine
+- Ravenous Passion
+- Razor of the Seventh Sun
+- Reach of the Council
+- Realmshaper
+- Reaper's Pursuit
+- Rearguard
+- Rebuke of the Vaal
+- Reckless Defence
+- Reclaimed Malevolence
+- Redbeak
+- Redblade Band
+- Redblade Banner
+- Redblade Tramplers
+- Reefbane
+- Refuge in Isolation
+- Relentless Fury
+- Relic of the Pact
+- Repentance
+- Replica Abyssus
+- Replica Advancing Fortress
+- Replica Alberon's Warpath
+- Replica Allelopathy
+- Replica Allure
+- Replica Alpha's Howl
+- Replica Ambu's Charge
+- Replica Atziri's Acuity
+- Replica Atziri's Foible
+- Replica Badge of the Brotherhood
+- Replica Bated Breath
+- Replica Bitterdream
+- Replica Blood Thorn
+- Replica Bloodplay
+- Replica Bones of Ullr
+- Replica Cold Iron Point
+- Replica Covenant
+- Replica Doedre's Damning
+- Replica Dragonfang's Flight
+- Replica Dreamfeather
+- Replica Duskdawn
+- Replica Earendel's Embrace
+- Replica Emberwake
+- Replica Eternity Shroud
+- Replica Farrul's Fur
+- Replica Fencoil
+- Replica Forbidden Shako
+- Replica Fragility
+- Replica Frostbreath
+- Replica Gifts from Above
+- Replica Grip of the Council
+- Replica Harvest
+- Replica Headhunter
+- Replica Heartbreaker
+- Replica Heatshiver
+- Replica Hinekora's Sight
+- Replica Hyrri's Ire
+- Replica Hyrri's Truth
+- Replica Infractem
+- Replica Innsbury Edge
+- Replica Inya's Epiphany
+- Replica Iron Commander
+- Replica Kalisa's Grace
+- Replica Kaom's Heart
+- Replica Karui Ward
+- Replica Kongor's Undying Rage
+- Replica Last Resort
+- Replica Lavianga's Spirit
+- Replica Leer Cast
+- Replica Lioneye's Paws
+- Replica Loreweave
+- Replica Maata's Teaching
+- Replica Malachai's Artifice
+- Replica Maloney's Mechanism
+- Replica Midnight Bargain
+- Replica Mistwall
+- Replica Nebulis
+- Replica Oro's Sacrifice
+- Replica Pacifism
+- Replica Paradoxica
+- Replica Perfect Form
+- Replica Powerlessness
+- Replica Primordial Might
+- Replica Prismweave
+- Replica Quill Rain
+- Replica Reckless Defence
+- Replica Red Trail
+- Replica Restless Ward
+- Replica Rumi's Concoction
+- Replica Shroud of the Lightless
+- Replica Siegebreaker
+- Replica Sorrow of the Divine
+- Replica Soul Strike
+- Replica Soul Tether
+- Replica Stampede
+- Replica Tasalio's Sign
+- Replica Tempestuous Steel
+- Replica Three-step Assault
+- Replica Trypanon
+- Replica Tukohama's Fortress
+- Replica Tulfall
+- Replica Twyzel
+- Replica Ungil's Gauche
+- Replica Veil of the Night
+- Replica Victario's Charity
+- Replica Voideye
+- Replica Voidwalker
+- Replica Volkuur's Guidance
+- Replica Windripper
+- Replica Wings of Entropy
+- Replica Winterheart
+- Replica Witchfire Brew
+- Retaliation Charm
+- Reverberation Rod
+- Rigwald's Charge
+- Rigwald's Command
+- Rigwald's Crest
+- Rigwald's Curse
+- Rigwald's Hunt
+- Rigwald's Quills
+- Rigwald's Savagery
+- Rime Gaze
+- Rise of the Phoenix
+- Rive
+- Romira's Banquet
+- Rotblood Promise
+- Rotgut
+- Roth's Reach
+- Rotmother's Mutiny
+- Rumi's Concoction
+- Ryslatha's Coil
+- Sacrificial Heart
+- Sadima's Touch
+- Saemus' Gift
+- Saffell's Frame
+- Sandstorm Visage
+- Sap of the Seasons
+- Saqawal's Flock
+- Saqawal's Nest
+- Saqawal's Talons
+- Saqawal's Winds
+- Scaeva
+- Scold's Bridle
+- Scornflux
+- Scorpion's Call
+- Seablister
+- Seething Fury
+- Self-Flagellation
+- Sentari's Answer
+- Servant of Decay
+- Seven Teachings
+- Seven-League Step
+- Severed in Sleep
+- Shackles of the Wretched
+- Shade of Solaris
+- Shadows and Dust
+- Shadowstitch
+- Shaper's Seed
+- Shaper's Touch
+- Shattershard
+- Shavronne's Pace
+- Shavronne's Revelation
+- Shavronne's Wrappings
+- Shimmeron
+- Shiversting
+- Shroud of the Lightless
+- Sibyl's Lament
+- Sidhebreath
+- Siegebreaker
+- Sign of the Sin Eater
+- Silverbranch
+- Sin Trek
+- Sin's Rebirth
+- Singularity
+- Sinvicta's Mettle
+- Sire of Shards
+- Skin of the Lords
+- Skin of the Loyal
+- Skirmish
+- Skullhead
+- Skyforth
+- Slavedriver's Hand
+- Slitherpinch
+- Slivertongue
+- Snakebite
+- Snakepit
+- Solaris Lorica
+- Solstice Vigil
+- Song of the Sirens
+- Soul Ascension
+- Soul Catcher
+- Soul Mantle
+- Soul Ripper
+- Soul Strike
+- Soul Taker
+- Soul Tether
+- Soulbound
+- Soulthirst
+- Soulwrest
+- Southbound
+- Speaker's Wreath
+- Spinehail
+- Spinesnatch
+- Split Personality
+- Sporeguard
+- Springleaf
+- Squirming Terror
+- Star of Wraeclast
+- Starcaller
+- Starforge
+- Starkonja's Head
+- Starlight Chalice
+- Stasis Prison
+- Steelworm
+- Steppan Eard
+- Stone of Lazhwar
+- Storm Cloud
+- Storm Prison
+- Storm Secret
+- Storm's Gift
+- Stormblood
+- Stormcharger
+- Stormfire
+- Stormseeker
+- Stormshroud
+- Story of the Vaal
+- Stranglegasp
+- String of Servitude
+- Sublime Vision
+- Subsume the Source
+- Sudden Dawn
+- Sunblast
+- Sundance
+- Surgebinders
+- Survivor's Guilt
+- Svalinn
+- Tabula Rasa
+- Tainted Pact
+- Tanu Ahi
+- Taproot
+- Taryn's Shiver
+- Tasalio's Sign
+- Taste of Hate
+- Tavukai
+- Tawhanuku's Timing
+- Tawhoa's Felling
+- Tear of Purity
+- Tecrod's Gaze
+- Tempered Flesh
+- Tempered Mind
+- Tempered Spirit
+- Temptation Step
+- Terminus Est
+- That Which Was Taken
+- The Admiral
+- The Adorned
+- The Anima Stone
+- The Annihilating Light
+- The Anticipation
+- The Anvil
+- The Apostate
+- The Arkhon's Tools
+- The Aylardex
+- The Balance of Terror
+- The Bandit Lord's Band
+- The Baron
+- The Battle Within
+- The Beast Fur Shawl
+- The Black Cane
+- The Blood Dance
+- The Blood Reaper
+- The Blood Thorn
+- The Blue Dream
+- The Blue Nightmare
+- The Brass Dome
+- The Brine Crown
+- The Bringer of Rain
+- The Broken Crown
+- The Burden of Shadows
+- The Burden of Truth
+- The Caged Mammoth
+- The Celestial Brace
+- The Coming Calamity
+- The Consuming Dark
+- The Covenant
+- The Crimson Storm
+- The Crustacean's Call
+- The Dancing Dervish
+- The Dark Monarch
+- The Dark Seer
+- The Deep One's Hide
+- The Devourer of Minds
+- The Devouring Diadem
+- The Draugur's Lantern
+- The Druggery
+- The Embalmer
+- The Enmity Divine
+- The Ephemeral Bond
+- The Eternal Apple
+- The Eternal Struggle
+- The Eternity Shroud
+- The Felbog Fang
+- The Flawed Refuge
+- The Fledgling
+- The Formless Flame
+- The Formless Inferno
+- The Fourth Vow
+- The Front Line
+- The Fulcrum
+- The Geomantic Gyre
+- The Ghastly Theatre
+- The Gluttonous Tide
+- The Goddess Bound
+- The Goddess Scorned
+- The Golden Charlatan
+- The Golden Rule
+- The Green Dream
+- The Green Nightmare
+- The Grey Spire
+- The Grey Wind
+- The Gull
+- The Halcyon
+- The Hallowed Monarch
+- The Hand of Phrecia
+- The Harvest
+- The Hateful Accuser
+- The Hidden Blade
+- The Highwayman
+- The Hungry Loop
+- The Ignomon
+- The Immortal Will
+- The Infinite Pursuit
+- The Interrogation
+- The Iron Fortress
+- The Iron Mass
+- The Ivory Tower
+- The Jinxed Juju
+- The Light of Meaning
+- The Living Blade
+- The Magnate
+- The Monastery Bell
+- The Oppressor
+- The Overflowing Chalice
+- The Pandemonius
+- The Pariah
+- The Perfect Form
+- The Poet's Pen
+- The Poised Prism
+- The Primordial Chain
+- The Princess
+- The Queen's Hunger
+- The Queller of Minds
+- The Rat Cage
+- The Red Dream
+- The Red Nightmare
+- The Red Trail
+- The Redblade
+- The Restless Ward
+- The Retch
+- The Saviour
+- The Scales of Justice
+- The Scourge
+- The Screaming Eagle
+- The Searing Touch
+- The Selfish Shepherd
+- The Shattered Divinity
+- The Siege
+- The Snowblind Grace
+- The Sorrow of the Divine
+- The Squire
+- The Stampede
+- The Stormheart
+- The Sundered Will
+- The Supreme Truth
+- The Surging Thoughts
+- The Surrender
+- The Taming
+- The Tempest Rising
+- The Tempest's Liberation
+- The Tempestuous Steel
+- The Three Dragons
+- The Tides of Time
+- The Torrent's Reclamation
+- The Trickster's Smile
+- The Unblinking Eye
+- The Unseen Hue
+- The Unshattered Will
+- The Untouched Soul
+- The Utmost
+- The Vertex
+- The Warden's Brand
+- The Wasp Nest
+- The Whispering Ice
+- The Will of Esh
+- The Will of Tul
+- The Will of Uul-Netol
+- The Will of Xoph
+- The Winds of Fate
+- The Wise Oak
+- The Writhing Jar
+- The Yielding Mortality
+- Thief's Torment
+- Thousand Ribbons
+- Thousand Teeth Temu
+- Thread of Hope
+- Three-step Assault
+- Thrillsteel
+- Thunderfist
+- Thundersight
+- Tidebreaker
+- Timeclasp
+- Tinkerskin
+- Titucius' Span
+- To Dust
+- Tombfist
+- Torchoak Step
+- Touch of Anguish
+- Transcendent Flesh
+- Transcendent Mind
+- Transcendent Spirit
+- Tremor Rod
+- Triad Grip
+- Triumvirate Authority
+- Trolltimber Spire
+- Trypanon
+- Tukohama's Fortress
+- Tulborn
+- Tulfall
+- Twyzel
+- Ulaman's Gaze
+- Umbilicus Immortalis
+- Unending Hunger
+- Ungil's Gauche
+- Ungil's Harmony
+- Unholy Accomplice
+- United in Dream
+- Unlight Extant
+- Unnatural Instinct
+- Unyielding Flame
+- Usurper's Penance
+- Utula's Hunger
+- Uul-Netol's Embrace
+- Uul-Netol's Kiss
+- Uul-Netol's Vow
+- Uzaza's Meadow
+- Uzaza's Mountain
+- Uzaza's Valley
+- Vaal Caress
+- Valako's Sign
+- Valyrium
+- Varunastra
+- Veil of the Night
+- Venarius' Astrolabe
+- Venopuncture
+- Ventor's Gamble
+- Veruso's Ambition
+- Veruso's Battering Rams
+- Vessel of Vinktar
+- Victario's Acuity
+- Victario's Charity
+- Victario's Flight
+- Victario's Influence
+- Viridi's Veil
+- Vis Mortis
+- Vivinsect
+- Vix Lunaris
+- Vixen's Entrapment
+- Voice of the Storm
+- Voices
+- Void Battery
+- Voidbringer
+- Voideye
+- Voidfletcher
+- Voidforge
+- Voidhome
+- Voidwalker
+- Volkuur's Guidance
+- Voll's Devotion
+- Voll's Protector
+- Voll's Vision
+- Voltaxic Rift
+- Vorana's March
+- Vorana's Preparation
+- Vulconus
+- Wake of Destruction
+- Wanderlust
+- Warped Timepiece
+- Warrior's Legacy
+- Watcher's Eye
+- Waxen Soul
+- Wellwater Phylactery
+- Wheel of the Stormsail
+- Whispers of Infinity
+- White Wind
+- Wideswing
+- Widowhail
+- Widowmaker
+- Wildfire Phloem
+- Wildslash
+- Willclash
+- Willowgift
+- Wilma's Requital
+- Windripper
+- Winds of Change
+- Windscream
+- Wine of the Prophet
+- Wing of the Wyvern
+- Wings of Entropy
+- Winterheart
+- Winterweave
+- Witchbane
+- Witchfire Brew
+- Witchhunter's Judgment
+- Woespike
+- Wondertrap
+- Wraithlord
+- Wreath of Phrecia
+- Wurm's Molt
+- Wyrmsign
+- Xirgil's Crank
+- Xoph's Blood
+- Xoph's Heart
+- Xoph's Inception
+- Xoph's Nurture
+- Yaomac's Accord
+- Ylfeban's Trickery
+- Ynda's Stand
+- Yoke of Suffering
+- Yriel's Fostering
+- Zahndethus' Cassock
+- Zana's Ingenuity
+- Zeel's Amplifier
+- Zerphi's Heart
+- Zerphi's Last Breath
