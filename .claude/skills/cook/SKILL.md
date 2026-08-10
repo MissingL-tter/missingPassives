@@ -51,7 +51,7 @@ stat:   mainOutput.WithDotDPS or mainOutput.TotalDPS   -- WithDotDPS is nil with
 
 Never report `CombinedDPS` (it adds culling). Every figure comes from `mainOutput`, never from
 adding up mods by hand. Sweep permutations instead of reasoning about them - trigger builds do
-not behave as the mod text reads. Probe hypothetical stats via
+not behave as the mod text reads, and that goes for DEFENSIVE frames as much as damage links. Probe hypothetical stats via
 `configTab.input.customMods = "..."` + `configTab:BuildModList()` before hunting them on gear:
 trigger cooldowns snap to server ticks, so a stat can be +24% DPS at one number and zero just
 below it.
@@ -85,6 +85,9 @@ While a Pinnacle Atlas Boss is in your Presence, Inflict Fire Exposure on Hit, a
 - Legality is spawn weight, not pool membership: armour bases fall back to a pool holding every
   mod in the game, so a mod can be listed for a base and still be impossible there.
 - Bench crafts have no spawn weight - add those as `{crafted}` text lines.
+- Influence/eldritch implicit legality: `influences.md` - one Exarch + one Eater implicit max
+  per item, sides in `ModEldritch.lua`; eldritch replaces base implicits and excludes other
+  influences. `validate.lua` does not check any of it.
 
 In PoB's data but not in the game (`validate.lua` rejects all of it):
 
@@ -124,11 +127,13 @@ Generated from PoB's database by the matching `tools/dump-*.lua`. Check ingredie
 - `data/gems.md` - unobtainable gems, upgraded support tiers, level caps. Opening-step read.
 - `data/skills.md` - obtainable active gems, with tags.
 - `data/supports.md` - obtainable supports, with tags and descriptions.
-- `data/uniques.md` - unobtainable uniques, variant traps, Foulborn.
+- `data/uniques.md` - the Obtainable whitelist (grep it: hit = exists and legal, miss = no),
+  variant traps, Foulborn.
 - `data/ascendancies.md` - every ascendancy and Bloodline node, and the shared 8-point rule.
-- `data/cluster-jewels.md` - sizes, skills, notables with stats, the authoring recipe, measured
-  point economics. Read before pathing any tree - a Large cluster whose enchant stat is live
-  competes with the tree's own wheels.
+- `data/jewels.md` - every tree-modifying jewel: cluster (sizes, skills, notables, authoring,
+  point economics), historic/timeless seed conquests and the one-historic limit, radius
+  transformers and allocation re-wirers. Read before pathing any tree - clusters compete with
+  the tree's own wheels, and one historic can rewrite them.
 
 ## Tools
 
@@ -138,17 +143,21 @@ Run from `src/`:
 luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 ```
 
-- `pob.lua` - headless bootstrap (`load`, `refresh`, `save`), required by the others.
+- `pob.lua` - headless bootstrap (`load`, `refresh`, `save`; binds real zlib `Inflate`/`Deflate`
+  over HeadlessWrapper's empty stubs - timeless-jewel LUTs need it), required by the others.
 - `affixes.lua "<base>" [pattern] [--tiers] [--shaper ...] [--skill=<tag>]` - legal affix ids
   for a base; cluster jewel bases need `--skill` (bare, it lists the base's skills).
 - `craft.lua` - bakes authored affix ids into real mods.
 - `validate.lua` - legality check; exits non-zero on any problem.
 - `export.lua` - uploads the build to pobb.in, prints the link.
-- `dump-gems.lua`, `dump-uniques.lua`, `dump-ascendancies.lua`, `dump-cluster-jewels.lua` -
+- `dump-gems.lua`, `dump-uniques.lua`, `dump-ascendancies.lua`, `dump-jewels.lua` -
   regenerate `data/`.
 
 The loop: author -> `craft.lua` -> `validate.lua` -> measure -> edit affix lines -> `craft.lua`
 again. Never measure between authoring and crafting.
+
+Before the final craft + validate, walk `faq.md` - the checklist of previously-missed
+mistakes - against the build.
 
 Deliver every finished build as BOTH the `.xml` path and a pobb.in link from `export.lua`, run
 after the final craft + validate so the paste matches the file.
