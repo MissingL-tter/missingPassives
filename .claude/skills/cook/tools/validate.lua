@@ -114,6 +114,17 @@ end
 ------------------------------------------------------------------ uniques
 print("=== UNIQUES ===")
 
+-- Limited-to enforcement: PoB silently sets jewelData.limitDisabled on any socketed jewel
+-- over its "Limited to" cap (the Historic cross-item cap of 1 included) - the jewel then
+-- contributes nothing, with no warning anywhere in the UI or calcs.
+for nodeId, itemId in pairs(build.spec.jewels or {}) do
+	local item = build.itemsTab.items[itemId]
+	if item and item.jewelData and item.jewelData.limitDisabled then
+		bad("Jewel@%d %s: ILLEGAL - exceeds its 'Limited to' cap (a character cannot equip it); PoB silently disables it",
+			nodeId, tostring(item.name))
+	end
+end
+
 -- A variant is not a version. On Watcher's Eye each is a different aura mod and several are
 -- selected at once ("Discipline: ES Per Hit" is variant 24 of 106), so "must be the last
 -- variant" is meaningless. PoB marks an actually-legacy roll in the variant NAME - "Clarity:
@@ -499,6 +510,88 @@ local function checkEnchants(label, item)
 	end
 end
 
+------------------------------------------------------------------ eldritch implicits
+-- influences.md, enforced: at most one Exarch + one Eater implicit per item, armour slots
+-- only, no coexistence with base implicits or influence, both sides t5+ impossible. A line
+-- is treated as eldritch when it text-matches a ModEldritch entry (rare bases don't share
+-- those texts). Uniques are skipped: the few with eldritch lines ship that way.
+local ELDRITCH_SLOTS = { ["Body Armour"] = true, ["Helmet"] = true, ["Gloves"] = true,
+	["Boots"] = true }
+local INFLUENCES = { "shaper", "elder", "crusader", "basilisk", "eyrie", "adjudicator" }
+local eldritchIndex = {}
+for id, mod in pairs(data.itemMods.Eldritch or {}) do
+	if type(mod) == "table" and (mod.type == "Exarch" or mod.type == "Eater") then
+		local tier = tonumber(tostring(id):match("(%d+)_*$")) or 0
+		for _, st in ipairs(mod) do
+			if type(st) == "string" then
+				local skel, specs = parse(st)
+				eldritchIndex[skel] = eldritchIndex[skel] or {}
+				table.insert(eldritchIndex[skel],
+					{ specs = specs, side = mod.type, tier = tier, id = id })
+			end
+		end
+	end
+end
+local function checkEldritch(label, item)
+	if not item or not item.base or item.rarity == "UNIQUE" then return end
+	-- the base's own implicit takes precedence: "15% increased Spell Damage" on an Imbued
+	-- Wand is the base implicit even though the text also matches a helmet eldritch mod
+	local baseImp = {}
+	for line in tostring(item.base.implicit or ""):gmatch("[^\n]+") do
+		local skel, specs = parse(line)
+		baseImp[#baseImp + 1] = { skel = skel, specs = specs }
+	end
+	local count, tier = {}, {}
+	local plainImplicits = 0
+	for _, v in ipairs(item.implicitModLines or {}) do
+		local text = clean(v.line)
+		local skel, vals = parse(text)
+		local isBase = false
+		for _, b in ipairs(baseImp) do
+			if b.skel == skel and inRange(b.specs, vals) then isBase = true break end
+		end
+		local best -- lowest tier whose range fits: the charitable reading
+		if not isBase then
+			for _, c in ipairs(eldritchIndex[skel] or {}) do
+				if inRange(c.specs, vals) and (not best or c.tier < best.tier) then best = c end
+			end
+		end
+		if best then
+			count[best.side] = (count[best.side] or 0) + 1
+			tier[best.side] = math.max(tier[best.side] or 0, best.tier)
+		else
+			plainImplicits = plainImplicits + 1
+		end
+	end
+	if not (count.Exarch or count.Eater) then return end
+	for _, side in ipairs({ "Exarch", "Eater" }) do
+		if (count[side] or 0) > 1 then
+			bad("%s: %d %s implicits - an item holds at most one per side", label, count[side], side)
+		end
+	end
+	if not ELDRITCH_SLOTS[item.base.type or ""] then
+		bad("%s: eldritch implicit on a %s - only Body Armour/Helmet/Gloves/Boots can have them",
+			label, item.base.type or "?")
+	end
+	if plainImplicits > 0 then
+		bad("%s: eldritch implicit alongside %d other implicit(s) - eldritch REPLACES the base implicit",
+			label, plainImplicits)
+	end
+	for _, inf in ipairs(INFLUENCES) do
+		if item[inf] then
+			bad("%s: eldritch implicit on a %s-influenced item - mutually exclusive", label, inf)
+		end
+	end
+	if (tier.Exarch or 0) >= 5 and (tier.Eater or 0) >= 5 then
+		bad("%s: both eldritch implicits t5+ (t%d/t%d) - IMPOSSIBLE, cap is t6/t4 or t5/t4",
+			label, tier.Exarch, tier.Eater)
+	else
+		print(string.format("  ok  %-12s eldritch %s%s", label,
+			count.Exarch and ("Exarch t" .. tier.Exarch) or "-",
+			count.Eater and (" + Eater t" .. tier.Eater) or ""))
+	end
+end
+
 ------------------------------------------------------------------ walk every slot
 local order = { "Weapon 1", "Weapon 2", "Helmet", "Body Armour", "Gloves", "Boots", "Amulet",
 	"Ring 1", "Ring 2", "Belt", "Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5" }
@@ -520,6 +613,47 @@ for _, s in ipairs(order) do
 end
 for nodeId, sock in pairs(build.itemsTab.sockets or {}) do
 	checkMods("Jewel@" .. nodeId, build.itemsTab.items[sock.selItemId or 0])
+end
+print("=== ELDRITCH ===")
+for _, s in ipairs(order) do
+	local slot = build.itemsTab.slots[s]
+	if slot then checkEldritch(s, build.itemsTab.items[slot.selItemId or 0]) end
+end
+
+------------------------------------------------------------------ build state
+-- Impossible-character checks: PoB computes happily through all of these and reports them
+-- only as quiet numbers, so each must be an error here.
+print("=== BUILD STATE ===")
+do
+	local out = build.calcsTab.mainOutput or {}
+	local before = problems
+	for _, a in ipairs({ "Str", "Dex", "Int" }) do
+		local have, need = out[a] or 0, out["Req" .. a] or 0
+		if need > have then
+			bad("attributes: %d %s required, only %d - gems could not level or function",
+				need, a, have)
+		end
+	end
+	if (out.ManaUnreserved or 0) < 0 then
+		bad("reservations exceed mana pool by %d - this aura set cannot all be active",
+			-out.ManaUnreserved)
+	end
+	if (out.LifeUnreserved or 1) < 0 then
+		bad("reservations exceed life pool by %d", -out.LifeUnreserved)
+	end
+	for id, node in pairs(build.spec.allocNodes or {}) do
+		if node.type == "Socket" then
+			local itemId = build.spec.jewels and build.spec.jewels[id]
+			if not itemId or itemId == 0 then
+				bad("Jewel@%d: allocated jewel socket is EMPTY - a passive point buying nothing", id)
+			end
+		end
+	end
+	if problems == before then
+		print(string.format("  ok  attributes %d/%d/%d vs req %d/%d/%d, unreserved mana %d, all sockets filled",
+			out.Str or 0, out.Dex or 0, out.Int or 0, out.ReqStr or 0, out.ReqDex or 0,
+			out.ReqInt or 0, out.ManaUnreserved or 0))
+	end
 end
 
 ------------------------------------------------------------------ tree budget
