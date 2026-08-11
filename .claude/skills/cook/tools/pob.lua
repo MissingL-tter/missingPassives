@@ -79,4 +79,45 @@ function pob.save(path)
 	f:close()
 end
 
+-- Replace every "(a-b)" range and standalone number in a mod/stat line with "#",
+-- collecting {min,max} pairs left to right. Fixed numbers become min == max.
+function pob.templateLine(line)
+	local vals, out, pos = {}, {}, 1
+	while pos <= #line do
+		local rs, re, a, b = line:find("%((%-?%d+%.?%d*)%-(%-?%d+%.?%d*)%)", pos)
+		local ns, ne, n = line:find("(%-?%d+%.?%d*)", pos)
+		if rs and (not ns or rs <= ns) then
+			out[#out + 1] = line:sub(pos, rs - 1) .. "#"
+			vals[#vals + 1] = { tonumber(a), tonumber(b) }
+			pos = re + 1
+		elseif ns then
+			out[#out + 1] = line:sub(pos, ns - 1) .. "#"
+			vals[#vals + 1] = { tonumber(n), tonumber(n) }
+			pos = ne + 1
+		else
+			out[#out + 1] = line:sub(pos)
+			break
+		end
+	end
+	return table.concat(out), vals
+end
+
+-- SQL literal helpers for the dump-*.lua db emitters.
+function pob.q(s) return "'" .. tostring(s):gsub("'", "''") .. "'" end
+function pob.qn(s) if s == nil or s == "" then return "NULL" end return pob.q(s) end
+function pob.num(v) if v == nil then return "NULL" end return tostring(v) end
+
+-- Build dbPath from SQL: emit(w) writes statements through w(line). Writes a sibling
+-- .sql, replaces the db via sqlite3 (must be on PATH), deletes the .sql.
+function pob.buildDb(dbPath, emit)
+	local sqlPath = dbPath .. ".sql"
+	local f = assert(io.open(sqlPath, "w+"))
+	emit(function(s) f:write(s, "\n") end)
+	f:close()
+	os.remove(dbPath)
+	local rc = os.execute(('sqlite3 "%s" ".read %s"'):format(dbPath, sqlPath))
+	assert(rc == 0 or rc == true, "sqlite3 failed building " .. dbPath)
+	os.remove(sqlPath)
+end
+
 return pob

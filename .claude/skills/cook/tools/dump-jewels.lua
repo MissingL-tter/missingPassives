@@ -1,7 +1,8 @@
--- Regenerates data/jewels.md: every jewel that MODIFIES the passive tree - cluster jewels
--- (sizes, skills, notables, authoring), historic/timeless jewels (seeds, conquests), and
--- radius/rule-changing jewels. Plain stat jewels are ordinary affix items - affixes.lua.
--- Run from src/:
+-- Regenerates data/jewels.md AND data/jewels.db: every jewel that MODIFIES the passive
+-- tree. The md holds the doctrine - cluster mechanics/authoring, historic/timeless
+-- conquests, radius/rule jewels; the db holds the cluster listings (sizes, skills,
+-- notables). Plain stat jewels are ordinary affix items - affixes.lua.
+-- Run from src/ (sqlite3 must be on PATH):
 --   luajit ../.claude/skills/cook/tools/dump-jewels.lua
 --
 -- Sources: data.clusterJewels + Data/ModJewelCluster + tree.clusterNodeMap (cluster section);
@@ -85,7 +86,8 @@ Implicits: 3
 {enchant}Added Small Passive Skills grant: 12% increased Fire Damage
 ```
 
-The last enchant line must be the skill's exact enchant text from the tables below.
+The last enchant line must be the skill's exact enchant text - `skills.enchant` in
+`jewels.db` (see Querying below).
 Socket via `<Socket nodeId="..." itemId="..."/>` on a rim socket, allocate the socket
 node, then the subgraph nodes (generated ids land in the saved `nodes` list and reload
 cleanly). Craft first, then allocate - notables only exist after crafting.
@@ -135,77 +137,81 @@ for _, name in ipairs(sizeOrder) do
 end
 print("")
 
+-- Cluster skills and notables go to jewels.db. Notables with zero spawn weight on every
+-- tag (removed from the game) are excluded - zero rows = removed or never existed, the
+-- same verdict either way.
+local sizeSkills = {}
 for _, name in ipairs(sizeOrder) do
 	local j = data.clusterJewels.jewels[name]
 	if j then
-		print(string.format("## %s skills\n", name))
-		print("| skill tag | small passive grants | enchant line for authoring |")
-		print("|---|---|---|")
 		local ids = {}
 		for id in pairs(j.skills) do ids[#ids + 1] = id end
 		table.sort(ids)
 		for _, id in ipairs(ids) do
 			local sk = j.skills[id]
-			print(string.format("| %s | %s | %s |", id,
-				table.concat(sk.stats or {}, " / "), table.concat(sk.enchant or {}, " / ")))
+			sizeSkills[#sizeSkills + 1] = { size = name, id = id, tag = sk.tag or id,
+				stats = table.concat(sk.stats or {}, " / "),
+				enchant = table.concat(sk.enchant or {}, " / ") }
 		end
-		print("")
 	end
 end
 
-print("## Not obtainable\n")
-print("Removed from the game over the years; PoB keeps them at spawn weight 0, so")
-print("`affixes.lua` never lists them and `validate.lua` rejects them by weight.")
-print("Listed so their names do not tempt from old guides.\n")
-local removed = {}
-for id, mod in pairs(clusterMods) do
-	local notable = (mod[1] or ""):match("^1 Added Passive Skill is (.+)$")
-	if notable then
-		local anyWeight = false
-		for i, v in ipairs(mod.weightVal or {}) do
-			if (mod.weightKey[i] or "") ~= "default" and v > 0 then anyWeight = true break end
-		end
-		if not anyWeight then removed[#removed + 1] = notable end
-	end
-end
-table.sort(removed)
-for _, name in ipairs(removed) do print("- " .. name) end
-print("")
-
-print("## Notables\n")
-print("Grouped by the skill tags that can roll them; grep by tag or by stat. Weights")
-print("are relative within the tag's pool. Stats come from the tree's own nodes.\n")
-local byTag = {}
+local notableList, tagSet = {}, {}
 for id, mod in pairs(clusterMods) do
 	if id:match("^AfflictionNotable") and mod.weightKey then
 		local notable = (mod[1] or ""):match("^1 Added Passive Skill is (.+)$")
 		if notable then
+			local weights = {}
 			for i, key in ipairs(mod.weightKey) do
 				if key ~= "default" and (mod.weightVal[i] or 0) > 0 then
-					byTag[key] = byTag[key] or {}
-					table.insert(byTag[key], { id = id, name = notable, w = mod.weightVal[i] })
+					weights[#weights + 1] = { tag = key, w = mod.weightVal[i] }
+					tagSet[key] = true
 				end
+			end
+			if #weights > 0 then
+				table.sort(weights, function(a, b) return a.tag < b.tag end)
+				local node = tree.clusterNodeMap[notable]
+				notableList[#notableList + 1] = { name = notable, modId = id,
+					weights = weights, stats = node and node.sd or {} }
 			end
 		end
 	end
 end
-local tags = {}
-for t in pairs(byTag) do tags[#tags + 1] = t end
-table.sort(tags)
-local nNotables = 0
-for _, t in ipairs(tags) do
-	print(string.format("### %s\n", t))
-	print("| notable | weight | id | stats |")
-	print("|---|---|---|---|")
-	table.sort(byTag[t], function(a, b) return a.name < b.name end)
-	for _, e in ipairs(byTag[t]) do
-		local node = tree.clusterNodeMap[e.name]
-		local stats = node and table.concat(node.sd or {}, " / "):gsub("|", "/") or "?"
-		print(string.format("| %s | %d | %s | %s |", e.name, e.w, e.id, stats))
-		nNotables = nNotables + 1
-	end
-	print("")
-end
+table.sort(notableList, function(a, b) return a.name < b.name end)
+local nTags = 0
+for _ in pairs(tagSet) do nTags = nTags + 1 end
+
+print("## Querying jewels.db\n")
+print("Cluster skills and notables live in `data/jewels.db`, rebuilt with this file. A")
+print("notable name from memory is a hypothesis - query it; zero rows means removed or")
+print("never existed, same verdict either way (removed notables keep spawn weight 0 in")
+print("PoB, so `affixes.lua` and `validate.lua` also reject them by weight).\n")
+print("- `sizes(name, min_nodes, max_nodes, sockets, socket_enchant)` - the socket")
+print("  enchant line each size must author.")
+print("- `skills(size, id, tag, small_stats, enchant)` - per size x skill; `enchant` is")
+print("  the exact final enchant line for authoring; `tag` is the weight key notables")
+print("  roll against and the `--skill=` argument to `affixes.lua`.")
+print("- `notables(id, name, mod_id)` - `mod_id` is the Prefix affix id to author.")
+print("- `notable_weights(notable_id, tag, weight)` - the skill tags that roll it;")
+print("  weight is relative within the tag's pool.")
+print("- `notable_stats(notable_id, ord, line, template)` - stat lines from the tree's")
+print("  own nodes; `template` has every number as `#` - LIKE-match on it, not `line`.")
+print("- `meta(key, value)` - `tree_version`, `generated_at`.\n")
+print("Canonical queries:\n")
+print("```sh")
+print("DB=.claude/skills/cook/data/jewels.db")
+print("# notables a fire cluster can roll, with stats and authoring ids")
+print("sqlite3 $DB \"SELECT n.name, n.mod_id, s.line FROM notables n")
+print("  JOIN notable_weights w ON w.notable_id=n.id AND w.tag='affliction_fire_damage'")
+print("  LEFT JOIN notable_stats s ON s.notable_id=n.id ORDER BY n.name, s.ord;\"")
+print("# criteria search across every notable, and which tags carry the hits")
+print("sqlite3 $DB \"SELECT DISTINCT n.name, w.tag FROM notables n")
+print("  JOIN notable_stats s ON s.notable_id=n.id")
+print("  JOIN notable_weights w ON w.notable_id=n.id")
+print("  WHERE s.template LIKE '%Critical Strike Multiplier%';\"")
+print("# a size's skills with their authoring enchant lines")
+print("sqlite3 $DB \"SELECT id, small_stats, enchant FROM skills WHERE size='Medium Cluster Jewel';\"")
+print("```")
 
 ------------------------------------------------------------------ parse unique jewels
 local knownProps = {
@@ -427,5 +433,80 @@ for _, g in ipairs(groups) do
 end
 
 out:close()
-emit(string.format("wrote jewels.md (%d cluster tags, %d notables, %d timeless, %d abyss historics)",
-	#tags, nNotables, #timeless, #abyssHist))
+
+------------------------------------------------------------------ jewels.db
+local q = pob.q
+pob.buildDb("../.claude/skills/cook/data/jewels.db", function(w)
+	w([[
+PRAGMA journal_mode=OFF;
+BEGIN;
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE sizes (
+	name TEXT PRIMARY KEY,
+	min_nodes INTEGER NOT NULL, max_nodes INTEGER NOT NULL,
+	sockets INTEGER NOT NULL,
+	socket_enchant TEXT
+);
+CREATE TABLE skills (
+	size TEXT NOT NULL,
+	id TEXT NOT NULL,
+	tag TEXT NOT NULL,
+	small_stats TEXT NOT NULL,
+	enchant TEXT NOT NULL,
+	PRIMARY KEY (size, id)
+);
+CREATE TABLE notables (
+	id INTEGER PRIMARY KEY,
+	name TEXT NOT NULL,
+	mod_id TEXT NOT NULL
+);
+CREATE TABLE notable_weights (
+	notable_id INTEGER NOT NULL REFERENCES notables(id),
+	tag TEXT NOT NULL,
+	weight INTEGER NOT NULL,
+	PRIMARY KEY (notable_id, tag)
+);
+CREATE TABLE notable_stats (
+	notable_id INTEGER NOT NULL REFERENCES notables(id),
+	ord INTEGER NOT NULL,
+	line TEXT NOT NULL,
+	template TEXT NOT NULL,
+	PRIMARY KEY (notable_id, ord)
+);]])
+
+	for _, name in ipairs(sizeOrder) do
+		local j = data.clusterJewels.jewels[name]
+		if j then
+			local s = sizeSockets[name]
+			w(("INSERT INTO sizes VALUES (%s, %d, %d, %d, %s);"):format(
+				q(name), j.minNodes, j.maxNodes, s[1], s[1] > 0 and q(s[2]) or "NULL"))
+		end
+	end
+	for _, sk in ipairs(sizeSkills) do
+		w(("INSERT INTO skills VALUES (%s, %s, %s, %s, %s);"):format(
+			q(sk.size), q(sk.id), q(sk.tag), q(sk.stats), q(sk.enchant)))
+	end
+	for nid, n in ipairs(notableList) do
+		w(("INSERT INTO notables VALUES (%d, %s, %s);"):format(nid, q(n.name), q(n.modId)))
+		for _, wt in ipairs(n.weights) do
+			w(("INSERT INTO notable_weights VALUES (%d, %s, %d);"):format(nid, q(wt.tag), wt.w))
+		end
+		for ord, s in ipairs(n.stats) do
+			local line = tostring(s):gsub("\n", " ")
+			w(("INSERT INTO notable_stats VALUES (%d, %d, %s, %s);"):format(
+				nid, ord, q(line), q((pob.templateLine(line)))))
+		end
+	end
+
+	w(("INSERT INTO meta VALUES ('tree_version', %s);"):format(
+		q(tostring(tree.treeVersion):gsub("_", "."))))
+	w(("INSERT INTO meta VALUES ('generated_at', %s);"):format(q(os.date("!%Y-%m-%d"))))
+	w("INSERT INTO meta VALUES ('generator', 'dump-jewels.lua');")
+	w([[
+CREATE INDEX idx_notables_name ON notables(name);
+CREATE INDEX idx_notable_weights_tag ON notable_weights(tag);
+COMMIT;]])
+end)
+
+emit(string.format("wrote jewels.md + jewels.db: %d skills across %d tags, %d notables, %d timeless, %d abyss historics",
+	#sizeSkills, nTags, #notableList, #timeless, #abyssHist))

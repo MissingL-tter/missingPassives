@@ -3,7 +3,7 @@
 
 CLASS:            # Scion | Marauder | Ranger | Witch | Duelist | Templar | Shadow
 ASCENDANCY:       # see data/ascendancies.md
-SKILL:            # e.g. Arc - see data/skills.md
+SKILL:            # e.g. Arc - see data/gems.db
 SKILL TYPE:       # only if SKILL is blank: spell | ranged attack | melee | trap |
                   #   mine | totem | brand | triggered | ...
 DPS:              # minimum Total DPS, e.g. 10m

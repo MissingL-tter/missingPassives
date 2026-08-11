@@ -1,53 +1,83 @@
--- Regenerates data/uniques.md. Run from src/:
+-- Regenerates data/uniques.md AND data/uniques.db from one collection pass.
+-- Run from src/ (sqlite3 must be on PATH):
 --   luajit ../.claude/skills/cook/tools/dump-uniques.lua
 --
 -- Obtainability is PoB's own flag, not a heuristic. ItemDBControl.lua:114 computes it as
 --   not (source == "No longer obtainable" or item.league == "Race Events")
--- from the item's `Source:` / `League:` lines (Item.lua:807 / :767). Items are built as real
--- Item objects here so the parse matches PoB's exactly.
+-- from the item's `Source:` / `League:` lines (Item.lua:807 / :767). Only obtainable
+-- uniques and mod lines reachable through at least one non-legacy variant reach either
+-- output. Items are built as real Item objects so the parse - variant tags,
+-- implicit/explicit split, PoB mod support - matches PoB's exactly.
 local pob = dofile("../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
+local q, qn, num = pob.q, pob.qn, pob.num
 
 -- A variant name is legacy if it names the patch the item was changed in.
 local function looksLegacy(name)
 	return (name:match("[Pp]re %d") or name:match("[Ll]egacy")) ~= nil
 end
 
-local unobtainable, variants, seen, total = {}, {}, {}, 0
-local obtainable = {}
-for _, list in pairs(data.uniques) do
+-- nil = unrestricted; false = reachable only through legacy variants (drop it);
+-- string = " | "-joined names of the non-legacy variants that carry it.
+local function legalVariants(item, holder)
+	if not holder.variantList then return nil end
+	local names = {}
+	for id in pairs(holder.variantList) do
+		local nm = item.variantList and item.variantList[id]
+		if nm and not looksLegacy(nm) then names[#names + 1] = nm end
+	end
+	if #names == 0 then return false end
+	table.sort(names)
+	return table.concat(names, " | ")
+end
+
+local templateLine = pob.templateLine
+
+------------------------------------------------------------------ collect
+local items, seenItem = {}, {}
+local seenTitle, total, nObtainable = {}, 0, 0
+local obtainableTitles, variants = {}, {}
+local listNames = {}
+for k in pairs(data.uniques) do listNames[#listNames + 1] = k end
+table.sort(listNames, function(a, b) return tostring(a) < tostring(b) end)
+for _, k in ipairs(listNames) do
+	local list = data.uniques[k]
 	if type(list) == "table" then
 		for _, raw in ipairs(list) do
 			if type(raw) == "string" then
 				local ok, item = pcall(function() return new("Item", raw) end)
-				local title = ok and item and item.title
-				if title and not seen[title] then
-					seen[title] = true
-					total = total + 1
-
-					local source = item.source or ""
-					local gone = nil
-					if source == "No longer obtainable" then
-						gone = "No longer obtainable"
-					elseif item.league == "Race Events" then
-						gone = "Race Events"
+				if ok and item and item.title and item.baseName then
+					local title = item.title
+					if not seenTitle[title] then
+						seenTitle[title] = true
+						total = total + 1
+						local gone = item.source == "No longer obtainable" or item.league == "Race Events"
+						if not gone then
+							obtainableTitles[title] = true
+							nObtainable = nObtainable + 1
+							-- variants of an item that cannot drop are moot; only track obtainable ones
+							local vlist, nLegacy = item.variantList or {}, 0
+							for _, v in ipairs(vlist) do if looksLegacy(v) then nLegacy = nLegacy + 1 end end
+							if nLegacy > 0 then
+								variants[#variants + 1] = { title = title, n = #vlist, nLegacy = nLegacy }
+							end
+						end
 					end
-					if gone then unobtainable[#unobtainable + 1] = { title = title, why = gone } end
-					if not gone then obtainable[#obtainable + 1] = title end
-
-					-- variants of an item that cannot drop are moot; only track obtainable ones
-					local vlist, nLegacy = item.variantList or {}, 0
-					for _, v in ipairs(vlist) do if looksLegacy(v) then nLegacy = nLegacy + 1 end end
-					if nLegacy > 0 and not gone then
-						variants[#variants + 1] = { title = title, n = #vlist, nLegacy = nLegacy }
+					local key = title .. "\0" .. item.baseName
+					if obtainableTitles[title] and not seenItem[key] then
+						seenItem[key] = true
+						items[#items + 1] = item
 					end
 				end
 			end
 		end
 	end
 end
-table.sort(unobtainable, function(a, b) return a.title < b.title end)
+table.sort(items, function(a, b)
+	if a.title ~= b.title then return a.title < b.title end
+	return a.baseName < b.baseName
+end)
 table.sort(variants, function(a, b) return a.title < b.title end)
 
 local perMod = {}
@@ -55,6 +85,31 @@ for _, it in ipairs(variants) do
 	if it.n >= 8 then perMod[#perMod + 1] = it end
 end
 
+-- Foulborn: data.foulbornMap[title] maps originalModId -> foulbornModId; the Foulborn
+-- version REPLACES a normal mod. Text: itemMods.ItemExclusive / itemMods.Foulborn.
+local exclusive, foulPool = data.itemMods.ItemExclusive, data.itemMods.Foulborn
+local foulByTitle, nFoulUniques, nFoulSwaps = {}, 0, 0
+for title, map in pairs(data.foulbornMap or {}) do
+	if obtainableTitles[title] then
+		local rows = {}
+		for origId, foulId in pairs(map) do
+			local o, n = exclusive[origId], foulPool[foulId]
+			if o and n then
+				rows[#rows + 1] = { from = table.concat(o, " "), to = table.concat(n, " ") }
+			end
+		end
+		if #rows > 0 then
+			table.sort(rows, function(a, b) return a.from < b.from end)
+			foulByTitle[title] = rows
+			nFoulUniques = nFoulUniques + 1
+			nFoulSwaps = nFoulSwaps + #rows
+		end
+	end
+end
+
+local treeVersion = tostring(_G.build.spec.treeVersion):gsub("_", ".")
+
+------------------------------------------------------------------ uniques.md
 local f = assert(io.open(OUT .. "uniques.md", "w+"))
 local function w(fmt, ...)
 	f:write(select("#", ...) > 0 and string.format(fmt, ...) or fmt, "\n")
@@ -62,17 +117,52 @@ end
 
 w("<!-- GENERATED by .claude/skills/cook/tools/dump-uniques.lua - do not hand-edit -->")
 w("# Uniques\n")
-w("_Generated from PoB tree data `%s`. Regenerate after any data update._\n",
-	tostring(_G.build.spec.treeVersion):gsub("_", "."))
-w("A unique may be designed around IF AND ONLY IF its exact name appears in the Obtainable")
-w("whitelist at the end of this file. Memory-sourced names are hypotheses - one grep of the")
-w("whitelist settles existence and legality together; a miss, for any reason, means no.")
-w("The sections before it document traps ON obtainable items.\n")
+w("_Generated from PoB tree data `%s`. Regenerate after any data update - this script",
+	treeVersion)
+w("rebuilds `uniques.db` too._\n")
+w("A unique may be designed around IF AND ONLY IF it has a row in `data/uniques.db`.")
+w("Memory-sourced names are hypotheses - one query settles existence and legality")
+w("together; zero rows, for any reason, means no. The db holds only legal content:")
+w("unobtainable uniques (%d of %d) and legacy-only mod lines are excluded at",
+	total - nObtainable, total)
+w("generation - never filter for legality yourself. The sections after the schema")
+w("document traps ON obtainable items.\n")
 
------------------------------------------------------------------- variants
-w("\n## Variants\n")
+w("## Querying uniques.db\n")
+w("Run `sqlite3` with paths from the repo root (from `src/`, prefix `../`). Double any")
+w("apostrophe inside SQL strings: `name='Watcher''s Eye'`.\n")
+w("- `uniques(id, name, base, type, subtype, league, source, req_level, req_str,")
+w("  req_dex, req_int)` - one row per name per base (Grand Spectrum: one per jewel")
+w("  colour); a base that differs by variant is \" | \"-joined inside `base`.")
+w("- `mods(id, unique_id, scope, line, template, variant, unsupported)` -")
+w("  scope `implicit|explicit|buff|enchant`; `line` keeps ranges (`+(10-77)% to ...`);")
+w("  `template` is the line with every number/range as `#` - LIKE-match on it, not on")
+w("  `line`; `variant` is \" | \"-joined names of the (non-legacy) variants carrying the")
+w("  line, NULL = unconditional; `unsupported=1` = PoB cannot calculate the line, it")
+w("  has no effect in a build.")
+w("- `mod_values(mod_id, ord, min, max)` - a line's numbers in reading order; fixed")
+w("  values have min = max. Numeric criteria go here, never regex on `line`.")
+w("- `foulborn_swaps(unique_id, replaces, replacement)` - see Foulborn below.")
+w("- `meta(key, value)` - `tree_version`, `generated_at`.\n")
+w("Canonical queries:\n")
+w("```sh")
+w("DB=.claude/skills/cook/data/uniques.db")
+w("# existence + slot - zero rows means DO NOT USE, whatever the reason")
+w("sqlite3 $DB \"SELECT id, base, type, req_level FROM uniques WHERE name='Seven Teachings';\"")
+w("# full mod listing for one item")
+w("sqlite3 $DB \"SELECT m.scope, m.line, m.variant, m.unsupported FROM mods m")
+w("  JOIN uniques u ON u.id=m.unique_id WHERE u.name='Seven Teachings';\"")
+w("# criteria search: crit multi roll >= 50 wearable before level 60")
+w("sqlite3 $DB \"SELECT u.name, u.req_level, m.line FROM mods m")
+w("  JOIN uniques u ON u.id=m.unique_id JOIN mod_values v ON v.mod_id=m.id AND v.ord=1")
+w("  WHERE m.template LIKE '%to Critical Strike Multiplier%' AND v.max>=50 AND u.req_level<60;\"")
+w("```\n")
+
+w("## Variants\n")
 w("%d obtainable uniques carry at least one legacy variant - a roll that existed before", #variants)
-w("some patch and cannot be obtained now.\n")
+w("some patch and cannot be obtained now. The db already excludes legacy-only lines and")
+w("names the surviving rolls in `mods.variant`; this section is about AUTHORING the item")
+w("into a build.\n")
 w("`Item.lua:1496` defaults an item to its **last** variant:")
 w("`self.variant = m_min(#self.variantList, self.variant or #self.variantList)`. Raw item")
 w("text can pin any variant with a `Selected Variant:` line, and PoB keeps a legacy pick")
@@ -83,9 +173,8 @@ w("These encode one variant per possible mod **roll** rather than one per item v
 w("Watcher's Eye has 106, one per aura mod - and several can be selected at once through")
 w("`variantAlt1..5`. \"Use the last variant\" is meaningless here: it just picks the last")
 w("aura in the list. A legacy roll sits directly beside its replacement under a name that")
-w("says so - `Clarity: Mana Added As ES (Pre 3.12.0)` at `Gain (12-18)%` next to the")
-w("current `Clarity: Mana Added As ES` at `Gain (6-10)%`. Same wording, nerfed numbers, so")
-w("the name is what identifies the roll. Every variant's lines live in the item text at")
+w("says so - same wording, nerfed numbers - so the name is what identifies the roll (query")
+w("`mods.variant` for the legal ones). Every variant's lines live in the item text at")
 w("once, selected or not, which is the trap: read them through")
 w("`Item:CheckModLineVariant` or you will judge a mod the item does not have.")
 w("`validate.lua` does both.\n")
@@ -95,54 +184,125 @@ for _, it in ipairs(perMod) do
 	w("| %s | %d | %d |", it.title, it.n, it.nLegacy)
 end
 
------------------------------------------------------------------- foulborn
--- data.foulbornMap[unique] maps originalModId -> foulbornModId: the Foulborn version REPLACES
--- a normal mod rather than adding one. Text: itemMods.ItemExclusive (original),
--- itemMods.Foulborn (replacement).
-local exclusive, foulPool = data.itemMods.ItemExclusive, data.itemMods.Foulborn
-local foul, nPairs = {}, 0
-for title, map in pairs(data.foulbornMap or {}) do
-	local rows = {}
-	for origId, foulId in pairs(map) do
-		local o, n = exclusive[origId], foulPool[foulId]
-		if o and n then
-			rows[#rows + 1] = { from = table.concat(o, " "), to = table.concat(n, " ") }
-			nPairs = nPairs + 1
-		end
-	end
-	if #rows > 0 then
-		table.sort(rows, function(a, b) return a.from < b.from end)
-		foul[#foul + 1] = { title = title, rows = rows }
-	end
-end
-table.sort(foul, function(a, b) return a.title < b.title end)
-
 w("\n## Foulborn\n")
-w("Not a league mechanic - permanent, and roughly a year older than 3.29.\n")
+w("Not a league mechanic - permanent, and roughly a year older than %s.\n", treeVersion)
 w("A Foulborn unique **replaces** one of its normal mods with a mutated counterpart. It")
-w("is not an extra mod, and you pick which one is replaced: %d uniques offer %d possible",
-	#foul, nPairs)
-w("swaps between them.\n")
+w("is not an extra mod, and you pick which one is replaced: %d obtainable uniques offer",
+	nFoulUniques)
+w("%d possible swaps between them, all in `foulborn_swaps`:\n", nFoulSwaps)
+w("```sh")
+w("sqlite3 $DB \"SELECT f.replaces, f.replacement FROM foulborn_swaps f")
+w("  JOIN uniques u ON u.id=f.unique_id WHERE u.name='Abyssus';\"")
+w("```\n")
 w("To put one in a build spec, tag the replacement line `{mutated}` in the item's raw")
 w("text. The `Foulborn ` name prefix is derived from that tag (`Item.lua:1564`), so")
 w("writing it yourself does nothing.\n")
 w("`Might of the Meek` is excluded: its transformation changes a radius rather than a")
-w("mod line, which PoB cannot represent (`Item.lua:999`).\n")
-w("| unique | replaces | with |")
-w("|---|---|---|")
-for _, it in ipairs(foul) do
-	for i, r in ipairs(it.rows) do
-		w("| %s | %s | %s |", i == 1 and it.title or "", r.from, r.to)
-	end
-end
-
------------------------------------------------------------------- whitelist
-table.sort(obtainable)
-w("\n## Obtainable (whitelist)\n")
-w("The only name-list in this file, by design: a grep hit here is atomic proof the unique")
-w("exists and is legal. Grep it - never read it whole. %d names.\n", #obtainable)
-for _, t in ipairs(obtainable) do w("- %s", t) end
-
+w("mod line, which PoB cannot represent (`Item.lua:999`).")
 f:close()
-print(string.format("wrote uniques.md (%d uniques, %d obtainable, %d unobtainable, %d with legacy variants)",
-	total, #obtainable, #unobtainable, #variants))
+
+------------------------------------------------------------------ uniques.db
+local nMods, nDropped = 0, 0
+pob.buildDb(OUT .. "uniques.db", function(w)
+	w([[
+PRAGMA journal_mode=OFF;
+BEGIN;
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE uniques (
+	id INTEGER PRIMARY KEY,
+	name TEXT NOT NULL,
+	base TEXT NOT NULL,
+	type TEXT NOT NULL,
+	subtype TEXT,
+	league TEXT,
+	source TEXT,
+	req_level INTEGER,
+	req_str INTEGER, req_dex INTEGER, req_int INTEGER
+);
+CREATE TABLE mods (
+	id INTEGER PRIMARY KEY,
+	unique_id INTEGER NOT NULL REFERENCES uniques(id),
+	scope TEXT NOT NULL,
+	line TEXT NOT NULL,
+	template TEXT NOT NULL,
+	variant TEXT,
+	unsupported INTEGER NOT NULL
+);
+CREATE TABLE mod_values (
+	mod_id INTEGER NOT NULL REFERENCES mods(id),
+	ord INTEGER NOT NULL,
+	min REAL NOT NULL,
+	max REAL NOT NULL,
+	PRIMARY KEY (mod_id, ord)
+);
+CREATE TABLE foulborn_swaps (
+	unique_id INTEGER NOT NULL REFERENCES uniques(id),
+	replaces TEXT NOT NULL,
+	replacement TEXT NOT NULL
+);]])
+
+	local scopes = {
+		{ "implicit", "implicitModLines" },
+		{ "explicit", "explicitModLines" },
+		{ "buff", "buffModLines" },
+		{ "enchant", "enchantModLines" },
+	}
+	local modId = 0
+	for uid, item in ipairs(items) do
+		-- bases reachable through a non-legacy variant
+		local bases = {}
+		for baseName, bl in pairs(item.baseLines or {}) do
+			if legalVariants(item, bl) ~= false then bases[#bases + 1] = baseName end
+		end
+		table.sort(bases)
+		local base = #bases > 0 and table.concat(bases, " | ") or item.baseName
+
+		local req = item.requirements or {}
+		w(("INSERT INTO uniques VALUES (%d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"):format(
+			uid, q(item.title), q(base), q(item.type or "?"),
+			qn(item.base and item.base.subType), qn(item.league), qn(item.source),
+			num(req.level), num(req.str), num(req.dex), num(req.int)))
+
+		for _, sc in ipairs(scopes) do
+			local scope, listName = sc[1], sc[2]
+			for _, modLine in ipairs(item[listName] or {}) do
+				local line = modLine.line
+				if line and line ~= "" then
+					local variant = legalVariants(item, modLine)
+					if variant == false then
+						nDropped = nDropped + 1
+					else
+						modId = modId + 1
+						local template, vals = templateLine(line)
+						w(("INSERT INTO mods VALUES (%d, %d, %s, %s, %s, %s, %d);"):format(
+							modId, uid, q(scope), q(line), q(template),
+							variant and q(variant) or "NULL", modLine.extra and 1 or 0))
+						for ord, v in ipairs(vals) do
+							w(("INSERT INTO mod_values VALUES (%d, %d, %s, %s);"):format(
+								modId, ord, tostring(v[1]), tostring(v[2])))
+						end
+					end
+				end
+			end
+		end
+
+		for _, r in ipairs(foulByTitle[item.title] or {}) do
+			w(("INSERT INTO foulborn_swaps VALUES (%d, %s, %s);"):format(uid, q(r.from), q(r.to)))
+		end
+	end
+	nMods = modId
+
+	w(("INSERT INTO meta VALUES ('tree_version', %s);"):format(q(treeVersion)))
+	w(("INSERT INTO meta VALUES ('generated_at', %s);"):format(q(os.date("!%Y-%m-%d"))))
+	w("INSERT INTO meta VALUES ('generator', 'dump-uniques.lua');")
+	w([[
+CREATE INDEX idx_uniques_name ON uniques(name);
+CREATE INDEX idx_uniques_type ON uniques(type);
+CREATE INDEX idx_mods_unique ON mods(unique_id);
+CREATE INDEX idx_mods_template ON mods(template);
+COMMIT;]])
+end)
+
+print(string.format(
+	"wrote uniques.md + uniques.db: %d items (%d names, %d unobtainable excluded), %d mods (%d legacy-only dropped), %d foulborn swaps, tree %s",
+	#items, nObtainable, total - nObtainable, nMods, nDropped, nFoulSwaps, treeVersion))

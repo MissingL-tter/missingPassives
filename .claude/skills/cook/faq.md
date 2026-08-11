@@ -22,8 +22,8 @@ missed once.
 ## Reading and reasoning errors
 
 - An item or gem name from memory is a HYPOTHESIS. Confirm against a whitelist before
-  designing around it: uniques via the Obtainable section of `data/uniques.md`, gems via
-  `data/skills.md` / `data/supports.md`. One grep - hit means exists and legal, miss means
+  designing around it: uniques via `data/uniques.db`, gems via `data/gems.db` (queries in
+  `uniques.md` / `gems.md`). One query - a row means exists and legal, zero rows means
   no, whatever the reason. Never reason from absence in a trap-list.
 - Defensive architecture is a search space, same as supports: when a defence line is hard
   to reach, enumerate and measure competing FRAMES (which aura set, which conversion or

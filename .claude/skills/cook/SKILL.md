@@ -29,14 +29,15 @@ Argument = a file in this skill's `recipes/`, without extension: `/cook cocnova`
 - `SKILL TYPE` applies only when `SKILL` is blank.
 - Entirely blank file: point at it rather than inventing a request.
 
-Once the recipe resolves, read all three before anything else, every build, no exceptions:
+Once the recipe resolves, read all of these before anything else, every build, no exceptions:
 
 1. `recipes/<argument>.txt` - the request
 2. `preferences.md` - standing preferences binding every build; a recipe overrides one only
    by saying so explicitly, your judgement never does
-3. `data/gems.md`
+3. `data/gems.md`, `data/uniques.md`, `data/ascendancies.md` - the rules, and the schemas +
+   canonical queries for their `.db` twins
 
-Echo the request back as a constraint checklist before building, headed by those three reads
+Echo the request back as a constraint checklist before building, headed by those reads
 marked done - cannot mark one, go read it. At the end report a measured figure against every
 line, shortfalls included.
 
@@ -122,19 +123,15 @@ accepted. Gotchas:
 
 ## Data
 
-Generated from PoB's database by the matching `tools/dump-*.lua`. Check ingredients here
-*before* designing around them.
+Generated from PoB's database by the matching `tools/dump-*.lua`. The opening reads carry
+the db schemas; the dbs are the oracles - a row = exists and legal, zero rows = no,
+whatever the reason. Check ingredients there *before* designing around them.
 
-- `data/gems.md` - unobtainable gems, upgraded support tiers, level caps. Opening-step read.
-- `data/skills.md` - obtainable active gems, with tags.
-- `data/supports.md` - obtainable supports, with tags and descriptions.
-- `data/uniques.md` - the Obtainable whitelist (grep it: hit = exists and legal, miss = no),
-  variant traps, Foulborn.
-- `data/ascendancies.md` - every ascendancy and Bloodline node, and the shared 8-point rule.
-- `data/jewels.md` - every tree-modifying jewel: cluster (sizes, skills, notables, authoring,
-  point economics), historic/timeless seed conquests and the one-historic limit, radius
-  transformers and allocation re-wirers. Read before pathing any tree - clusters compete with
-  the tree's own wheels, and one historic can rewrite them.
+- `data/jewels.md` - every tree-modifying jewel: cluster mechanics, authoring and point
+  economics (+ `jewels.db` schema and queries for sizes, skills, notables),
+  historic/timeless seed conquests and the one-historic limit, radius transformers and
+  allocation re-wirers. Read before pathing any tree - clusters compete with the tree's
+  own wheels, and one historic can rewrite them.
 
 ## Tools
 
@@ -152,7 +149,8 @@ luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 - `validate.lua` - legality check; exits non-zero on any problem.
 - `export.lua` - uploads the build to pobb.in, prints the link.
 - `dump-gems.lua`, `dump-uniques.lua`, `dump-ascendancies.lua`, `dump-jewels.lua` -
-  regenerate `data/`.
+  regenerate `data/`; each rebuilds its md + db pair in one run (`sqlite3` must be on
+  PATH).
 
 The loop: author -> `craft.lua` -> `validate.lua` -> measure -> edit affix lines -> `craft.lua`
 again. Never measure between authoring and crafting.
