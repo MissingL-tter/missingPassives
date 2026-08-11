@@ -7,6 +7,13 @@ Judge items purely by legal obtainability of the END state - never by currency, 
 route or market price. The T2 `{range:1}` / T1 `{range:0.85}` affix rule and the tier
 conventions in `influences.md` are the only cost proxies; apply them and move on.
 
+## Mageblood flasks
+
+Every Mageblood build includes at least one movement-speed flask among the constantly-applied
+slots - no one wants to be slow on a Mageblood character. Silver Flask by default; when the
+build deliberately constrains attack or cast rate (trigger cooldowns, spend-throttled
+casting), Onslaught's rate portion is wasted there - use a Quicksilver instead.
+
 ## Gear mods
 
 Never author a mod gated on an enemy or an arena the character is not always in - implicits,
