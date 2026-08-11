@@ -689,7 +689,9 @@ do
 end
 
 ------------------------------------------------------------------ tree budget
--- Mirrors Build.lua:884: usedMax = 99 + 23 + ExtraPoints (bandit / quest extras land in
+-- Level doctrine (preferences.md): every build is authored at character level 95 - one
+-- that only works at 100 is unreasonable. The budget mirrors Build.lua:884 at that
+-- level: usedMax = 94 levels + 23 quest + ExtraPoints (bandit / quest extras land in
 -- ExtraPoints); ascendancy and Bloodline each cap at 8 and DRAW ON THE SAME 8 - ascUsed
 -- already includes every Bloodline node. A 9th point loads and calcs fine, PoB only puts a
 -- warning in a UI corner, so it must be an error here.
@@ -697,10 +699,14 @@ print("=== TREE ===")
 do
 	local used, ascUsed, secondaryAscUsed = build.spec:CountAllocNodes()
 	local extra = (build.calcsTab.mainOutput or {}).ExtraPoints or 0
-	local usedMax = 99 + 23 + extra
+	local usedMax = 94 + 23 + extra
 	local before = problems
+	if (build.characterLevel or 0) ~= 95 then
+		bad("character level %d - every build is authored at 95 (preferences.md)",
+			build.characterLevel or 0)
+	end
 	if used > usedMax then
-		bad("tree: %d passive points, budget is %d (99 levels + 23 quest + %d extra)",
+		bad("tree: %d passive points, budget is %d (94 levels + 23 quest + %d extra)",
 			used, usedMax, extra)
 	end
 	if ascUsed > 8 then

@@ -1,6 +1,12 @@
 Standing user preferences, every build, no exceptions. A recipe overrides one only by saying
 so explicitly; your own judgement never does.
 
+## Character level 95
+
+Every build is authored at character level 95 - a build that only works at 100 is
+unreasonable. Life, mana, accuracy and the 117+extras passive budget all follow from the
+level; `validate.lua` enforces both the level and the budget.
+
 ## Cost is not your concern
 
 Judge items purely by legal obtainability of the END state - never by currency, crafting

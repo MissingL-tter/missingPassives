@@ -102,8 +102,9 @@ In PoB's data but not in the game (`validate.lua` rejects all of it):
 PoB does not enforce, while you type: no two affixes may share a mod `group`; one bench craft
 unless the item has "Can have up to 3 Crafted Modifiers"; an unknown affix id is silently
 dropped; affixes past 3 prefixes / 3 suffixes are silently ignored. `validate.lua` catches all
-of these, plus inert never-crafted items, T1 rolls over 0.85, and tree budgets (122+extras
-points; 8 ascendancy, Bloodline included).
+of these, plus inert never-crafted items, T1 rolls over 0.85, character level (95, per
+`preferences.md`) and tree budgets (117+extras points at 95; 8 ascendancy, Bloodline
+included).
 
 ## Headless mutation
 
