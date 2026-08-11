@@ -32,6 +32,11 @@ missed once.
 - Mechanics that scale on RESERVED amounts invert normal aura logic (reservation
   efficiency lowers reserved; "wasted" reservation is fuel). When a mechanic keys off an
   unusual quantity, re-derive what helps from scratch instead of importing habits.
+- "Spend/spent <resource>" modifiers require spending EXACTLY that resource - anything
+  that redirects payment silently disables them. Eldritch Battery pays from ES (ES paid
+  is not mana spent: kills Indigon, Arcane Surge support, "per X mana spent recently"
+  nodes); Blood Magic / Lifetap pay life, same effect; the litany is long. Before
+  crediting any spend-scaling mod, trace which pool each cost actually leaves.
 
 ## Silent breakage
 
