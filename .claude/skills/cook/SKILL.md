@@ -155,6 +155,18 @@ luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 The loop: author -> `craft.lua` -> `validate.lua` -> measure -> edit affix lines -> `craft.lua`
 again. Never measure between authoring and crafting.
 
+## Tree pruning
+
+Once every constraint measures green, prune the tree MECHANICALLY - builds ship with
+dead travel smalls otherwise. A leaf is a node whose dealloc costs exactly one point:
+`spec:DeallocNode(node)` then `spec:CountAllocNodes()` delta == 1. Sweep every allocated
+leaf: dealloc, refresh, re-measure; keep the dealloc only when nothing regresses - every
+recipe line, DPS, and gem attribute requirements (PoB only warns on those) - else
+realloc. Repeat until a full pass prunes nothing: each removal exposes the next leaf.
+Never prune by eyeballing the tree - a small can be carrying a mastery gate, a
+jewel-socket path or an attribute requirement invisibly. Report the points freed and
+either reinvest them against the weakest constraint or bank them as upgrade room.
+
 Before the final craft + validate, walk `faq.md` - the checklist of previously-missed
 mistakes - against the build.
 
