@@ -32,6 +32,9 @@ end
 --   -> "Adds # to # Cold Damage", {{29,39},{49,61}}
 local function parse(text)
 	local specs = {}
+	-- fold a leading minus into a range so "-(80-70)% ..." and a concrete "-75% ..."
+	-- produce the same skeleton (negative-descending unique ranges never matched otherwise)
+	text = text:gsub("%-%(([%d%.]+)%-([%d%.]+)%)", "(-%1--%2)")
 	local skel = text:gsub("%(%-?[%d%.]+%-%-?[%d%.]+%)", function(r)
 		local lo, hi = r:match("%((%-?[%d%.]+)%-(%-?[%d%.]+)%)")
 		specs[#specs + 1] = { tonumber(lo), tonumber(hi) }
@@ -650,6 +653,64 @@ for _, s in ipairs(order) do
 		checkEldritch(s, item)
 		checkInfluences(s, item)
 	end
+end
+
+------------------------------------------------------------------ config
+-- Config drifts across save/load cycles (defaults are omitted on save; enemy settings live
+-- partly in Placeholder elements), and condition flags survive their sources being removed.
+print("=== CONFIG ===")
+do
+	local env = build.calcsTab.mainEnv or {}
+	local eLvl = env.enemyLevel
+	local eBoss = build.configTab.input.enemyIsBoss
+	if eLvl ~= 84 then
+		bad("effective enemy level is %s - the kitchen measures at 84", tostring(eLvl))
+	end
+	if eBoss ~= "Pinnacle" then
+		bad("enemyIsBoss is %s - the kitchen measures vs Pinnacle", tostring(eBoss))
+	end
+	if eLvl == 84 and eBoss == "Pinnacle" then
+		print("  ok  enemy: Pinnacle boss, level 84")
+	end
+	-- only flags the FILE persists (configTab.input also carries engine defaults)
+	local f = io.open(BUILD, "r")
+	if f then
+		local xml = f:read("*a")
+		f:close()
+		local flags = {}
+		-- attribute order varies between save cycles; match the tag, then its attributes
+		for tag in xml:gmatch('<Input ([^>]+)/>') do
+			if tag:match('boolean="true"') then
+				local name = tag:match('name="([^"]+)"')
+				if name then flags[#flags + 1] = name end
+			end
+		end
+		table.sort(flags)
+		for _, k in ipairs(flags) do
+			print("  ??  flag " .. k .. "   - confirm the build has a real source for this")
+		end
+	end
+end
+
+------------------------------------------------------------------ craft form
+-- Bench crafts authored as Prefix:/Suffix: PROPERTIES parse and measure, then silently
+-- degrade to None on a save/load cycle. Only {crafted} TEXT lines survive.
+print("=== CRAFT FORM ===")
+do
+	local found = false
+	for id, item in pairs(build.itemsTab.items) do
+		for _, list in ipairs({ item.prefixes or {}, item.suffixes or {} }) do
+			for _, entry in ipairs(list) do
+				local mid = type(entry) == "table" and (entry.modId or "") or tostring(entry)
+				if tostring(mid):match("{crafted}") then
+					found = true
+					bad("item %d (%s): bench craft authored as a property - it will vanish on the next save/load; author it as a {crafted} text line after Implicits",
+						id, tostring(item.name))
+				end
+			end
+		end
+	end
+	if not found then print("  ok  no property-form bench crafts") end
 end
 
 ------------------------------------------------------------------ build state

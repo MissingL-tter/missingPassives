@@ -52,7 +52,14 @@ function pob.data()
 end
 
 -- Load a build .xml and settle the calcs. Returns the global `build`.
+-- ONE load per process: a second loadBuildFromXML does not reliably reset engine state, so
+-- file edits between in-process loads are silently ignored (an entire sweep once measured
+-- the same baseline six times this way). Re-run the script instead.
+local loadedOnce = false
 function pob.load(path)
+	assert(not loadedOnce,
+		"pob.load called twice in one process - in-process reloads keep stale state; use a fresh process per measurement")
+	loadedOnce = true
 	local f = assert(io.open(path, "r"), "cannot open " .. tostring(path))
 	local xml = f:read("*a")
 	f:close()
