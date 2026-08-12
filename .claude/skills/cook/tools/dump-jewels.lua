@@ -39,8 +39,8 @@ subgraph PoB builds always matches the in-game structure.
 
 - Only rim sockets take a Large jewel: `node.expansionJewel.size == 2`
   (`PassiveSpec.lua:1764`). Every rim socket costs ~2 travel + the socket itself.
-- Subgraph nodes are real allocated nodes: they count toward the 122+extras passive
-  budget (`CountAllocNodes`), and `validate.lua`'s tree check covers them.
+- Subgraph nodes are real allocated nodes: they count toward the passive budget
+  `preferences.md` sets (`CountAllocNodes`), and `validate.lua`'s tree check covers them.
 - The jewel's skill, node count AND socket count come from its ENCHANT lines, parsed by
   exact text (`ModParser.lua:6544`, `:5199`). The `Cluster Jewel Skill:`/`Node Count:`
   properties are only crafting-UI state - without the enchant lines the subgraph never
@@ -330,8 +330,13 @@ cluster jewel's nested socket they conquer nothing (verified), and they have no 
 stats, so nested placement is fully dead. The conquered set is baked per (seed, socket)
 in the LUT: nodes near the socket are wholesale REPLACED with new abyss identities
 (smalls and notables both; verified 58 nodes from one socket). Zorath's jewel instead
-conquers the nodes along your CURRENT shortest allocated path from its socket to the
-class start - reallocate the tree and the conquest moves with it (verified, 6 nodes).
+conquers allocated travel nodes near its socket AND a tree-wide spread of UNALLOCATED
+ascendancy notables across every class, each rolled from a small abyss pool that repeats
+~5 distinct mods (verified: 27 nodes at each of two seeds; one pool entry is
+"Insufficient Mana doesn't prevent your Spells / Cannot recover Mana"). Because the
+conquered ascendancy notables include Forbidden-grantable ones, the roll can be
+cherry-picked cross-ascendancy via Forbidden Flame + Forbidden Flesh - seed-shop until
+the wanted mod lands on a grantable notable of your class.
 ]])
 print("| jewel | base | lord | seed |")
 print("|---|---|---|---|")
