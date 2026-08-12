@@ -21,10 +21,8 @@ missed once.
 
 ## Reading and reasoning errors
 
-- An item or gem name from memory is a HYPOTHESIS. Confirm against a whitelist before
-  designing around it: uniques via `data/uniques.db`, gems via `data/gems.db` (queries in
-  `uniques.md` / `gems.md`). One query - a row means exists and legal, zero rows means
-  no, whatever the reason. Never reason from absence in a trap-list.
+- Every unique, gem and base name in the build traced back to a row in its db - no name
+  survived on recall alone. Never reason from absence in a trap-list.
 - Defensive architecture is a search space, same as supports: when a defence line is hard
   to reach, enumerate and measure competing FRAMES (which aura set, which conversion or
   cap mechanic, which unique enabler) before grinding increments inside the frame you
@@ -38,12 +36,32 @@ missed once.
   nodes); Blood Magic / Lifetap pay life, same effect; the litany is long. Before
   crediting any spend-scaling mod, trace which pool each cost actually leaves.
 
+## Tree surgery
+
+- `spec:DeallocNode(node)` drops ALL dependents. Restoring by re-allocating only the target
+  node loses every branch beyond it - a leaf-prune loop built that way shredded a finished
+  tree and saved the wreck. Snapshot the full allocation id set before each dealloc and
+  restore from the snapshot; `cp` the build file to scratch before any destructive pass.
+  Use `tools/prune.lua` instead of re-improvising the loop.
+- Prune guards are GENERATED from the recipe checklist, never retyped from memory - a
+  hand-typed guard list omitted CI (a recipe line) and the prune silently removed it. The
+  tool's non-regression stat set plus its keystone-set check exists because of this.
+- Historic conquests transform UNALLOCATED nodes too (including ascendancy notables
+  tree-wide, which Forbidden Flame/Flesh can then grant). When hunting a mechanic, scan
+  `conqueredBy` across ALL of `spec.nodes`, not just `allocNodes`.
+
 ## Silent breakage
 
 - After ANY gem-list edit: re-check `skillPart` and `mainActiveSkill` - they silently reset
   (Ball Lightning part 1 / wrong main skill regression).
 - Conditional mods must actually fire: probe with `customMods` (Intolerance of Sin sat dead
   below 150 devotion; PoB never warned).
+- Config drifts across save/load cycles and defaults are invisible (PoB omits
+  default-valued inputs on save; enemy settings live partly in `<Placeholder>` elements).
+  `validate.lua` now asserts the effective enemy is Pinnacle level 84 and prints every
+  enabled condition flag - each printed flag must trace to a real source in the build
+  (`useElusive` sat enabled for hours with no Elusive source; `conditionCritRecently`
+  silently off understated DPS by 18%).
 - Attribute requirements: `ReqStr/ReqDex/ReqInt` vs actual - PoB computes DPS even when
   gems could not level.
 - `ManaUnreserved >= 0`, and for trigger builds the TRIGGERED skill's cost is real

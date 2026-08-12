@@ -34,8 +34,9 @@ Once the recipe resolves, read all of these before anything else, every build, n
 1. `recipes/<argument>.txt` - the request
 2. `preferences.md` - standing preferences binding every build; a recipe overrides one only
    by saying so explicitly, your judgement never does
-3. `data/gems.md`, `data/uniques.md`, `data/ascendancies.md` - the rules, and the schemas +
-   canonical queries for their `.db` twins
+3. `data/gems.md`, `data/uniques.md`, `data/ascendancies.md`, `data/bases.md`,
+   `data/jewels.md` - the rules, and the schemas + canonical queries for their `.db`
+   twins. Check ingredients against the dbs BEFORE designing around them.
 
 Echo the request back as a constraint checklist before building, headed by those reads
 marked done - cannot mark one, go read it. At the end report a measured figure against every
@@ -73,6 +74,7 @@ Implicits: 1
 While a Pinnacle Atlas Boss is in your Presence, Inflict Fire Exposure on Hit, applying -22% to Fire Resistance
 ```
 
+- Settle the base before writing any affix - the affixes scale numbers the base sets.
 - `{range:N}` = roll position, 0..1 across the mod's value range. Find ids with `affixes.lua`;
   it marks T1/T2 per group.
 - Author the **T2 tier at `{range:1}`** - realistic, with T1 left as upgrade room. Use T1 only
@@ -83,9 +85,11 @@ While a Pinnacle Atlas Boss is in your Presence, Inflict Fire Exposure on Hit, a
   calcs until `craft.lua` runs. To change an item, edit its `Prefix:`/`Suffix:` lines in the XML
   and re-run `craft.lua`. Never rebuild items from a crafted file's raw text in a script - each
   cycle re-parses generated lines back into the affix lists.
-- Legality is spawn weight, not pool membership: armour bases fall back to a pool holding every
-  mod in the game, so a mod can be listed for a base and still be impossible there.
-- Bench crafts have no spawn weight - add those as `{crafted}` text lines.
+- Armour bases fall back to a pool holding every mod in the game, so a mod can be listed for
+  a base and still carry zero spawn weight there - pool membership is not legality.
+- Bench crafts have no spawn weight - add those as `{crafted}` text lines AFTER the
+  `Implicits:` block, never as `Prefix:`/`Suffix:` properties: the property form parses,
+  measures, then silently degrades to `None` on a save/load cycle (`validate.lua` flags it).
 - Influence/eldritch implicit legality: `influences.md` - one Exarch + one Eater implicit max
   per item, sides in `ModEldritch.lua`; eldritch replaces base implicits and excludes other
   influences. `validate.lua` enforces the end states; read `influences.md` BEFORE authoring
@@ -102,9 +106,8 @@ In PoB's data but not in the game (`validate.lua` rejects all of it):
 PoB does not enforce, while you type: no two affixes may share a mod `group`; one bench craft
 unless the item has "Can have up to 3 Crafted Modifiers"; an unknown affix id is silently
 dropped; affixes past 3 prefixes / 3 suffixes are silently ignored. `validate.lua` catches all
-of these, plus inert never-crafted items, T1 rolls over 0.85, character level (95, per
-`preferences.md`) and tree budgets (117+extras points at 95; 8 ascendancy, Bloodline
-included).
+of these, plus inert never-crafted items, T1 rolls over 0.85, the character level and passive
+budget `preferences.md` sets, and 8 ascendancy points, Bloodline included.
 
 ## Headless mutation
 
@@ -122,18 +125,6 @@ accepted. Gotchas:
   crafted file's. Added items also need `t_insert(itemsTab.itemOrderList, id)` or `SaveDB` drops
   them; slot assignments save from item sets, not `slot.selItemId`.
 
-## Data
-
-Generated from PoB's database by the matching `tools/dump-*.lua`. The opening reads carry
-the db schemas; the dbs are the oracles - a row = exists and legal, zero rows = no,
-whatever the reason. Check ingredients there *before* designing around them.
-
-- `data/jewels.md` - every tree-modifying jewel: cluster mechanics, authoring and point
-  economics (+ `jewels.db` schema and queries for sizes, skills, notables),
-  historic/timeless seed conquests and the one-historic limit, radius transformers and
-  allocation re-wirers. Read before pathing any tree - clusters compete with the tree's
-  own wheels, and one historic can rewrite them.
-
 ## Tools
 
 Run from `src/`:
@@ -148,25 +139,28 @@ luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
   for a base; cluster jewel bases need `--skill` (bare, it lists the base's skills).
 - `craft.lua` - bakes authored affix ids into real mods.
 - `validate.lua` - legality check; exits non-zero on any problem.
+- `prune.lua "Builds/My Build.xml"` - mechanical leaf prune, snapshot-safe, guards generated
+  from the build rather than retyped. Backs up to `<build>.preprune.bak`, saves only if it
+  freed a point.
 - `export.lua` - uploads the build to pobb.in, prints the link.
-- `dump-gems.lua`, `dump-uniques.lua`, `dump-ascendancies.lua`, `dump-jewels.lua` -
-  regenerate `data/`; each rebuilds its md + db pair in one run (`sqlite3` must be on
-  PATH).
+- `dump-gems.lua`, `dump-uniques.lua`, `dump-ascendancies.lua`, `dump-jewels.lua`,
+  `dump-bases.lua` - regenerate `data/`; each rebuilds its md + db pair in one run
+  (`sqlite3` must be on PATH). All offline.
+- `fetch-legacy-bases.lua` - the one tool that needs network. Refreshes
+  `data/legacy-bases.tsv` (bases PoB ships that the game removed) from poewiki. Run
+  only after a PoB base-data update, then re-run `dump-bases.lua`.
 
 The loop: author -> `craft.lua` -> `validate.lua` -> measure -> edit affix lines -> `craft.lua`
 again. Never measure between authoring and crafting.
 
 ## Tree pruning
 
-Once every constraint measures green, prune the tree MECHANICALLY - builds ship with
-dead travel smalls otherwise. A leaf is a node whose dealloc costs exactly one point:
-`spec:DeallocNode(node)` then `spec:CountAllocNodes()` delta == 1. Sweep every allocated
-leaf: dealloc, refresh, re-measure; keep the dealloc only when nothing regresses - every
-recipe line, DPS, and gem attribute requirements (PoB only warns on those) - else
-realloc. Repeat until a full pass prunes nothing: each removal exposes the next leaf.
-Never prune by eyeballing the tree - a small can be carrying a mastery gate, a
-jewel-socket path or an attribute requirement invisibly. Report the points freed and
-either reinvest them against the weakest constraint or bank them as upgrade room.
+Once every constraint measures green, run `prune.lua` - builds ship with dead travel smalls
+otherwise. Never prune by eyeballing the tree, and never re-improvise the loop in a scratch
+script: a small can be carrying a mastery gate, a jewel-socket path or an attribute
+requirement invisibly, and the dealloc/restore trap in `faq.md` has already shredded a
+finished tree once. Report the points freed and either reinvest them against the weakest
+constraint or bank them as upgrade room.
 
 Before the final craft + validate, walk `faq.md` - the checklist of previously-missed
 mistakes - against the build.

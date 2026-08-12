@@ -1,9 +1,8 @@
 # Influences
 
-Hand-maintained legality rules, every build. Judge END STATES only: legal = can exist;
-currency, crafting route and cost are never your concern - the affix-tier limits and the
-conventions below are the only cost proxies, and the user owns them. `validate.lua` enforces
-the end states; read this BEFORE authoring so items are legal in one pass.
+Hand-maintained legality rules, every build. Judge END STATES only: legal = can exist, on
+the cost doctrine `preferences.md` sets. `validate.lua` enforces the end states; read this
+BEFORE authoring so items are legal in one pass.
 
 ## Influence types
 
@@ -12,7 +11,7 @@ the end states; read this BEFORE authoring so items are legal in one pass.
   Orb); the item may then carry mods from each influence's pool.
 - Influences only open prefix/suffix pools - never add, replace or interact with implicits.
 - `affixes.lua` flags / PoB `influenceTags`: `shaper`, `elder`, `crusader`,
-  `adjudicator`=Warlord, `basilisk`=Hunter, `eyrie`=Redeemer (inferred mapping).
+  `adjudicator`=Warlord, `basilisk`=Hunter, `eyrie`=Redeemer.
 
 ## Eldritch items (Searing Exarch / Eater of Worlds)
 
