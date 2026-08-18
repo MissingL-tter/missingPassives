@@ -205,7 +205,7 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 	end)
 
 	-- Control for setting max node depth to limit calculation time of the heat map
-	self.controls.nodePowerMaxDepthSelect = new("DropDownControl", { "LEFT", self.controls.treeHeatMap, "RIGHT" }, { 8, 0, 55, 20 }, { "All", 5, 10, 15, "Custom" }, function(index, value)
+	self.controls.nodePowerMaxDepthSelect = new("DropDownControl", { "LEFT", self.controls.treeHeatMap, "RIGHT" }, { 8, 0, 55, 20 }, { "All", 5, 10, 15, "Custom", "Anoint" }, function(index, value)
 		-- Show custom value control and resize/move elements
 		self.isCustomMaxDepth = value == "Custom"
 		if self.isCustomMaxDepth then
@@ -220,11 +220,21 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 		self.controls.treeHeatMapStatSelect:SetAnchor("LEFT", self.controls.nodePowerMaxDepthSelect, "RIGHT", nil, nil, nil)
 
 		local oldMax = self.build.calcsTab.nodePowerMaxDepth
+		local oldAnointOnly = self.build.calcsTab.nodePowerAnointOnly
 
 		if type(value) == "number" then
 			self.build.calcsTab.nodePowerMaxDepth = value
 		else
 			self.build.calcsTab.nodePowerMaxDepth = nil
+		end
+		self.build.calcsTab.nodePowerAnointOnly = value == "Anoint"
+
+		-- Anoint mode changes which nodes are eligible, not just how many, so always recalculate
+		if oldAnointOnly ~= self.build.calcsTab.nodePowerAnointOnly then
+			if self.viewer.showHeatMap then
+				self:SetPowerCalc(self.build.calcsTab.powerStat)
+			end
+			return
 		end
 
 		-- If the heat map is shown, tell it to recalculate
@@ -235,7 +245,7 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 			end
 		end
 	end)
-	self.controls.nodePowerMaxDepthSelect.tooltipText = "Limit of Node distance to search (lower = faster)"
+	self.controls.nodePowerMaxDepthSelect.tooltipText = "Limit of Node distance to search (lower = faster)\nAnoint: only calculate notables that can be anointed, at any distance"
 
 	-- Control for setting max node depth by custom value
 	self.controls.nodePowerMaxDepthCustom = new("EditControl", { "LEFT", self.controls.nodePowerMaxDepthSelect, "RIGHT" }, { 8, 0, 70, 20 }, "0", nil, "%D", nil, function(value)

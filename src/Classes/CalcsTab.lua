@@ -490,6 +490,11 @@ function CalcsTabClass:PowerBuilder()
 	-- local timer_start = GetTime()
 	local useFullDPS = self.powerStat and self.powerStat.stat == "FullDPS"
 	local calcFunc, calcBase = self:GetMiscCalculator()
+	local anointOnly = self.nodePowerAnointOnly
+	-- Same test the anoint node list uses: a node is anointable if it has an oil recipe
+	local function isNodeInScope(node)
+		return not anointOnly or (node.recipe and #node.recipe >= 1)
+	end
 	local cache = { }
 	local distanceMap = { }
 	local distanceList = { }
@@ -558,7 +563,7 @@ function CalcsTabClass:PowerBuilder()
 		if node.type == "Mastery" then
 			node.power.masteryEffects = { }
 		end
-		if node.modKey ~= "" and not self.mainEnv.grantedPassives[nodeId] then
+		if node.modKey ~= "" and not self.mainEnv.grantedPassives[nodeId] and isNodeInScope(node) then
 			if node.type == "Mastery" and node.allMasteryOptions then
 				if not (self.nodePowerMaxDepth and self.nodePowerMaxDepth < node.pathDist) then
 					t_insert(masteryNodeList, node)
@@ -591,7 +596,7 @@ function CalcsTabClass:PowerBuilder()
 	table.sort(distanceList, function(a, b) return a[1] < b[1] end)
 	-- Count eligible cluster nodes
 	for _, node in pairs(self.build.spec.tree.clusterNodeMap) do
-		if not node.alloc and node.modKey ~= "" and not self.mainEnv.grantedPassives[node.id] then
+		if not node.alloc and node.modKey ~= "" and not self.mainEnv.grantedPassives[node.id] and isNodeInScope(node) then
 			total = total + 1
 		end
 	end
@@ -709,7 +714,7 @@ function CalcsTabClass:PowerBuilder()
 			node.power = {}
 		end
 		wipeTable(node.power)
-		if not node.alloc and node.modKey ~= "" and not self.mainEnv.grantedPassives[node.id] then
+		if not node.alloc and node.modKey ~= "" and not self.mainEnv.grantedPassives[node.id] and isNodeInScope(node) then
 			if not cache[node.modKey] then
 				cache[node.modKey] = calcFunc({ addNodes = { [node] = true } }, useFullDPS)
 			end
