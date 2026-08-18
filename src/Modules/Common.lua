@@ -354,12 +354,6 @@ function jsonToLua(json)
 		:gsub("\\u(%x%x%x%x)",function(hex) return codePointToUTF8(tonumber(hex,16)) end)
 end
 
--- Check if mouse is currently inside area defined by region.x, region.y, region.width, region.height
-function isMouseInRegion(region)
-	local cursorX, cursorY = GetCursorPos()
-	return cursorX >= region.x and cursorX < region.x + region.width and cursorY >= region.y and cursorY < region.y + region.height
-end
-
 -- Write a Lua table to file
 local function qFmt(s)
 	return '"'..s:gsub("\n","\\n"):gsub("\"","\\\"")..'"'
@@ -1052,17 +1046,6 @@ function escapeGGGString(text)
 		:gsub("%[[^|]+|([^|]+)%]", "%1")
 	return line
 end
--- Returns virtual screen size
-function GetVirtualScreenSize()
-	local width, height = GetScreenSize()
-	local scale = GetScreenScale and GetScreenScale() or 1.0
-	if scale ~= 1.0 then
-		width = math.floor(width / scale)
-		height = math.floor(height / scale)
-	end
-	return width, height
-end
-
 -- used for calculating the hash field of a stat
 local GGG_STAT_HASH32_SEED = 0xC58F1A7B
 -- used for calculating the trade hash from stat hash fields

@@ -44,51 +44,14 @@ function imageHandleClass:ImageSize()
 	return 1, 1
 end
 
--- Rendering
-function RenderInit(flag, ...) end
-function GetScreenSize()
-	return 1920, 1080
-end
-function GetScreenScale()
-	return 1
-end
-function GetVirtualScreenSize()
-	return GetScreenSize()
-end
-function GetDPIScaleOverridePercent()
-	return 1
-end
-function SetDPIScaleOverridePercent(scale) end
-function SetClearColor(r, g, b, a) end
-function SetDrawLayer(layer, subLayer) end
-function SetViewport(x, y, width, height) end
-function SetDrawColor(r, g, b, a) end
-function DrawImage(imgHandle, left, top, width, height, tcLeft, tcTop, tcRight, tcBottom) end
-function DrawImageQuad(imageHandle, x1, y1, x2, y2, x3, y3, x4, y4, s1, t1, s2, t2, s3, t3, s4, t4) end
-function DrawString(left, top, align, height, font, text) end
-function DrawStringWidth(height, font, text)
-	return 1
-end
-function DrawStringCursorIndex(height, font, text, cursorX, cursorY)
-	return 0
-end
 function StripEscapes(text)
 	return text:gsub("%^%d",""):gsub("%^x%x%x%x%x%x%x","")
-end
-function GetAsyncCount()
-	return 0
 end
 
 -- Search Handles
 function NewFileSearch() end
 
 -- General Functions
-function SetWindowTitle(title) end
-function GetCursorPos()
-	return 0, 0
-end
-function SetCursorPos(x, y) end
-function ShowCursor(doShow) end
 function IsKeyDown(keyName) end
 function Copy(text) end
 function Paste() end
@@ -164,7 +127,6 @@ function OpenURL(url) end
 function SetProfiling(isEnabled) end
 function Restart() end
 function Exit() end
-function TakeScreenshot() end
 
 ---@return string? provider
 ---@return string? version
@@ -188,7 +150,7 @@ dofile("Launch.lua")
 
 -- Prevents loading of ModCache
 -- Allows running mod parsing related tests without pushing ModCache
--- The CI env var will be true when run from github workflows but should be false for other tools using the headless wrapper 
+-- The CI env var will be true when run from github workflows but should be false for other tools using the headless wrapper
 mainObject.continuousIntegrationMode = os.getenv("CI")
 
 runCallback("OnInit")

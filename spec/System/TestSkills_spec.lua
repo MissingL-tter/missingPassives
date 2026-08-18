@@ -143,11 +143,7 @@ describe("TestSkills", function()
 
 		local mainSocketGroup = build.skillsTab.socketGroupList[build.mainSocketGroup]
 		local activeSkill = mainSocketGroup.displaySkillList[mainSocketGroup.mainActiveSkill]
-		local calcsSkillSelectControls = build.calcsTab.sectionList[1].controls
-		build:RefreshSkillSelectControls(calcsSkillSelectControls, build.calcsTab.input.skill_number, "Calcs")
 
-		assert.are.equals("50", build.controls.mainSkillStageCount.buf)
-		assert.are.equals("50", calcsSkillSelectControls.mainSkillStageCount.buf)
 		assert.are.equals(50, activeSkill.skillData.stagesMax)
 		assert.are.equals(50, activeSkill.skillModList:Sum("BASE", activeSkill.skillCfg, "Multiplier:BladeBlastStage"))
 		assert.are.equals(49, activeSkill.skillModList:Sum("BASE", activeSkill.skillCfg, "Multiplier:BladeBlastStageAfterFirst"))
@@ -161,7 +157,6 @@ describe("TestSkills", function()
 		runCallback("OnFrame")
 
 		activeSkill = mainSocketGroup.displaySkillList[mainSocketGroup.mainActiveSkill]
-		assert.are.equals("51", build.controls.mainSkillStageCount.buf)
 		assert.are.equals(50, activeSkill.skillModList:Sum("BASE", activeSkill.skillCfg, "Multiplier:BladeBlastStage"))
 		assert.are.equals(49, activeSkill.skillModList:Sum("BASE", activeSkill.skillCfg, "Multiplier:BladeBlastStageAfterFirst"))
 		assert.are.equals(cappedAverageDamage, build.calcsTab.mainOutput.AverageDamage)

@@ -1,7 +1,7 @@
 -- Path of Building
 --
 -- Module: Items Tab
--- Items tab for the current build.
+-- Item and equipment state for the current build.
 --
 local pairs = pairs
 local ipairs = ipairs
@@ -14,23 +14,8 @@ local m_min = math.min
 local m_ceil = math.ceil
 local m_floor = math.floor
 local m_modf = math.modf
-local buySimilar = LoadModule("Classes/CompareBuySimilar")
 
 local gemTooltip = LoadModule("Classes/GemTooltip")
-local rarityDropList = {
-	{ label = colorCodes.NORMAL.."Normal", rarity = "NORMAL" },
-	{ label = colorCodes.MAGIC.."Magic", rarity = "MAGIC" },
-	{ label = colorCodes.RARE.."Rare", rarity = "RARE" },
-	{ label = colorCodes.UNIQUE.."Unique", rarity = "UNIQUE" },
-	{ label = colorCodes.RELIC.."Relic", rarity = "RELIC" }
-}
-
-local socketDropList = {
-	{ label = colorCodes.STRENGTH.."R", color = "R" },
-	{ label = colorCodes.DEXTERITY.."G", color = "G" },
-	{ label = colorCodes.INTELLIGENCE.."B", color = "B" },
-	{ label = colorCodes.SCION.."W", color = "W" }
-}
 
 local baseSlots = { "Weapon 1", "Weapon 2", "Helmet", "Body Armour", "Gloves", "Boots", "Amulet", "Ring 1", "Ring 2", "Ring 3", "Belt", "Graft 1", "Graft 2", "Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5" }
 
@@ -66,145 +51,67 @@ local function isAnointable(item)
 		and (item.canBeAnointed or item.base.type == "Amulet")
 end
 
-local function buildModSortList()
-	local sortList = { { label = "Default", stat = nil } }
-	local sortStats = { }
-	for _, entry in ipairs(data.powerStatList) do
-		if entry.stat and not entry.ignoreForNodes then
-			t_insert(sortList, { label = entry.label, stat = entry.stat })
-			sortStats[entry.stat] = entry
-		end
-	end
-	return sortList, sortStats
-end
-
-local ItemsTabClass = newClass("ItemsTab", "UndoHandler", "ControlHost", "Control", function(self, build)
+local ItemsTabClass = newClass("ItemsTab", "UndoHandler", function(self, build)
 	self.UndoHandler()
-	self.ControlHost()
-	self.Control()
 
 	self.build = build
-
-	self.socketViewer = new("PassiveTreeView")
 
 	self.items = { }
 	self.itemOrderList = { }
 
 	self.showStatDifferences = true
 
-	-- PoB Trader class initialization
-	self.tradeQuery = new("TradeQuery", self)
+	-- Persisted trade search weights and the request handler for trade site queries;
+	-- statSortSelectionList stays nil until loaded or assigned, so fresh builds
+	-- don't save an empty TradeSearchWeights section
+	self.tradeQuery = { }
+	self.tradeQuery.tradeQueryRequests = new("TradeQueryRequests", self.tradeQuery)
 
-	-- Set selector
-	self.controls.setSelect = new("DropDownControl", {"TOPLEFT",self,"TOPLEFT"}, {96, 8, 216, 20}, nil, function(index, value)
-		self:SetActiveItemSet(self.itemSetOrderList[index])
-		self:AddUndoState()
-	end)
-	self.controls.setSelect.enableDroppedWidth = true
-	self.controls.setSelect.enabled = function()
-		return #self.itemSetOrderList > 1
-	end
-	self.controls.setSelect.tooltipFunc = function(tooltip, mode, index, value)
-		tooltip:Clear()
-		if mode == "HOVER" then
-			self:AddItemSetTooltip(tooltip, self.itemSets[self.itemSetOrderList[index]])
-		end
-	end
-	self.controls.setLabel = new("LabelControl", {"RIGHT",self.controls.setSelect,"LEFT"}, {-2, 0, 0, 16}, "^7Item set:")
-	self.controls.setManage = new("ButtonControl", {"LEFT",self.controls.setSelect,"RIGHT"}, {4, 0, 90, 20}, "Manage...", function()
-		self:OpenItemSetManagePopup()
-	end)
-
-	-- Price Items
-	self.controls.priceDisplayItem = new("ButtonControl", {"TOPLEFT",self,"TOPLEFT"}, {96, 32, 310, 20}, "Trade for these items", function()
-		self.tradeQuery:PriceItem()
-	end)
-	self.controls.priceDisplayItem.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		tooltip:AddLine(16, "^7Contains searches from the official trading site to help find")
-		tooltip:AddLine(16, "^7similar or better items for this build")
-	end
+	-- Selection models for the item being viewed/edited; these replace the old
+	-- crafting controls and are driven both by the engine and by a UI
+	self.controls = { }
 
 	-- Item slots
 	self.slots = { }
 	self.orderedSlots = { }
 	self.slotOrder = { }
-	self.slotAnchor = new("Control", {"TOPLEFT",self,"TOPLEFT"}, {96, 76, 310, 0})
-	local prevSlot = self.slotAnchor
 	local function addSlot(slot)
-		prevSlot = slot
 		self.slots[slot.slotName] = slot
 		t_insert(self.orderedSlots, slot)
 		self.slotOrder[slot.slotName] = #self.orderedSlots
-		t_insert(self.controls, slot)
 	end
 	for index, slotName in ipairs(baseSlots) do
-		local slot = new("ItemSlotControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, 0, 2, self, slotName)
+		local slot = new("ItemSlot", self, slotName)
 		addSlot(slot)
 		if slotName:match("Weapon") then
 			-- Add alternate weapon slot
 			slot.weaponSet = 1
-			slot.shown = function()
-				return not self.activeItemSet.useSecondWeaponSet
-			end
-			local swapSlot = new("ItemSlotControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, 0, 2, self, slotName.." Swap", slotName)
+			local swapSlot = new("ItemSlot", self, slotName.." Swap", slotName)
 			addSlot(swapSlot)
 			swapSlot.weaponSet = 2
-			swapSlot.shown = function()
-				return self.activeItemSet.useSecondWeaponSet
-			end
 			for i = 1, 6 do
-				local abyssal = new("ItemSlotControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, 0, 2, self, slotName.." Swap Abyssal Socket "..i, "Abyssal #"..i)
+				local abyssal = new("ItemSlot", self, slotName.." Swap Abyssal Socket "..i, "Abyssal #"..i)
 				addSlot(abyssal)
 				abyssal.parentSlot = swapSlot
 				abyssal.weaponSet = 2
-				abyssal.shown = function()
-					return not abyssal.inactive and self.activeItemSet.useSecondWeaponSet
-				end
 				swapSlot.abyssalSocketList[i] = abyssal
-			end
-		elseif slotName == "Graft 1" or slotName == "Graft 2" then
-			slot.shown = function()
-				return self.build.spec.treeVersion:find("3_27")
-			end
-		elseif slotName == "Ring 3" then
-			slot.shown = function()
-				return self.build.calcsTab.mainEnv.modDB:Flag(nil, "AdditionalRingSlot")
 			end
 		end
 		if slotName == "Weapon 1" or slotName == "Weapon 2" or slotName == "Helmet" or slotName == "Gloves" or slotName == "Body Armour" or slotName == "Boots" or slotName == "Belt" then
 			-- Add Abyssal Socket slots
 			for i = 1, 6 do
-				local abyssal = new("ItemSlotControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, 0, 2, self, slotName.." Abyssal Socket "..i, "Abyssal #"..i)
+				local abyssal = new("ItemSlot", self, slotName.." Abyssal Socket "..i, "Abyssal #"..i)
 				addSlot(abyssal)
 				abyssal.parentSlot = slot
 				if slotName:match("Weapon") then
 					abyssal.weaponSet = 1
-					abyssal.shown = function()
-						return not abyssal.inactive and not self.activeItemSet.useSecondWeaponSet
-					end
 				end
 				slot.abyssalSocketList[i] = abyssal
 			end
 		end
 	end
 
-	-- Passive tree dropdown controls
-	self.controls.specSelect = new("DropDownControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, {0, 8, 216, 20}, nil, function(index, value)
-		if self.build.treeTab.specList[index] then
-			self.build.modFlag = true
-			self.build.treeTab:SetActiveSpec(index)
-		end
-	end)
-	self.controls.specSelect.enabled = function()
-		return #self.controls.specSelect.list > 1
-	end
-	prevSlot = self.controls.specSelect
-	self.controls.specButton = new("ButtonControl", {"LEFT",prevSlot,"RIGHT"}, {4, 0, 90, 20}, "Manage...", function()
-		self.build.treeTab:OpenSpecManagePopup()
-	end)
-	self.controls.specLabel = new("LabelControl", {"RIGHT",prevSlot,"LEFT"}, {-2, 0, 0, 16}, "^7Passive tree:")
-
+	-- Jewel sockets
 	self.sockets = { }
 	local socketOrder = { }
 	for _, node in pairs(build.latestTree.nodes) do
@@ -216,166 +123,16 @@ local ItemsTabClass = newClass("ItemsTab", "UndoHandler", "ControlHost", "Contro
 		return a.id < b.id
 	end)
 	for _, node in ipairs(socketOrder) do
-		local socketControl = new("ItemSlotControl", {"TOPLEFT",prevSlot,"BOTTOMLEFT"}, 0, 2, self, "Jewel "..node.id, "Socket", node.id)
-		self.sockets[node.id] = socketControl
-		addSlot(socketControl)
-	end
-	self.controls.slotHeader = new("LabelControl", {"BOTTOMLEFT",self.slotAnchor,"TOPLEFT"}, {0, -4, 0, 16}, "^7Equipped items:")
-	self.controls.weaponSwap1 = new("ButtonControl", {"BOTTOMRIGHT",self.slotAnchor,"TOPRIGHT"}, {-20, -2, 18, 18}, "I", function()
-		if self.activeItemSet.useSecondWeaponSet then
-			self.activeItemSet.useSecondWeaponSet = false
-			self:AddUndoState()
-			self.build.buildFlag = true
-			local mainSocketGroup = self.build.skillsTab.socketGroupList[self.build.mainSocketGroup]
-			if mainSocketGroup and mainSocketGroup.slot and self.slots[mainSocketGroup.slot].weaponSet == 2 then
-				for index, socketGroup in ipairs(self.build.skillsTab.socketGroupList) do
-					if socketGroup.slot and self.slots[socketGroup.slot].weaponSet == 1 then
-						self.build.mainSocketGroup = index
-						break
-					end
-				end
-			end
-		end
-	end)
-	self.controls.weaponSwap1.overSizeText = 3
-	self.controls.weaponSwap1.locked = function()
-		return not self.activeItemSet.useSecondWeaponSet
-	end
-	self.controls.weaponSwap2 = new("ButtonControl", {"BOTTOMRIGHT",self.slotAnchor,"TOPRIGHT"}, {0, -2, 18, 18}, "II", function()
-		if not self.activeItemSet.useSecondWeaponSet then
-			self.activeItemSet.useSecondWeaponSet = true
-			self:AddUndoState()
-			self.build.buildFlag = true
-			local mainSocketGroup = self.build.skillsTab.socketGroupList[self.build.mainSocketGroup]
-			if mainSocketGroup and mainSocketGroup.slot and self.slots[mainSocketGroup.slot].weaponSet == 1 then
-				for index, socketGroup in ipairs(self.build.skillsTab.socketGroupList) do
-					if socketGroup.slot and self.slots[socketGroup.slot].weaponSet == 2 then
-						self.build.mainSocketGroup = index
-						break
-					end
-				end
-			end
-		end
-	end)
-	self.controls.weaponSwap2.overSizeText = 3
-	self.controls.weaponSwap2.locked = function()
-		return self.activeItemSet.useSecondWeaponSet
-	end
-	self.controls.weaponSwapLabel = new("LabelControl", {"RIGHT",self.controls.weaponSwap1,"LEFT"}, {-4, 0, 0, 14}, "^7Weapon Set:")
-
-	-- All items list
-	if main.portraitMode then
-		self.controls.itemList = new("ItemListControl", {"TOPRIGHT",self.lastSlot,"BOTTOMRIGHT"}, {0, 0, 360, 308}, self, true)
-	else
-		self.controls.itemList = new("ItemListControl", {"TOPLEFT",self.controls.setManage,"TOPRIGHT"}, {20, 20, 360, 308}, self, true)
+		local socket = new("ItemSlot", self, "Jewel "..node.id, "Socket", node.id)
+		self.sockets[node.id] = socket
+		addSlot(socket)
 	end
 
-	-- Database selector
-	self.controls.selectDBLabel = new("LabelControl", {"TOPLEFT",self.controls.itemList,"BOTTOMLEFT"}, {0, 14, 0, 16}, "^7Import from:")
-	self.controls.selectDBLabel.shown = function()
-		return self.height < 980
-	end
-	self.controls.selectDB = new("DropDownControl", {"LEFT",self.controls.selectDBLabel,"RIGHT"}, {4, 0, 150, 18}, { "Uniques", "Rare Templates" })
-
-	-- Unique database
-	self.controls.uniqueDB = new("ItemDBControl", {"TOPLEFT",self.controls.itemList,"BOTTOMLEFT"}, {0, 76, 360, function(c) return m_min(244, self.maxY - select(2, c:GetPos())) end}, self, main.uniqueDB, "UNIQUE")
-	self.controls.uniqueDB.y = function()
-		return self.controls.selectDBLabel:IsShown() and 118 or 96
-	end
-	self.controls.uniqueDB.shown = function()
-		return not self.controls.selectDBLabel:IsShown() or self.controls.selectDB.selIndex == 1
-	end
-
-	-- Rare template database
-	self.controls.rareDB = new("ItemDBControl", {"TOPLEFT",self.controls.itemList,"BOTTOMLEFT"}, {0, 76, 360, function(c) return m_min(260, self.maxY - select(2, c:GetPos())) end}, self, main.rareDB, "RARE")
-	self.controls.rareDB.y = function()
-		return self.controls.selectDBLabel:IsShown() and 78 or 396
-	end
-	self.controls.rareDB.shown = function()
-		return not self.controls.selectDBLabel:IsShown() or self.controls.selectDB.selIndex == 2
-	end
-	-- Create/import item
-	self.controls.craftDisplayItem = new("ButtonControl", {"TOPLEFT",main.portraitMode and self.controls.setManage or self.controls.itemList,"TOPRIGHT"}, {20, main.portraitMode and 0 or -20, 120, 20}, "Craft item...", function()
-		self:CraftItem()
-	end)
-	self.controls.craftDisplayItem.shown = function()
-		return self.displayItem == nil
-	end
-	self.controls.newDisplayItem = new("ButtonControl", {"TOPLEFT",self.controls.craftDisplayItem,"TOPRIGHT"}, {8, 0, 120, 20}, "Create custom...", function()
-		self:EditDisplayItemText()
-	end)
-	self.controls.displayItemTip = new("LabelControl", {"TOPLEFT",self.controls.craftDisplayItem,"BOTTOMLEFT"}, {0, 8, 100, 16},
-[[^7Double-click an item from one of the lists,
-or copy and paste an item from in game
-(hover over the item and Ctrl+C) to view or edit
-the item and add it to your build. You can
-also clone an item within Path of Building by
-copying and pasting it with Ctrl+C and Ctrl+V.
-
-You can Control + Click an item to equip it, or
-drag it onto the slot.  This will also add it to
-your build if it's from the unique/template list.
-If there's 2 slots an item can go in,
-holding Shift will put it in the second.]])
-	self.controls.sharedItemList = new("SharedItemListControl", {"TOPLEFT",self.controls.craftDisplayItem, "BOTTOMLEFT"}, {0, 232, 340, 308}, self, true)
-
-	-- Display item
+	-- Display item description
 	self.displayItemTooltip = new("Tooltip")
-	self.displayItemTooltip.maxWidth = 458
-	self.anchorDisplayItem = new("Control", {"TOPLEFT",main.portraitMode and self.controls.setManage or self.controls.itemList,"TOPRIGHT"}, {20, main.portraitMode and 0 or -20, 0, 0})
-	self.anchorDisplayItem.shown = function()
-		return self.displayItem ~= nil
-	end
-	self.controls.addDisplayItem = new("ButtonControl", {"TOPLEFT",self.anchorDisplayItem,"TOPLEFT"}, {0, 0, 100, 20}, "", function()
-		self:AddDisplayItem()
-	end)
-	self.controls.addDisplayItem.label = function()
-		return self.items[self.displayItem.id] and "Save" or "Add to build"
-	end
-	self.controls.editDisplayItem = new("ButtonControl", {"LEFT",self.controls.addDisplayItem,"RIGHT"}, {8, 0, 60, 20}, "Edit...", function()
-		self:EditDisplayItemText()
-	end)
-	self.controls.removeDisplayItem = new("ButtonControl", {"LEFT",self.controls.editDisplayItem,"RIGHT"}, {8, 0, 60, 20}, "Cancel", function()
-		self:SetDisplayItem()
-	end)
 
-	self.controls.displayItemBuySimilar = new("ButtonControl",
-		{ "LEFT", self.controls.removeDisplayItem, "RIGHT", true },
-		{ 8, 0, 100, 20 }, "Buy similar", function()
-			local itemSlot = self:GetComparisonSlotNameForItem(self.displayItem)
-			buySimilar.openPopup(self.displayItem, itemSlot, self.build)
-		end)
-	self.controls.displayItemBuySimilar.shown = function()
-		return self.displayItem
-	end
-	-- Section: Variant(s)
-
-	self.controls.displayItemSectionVariant = new("Control", {"TOPLEFT",self.controls.addDisplayItem,"BOTTOMLEFT"}, {0, 8, 0, function()
-		if not self.displayItem then
-			return 0
-		end
-		if self.displayItem.usesVariantGroups then
-			local rows = self.displayItem.versionList and #self.displayItem.versionList > 1 and 1 or 0
-			local groups = 0
-			for groupId in pairsSortByKey(self.displayItem.variantGroups) do
-				if groups < 6 and #self.displayItem:GetVariantGroupOptions(groupId, false) > 0 then
-					rows = rows + 1
-					groups = groups + 1
-				end
-			end
-			return rows > 0 and rows * 24 + 4 or 0
-		end
-		if not self.controls.displayItemVariant:IsShown() then
-			return 0
-		end
-		return (28 +
-		(self.displayItem.hasAltVariant and 24 or 0) +
-		(self.displayItem.hasAltVariant2 and 24 or 0) +
-		(self.displayItem.hasAltVariant3 and 24 or 0) +
-		(self.displayItem.hasAltVariant4 and 24 or 0) +
-		(self.displayItem.hasAltVariant5 and 24 or 0))
-	end})
-	self.controls.displayItemVersion = new("DropDownControl", {"TOPLEFT", self.controls.displayItemSectionVariant,"TOPLEFT"}, {0, 0, 300, 20}, nil, function(index, value)
+	-- Version/variant selection models
+	self.controls.displayItemVersion = new("Selector", nil, function(index, value)
 		self.displayItem.selectedVersion = index
 		self.displayItem:NormaliseVariantSelections()
 		self.displayItem:BuildAndParseRaw()
@@ -383,266 +140,48 @@ holding Shift will put it in the second.]])
 		self:UpdateDisplayItemTooltip()
 		self:UpdateDisplayItemRangeLines()
 	end)
-	self.controls.displayItemVersion.maxDroppedWidth = 1000
 	self.controls.displayItemVersion.shown = function()
 		return self.displayItem and self.displayItem.usesVariantGroups
 			and self.displayItem.versionList and #self.displayItem.versionList > 1
 	end
-	self.controls.displayItemVariant = new("DropDownControl", {"TOPLEFT", self.controls.displayItemSectionVariant,"TOPLEFT"}, {0, 0, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variant", self.controls.displayItemVariant)
-	end)
-	self.controls.displayItemVariant.y = function()
-		return self.controls.displayItemVersion:IsShown() and 24 or 0
-	end
-	self.controls.displayItemVariant.maxDroppedWidth = 1000
-	self.controls.displayItemVariant.shown = function()
-		return self.displayItem.variantList and #self.displayItem.variantList > 1
-	end
-	self.controls.displayItemAltVariant = new("DropDownControl", {"TOPLEFT",self.controls.displayItemVariant,"BOTTOMLEFT"}, {0, 4, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variantAlt", self.controls.displayItemAltVariant)
-	end)
-	self.controls.displayItemAltVariant.maxDroppedWidth = 1000
-	self.controls.displayItemAltVariant.shown = function()
-		return self.displayItem.hasAltVariant
-	end
-	self.controls.displayItemAltVariant2 = new("DropDownControl", {"TOPLEFT",self.controls.displayItemAltVariant,"BOTTOMLEFT"}, {0, 4, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variantAlt2", self.controls.displayItemAltVariant2)
-	end)
-	self.controls.displayItemAltVariant2.maxDroppedWidth = 1000
-	self.controls.displayItemAltVariant2.shown = function()
-		return self.displayItem.hasAltVariant2
-	end
-	self.controls.displayItemAltVariant3 = new("DropDownControl", {"TOPLEFT",self.controls.displayItemAltVariant2,"BOTTOMLEFT"}, {0, 4, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variantAlt3", self.controls.displayItemAltVariant3)
-	end)
-	self.controls.displayItemAltVariant3.maxDroppedWidth = 1000
-	self.controls.displayItemAltVariant3.shown = function()
-		return self.displayItem.hasAltVariant3
-	end
-	self.controls.displayItemAltVariant4 = new("DropDownControl", {"TOPLEFT",self.controls.displayItemAltVariant3,"BOTTOMLEFT"}, {0, 4, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variantAlt4", self.controls.displayItemAltVariant4)
-	end)
-	self.controls.displayItemAltVariant4.maxDroppedWidth = 1000
-	self.controls.displayItemAltVariant4.shown = function()
-		return self.displayItem.hasAltVariant4
-	end
-	self.controls.displayItemAltVariant5 = new("DropDownControl", {"TOPLEFT",self.controls.displayItemAltVariant4,"BOTTOMLEFT"}, {0, 4, 300, 20}, nil, function(index, value)
-		self:SelectDisplayItemVariant(index, value, "variantAlt5", self.controls.displayItemAltVariant5)
-	end)
-	self.controls.displayItemAltVariant5.maxDroppedWidth = 1000
-	self.controls.displayItemAltVariant5.shown = function()
-		return self.displayItem.hasAltVariant5
-	end
-	for _, control in ipairs({
-		self.controls.displayItemVariant,
-		self.controls.displayItemAltVariant,
-		self.controls.displayItemAltVariant2,
-		self.controls.displayItemAltVariant3,
-		self.controls.displayItemAltVariant4,
-		self.controls.displayItemAltVariant5,
-	}) do
-		local legacyShown = control.shown
-		control.shown = function(c)
-			return self.displayItem and (self.displayItem.usesVariantGroups and c.newVariantVisible
-				or not self.displayItem.usesVariantGroups and legacyShown())
-		end
-		control.enabled = function(c)
-			return not self.displayItem or not self.displayItem.usesVariantGroups or c.newVariantEnabled
-		end
-	end
-
-	-- Section: Sockets and Links
-	self.controls.displayItemSectionSockets = new("Control", {"TOPLEFT",self.controls.displayItemSectionVariant,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return self.displayItem and self.displayItem.selectableSocketCount > 0 and 28 or 0
-	end})
-	for i = 1, 6 do
-		local drop = new("DropDownControl", {"TOPLEFT",self.controls.displayItemSectionSockets,"TOPLEFT"}, {(i-1) * 64, 0, 36, 20}, socketDropList, function(index, value)
-			self.displayItem.sockets[i].color = value.color
-			self.displayItem:BuildAndParseRaw()
-			self:UpdateDisplayItemTooltip()
+	local variantSelectors = {
+		{ name = "displayItemVariant", legacyField = "variant", legacyShown = function() return self.displayItem.variantList and #self.displayItem.variantList > 1 end },
+		{ name = "displayItemAltVariant", legacyField = "variantAlt", legacyShown = function() return self.displayItem.hasAltVariant end },
+		{ name = "displayItemAltVariant2", legacyField = "variantAlt2", legacyShown = function() return self.displayItem.hasAltVariant2 end },
+		{ name = "displayItemAltVariant3", legacyField = "variantAlt3", legacyShown = function() return self.displayItem.hasAltVariant3 end },
+		{ name = "displayItemAltVariant4", legacyField = "variantAlt4", legacyShown = function() return self.displayItem.hasAltVariant4 end },
+		{ name = "displayItemAltVariant5", legacyField = "variantAlt5", legacyShown = function() return self.displayItem.hasAltVariant5 end },
+	}
+	for _, selectorDef in ipairs(variantSelectors) do
+		local control
+		control = new("Selector", nil, function(index, value)
+			self:SelectDisplayItemVariant(index, value, selectorDef.legacyField, control)
 		end)
-		drop.shown = function()
-			return self.displayItem.selectableSocketCount >= i and self.displayItem.sockets[i] and self.displayItem.sockets[i].color ~= "A"
+		control.shown = function()
+			return self.displayItem and (self.displayItem.usesVariantGroups and control.newVariantVisible
+				or not self.displayItem.usesVariantGroups and selectorDef.legacyShown())
 		end
-		self.controls["displayItemSocket"..i] = drop
-		if i < 6 then
-			local link = new("CheckBoxControl", {"LEFT",drop,"RIGHT"}, {4, 0, 20}, nil, function(state)
-				if state and self.displayItem.sockets[i].group ~= self.displayItem.sockets[i+1].group then
-					for s = i + 1, #self.displayItem.sockets do
-						self.displayItem.sockets[s].group = self.displayItem.sockets[s].group - 1
-					end
-				elseif not state and self.displayItem.sockets[i].group == self.displayItem.sockets[i+1].group then
-					for s = i + 1, #self.displayItem.sockets do
-						self.displayItem.sockets[s].group = self.displayItem.sockets[s].group + 1
-					end
-				end
-				self.displayItem:BuildAndParseRaw()
-				self:UpdateDisplayItemTooltip()
-			end)
-			link.shown = function()
-				return self.displayItem.selectableSocketCount > i and self.displayItem.sockets[i+1] and self.displayItem.sockets[i+1].color ~= "A"
-			end
-			self.controls["displayItemLink"..i] = link
+		control.enabled = function()
+			return not self.displayItem or not self.displayItem.usesVariantGroups or control.newVariantEnabled
 		end
-	end
-	self.controls.displayItemAddSocket = new("ButtonControl", {"TOPLEFT",self.controls.displayItemSectionSockets,"TOPLEFT"}, {function() return (#self.displayItem.sockets - self.displayItem.abyssalSocketCount) * 64 - 12 end, 0, 20, 20}, "+", function()
-		local insertIndex = #self.displayItem.sockets - self.displayItem.abyssalSocketCount + 1
-		t_insert(self.displayItem.sockets, insertIndex, {
-			color = self.displayItem.defaultSocketColor,
-			group = self.displayItem.sockets[insertIndex - 1].group + 1
-		})
-		for s = insertIndex + 1, #self.displayItem.sockets do
-			self.displayItem.sockets[s].group = self.displayItem.sockets[s].group + 1
-		end
-		self.displayItem:BuildAndParseRaw()
-		self:UpdateSocketControls()
-		self:UpdateDisplayItemTooltip()
-	end)
-	self.controls.displayItemAddSocket.shown = function()
-		return #self.displayItem.sockets < self.displayItem.selectableSocketCount + self.displayItem.abyssalSocketCount
+		self.controls[selectorDef.name] = control
 	end
 
-	-- Section: Enchant / Anoint / Corrupt
-	self.controls.displayItemSectionEnchant = new("Control", {"TOPLEFT",self.controls.displayItemSectionSockets,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return (self.controls.displayItemEnchant:IsShown() or self.controls.displayItemEnchant2:IsShown() or self.controls.displayItemAnoint:IsShown() or self.controls.displayItemAnoint2:IsShown() or self.controls.displayItemCorrupt:IsShown() ) and 28 or 0
-	end})
-	self.controls.displayItemEnchant = new("ButtonControl", { "TOPLEFT", self.controls.displayItemSectionEnchant, "TOPLEFT" }, { 0, 0, 160, 20 }, "Change Enchantment...", function()
-		self:EnchantDisplayItem(1)
+	-- Cluster jewel crafting models
+	self.controls.displayItemClusterJewelSkill = new("Selector", { }, function(index, value)
+		self.displayItem.clusterJewelSkill = value.skillId
+		self:CraftClusterJewel()
 	end)
-	self.controls.displayItemEnchant.shown = function()
-		return self.displayItem and self.displayItem.enchantments
+	self.controls.displayItemClusterJewelSkill.shown = function()
+		return self.displayItem and self.displayItem.crafted and self.displayItem.clusterJewel and true or false
 	end
-	self.controls.displayItemEnchant2 = new("ButtonControl", { "TOPLEFT", self.controls.displayItemEnchant, "TOPRIGHT", true }, { 8, 0, 160, 20 }, "Change Enchantment 2...", function()
-		self:EnchantDisplayItem(2)
+	self.controls.displayItemClusterJewelNodeCount = new("SliderModel", function(val)
+		local clusterJewel = self.displayItem.clusterJewel
+		self.displayItem.clusterJewelNodeCount = round(val * (clusterJewel.maxNodes - clusterJewel.minNodes) + clusterJewel.minNodes)
+		self:CraftClusterJewel()
 	end)
-	self.controls.displayItemEnchant2.shown = function()
-		return self.displayItem and self.displayItem.enchantments and self.displayItem.canHaveTwoEnchants and #self.displayItem.enchantModLines > 0
-	end
-	self.controls.displayItemAnoint = new("ButtonControl", {"TOPLEFT",self.controls.displayItemEnchant2,"TOPRIGHT",true}, {8, 0, 100, 20}, "Anoint...", function()
-		self:AnointDisplayItem(1)
-	end)
-	self.controls.displayItemAnoint.shown = function()
-		return self.displayItem and isAnointable(self.displayItem)
-	end
-	self.controls.displayItemAnoint2 = new("ButtonControl", {"TOPLEFT",self.controls.displayItemAnoint,"TOPRIGHT",true}, {8, 0, 100, 20}, "Anoint 2...", function()
-		self:AnointDisplayItem(2)
-	end)
-	self.controls.displayItemAnoint2.shown = function()
-		return self.displayItem and
-			isAnointable(self.displayItem) and
-			self.displayItem.canHaveTwoEnchants and
-			#self.displayItem.enchantModLines > 0
-	end
-	self.controls.displayItemAnoint3 = new("ButtonControl", {"TOPLEFT",self.controls.displayItemAnoint2,"TOPRIGHT",true}, {8, 0, 100, 20}, "Anoint 3...", function()
-		self:AnointDisplayItem(3)
-	end)
-	self.controls.displayItemAnoint3.shown = function()
-		return self.displayItem and
-			isAnointable(self.displayItem) and
-			self.displayItem.canHaveThreeEnchants and
-			#self.displayItem.enchantModLines > 1
-	end
-	self.controls.displayItemAnoint4 = new("ButtonControl", {"TOPLEFT",self.controls.displayItemAnoint3,"TOPRIGHT",true}, {8, 0, 100, 20}, "Anoint 4...", function()
-		self:AnointDisplayItem(4)
-	end)
-	self.controls.displayItemAnoint4.shown = function()
-		return self.displayItem and
-			isAnointable(self.displayItem) and
-			self.displayItem.canHaveFourEnchants and
-			#self.displayItem.enchantModLines > 2
-	end
-	self.controls.displayItemCorrupt = new("ButtonControl", {"TOPLEFT",self.controls.displayItemAnoint4,"TOPRIGHT",true}, {8, 10, 100, 20}, "Corrupt...", function()
-		self:CorruptDisplayItem("Corrupted")
-	end)
-	self.controls.displayItemCorrupt.shown = function()
-		return self.displayItem and self.displayItem.corruptible
-	end
-	--[[
-	self.controls.displayItemScourge = new("ButtonControl", {"TOPLEFT",self.controls.displayItemCorrupt,"TOPRIGHT",true}, {8, 0, 100, 20}, "Scourge...", function()
-		self:CorruptDisplayItem("Scourge")
-	end)
-	self.controls.displayItemScourge.shown = function()
-		return self.displayItem and self.displayItem.corruptible
-	end
-	--]]
-	self.controls.displayItemAddImplicit = new("ButtonControl", {"TOPLEFT",self.controls.displayItemCorrupt,"TOPRIGHT",true}, {8, 0, 120, 20}, "Add Implicit...", function()
-		self:AddImplicitToDisplayItem()
-	end)
-	self.controls.displayItemAddImplicit.shown = function()
-		return self.displayItem and
-			self.displayItem.type ~= "Tincture" and self.displayItem.type ~= "Graft" and (self.displayItem.corruptible or ((self.displayItem.type ~= "Flask" and self.displayItem.type ~= "Jewel") and
-			(self.displayItem.rarity == "NORMAL" or self.displayItem.rarity == "MAGIC" or self.displayItem.rarity == "RARE"))) and
-			not self.displayItem.implicitsCannotBeChanged
-	end
 
-	-- Section: Influence dropdowns
-	local influenceDisplayList = { "Influence" }
-	for i, curInfluenceInfo in ipairs(influenceInfo) do
-		influenceDisplayList[i + 1] = curInfluenceInfo.display
-	end
-	local function setDisplayItemInfluence(influenceIndexList)
-		self.displayItem:ResetInfluence()
-		if self.displayItem.HasElderShaperAndAllConquerorInfluences then
-			for i, curInfluenceInfo in ipairs(itemLib.influenceInfo.default) do
-				self.displayItem[influenceInfo[i].key] = true
-			end
-		else
-			for _, index in ipairs(influenceIndexList) do
-				if index > 0 then
-					self.displayItem[influenceInfo[index].key] = true
-				end
-			end
-		end
-
-		if self.displayItem.crafted then
-			for i = 1, self.displayItem.affixLimit do
-				-- Force affix selectors to update
-				local drop = self.controls["displayItemAffix"..i]
-				drop.selFunc(drop.selIndex, drop.list[drop.selIndex])
-			end
-		end
-		self.displayItem:BuildAndParseRaw()
-		self:UpdateDisplayItemTooltip()
-	end
-	self.controls.displayItemSectionInfluence = new("Control", {"TOPLEFT",self.controls.displayItemSectionEnchant,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return self.displayItem and self.displayItem.canBeInfluenced and 28 or 0
-	end})
-	local influenceTipText = table.concat(main:WrapString("Selecting an influence here will also allow the modifier dropdowns to contain influenced mods.", 16, 140), "\n")
-	self.controls.displayItemInfluence = new("DropDownControl", {"TOPLEFT",self.controls.displayItemSectionInfluence,"TOPRIGHT"}, {0, 0, 100, 20}, influenceDisplayList, function(index, value)
-		local otherIndex = self.controls.displayItemInfluence2.selIndex
-		setDisplayItemInfluence({ index - 1, otherIndex - 1 })
-	end)
-	self.controls.displayItemInfluence.tooltipText = influenceTipText
-	self.controls.displayItemInfluence.shown = function()
-		return self.displayItem and self.displayItem.canBeInfluenced
-	end
-	self.controls.displayItemInfluence2 = new("DropDownControl", {"TOPLEFT",self.controls.displayItemInfluence,"TOPRIGHT",true}, {8, 0, 100, 20}, influenceDisplayList, function(index, value)
-		local otherIndex = self.controls.displayItemInfluence.selIndex
-		setDisplayItemInfluence({ index - 1, otherIndex - 1 })
-	end)
-	self.controls.displayItemInfluence2.shown = function()
-		return self.displayItem and self.displayItem.canBeInfluenced
-	end
-	self.controls.displayItemInfluence2.tooltipText = influenceTipText
-
-	-- Section: Item Quality
-	self.controls.displayItemSectionQuality = new("Control", {"TOPLEFT",self.controls.displayItemSectionInfluence,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return (self.controls.displayItemQuality:IsShown() and self.controls.displayItemQualityEdit:IsShown()) and 28 or 0
-	end})
-	self.controls.displayItemQuality = new("LabelControl", { "TOPLEFT", self.controls.displayItemSectionQuality, "TOPRIGHT" }, { 0, 0, 0, 16 }, "^7Quality:")
-	self.controls.displayItemQuality.shown = function()
-		return self.displayItem and self.displayItem.quality and (self.displayItem.base.type ~= "Amulet" or self.displayItem.base.type ~= "Belt" or self.displayItem.base.type ~= "Jewel" or self.displayItem.base.type ~= "Quiver" or self.displayItem.base.type ~= "Ring" or self.displayItem.type ~= "Graft")
-	end
-
-	self.controls.displayItemQualityEdit = new("EditControl", {"LEFT",self.controls.displayItemQuality,"RIGHT"}, {2, 0, 60, 20}, nil, nil, "%D", 2, function(buf)
-		self.displayItem.quality = tonumber(buf)
-		self.displayItem:BuildAndParseRaw()
-		self:UpdateDisplayItemTooltip()
-	end)
-	self.controls.displayItemQualityEdit.shown = function()
-		return self.displayItem and self.displayItem.quality and (self.displayItem.base.type ~= "Amulet" or self.displayItem.base.type ~= "Belt" or self.displayItem.base.type ~= "Jewel" or self.displayItem.base.type ~= "Quiver" or self.displayItem.base.type ~= "Ring" or self.displayItem.type ~= "Graft")
-	end
-
+	-- Modifier sorting model for crafted items
 	local sortingOptions = {
 		{ stat = nil, label = "Default" }
 	}
@@ -651,149 +190,26 @@ holding Shift will put it in the second.]])
 			table.insert(sortingOptions, option)
 		end
 	end
-	-- Section: Catalysts
-	self.controls.displayItemSectionCatalyst = new("Control", {"TOPLEFT",self.controls.displayItemSectionQuality,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return (self.controls.displayItemCatalyst:IsShown() or self.controls.displayItemCatalystQualityEdit:IsShown()) and 28 or 0
-	end})
-	self.controls.displayItemCatalyst = new("DropDownControl", {"TOPLEFT",self.controls.displayItemSectionCatalyst,"TOPRIGHT"}, {0, 0, 250, 20},
-		{"Catalyst","Abrasive (Attack)","Accelerating (Speed)","Dextral (Suffix)","Fertile (Life & Mana)","Imbued (Caster)","Intrinsic (Attribute)","Noxious (Physical & Chaos Damage)",
-		 "Prismatic (Resistance)","Sinistral (Prefix)","Tempering (Defense)","Turbulent (Elemental)","Unstable (Critical)"},
-		function(index, value)
-			self.displayItem.catalyst = index - 1
-			if not self.displayItem.catalystQuality then
-				self.displayItem.catalystQuality = 20
-				self.controls.displayItemCatalystQualityEdit:SetText(self.displayItem.catalystQuality)
-			end
-			if self.displayItem.crafted then
-				for i = 1, self.displayItem.affixLimit do
-					-- Force affix selectors to update
-					local drop = self.controls["displayItemAffix"..i]
-					drop.selFunc(drop.selIndex, drop.list[drop.selIndex])
-				end
-			end
-			self.displayItem:BuildAndParseRaw()
-			self:UpdateDisplayItemTooltip()
-		end)
-	self.controls.displayItemCatalyst.shown = function()
-		return self.displayItem and (self.displayItem.crafted or self.displayItem.hasModTags) and (self.displayItem.base.type == "Amulet" or self.displayItem.base.type == "Ring" or self.displayItem.base.type == "Belt")
-	end
-	self.controls.displayItemCatalystQualityEdit = new("EditControl", {"LEFT",self.controls.displayItemCatalyst,"RIGHT"}, {2, 0, 60, 20}, nil, nil, "%D", 2, function(buf)
-		self.displayItem.catalystQuality = tonumber(buf)
-		if self.displayItem.crafted then
-			for i = 1, self.displayItem.affixLimit do
-				-- Force affix selectors to update
-				local drop = self.controls["displayItemAffix"..i]
-				drop.selFunc(drop.selIndex, drop.list[drop.selIndex])
-			end
-		end
-		self.displayItem:BuildAndParseRaw()
-		self:UpdateDisplayItemTooltip()
-	end)
-	self.controls.displayItemCatalystQualityEdit.shown = function()
-		return self.displayItem and (self.displayItem.crafted or self.displayItem.hasModTags) and self.displayItem.catalyst and self.displayItem.catalyst > 0
-	end
-
-	-- Section: Cluster Jewel
-	self.controls.displayItemSectionClusterJewel = new("Control", {"TOPLEFT",self.controls.displayItemSectionCatalyst,"BOTTOMLEFT"}, {0, 0, 0, function()
-		return self.controls.displayItemClusterJewelSkill:IsShown() and 52 or 0
-	end})
-	self.controls.displayItemClusterJewelSkill = new("DropDownControl", {"TOPLEFT",self.controls.displayItemSectionClusterJewel,"TOPLEFT"}, {0, 0, 300, 20}, { }, function(index, value)
-		self.displayItem.clusterJewelSkill = value.skillId
-		self:CraftClusterJewel()
-	end) {
+	self.controls.craftingSortingLabel = {
 		shown = function()
-			return self.displayItem and self.displayItem.crafted and self.displayItem.clusterJewel
+			return self.displayItem and self.displayItem.crafted and
+				-- cluster jewels don't have good comparison support and sorting would be misleading
+				not (self.displayItem.base.type == "Jewel" and self.displayItem.base.subType == "Cluster")
 		end
 	}
-
-	self.controls.displayItemClusterJewelNodeCountLabel = new("LabelControl", {"TOPLEFT",self.controls.displayItemClusterJewelSkill,"BOTTOMLEFT"}, {0, 7, 0, 14}, "^7Added Passives:")
-	self.controls.displayItemClusterJewelNodeCount = new("SliderControl", {"LEFT",self.controls.displayItemClusterJewelNodeCountLabel,"RIGHT"}, {2, 0, 150, 20}, function(val)
-		local divVal = self.controls.displayItemClusterJewelNodeCount:GetDivVal()
-		local clusterJewel = self.displayItem.clusterJewel
-		self.displayItem.clusterJewelNodeCount = round(val * (clusterJewel.maxNodes - clusterJewel.minNodes) + clusterJewel.minNodes)
-		self:CraftClusterJewel()
-	end)
-
-	self.controls.craftingSortingLabel = new("LabelControl", { "TOPLEFT", self.controls.displayItemSectionClusterJewel, "BOTTOMLEFT" }, { 0, 0, 0, 16 }, "^7Modifier sorting:")
-	self.controls.craftingSortingLabel.shown = function()
-		return self.displayItem and self.displayItem.crafted and
-			-- cluster jewels don't have good comparison support and sorting would be misleading
-			not (self.displayItem.base.type == "Jewel" and self.displayItem.base.subType == "Cluster")
-	end
-	self.controls.craftingSorting = new("DropDownControl", { "LEFT", self.controls.craftingSortingLabel, "RIGHT" }, { 4, 0, 200, 20 }, sortingOptions, function()
+	self.controls.craftingSorting = new("Selector", sortingOptions, function()
 		self:UpdateAffixControls()
 	end)
 
-	-- Section: Affix Selection
+	-- Affix selection models for crafted items
 	local maxModCount = 9
-	self.controls.displayItemSectionAffix = new("Control", { "TOPLEFT", self.controls.craftingSortingLabel, "BOTTOMLEFT", true }, { 0, function()
-		if self.controls.craftingSortingLabel.shown() then
-			return 8
-		else
-			return -16
-		end
-	end, 0, function()
-		if not self.displayItem or not self.displayItem.crafted then
-			return 0
-		end
-		local h = 6
-		for i = 1, maxModCount do
-			if self.controls["displayItemAffix"..i]:IsShown() then
-				h = h + 24
-				if self.controls["displayItemAffixRange"..i]:IsShown() then
-					h = h + 18
-				end
-			end
-		end
-		return h
-	end})
+	self.controls.displayItemSectionAffix = new("Selector")
 	self.controls.displayItemSectionAffix.shown = function()
-		return self.displayItem and self.displayItem.crafted
+		return self.displayItem and self.displayItem.crafted and true or false
 	end
 	for i = 1, maxModCount do
-		local prev = self.controls["displayItemAffix"..(i-1)] or self.controls.displayItemSectionAffix
 		local drop, slider
-		local function verifyRange(range, index, drop) -- flips range if it will form discontinuous values
-			local priorMod = index - 1 > 0 and self.displayItem.affixes[drop.list[drop.selIndex].modList[index - 1]] or nil
-			local nextMod = index + 1 < #drop.list[drop.selIndex].modList and self.displayItem.affixes[drop.list[drop.selIndex].modList[index + 1]] or nil
-			local function flipRange(modA, modB) -- assumes all pairs are ordered the same
-				local function getMinMax(mod) -- gets first valid range from a mod
-					for _, line in ipairs(mod) do
-						local min, max = line:match("%((%d[%d%.]*)%-(%d[%d%.]*)%)")
-						if min and max then return tonumber(min), tonumber(max)	end
-					end
-				end
-
-				local minA, maxA = getMinMax(modA)
-				local minB, maxB = getMinMax(modB)
-
-				if not minA or not minB or not maxA or not maxB then
-					return false
-				end
-
-				local allInts = minA == m_floor(minA) and maxA == m_floor(maxA) and minB == m_floor(minB) and maxB == m_floor(maxB) -- if the mod goes in steps that aren't 1, then the code below this doesn't work
-				if (minA and minB and maxA and maxB and allInts) then
-					if (minA < minB) then -- ascending
-						return minA + 1 == maxB
-					else -- descending
-						return minA - 1 == maxB
-					end
-				end
-				return false
-			end
-
-			if priorMod then
-				if flipRange(priorMod, self.displayItem.affixes[drop.list[drop.selIndex].modList[index]]) then
-					range = 1 - range
-				end
-			elseif nextMod then
-				if flipRange(self.displayItem.affixes[drop.list[drop.selIndex].modList[index]], nextMod) then
-					range = 1 - range
-				end
-			end
-			return range
-		end
-		drop = new("DropDownControl", {"TOPLEFT",prev,"TOPLEFT"}, {i==1 and 40 or 0, 0, 418, 20}, nil, function(index, value)
+		drop = new("Selector", nil, function(index, value)
 			local affix = { modId = "None", fractured = self.displayItem[drop.outputTable][drop.outputIndex].fractured }
 			if value.modId then
 				affix.modId = value.modId
@@ -802,399 +218,53 @@ holding Shift will put it in the second.]])
 				slider.divCount = #value.modList
 				local index, range = slider:GetDivVal()
 				affix.modId = value.modList[index]
-				affix.range = verifyRange(range, index, drop)
+				affix.range = self:VerifyAffixRange(range, index, drop)
 			end
 			self.displayItem[drop.outputTable][drop.outputIndex] = affix
 			self.displayItem:Craft()
 			self:UpdateDisplayItemTooltip()
 			self:UpdateAffixControls()
 		end)
-		drop.y = function()
-			return i == 1 and 0 or 24 + (prev.slider:IsShown() and 18 or 0)
-		end
-		drop.tooltipFunc = function(tooltip, mode, index, value)
-			local modList = value.modList
-			if not modList or main.popups[1] or mode == "OUT" or (self.selControl and self.selControl ~= drop) then
-				tooltip:Clear()
-			elseif tooltip:CheckForUpdate(modList) then
-				if value.modId or #modList == 1 then
-					local mod = self.displayItem.affixes[value.modId or modList[1]]
-					tooltip:AddLine(16, "^7Affix: "..mod.affix)
-					for _, line in ipairs(mod) do
-						tooltip:AddLine(14, "^7"..line)
-					end
-					if mod.level > 1 then
-						tooltip:AddLine(16, "Level: "..mod.level)
-					end
-					if mod.modTags and #mod.modTags > 0 then
-						tooltip:AddLine(16, "Tags: "..table.concat(mod.modTags, ', '))
-					end
-				else
-					tooltip:AddLine(16, "^7"..#modList.." Tiers")
-					local minMod = self.displayItem.affixes[modList[1]]
-					local maxMod = self.displayItem.affixes[modList[#modList]]
-					for l, line in ipairs(minMod) do
-						local minLine = line:gsub("%((%d[%d%.]*)%-(%d[%d%.]*)%)", "%1")
-						local maxLine = maxMod[l]:gsub("%((%d[%d%.]*)%-(%d[%d%.]*)%)", "%2")
-						if maxLine == maxMod[l] then
-							tooltip:AddLine(14, maxLine)
-						else
-							local start = 1
-							tooltip:AddLine(14, (minLine:gsub("%d[%d%.]*", function(min)
-								local s, e, max = maxLine:find("(%d[%d%.]*)", start)
-								start = e + 1
-								if min == max then
-									return min
-								else
-									return "("..min.."-"..max..")"
-								end
-							end)))
-						end
-					end
-					tooltip:AddLine(16, "Level: "..minMod.level.." to "..maxMod.level)
-					-- Assuming that all mods have the same tags
-					if maxMod.modTags and #maxMod.modTags > 0 then
-						tooltip:AddLine(16, "Tags: "..table.concat(maxMod.modTags, ', '))
-					end
-				end
-				local mod = self.displayItem.affixes[value.modId or modList[1]]
-				local notableName = mod[1] and mod[1]:match("1 Added Passive Skill is (.*)")
-				local node = notableName and self.build.spec.tree.clusterNodeMap[notableName]
-				if node then
-					tooltip:AddSeparator(14)
-
-					-- Node name
-					self.socketViewer:AddNodeName(tooltip, node, self.build)
-
-					-- Node description
-					if node.sd[1] then
-						tooltip:AddLine(16, "")
-						for i, line in ipairs(node.sd) do
-							if line ~= " " and (node.mods[i].extra or not node.mods[i].list) then
-								local line = colorCodes.UNSUPPORTED .. line
-								line = main.notSupportedModTooltips and (line .. main.notSupportedTooltipText) or line
-								tooltip:AddLine(16, line)
-							else
-								tooltip:AddLine(16, colorCodes.MAGIC..line)
-							end
-						end
-					end
-
-					-- Reminder text
-					if node.reminderText then
-						tooltip:AddSeparator(14)
-						for _, line in ipairs(node.reminderText) do
-							tooltip:AddLine(14, "^xA0A080"..line)
-						end
-					end
-
-					-- Comparison
-					tooltip:AddSeparator(14)
-					self:AppendAddedNotableTooltip(tooltip, node)
-
-					-- Information of for this notable appears
-					local clusterInfo = self.build.data.clusterJewelInfoForNotable[notableName]
-					if clusterInfo then
-						tooltip:AddSeparator(14)
-						tooltip:AddLine(20, "^7"..notableName.." can appear on:")
-						local isFirstSize = true
-						for size, v in pairs(clusterInfo.size) do
-							tooltip:AddLine(18, colorCodes.MAGIC..size..":")
-							local sizeSkills = self.build.data.clusterJewels.jewels[size].skills
-							for i, type in ipairs(clusterInfo.jewelTypes) do
-								if sizeSkills[type] then
-									tooltip:AddLine(14, "^7    "..sizeSkills[type].name)
-								end
-							end
-							if not isFirstSize then
-								tooltip:AddLine(10, "")
-							end
-							isFirstSize = false
-						end
-					end
-				else
-					local mod = { }
-					if value.modId or #modList == 1 then
-						mod = self.displayItem.affixes[value.modId or modList[1]]
-					else
-						mod = self.displayItem.affixes[modList[1 + round((#modList - 1) * (main.defaultItemAffixQuality or 0.5))]]
-					end
-
-					-- Adding Mod
-					self:AddModComparisonTooltip(tooltip, mod)
-				end
-			end
-		end
 		drop.shown = function()
-			return self.displayItem and self.displayItem.crafted and i <= self.displayItem.affixLimit
+			return self.displayItem and self.displayItem.crafted and i <= self.displayItem.affixLimit and true or false
 		end
-		slider = new("SliderControl", {"TOPLEFT",drop,"BOTTOMLEFT"}, {0, 2, 300, 16}, function(val)
+		slider = new("SliderModel", function(val)
 			local affix = self.displayItem[drop.outputTable][drop.outputIndex]
 			local index, range = slider:GetDivVal()
 			affix.modId = drop.list[drop.selIndex].modList[index]
 
-			affix.range = verifyRange(range, index, drop)
+			affix.range = self:VerifyAffixRange(range, index, drop)
 			self.displayItem:Craft()
 			self:UpdateDisplayItemTooltip()
 		end)
-		slider.width = function()
-			return slider.divCount and 300 or 100
-		end
-		slider.tooltipFunc = function(tooltip, val)
-			local modList = drop.list[drop.selIndex].modList
-			if not modList or main.popups[1] or (self.selControl and self.selControl ~= slider) then
-				tooltip:Clear()
-			elseif tooltip:CheckForUpdate(val, modList) then
-				local index, range = slider:GetDivVal(val)
-				range = verifyRange(range, index, drop)
-				local modId = modList[index]
-				local mod = self.displayItem.affixes[modId]
-				for _, line in ipairs(mod) do
-					tooltip:AddLine(16, itemLib.applyRange(line, range))
-				end
-				tooltip:AddSeparator(10)
-				if #modList > 1 then
-					tooltip:AddLine(16, "^7Affix: Tier "..(#modList - isValueInArray(modList, modId) + 1).." ("..mod.affix..")")
-				else
-					tooltip:AddLine(16, "^7Affix: "..mod.affix)
-				end
-				for _, line in ipairs(mod) do
-					tooltip:AddLine(14, line)
-				end
-				if mod.level > 1 then
-					tooltip:AddLine(16, "Level: "..mod.level)
-				end
-			end
-		end
 		drop.slider = slider
 		self.controls["displayItemAffix"..i] = drop
-		self.controls["displayItemAffixLabel"..i] = new("LabelControl", {"RIGHT",drop,"LEFT"}, {-4, 0, 0, 14}, function()
-			local ignoreModType = self.displayItem.rareLikeUnique and self.displayItem.rareLikeUnique.ignoreModType
-			return ignoreModType and "^7Explicit:"
-				or drop.outputTable == "prefixes" and "^7Prefix:"
-				or "^7Suffix:"
-		end)
 		self.controls["displayItemAffixRange"..i] = slider
-		self.controls["displayItemAffixRangeLabel"..i] = new("LabelControl", {"RIGHT",slider,"LEFT"}, {-4, 0, 0, 14}, function()
-			return drop.selIndex > 1 and "^7Roll:" or "^x7F7F7FRoll:"
-		end)
 	end
 
-	-- Section: Custom modifiers
-	-- if either Custom or Crucible mod buttons are shown, create the control for the list of mods
-	self.controls.displayItemSectionCustom = new("Control", {"TOPLEFT",self.controls.displayItemSectionAffix,"BOTTOMLEFT",true}, {0, 0, 0, function()
-		return (self.controls.displayItemAddCustom:IsShown() or self.controls.displayItemAddCrucible:IsShown()) and 28 + self.displayItem.customCount * 22 or 0
-	end})
-	self.controls.displayItemAddCustom = new("ButtonControl", {"TOPLEFT",self.controls.displayItemSectionCustom,"TOPLEFT"}, {0, 0, 120, 20}, "Add modifier...", function()
-		self:AddCustomModifierToDisplayItem()
-	end)
+	-- Custom modifier models
+	self.controls.displayItemSectionCustom = new("Selector")
+	self.controls.displayItemAddCustom = new("Selector")
 	self.controls.displayItemAddCustom.shown = function()
-		return self.displayItem and (self.displayItem.rarity == "MAGIC" or self.displayItem.rarity == "RARE" or (self.displayItem.rareLikeUnique and self.displayItem.rareLikeUnique.supportsCustomModifiers))
+		return self.displayItem and (self.displayItem.rarity == "MAGIC" or self.displayItem.rarity == "RARE" or (self.displayItem.rareLikeUnique and self.displayItem.rareLikeUnique.supportsCustomModifiers)) and true or false
 	end
-
-	-- Section: Crucible modifiers
-	-- if the Add modifier button is not shown, take its place, otherwise move it to the right of it
-	self.controls.displayItemAddCrucible = new("ButtonControl", {"TOPLEFT",self.controls.displayItemSectionCustom,"TOPLEFT"}, {function()
-		return (self.controls.displayItemAddCustom:IsShown() and 128) or 0
-	end, 0, 150, 20}, "Add Crucible mod...", function()
-		self:AddCrucibleModifierToDisplayItem()
-	end)
+	self.controls.displayItemAddCrucible = new("Selector")
 	self.controls.displayItemAddCrucible.shown = function()
-		return self.displayItem and (self.displayItem:GetPrimarySlot() == "Weapon 1" or self.displayItem.type == "Shield" or self.displayItem.canHaveShieldCrucibleTree)
+		return self.displayItem and (self.displayItem:GetPrimarySlot() == "Weapon 1" or self.displayItem.type == "Shield" or self.displayItem.canHaveShieldCrucibleTree) and true or false
 	end
 
-	-- Section: Modifier Range
-	local labelFontSize = 14
-	self.controls.displayItemSectionRange = new("Control", { "TOPLEFT", self.controls.displayItemSectionCustom, "BOTTOMLEFT" }, { 0, 0, 0, function()
-		if not self.displayItem or not self.displayItem.rangeLineList[1] then
-			return 0
-		end
-		if main.showAllItemAffixes and self.displayItem.rarity == "UNIQUE" then
-			local height = 0
-			for i = 1, #self.displayItem.rangeLineList do
-				local label = self.controls["displayItemStackedRangeLine" .. i]
-				height = height + math.max(22, (label.lineCount or 0) * labelFontSize)
-			end
-			return height + 4
-		else
-			return 28
-		end
-	end})
-	local foulbornIcon = NewImageHandle()
-	foulbornIcon:Load("Assets/breachicon.png")
-	self.controls.displayItemRangeLine = new("DropDownControl", {"TOPLEFT",self.controls.displayItemSectionRange,"TOPLEFT"}, {0, 0, 350, 18}, nil, function(index, value)
+	-- Modifier range models
+	self.controls.displayItemRangeLine = new("Selector", nil, function(index, value)
 		self.controls.displayItemRangeSlider.val = self.displayItem.rangeLineList[index].range
 	end)
-	self.controls.displayItemRangeLine.shown = function()
-		return self.displayItem and self.displayItem.rangeLineList[1] ~= nil and not (main.showAllItemAffixes and self.displayItem.rarity == "UNIQUE")
-	end
-	local function getSelectedModLine()
-		return self.displayItem and self.displayItem.rangeLineList[self.controls.displayItemRangeLine.selIndex] or nil
-	end
-	local box = new("CheckBoxControl", { "LEFT", self.controls.displayItemRangeLine, "RIGHT", true }, { 0, 0, 18 }, nil)
-	box.changeFunc = function(val)
-		local line = getSelectedModLine()
-		if line and line.modId and line.newModId then
-			self.displayItem:MutateMod(line.modId, line.newModId, not line.mutated)
-			self:UpdateDisplayItemTooltip()
-			self:UpdateCustomControls()
-			self:UpdateDisplayItemRangeLines()
-		end
-	end
-	box.RealDraw = box.Draw
-	function box:Draw(...)
-		local x, y = self:GetPos()
-		SetDrawColor(1, 1, 1)
-		DrawImage(foulbornIcon, x - 24, y - 1, 20, 20)
-		return box:RealDraw(...)
-	end
-
-	box.shown = function()
-		local line = getSelectedModLine()
-		-- hack: set property according to item. the state is not a prop and so can't be set as a function value
-		if line and line.mutated then
-			box.state = true
-		else
-			box.state = false
-		end
-		return not main.showAllItemAffixes and line and line.modId and line.newModId
-	end
-	-- fix spacing
-	box.x = function()
-		if box:IsShown() then
-			return 25
-		else
-			return 8
-		end
-	end
-	self.controls.displayItemMutatedCheckbox = box
-	local slider = new("SliderControl", { "LEFT", self.controls.displayItemMutatedCheckbox, "RIGHT", true }, { 4, 0, 100, 18 }, function(val)
-		local line = getSelectedModLine()
+	self.controls.displayItemRangeSlider = new("SliderModel", function(val)
+		local line = self.displayItem.rangeLineList[self.controls.displayItemRangeLine.selIndex]
 		line.range = val
 		self.displayItem:BuildAndParseRaw()
 		self:UpdateDisplayItemTooltip()
 		self:UpdateCustomControls()
 	end)
-	slider.shown = function()
-		local modLine = self.displayItem and not (main.showAllItemAffixes and self.displayItem.rarity == "UNIQUE") and self.displayItem.rangeLineList[self.controls.displayItemRangeLine.selIndex]
-		if modLine then
-			-- it's possible for the range to change while this slider is
-			-- hidden, so correct the slider to show the same value
-			slider.val = modLine.range or slider.val
-			return modLine.showSlider
-		else
-			return false
-		end
-	end
-	self.controls.displayItemRangeSlider = slider
-
-	for i = 1, 20 do
-		local baseControl = self.controls.displayItemSectionRange
-
-		-- layout: [box] <- [slider] <- text
-
-		local box = new("CheckBoxControl", { "TOPLEFT", baseControl, "TOPLEFT", true }, { 0, 0, 18 }, nil, function(val)
-			local line = self.displayItem and self.displayItem.rangeLineList[i]
-			if line and line.modId and line.newModId then
-				self.displayItem:MutateMod(line.modId, line.newModId, not line.mutated)
-				self:UpdateDisplayItemTooltip()
-				self:UpdateCustomControls()
-			end
-		end)
-		-- fix spacing
-		box.x = function()
-			if box:IsShown() then
-				return 24
-			else
-				return 0
-			end
-		end
-		box.y = function()
-			local prevBox = self.controls["displayItemStackedMutatedCheckbox" .. (i - 1)]
-			local prevLabel = self.controls["displayItemStackedRangeLine" .. (i - 1)]
-			return i == 1 and 2 or prevBox:GetProperty("y") + math.max(22, (prevLabel.lineCount or 0) * 14)
-		end
-		box.shown = function()
-			local line = (self.displayItem and self.displayItem.rangeLineList[i]) or nil
-			-- hack: set property according to item. the state is not a prop and so can't be set as a function value
-			if line and line.mutated then
-				box.state = true
-			else
-				box.state = false
-			end
-			return main.showAllItemAffixes and line and line.modId and line.newModId
-		end
-		box.RealDraw = box.Draw
-		function box:Draw(...)
-			local x, y = self:GetPos()
-			SetDrawColor(1, 1, 1)
-			DrawImage(foulbornIcon, x - 24, y, 20, 20)
-			return box:RealDraw(...)
-		end
-
-		self.controls["displayItemStackedMutatedCheckbox" .. i] = box
-
-		local slider = new("SliderControl", { "LEFT", box, "RIGHT", true }, { 4, 0, 100, 18 }, function(val)
-			if self.displayItem and self.displayItem.rangeLineList[i] then
-				self.displayItem.rangeLineList[i].range = val
-				self.displayItem:BuildAndParseRaw()
-				self:UpdateDisplayItemTooltip()
-				self:UpdateCustomControls()
-			end
-		end)
-		slider.shown = function()
-			local modLine = main.showAllItemAffixes and self.displayItem and self.displayItem.rarity == "UNIQUE" and self.displayItem.rangeLineList[i]
-			if modLine then
-				-- it's possible for the range to change while this slider is
-				-- hidden, so correct the slider to show the same value
-				slider.val = modLine.range or slider.val
-				return modLine.showSlider
-			else
-				return false
-			end
-		end
-
-		self.controls["displayItemStackedRangeSlider" .. i] = slider
-
-		self.controls["displayItemStackedRangeLine" .. i] = new("LabelControl", { "LEFT", slider, "RIGHT", true }, { 4, -2, 350, labelFontSize }, function()
-			local modLine = self.displayItem.rangeLineList[i]
-			if self.displayItem and modLine then
-				local colour = modLine.mutated and colorCodes.MUTATED or "^7"
-				local text = table.concat(main:WrapString(modLine.line, labelFontSize, 370), "\n")
-				local _, lineCount = text:gsub("\n", "")
-				self.controls["displayItemStackedRangeLine" .. i].lineCount = lineCount + 1
-				return colour .. text
-			end
-			return ""
-		end)
-		self.controls["displayItemStackedRangeLine" .. i].shown = function()
-			return slider:IsShown() or box:IsShown()
-		end
-	end
-	-- Tooltip anchor
-	self.controls.displayItemTooltipAnchor = new("Control", {"TOPLEFT",self.controls.displayItemSectionRange,"BOTTOMLEFT"})
-
-	-- Scroll bars
-	self.controls.scrollBarH = new("ScrollBarControl", nil, {0, 0, 0, 18}, 100, "HORIZONTAL", true)
-	self.controls.scrollBarV = new("ScrollBarControl", nil, {0, 0, 18, 0}, 100, "VERTICAL", true)
-
-	-- Initialise drag target lists
-	t_insert(self.controls.itemList.dragTargetList, self.controls.sharedItemList)
-	t_insert(self.controls.itemList.dragTargetList, build.controls.mainSkillMinion)
-	t_insert(self.controls.uniqueDB.dragTargetList, self.controls.itemList)
-	t_insert(self.controls.uniqueDB.dragTargetList, self.controls.sharedItemList)
-	t_insert(self.controls.uniqueDB.dragTargetList, build.controls.mainSkillMinion)
-	t_insert(self.controls.rareDB.dragTargetList, self.controls.itemList)
-	t_insert(self.controls.rareDB.dragTargetList, self.controls.sharedItemList)
-	t_insert(self.controls.rareDB.dragTargetList, build.controls.mainSkillMinion)
-	t_insert(self.controls.sharedItemList.dragTargetList, self.controls.itemList)
-	t_insert(self.controls.sharedItemList.dragTargetList, build.controls.mainSkillMinion)
-	for _, slot in pairs(self.slots) do
-		t_insert(self.controls.itemList.dragTargetList, slot)
-		t_insert(self.controls.uniqueDB.dragTargetList, slot)
-		t_insert(self.controls.rareDB.dragTargetList, slot)
-		t_insert(self.controls.sharedItemList.dragTargetList, slot)
-	end
+	self.controls.displayItemRangeLine.list = { }
 
 	-- Initialise item sets
 	self.itemSets = { }
@@ -1265,9 +335,8 @@ function ItemsTabClass:Load(xml, dbFileName)
 			local slot = self.slots[node.attrib.name or ""]
 			if slot then
 				slot.selItemId = tonumber(node.attrib.itemId)
-				if slot.controls.activate then
+				if slot.slotName:match("Flask") then
 					slot.active = node.attrib.active == "true"
-					slot.controls.activate.state = slot.active
 				end
 			end
 		elseif node.elem == "ItemSet" then
@@ -1409,159 +478,6 @@ function ItemsTabClass:Save(xml)
 	end
 end
 
-function ItemsTabClass:Draw(viewPort, inputEvents)
-	self.x = viewPort.x
-	self.y = viewPort.y
-	self.width = viewPort.width
-	self.height = viewPort.height
-	self.controls.scrollBarH.width = viewPort.width
-	self.controls.scrollBarH.x = viewPort.x
-	self.controls.scrollBarH.y = viewPort.y + viewPort.height - 18
-	self.controls.scrollBarV.height = viewPort.height - 18
-	self.controls.scrollBarV.x = viewPort.x + viewPort.width - 18
-	self.controls.scrollBarV.y = viewPort.y
-	do
-		local maxY = select(2, self.lastSlot:GetPos()) + 24
-		local maxX = self.anchorDisplayItem:GetPos() + 462
-		if self.displayItem then
-			local x, y = self.controls.displayItemTooltipAnchor:GetPos()
-			local ttW, ttH = self.displayItemTooltip:GetDynamicSize(viewPort)
-			maxY = m_max(maxY, y + ttH + 4)
-			maxX = m_max(maxX, x + ttW + 80)
-		end
-		local contentHeight = maxY - self.y
-		local contentWidth = maxX - self.x
-		local v = contentHeight > viewPort.height
-		local h = contentWidth > viewPort.width - (v and 20 or 0)
-		if h then
-			v = contentHeight > viewPort.height - 20
-		end
-		self.controls.scrollBarV:SetContentDimension(contentHeight, viewPort.height - (h and 20 or 0))
-		self.controls.scrollBarH:SetContentDimension(contentWidth, viewPort.width - (v and 20 or 0))
-		if self.snapHScroll == "RIGHT" then
-			self.controls.scrollBarH:SetOffset(self.controls.scrollBarH.offsetMax)
-		elseif self.snapHScroll == "LEFT" then
-			self.controls.scrollBarH:SetOffset(0)
-		end
-		self.snapHScroll = nil
-		self.maxY = h and self.controls.scrollBarH.y or viewPort.y + viewPort.height
-	end
-	self.x = self.x - self.controls.scrollBarH.offset
-	self.y = self.y - self.controls.scrollBarV.offset
-
-	for _, event in ipairs(inputEvents) do
-		if event.type == "KeyDown" then
-			if event.key == "v" and IsKeyDown("CTRL") then
-				local newItem = Paste()
-				if newItem then
-					self:CreateDisplayItemFromRaw(newItem, true)
-				end
-			elseif event.key == "e" then
-				local mOverControl = self:GetMouseOverControl()
-				if mOverControl and mOverControl._className == "ItemSlotControl" and mOverControl.selItemId ~= 0 then
-					-- Trigger itemList's double click procedure
-					self.controls.itemList:OnSelClick(0, mOverControl.selItemId, true)
-				end
-			elseif event.key == "z" and IsKeyDown("CTRL") then
-				self:Undo()
-				self.build.buildFlag = true
-			elseif event.key == "y" and IsKeyDown("CTRL") then
-				self:Redo()
-				self.build.buildFlag = true
-			elseif event.key == "f" and IsKeyDown("CTRL") then
-				local selUnique = self.selControl == self.controls.uniqueDB.controls.search
-				local selRare = self.selControl == self.controls.rareDB.controls.search
-				if selUnique or (self.controls.selectDB:IsShown() and not selRare and self.controls.selectDB.selIndex == 2) then
-					self:SelectControl(self.controls.rareDB.controls.search)
-					self.controls.selectDB.selIndex = 2
-				else
-					self:SelectControl(self.controls.uniqueDB.controls.search)
-					self.controls.selectDB.selIndex = 1
-				end
-			elseif event.key == "d" and IsKeyDown("CTRL") then
-				self.showStatDifferences = not self.showStatDifferences
-				self.build.buildFlag = true
-			end
-		end
-	end
-	self:ProcessControlsInput(inputEvents, viewPort)
-	for _, event in ipairs(inputEvents) do
-		if event.type == "KeyUp" then
-			if self.controls.scrollBarV:IsScrollDownKey(event.key) then
-				if self.controls.scrollBarV:IsMouseOver() or not self.controls.scrollBarH:IsShown() then
-					self.controls.scrollBarV:Scroll(1)
-				else
-					self.controls.scrollBarH:Scroll(1)
-				end
-			elseif self.controls.scrollBarV:IsScrollUpKey(event.key) then
-				if self.controls.scrollBarV:IsMouseOver() or not self.controls.scrollBarH:IsShown() then
-					self.controls.scrollBarV:Scroll(-1)
-				else
-					self.controls.scrollBarH:Scroll(-1)
-				end
-			end
-		end
-	end
-
-	main:DrawBackground(viewPort)
-
-	local newItemList = { }
-	for index, itemSetId in ipairs(self.itemSetOrderList) do
-		local itemSet = self.itemSets[itemSetId]
-		t_insert(newItemList, itemSet.title or "Default")
-		if itemSetId == self.activeItemSetId then
-			self.controls.setSelect.selIndex = index
-		end
-	end
-	self.controls.setSelect:SetList(newItemList)
-
-	if self.displayItem then
-		local x, y = self.controls.displayItemTooltipAnchor:GetPos()
-		self.displayItemTooltip:Draw(x, y, nil, nil, viewPort)
-
-		-- Toggle mods
-		local cursorX, cursorY = GetCursorPos()
-		for _, line in ipairs(self.displayItemTooltip.lines) do
-			if line.modLine and line.bounds then
-				local b = line.bounds
-				if cursorX >= b.x and cursorX <= b.x + b.width and cursorY >= b.y and cursorY <= b.y + b.height then
-					SetDrawColor(1, 1, 1, 0.15)
-					DrawImage(nil, b.x, b.y, b.width, b.height)
-					SetDrawColor(1, 1, 1)
-
-					for id, event in ipairs(inputEvents) do
-						if event.type == "KeyDown" and event.key:match("BUTTON") then
-							inputEvents[id] = nil
-							self:ToggleDisplayItemModLine(line.modLine)
-							break
-						end
-					end
-				end
-			end
-		end
-	end
-
-	self:UpdateSockets()
-
-	if main.portraitMode then
-		self.controls.itemList:SetAnchor("TOPRIGHT", self.lastSlot, "BOTTOMRIGHT", 0, 40)
-	else
-		self.controls.itemList:SetAnchor("TOPLEFT", self.controls.setManage, "TOPRIGHT", 20, 20)
-	end
-	self.controls.craftDisplayItem:SetAnchor("TOPLEFT", main.portraitMode and self.controls.setManage or self.controls.itemList, "TOPRIGHT", 20, main.portraitMode and 0 or -20)
-	self.anchorDisplayItem:SetAnchor("TOPLEFT", main.portraitMode and self.controls.setManage or self.controls.itemList, "TOPRIGHT", 20, main.portraitMode and 0)
-
-	self:DrawControls(viewPort)
-	if self.controls.scrollBarH:IsShown() then
-		self.controls.scrollBarH:Draw(viewPort)
-	end
-	if self.controls.scrollBarV:IsShown() then
-		self.controls.scrollBarV:Draw(viewPort)
-	end
-
-	self.controls.specSelect:SetList(self.build.treeTab:GetSpecList())
-end
-
 -- Creates a new item set
 function ItemsTabClass:NewItemSet(itemSetId)
 	local itemSet = { id = itemSetId }
@@ -1599,9 +515,6 @@ function ItemsTabClass:SetActiveItemSet(itemSetId)
 			-- Equip the incoming set's item
 			slot.selItemId = curSet[slotName].selItemId
 			slot.active = curSet[slotName].active
-			if slot.controls.activate then
-				slot.controls.activate.state = slot.active
-			end
 		end
 	end
 	self.build.buildFlag = true
@@ -1903,7 +816,6 @@ function ItemsTabClass:UpdateDisplayItemVariantControls()
 
 	self.controls.displayItemVersion.list = item.versionList or { }
 	self.controls.displayItemVersion.selIndex = item.selectedVersion or 1
-	self.controls.displayItemVersion:CheckDroppedWidth(true)
 	local controlIndex = 1
 	for groupId in pairsSortByKey(item.variantGroups) do
 		local eligibleOptions = item:GetVariantGroupOptions(groupId, false)
@@ -1935,7 +847,6 @@ function ItemsTabClass:UpdateDisplayItemVariantControls()
 			control.variantGroupId = groupId
 			control.newVariantVisible = true
 			control.newVariantEnabled = #availableOptions > 1
-			control:CheckDroppedWidth(true)
 			controlIndex = controlIndex + 1
 		end
 	end
@@ -1945,83 +856,44 @@ end
 function ItemsTabClass:SetDisplayItem(item)
 	self.displayItem = item
 	if item then
-		-- Update the display item controls
+		-- Update the display item models
 		self:UpdateDisplayItemTooltip()
-		self.snapHScroll = "RIGHT"
 
 		if item.usesVariantGroups then
 			self:UpdateDisplayItemVariantControls()
 		else
 			self.controls.displayItemVariant.list = item.variantList
 			self.controls.displayItemVariant.selIndex = item.variant
-			self.controls.displayItemVariant:CheckDroppedWidth(true)
 		end
 		if not item.usesVariantGroups and item.hasAltVariant then
 			self.controls.displayItemAltVariant.list = item.variantList
 			self.controls.displayItemAltVariant.selIndex = item.variantAlt
-			self.controls.displayItemAltVariant:CheckDroppedWidth(true)
 		end
 		if not item.usesVariantGroups and item.hasAltVariant2 then
 			self.controls.displayItemAltVariant2.list = item.variantList
 			self.controls.displayItemAltVariant2.selIndex = item.variantAlt2
-			self.controls.displayItemAltVariant2:CheckDroppedWidth(true)
 		end
 		if not item.usesVariantGroups and item.hasAltVariant3 then
 			self.controls.displayItemAltVariant3.list = item.variantList
 			self.controls.displayItemAltVariant3.selIndex = item.variantAlt3
-			self.controls.displayItemAltVariant3:CheckDroppedWidth(true)
 		end
 		if not item.usesVariantGroups and item.hasAltVariant4 then
 			self.controls.displayItemAltVariant4.list = item.variantList
 			self.controls.displayItemAltVariant4.selIndex = item.variantAlt4
-			self.controls.displayItemAltVariant4:CheckDroppedWidth(true)
 		end
 		if not item.usesVariantGroups and item.hasAltVariant5 then
 			self.controls.displayItemAltVariant5.list = item.variantList
 			self.controls.displayItemAltVariant5.selIndex = item.variantAlt5
-			self.controls.displayItemAltVariant5:CheckDroppedWidth(true)
 		end
-		self:UpdateSocketControls()
 		if item.crafted then
 			self:UpdateAffixControls()
 		end
 
-		-- Set both influence dropdowns
-		local influence1 = 1
-		local influence2 = 1
-		local influenceDisplayList = { "Influence" }
-		for i, curInfluenceInfo in ipairs((item.canHaveEldritchInfluence or item.type == "Helmet" or item.type == "Body Armour" or item.type == "Gloves" or item.type == "Boots") and itemLib.influenceInfo.all or itemLib.influenceInfo.default) do
-			influenceDisplayList[i + 1] = curInfluenceInfo.display
-		end
-		self.controls.displayItemInfluence.list = influenceDisplayList
-		self.controls.displayItemInfluence2.list = influenceDisplayList
-		for i, curInfluenceInfo in ipairs(influenceInfo) do
-			if item[curInfluenceInfo.key] then
-				if influence1 == 1 then
-					influence1 = i + 1
-				elseif influence2 == 1 then
-					influence2 = i + 1
-					break
-				end
-			end
-		end
-		-- Initialising these controls must not re-craft the parsed item.
-		self.controls.displayItemInfluence:SetSel(influence1, true)
-		self.controls.displayItemInfluence2:SetSel(influence2, true)
-		self.controls.displayItemQualityEdit:SetText(item.quality)
-		self.controls.displayItemCatalyst:SetSel((item.catalyst or 0) + 1, true)
-		if item.catalystQuality then
-			self.controls.displayItemCatalystQualityEdit:SetText(m_max(item.catalystQuality, 0))
-		else
-			self.controls.displayItemCatalystQualityEdit:SetText(0)
-		end
 		self:UpdateCustomControls()
 		self:UpdateDisplayItemRangeLines()
 		if item.clusterJewel and item.crafted then
 			self:UpdateClusterJewelControls()
 		end
-	else
-		self.snapHScroll = "LEFT"
 	end
 end
 
@@ -2044,16 +916,6 @@ function ItemsTabClass:ToggleDisplayItemModLine(modLine)
 		self:UpdateAffixControls()
 	end
 	self.build.buildFlag = true
-end
-
-function ItemsTabClass:UpdateSocketControls()
-	local sockets = self.displayItem.sockets
-	for i = 1, #sockets - self.displayItem.abyssalSocketCount do
-		self.controls["displayItemSocket"..i]:SelByValue(sockets[i].color, "color")
-		if i > 1 then
-			self.controls["displayItemLink"..(i-1)].state = sockets[i].group == sockets[i-1].group
-		end
-	end
 end
 
 function ItemsTabClass:UpdateClusterJewelControls()
@@ -2102,6 +964,48 @@ function ItemsTabClass:CraftClusterJewel()
 		local drop = self.controls["displayItemAffix"..i]
 		drop.selFunc(drop.selIndex, drop.list[drop.selIndex])
 	end
+end
+
+-- Flips an affix range if it would form discontinuous values
+function ItemsTabClass:VerifyAffixRange(range, index, drop)
+	local priorMod = index - 1 > 0 and self.displayItem.affixes[drop.list[drop.selIndex].modList[index - 1]] or nil
+	local nextMod = index + 1 < #drop.list[drop.selIndex].modList and self.displayItem.affixes[drop.list[drop.selIndex].modList[index + 1]] or nil
+	local function flipRange(modA, modB) -- assumes all pairs are ordered the same
+		local function getMinMax(mod) -- gets first valid range from a mod
+			for _, line in ipairs(mod) do
+				local min, max = line:match("%((%d[%d%.]*)%-(%d[%d%.]*)%)")
+				if min and max then return tonumber(min), tonumber(max)	end
+			end
+		end
+
+		local minA, maxA = getMinMax(modA)
+		local minB, maxB = getMinMax(modB)
+
+		if not minA or not minB or not maxA or not maxB then
+			return false
+		end
+
+		local allInts = minA == m_floor(minA) and maxA == m_floor(maxA) and minB == m_floor(minB) and maxB == m_floor(maxB) -- if the mod goes in steps that aren't 1, then the code below this doesn't work
+		if (minA and minB and maxA and maxB and allInts) then
+			if (minA < minB) then -- ascending
+				return minA + 1 == maxB
+			else -- descending
+				return minA - 1 == maxB
+			end
+		end
+		return false
+	end
+
+	if priorMod then
+		if flipRange(priorMod, self.displayItem.affixes[drop.list[drop.selIndex].modList[index]]) then
+			range = 1 - range
+		end
+	elseif nextMod then
+		if flipRange(self.displayItem.affixes[drop.list[drop.selIndex].modList[index]], nextMod) then
+			range = 1 - range
+		end
+	end
+	return range
 end
 
 -- Update affix selection controls
@@ -2347,16 +1251,12 @@ function ItemsTabClass:UpdateCustomControls()
 				local line = itemLib.formatModLine(modLine)
 				if line then
 					if not self.controls["displayItemCustomModifierRemove"..i] then
-						self.controls["displayItemCustomModifierRemove"..i] = new("ButtonControl", {"TOPLEFT",self.controls.displayItemSectionCustom,"TOPLEFT"}, {0, i * 22 + 4, 70, 20}, "^7Remove")
-						self.controls["displayItemCustomModifier"..i] = new("LabelControl", {"LEFT",self.controls["displayItemCustomModifierRemove"..i],"RIGHT"}, {65, 0, 0, 16})
-						self.controls["displayItemCustomModifierLabel"..i] = new("LabelControl", {"LEFT",self.controls["displayItemCustomModifierRemove"..i],"RIGHT"}, {5, 0, 0, 16})
+						self.controls["displayItemCustomModifierRemove"..i] = new("Selector")
+						self.controls["displayItemCustomModifier"..i] = { }
+						self.controls["displayItemCustomModifierLabel"..i] = { }
 					end
 					self.controls["displayItemCustomModifierRemove"..i].shown = true
-					local label = itemLib.formatModLine(modLine)
-					if DrawStringCursorIndex(16, "VAR", label, 330, 10) < #label then
-						label = label:sub(1, DrawStringCursorIndex(16, "VAR", label, 310, 10)) .. "..."
-					end
-					self.controls["displayItemCustomModifier"..i].label = label
+					self.controls["displayItemCustomModifier"..i].label = line
 					self.controls["displayItemCustomModifierLabel"..i].label = modLine.crafted and " ^7Crafted:" or modLine.crucible and "^7Crucible:" or " ^7Custom:"
 					self.controls["displayItemCustomModifierRemove"..i].onClick = function()
 						if index > #item.explicitModLines then
@@ -2502,372 +1402,6 @@ function ItemsTabClass:IsItemValidForSlot(item, slotName, itemSet)
 	end
 end
 
--- Opens the item set manager
-function ItemsTabClass:OpenItemSetManagePopup()
-	local controls = { }
-	controls.setList = new("ItemSetListControl", nil, {-155, 50, 300, 200}, self)
-	controls.sharedList = new("SharedItemSetListControl", nil, {155, 50, 300, 200}, self)
-	controls.setList.dragTargetList = { controls.sharedList }
-	controls.sharedList.dragTargetList = { controls.setList }
-	controls.close = new("ButtonControl", nil, {0, 260, 90, 20}, "Done", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(630, 290, "Manage Item Sets", controls)
-end
-
--- Opens the item crafting popup
-function ItemsTabClass:CraftItem()
-	local controls = { }
-	local function makeItem(base)
-		local item = new("Item")
-		item.name = base.name
-		item.base = base.base
-		item.baseName = base.name
-		item.buffModLines = { }
-		item.enchantModLines = { }
-		item.classRequirementModLines = { }
-		item.scourgeModLines = { }
-		item.implicitModLines = { }
-		item.explicitModLines = { }
-		item.crucibleModLines = { }
-		if base.base.type == "Amulet" or base.base.type == "Belt" or base.base.type == "Jewel" or base.base.type == "Quiver" or base.base.type == "Ring" or base.base.type == "Graft" then
-			item.quality = nil
-		else
-			item.quality = 0
-		end
-		local raritySel = controls.rarity.selIndex
-		if base.base.flask
-				or (base.base.type == "Jewel" and base.base.subType == "Charm")
-		 		or base.base.type == "Tincture"
-		then
-			if raritySel == 3 then
-				raritySel = 2
-			end
-		end
-		if raritySel == 2 or raritySel == 3 then
-			item.crafted = true
-		end
-		item.rarity = controls.rarity.list[raritySel].rarity
-		if raritySel >= 3 then
-			item.title = controls.title.buf:match("%S") and controls.title.buf or "New Item"
-		end
-		if base.base.implicit then
-			local implicitIndex = 1
-			for line in base.base.implicit:gmatch("[^\n]+") do
-				local modList, extra = modLib.parseMod(line)
-				t_insert(item.implicitModLines, { line = line, extra = extra, modList = modList or { }, modTags = base.base.implicitModTypes and base.base.implicitModTypes[implicitIndex] or { } })
-				implicitIndex = implicitIndex + 1
-			end
-		end
-		item:NormaliseQuality()
-		item:BuildAndParseRaw()
-		return item
-	end
-	controls.rarityLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {50, 20, 0, 16}, "Rarity:")
-	controls.rarity = new("DropDownControl", nil, {-80, 20, 100, 18}, rarityDropList)
-	controls.rarity.selIndex = self.lastCraftRaritySel or 3
-	controls.title = new("EditControl", nil, {70, 20, 190, 18}, "", "Name")
-	controls.title.shown = function()
-		return controls.rarity.selIndex >= 3
-	end
-	controls.typeLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {50, 45, 0, 16}, "Type:")
-	controls.type = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {55, 45, 295, 18}, self.build.data.itemBaseTypeList, function(index, value)
-		controls.base.list = self.build.data.itemBaseLists[self.build.data.itemBaseTypeList[index]]
-		controls.base.selIndex = 1
-	end)
-	controls.type.selIndex = self.lastCraftTypeSel or 1
-	controls.baseLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {50, 70, 0, 16}, "Base:")
-	controls.base = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {55, 70, 200, 18}, self.build.data.itemBaseLists[self.build.data.itemBaseTypeList[controls.type.selIndex]])
-	controls.base.selIndex = self.lastCraftBaseSel or 1
-	controls.base.tooltipFunc = function(tooltip, mode, index, value)
-		tooltip:Clear()
-		if mode ~= "OUT" then
-			self:AddItemTooltip(tooltip, makeItem(value), nil, true)
-		end
-	end
-	controls.save = new("ButtonControl", nil, {-45, 100, 80, 20}, "Create", function()
-		main:ClosePopup()
-		local item = makeItem(controls.base.list[controls.base.selIndex])
-		self:SetDisplayItem(item)
-		if not item.crafted and item.rarity ~= "NORMAL" then
-			self:EditDisplayItemText()
-		end
-		self.lastCraftRaritySel = controls.rarity.selIndex
-		self.lastCraftTypeSel = controls.type.selIndex
-		self.lastCraftBaseSel = controls.base.selIndex
-	end)
-	controls.cancel = new("ButtonControl", nil, {45, 100, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(370, 130, "Craft Item", controls)
-end
-
--- Opens the item text editor popup
-function ItemsTabClass:EditDisplayItemText(alsoAddItem)
-	local controls = { }
-	local function buildRaw()
-		local editBuf = controls.edit.buf
-		if editBuf:match("^Item Class: .*\nRarity: ") or editBuf:match("^Rarity: ") then
-			return editBuf
-		else
-			return "Rarity: "..controls.rarity.list[controls.rarity.selIndex].rarity.."\n"..controls.edit.buf
-		end
-	end
-	controls.rarity = new("DropDownControl", nil, {-190, 10, 100, 18}, rarityDropList)
-	controls.edit = new("EditControl", nil, {0, 40, 480, 420}, "", nil, "^%C\t\n", nil, nil, 14)
-	if self.displayItem then
-		controls.edit:SetText(self.displayItem:BuildRaw():gsub("Rarity: %w+\n",""))
-		controls.rarity:SelByValue(self.displayItem.rarity, "rarity")
-	else
-		controls.rarity.selIndex = 3
-	end
-	controls.edit.font = "FIXED"
-	controls.edit.pasteFilter = sanitiseText
-	controls.save = new("ButtonControl", nil, {-45, 470, 80, 20}, self.displayItem and "Save" or "Create", function()
-		local id = self.displayItem and self.displayItem.id
-		self:CreateDisplayItemFromRaw(buildRaw(), not self.displayItem)
-		self.displayItem.id = id
-		if alsoAddItem then
-			self:AddDisplayItem()
-		end
-		main:ClosePopup()
-	end, nil, true)
-	controls.save.enabled = function()
-		local item = new("Item", buildRaw())
-		return item.base ~= nil
-	end
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		local item = new("Item", buildRaw())
-		if item.base then
-			self:AddItemTooltip(tooltip, item, nil, true)
-		else
-			tooltip:AddLine(14, "The item is invalid.")
-			tooltip:AddLine(14, "Check that the item's title and base name are in the correct format.")
-			tooltip:AddLine(14, "For Rare and Unique items, the first 2 lines must be the title and base name. E.g.:")
-			tooltip:AddLine(14, "Abberath's Horn")
-			tooltip:AddLine(14, "Goat's Horn")
-			tooltip:AddLine(14, "For Normal and Magic items, the base name must be somewhere in the first line. E.g.:")
-			tooltip:AddLine(14, "Scholar's Platinum Kris of Joy")
-		end
-	end
-	controls.cancel = new("ButtonControl", nil, {45, 470, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(500, 500, self.displayItem and "Edit Item Text" or "Create Custom Item from Text", controls, nil, "edit")
-end
-
--- Opens the item enchanting popup
-function ItemsTabClass:EnchantDisplayItem(enchantSlot)
-	self.enchantSlot = enchantSlot or 1
-
-	local controls = { }
-	local enchantments = self.displayItem.enchantments
-	local haveSkills = true
-	for _, source in ipairs(self.build.data.enchantmentSource) do
-		if self.displayItem.enchantments[source.name] then
-			haveSkills = false
-			break
-		end
-	end
-	local skillList = { }
-	local skillsUsed = { }
-	if haveSkills then
-		for _, socketGroup in ipairs(self.build.skillsTab.socketGroupList) do
-			for _, gemInstance in ipairs(socketGroup.gemList) do
-				if gemInstance.gemData then
-					for _, grantedEffect in ipairs(gemInstance.gemData.grantedEffectList) do
-						if not grantedEffect.support and enchantments[grantedEffect.name] then
-							skillsUsed[grantedEffect.name] = true
-						end
-					end
-				end
-			end
-		end
-	end
-	local function buildSkillList(onlyUsedSkills)
-		wipeTable(skillList)
-		for skillName in pairs(enchantments) do
-			if not onlyUsedSkills or not next(skillsUsed) or skillsUsed[skillName] then
-				t_insert(skillList, skillName)
-			end
-		end
-		table.sort(skillList)
-	end
-	local enchantmentSourceList = { }
-	local function buildEnchantmentSourceList()
-		wipeTable(enchantmentSourceList)
-		local list = haveSkills and enchantments[skillList[controls.skill and controls.skill.selIndex or 1]] or enchantments
-		for _, source in ipairs(self.build.data.enchantmentSource) do
-			if list[source.name] then
-				t_insert(enchantmentSourceList, source)
-			end
-		end
-	end
-	local enchantmentList = { }
-	local sortList, sortStats = buildModSortList()
-	local function setDefaultSortOrder()
-		for index, entry in ipairs(enchantmentList) do
-			entry.defaultSortOrder = index
-			entry.sortValue = nil
-			entry.sortValues = nil
-		end
-	end
-	local function buildEnchantmentList()
-		wipeTable(enchantmentList)
-		local list = haveSkills and enchantments[skillList[controls.skill and controls.skill.selIndex or 1]] or enchantments
-		for _, enchantment in ipairs(list[enchantmentSourceList[controls.enchantmentSource and controls.enchantmentSource.selIndex or 1].name]) do
-			t_insert(enchantmentList, { label = enchantment, line = enchantment })
-		end
-		setDefaultSortOrder()
-	end
-	if haveSkills then
-		buildSkillList(true)
-	end
-	buildEnchantmentSourceList()
-	buildEnchantmentList()
-	local function enchantItem(idx, remove)
-		local item = new("Item", self.displayItem:BuildRaw())
-		local index = idx or controls.enchantment.selIndex
-		item.id = self.displayItem.id
-		local entry = enchantmentList[index]
-		if remove then
-			t_remove(item.enchantModLines, self.enchantSlot)
-		elseif entry then
-			local line = entry.line
-			local first, second = line:match("([^/]+)/([^/]+)")
-			if first then
-				item.enchantModLines = { { crafted = true, line = first }, { crafted = true, line = second } }
-			else
-				if not item.canHaveTwoEnchants and #item.enchantModLines > 1 then
-					item.enchantModLines = { item.enchantModLines[1] }
-				end
-				if #item.enchantModLines >= self.enchantSlot then
-					t_remove(item.enchantModLines, self.enchantSlot)
-				end
-				t_insert(item.enchantModLines, self.enchantSlot, { crafted = true, line = line })
-			end
-		end
-		item:BuildAndParseRaw()
-		return item
-	end
-	local function getSortValue(entry, stat, calcFunc, slotName, useFullDPS)
-		entry.sortValues = entry.sortValues or { }
-		if entry.sortValues[stat] ~= nil then
-			return entry.sortValues[stat]
-		end
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		local line = entry.line
-		local first, second = line:match("([^/]+)/([^/]+)")
-		if first then
-			item.enchantModLines = { { crafted = true, line = first }, { crafted = true, line = second } }
-		else
-			if not item.canHaveTwoEnchants and #item.enchantModLines > 1 then
-				item.enchantModLines = { item.enchantModLines[1] }
-			end
-			if #item.enchantModLines >= self.enchantSlot then
-				t_remove(item.enchantModLines, self.enchantSlot)
-			end
-			t_insert(item.enchantModLines, self.enchantSlot, { crafted = true, line = line })
-		end
-		item:BuildAndParseRaw()
-		local output = calcFunc({ repSlotName = slotName, repItem = item }, useFullDPS)
-		local value = data.powerStatList.GetFromOutput(output, sortStats[stat])
-		entry.sortValues[stat] = value
-		return value
-	end
-	local function applySort(stat, selectFirst)
-		if not controls.enchantment or not controls.enchantment:IsShown() then
-			return
-		end
-		local selected = not selectFirst and enchantmentList[controls.enchantment.selIndex] or nil
-		if stat then
-			local slotName = self.displayItem:GetPrimarySlot()
-			local calcFunc = self.build.calcsTab:GetMiscCalculator()
-			local useFullDPS = stat == "FullDPS"
-			for _, entry in ipairs(enchantmentList) do
-				entry.sortValue = getSortValue(entry, stat, calcFunc, slotName, useFullDPS)
-			end
-			table.sort(enchantmentList, function(a, b)
-				if a.sortValue ~= b.sortValue then
-					return a.sortValue > b.sortValue
-				end
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		else
-			table.sort(enchantmentList, function(a, b)
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		end
-		controls.enchantment:UpdateSearch()
-		if selected then
-			for index, entry in ipairs(enchantmentList) do
-				if entry == selected then
-					controls.enchantment.selIndex = index
-					break
-				end
-			end
-		else
-			controls.enchantment:SetSel(1, true)
-		end
-	end
-	if haveSkills then
-		controls.skillLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 20, 0, 16}, "^7Skill:")
-		controls.skill = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 20, 180, 18}, skillList, function(index, value)
-			buildEnchantmentSourceList()
-			buildEnchantmentList()
-			controls.enchantment:SetSel(1)
-			if controls.sort then
-				applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-			end
-		end)
-		controls.allSkills = new("CheckBoxControl", {"TOPLEFT",nil,"TOPLEFT"}, {350, 20, 18}, "All skills:", function(state)
-			buildSkillList(not state)
-			controls.skill:SetSel(1)
-			buildEnchantmentList()
-			controls.enchantment:SetSel(1)
-			if controls.sort then
-				applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-			end
-		end)
-		controls.allSkills.tooltipText = "Show all skills, not just those used by this build."
-		if not next(skillsUsed) then
-			controls.allSkills.state = true
-			controls.allSkills.enabled = false
-		end
-	end
-	controls.enchantmentSourceLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 45, 0, 16}, "^7Source:")
-	controls.enchantmentSource = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 45, 180, 18}, enchantmentSourceList, function(index, value)
-		buildEnchantmentList()
-		controls.enchantment:SetSel(m_min(controls.enchantment.selIndex, #enchantmentList))
-		if controls.sort then
-			applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-		end
-	end)
-	controls.sortLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {350, 45, 0, 16}, "^7Sort by:")
-	controls.sort = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {355, 45, 240, 18}, sortList, function(index, value)
-		applySort(value.stat, true)
-	end)
-	controls.enchantmentLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 70, 0, 16}, "^7Enchantment:")
-	controls.enchantment = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 70, 495, 18}, enchantmentList)
-	controls.enchantment.tooltipFunc = function(tooltip, mode, index)
-		tooltip:Clear()
-		self:AddItemTooltip(tooltip, enchantItem(index), nil, true)
-	end
-	controls.save = new("ButtonControl", nil, {-88, 100, 80, 20}, "Enchant", function()
-		self:SetDisplayItem(enchantItem())
-		main:ClosePopup()
-	end)
-	controls.remove = new("ButtonControl", nil, {0, 100, 80, 20}, "Remove", function()
-		self:SetDisplayItem(enchantItem(nil, true))
-		main:ClosePopup()
-	end)
-	controls.close = new("ButtonControl", nil, {88, 100, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(605, 130, "Enchant Item", controls)
-end
 
 ---Gets the name of the anointed node on an item
 ---@param item table @The item to get the anoint from
@@ -2974,1166 +1508,7 @@ function ItemsTabClass:AppendAddedNotableTooltip(tooltip, node)
 	end
 end
 
--- Opens the item anointing popup
-function ItemsTabClass:AnointDisplayItem(enchantSlot)
-	self.anointEnchantSlot = enchantSlot or 1
 
-	local controls = { }
-	controls.notableDB = new("NotableDBControl", {"TOPLEFT",nil,"TOPLEFT"}, {10, 60, 360, 360}, self, self.build.spec.tree.nodes, "ANOINT")
-
-	local function saveLabel()
-		local node = controls.notableDB.selValue
-		if node then
-			return "Anoint " .. node.dn
-		end
-		local curAnoints = self:getAnoint(self.displayItem)
-		if curAnoints and #curAnoints >= self.anointEnchantSlot then
-			return "Remove "..curAnoints[self.anointEnchantSlot]
-		end
-		return "No Anoint"
-	end
-	local function saveLabelWidth()
-		local label = saveLabel()
-		return DrawStringWidth(16, "VAR", label) + 10
-	end
-	local function saveLabelX()
-		local width = saveLabelWidth()
-		return -(width + 90) / 2
-	end
-	controls.save = new("ButtonControl", {"BOTTOMLEFT", nil, "BOTTOM" }, {saveLabelX, -4, saveLabelWidth, 20}, saveLabel, function()
-		self:SetDisplayItem(self:anointItem(controls.notableDB.selValue))
-		main:ClosePopup()
-	end)
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		self:AppendAnointTooltip(tooltip, controls.notableDB.selValue)
-	end
-	controls.close = new("ButtonControl", {"TOPLEFT", controls.save, "TOPRIGHT" }, {10, 0, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(380, 448, "Anoint Item", controls)
-end
-
--- Opens the item corrupting popup
-function ItemsTabClass:CorruptDisplayItem(modType)
-	local currentModType = modType or "Corrupted"
-	local controls = { }
-	local implicitList = { }
-	local shownExplicits = {}
-	local explicitOffset = 0
-	local corruptedRanges = {}
-	local sourceList = { "Corrupted", "Scourge" }
-	local sortList, sortStats = buildModSortList()
-	local function buildImplicitList(modType)
-		if implicitList[modType] then
-			return
-		end
-		implicitList[modType] = {}
-		for modId, mod in pairs(self.displayItem.affixes) do
-			if mod.type == modType and self.displayItem:GetModSpawnWeight(mod) > 0 then
-				t_insert(implicitList[modType], { mod = mod })
-			end
-		end
-		table.sort(implicitList[modType], function(a, b)
-			local an = a.mod[1]:lower():gsub("%(.-%)","$"):gsub("[%+%-%%]",""):gsub("%d+","$")
-			local bn = b.mod[1]:lower():gsub("%(.-%)","$"):gsub("[%+%-%%]",""):gsub("%d+","$")
-			if an ~= bn then
-				return an < bn
-			else
-				return a.mod.level < b.mod.level
-			end
-		end)
-		for index, entry in ipairs(implicitList[modType]) do
-			entry.defaultSortOrder = index
-		end
-	end
-	buildImplicitList(currentModType)
-	local function buildList(control, other, modType)
-		local selfMod = control.selIndex and control.selIndex > 1 and control.list[control.selIndex].mod
-		local otherMod = other and other.selIndex and other.selIndex > 1 and other.list[other.selIndex].mod
-		wipeTable(control.list)
-		t_insert(control.list, { label = "None" })
-		for _, entry in ipairs(implicitList[modType]) do
-			local mod = entry.mod
-			if not otherMod or mod.group ~= otherMod.group then
-				t_insert(control.list, { label = table.concat(mod, "/"), mod = mod })
-			end
-		end
-		control:SelByValue(selfMod, "mod")
-	end
-	local function getSortValue(entry, modType, stat, calcFunc, slotName, useFullDPS)
-		entry.sortValues = entry.sortValues or { }
-		if entry.sortValues[stat] ~= nil then
-			return entry.sortValues[stat]
-		end
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		item.corrupted = true
-		local mod = entry.mod
-		local targetLines = modType == "Corrupted" and item.implicitModLines or item.scourgeModLines
-		wipeTable(targetLines)
-		for _, modLine in ipairs(mod) do
-			modLine = (currentModType == "ScourgeUpside" and "{scourge}" or "") .. modLine
-			if mod.modTags[1] then
-				t_insert(targetLines, { line = "{tags:" .. table.concat(mod.modTags, ",") .. "}" .. modLine })
-			else
-				t_insert(targetLines, { line = modLine })
-			end
-		end
-		item:BuildAndParseRaw()
-		local output = calcFunc({ repSlotName = slotName, repItem = item }, useFullDPS)
-		local value = data.powerStatList.GetFromOutput(output, sortStats[stat])
-		entry.sortValues[stat] = value
-		return value
-	end
-	local function sortModType(modType, stat, calcFunc, slotName, useFullDPS)
-		if not implicitList[modType] then
-			return
-		end
-		if stat then
-			for _, entry in ipairs(implicitList[modType]) do
-				entry.sortValue = getSortValue(entry, modType, stat, calcFunc, slotName, useFullDPS)
-			end
-			table.sort(implicitList[modType], function(a, b)
-				if a.sortValue ~= b.sortValue then
-					return a.sortValue > b.sortValue
-				end
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		else
-			table.sort(implicitList[modType], function(a, b)
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		end
-	end
-	local function applySort(stat)
-		if not controls.implicit1 then
-			return
-		end
-		local slotName = self.displayItem:GetPrimarySlot()
-		local calcFunc = stat and self.build.calcsTab:GetMiscCalculator() or nil
-		local useFullDPS = stat == "FullDPS"
-		if currentModType == "Corrupted" then
-			sortModType("Corrupted", stat, calcFunc, slotName, useFullDPS)
-		else
-			sortModType("ScourgeUpside", stat, calcFunc, slotName, useFullDPS)
-			sortModType("ScourgeDownside", stat, calcFunc, slotName, useFullDPS)
-		end
-		if currentModType == "Corrupted" then
-			buildList(controls.implicit1, controls.implicit2, currentModType)
-			buildList(controls.implicit2, controls.implicit1, currentModType)
-		else
-			buildList(controls.implicit1, controls.implicit2, "ScourgeUpside")
-			buildList(controls.implicit2, controls.implicit1, "ScourgeUpside")
-			buildList(controls.implicit3, controls.implicit4, "ScourgeDownside")
-			buildList(controls.implicit4, controls.implicit3, "ScourgeDownside")
-		end
-		controls.implicit1:UpdateSearch()
-		controls.implicit2:UpdateSearch()
-		if controls.implicit3 then controls.implicit3:UpdateSearch() end
-		if controls.implicit4 then controls.implicit4:UpdateSearch() end
-	end
-	local function corruptItem(addingImplicits)
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		item.corrupted = true
-		-- either add implicits or roll ranges. if in the future it is possible
-		-- to double corrupt an item, this needs to be changed to not remove
-		-- implicits, like in pob2
-		if addingImplicits then
-			local newImplicit = {}
-			for _, control in ipairs { controls.implicit1, controls.implicit2, controls.implicit3, controls.implicit4 } do
-				if control.selIndex > 1 then
-					local mod = control.list[control.selIndex].mod
-					for _, modLine in ipairs(mod) do
-						modLine = (currentModType == "ScourgeUpside" and "{scourge}" or "") .. modLine
-						if mod.modTags[1] then
-							t_insert(newImplicit, { line = "{tags:" .. table.concat(mod.modTags, ",") .. "}" .. modLine })
-						else
-							t_insert(newImplicit, { line = modLine })
-						end
-					end
-				end
-			end
-			if #newImplicit > 0 then
-				wipeTable(currentModType == "Corrupted" and item.implicitModLines or item.scourgeModLines)
-				for i, implicit in ipairs(newImplicit) do
-					t_insert(currentModType == "Corrupted" and item.implicitModLines or item.scourgeModLines, i, implicit)
-				end
-			end
-		end
-		if not addingImplicits then
-			for i, modLine in ipairs(item.explicitModLines) do
-				local corruptedRange = corruptedRanges[i]
-				if corruptedRange then
-					modLine.corruptedRange = corruptedRange ~= 1 and corruptedRange or nil
-				end
-			end
-		end
-		item:BuildAndParseRaw()
-		return item
-	end
-	if self.displayItem.rarity == "UNIQUE" or self.displayItem.rarity == "RELIC" then
-		local item = new("Item", self.displayItem:BuildRaw())
-		local offset = 20
-		for i, mod in ipairs(item.explicitModLines) do
-			local modRange = mod.range or main.defaultItemAffixQuality
-			if itemLib.isModLineScalable(mod.line, modRange, mod.valueScalar) and item:CheckModLineVariant(mod) then
-				local function formatLabel(corruptedRange)
-					local line = itemLib.applyRange(mod.line, modRange, mod.valueScalar or 1, corruptedRange)
-					local lines = main:WrapString("^7" .. line, 16, 430)
-					return table.concat(lines, "\n"), #lines
-				end
-				controls["rollRangeValue" .. i] = new("LabelControl", { "TOPLEFT", nil, "TOPLEFT" },
-					{ 10, 10 + offset, 200, 16 }, "^71.00")
-				controls["rollRangeSlider" .. i] = new("SliderControl",
-					{ "LEFT", controls["rollRangeValue" .. i], "RIGHT" }, { 5, 0, 80, 18 }, function(val)
-						corruptedRanges[i] = 0.78 + round(0.44 * val, 2) -- 0.78-1.22
-						controls["rollRangeValue" .. i].label = "^7" .. string.format("%.2f", corruptedRanges[i])
-						controls["rollRangeLabel" .. i].label = formatLabel(corruptedRanges[i])
-					end)
-				corruptedRanges[i] = mod.corruptedRange or 1
-				controls["rollRangeSlider" .. i].val = ((corruptedRanges[i]) - 0.78) / 0.44
-				controls["rollRangeValue" .. i].label = "^7" .. string.format("%.2f", corruptedRanges[i])
-				local label, lineCount = formatLabel(corruptedRanges[i])
-				offset = offset + 16 * (lineCount - 1)
-				controls["rollRangeLabel" .. i] = new("LabelControl",
-					{ "LEFT", controls["rollRangeSlider" .. i], "RIGHT" },
-					{ 5, 0, 200, 16 }, label)
-				-- hide them by default as they are a secondary window
-				controls["rollRangeLabel" .. i].shown = false
-				controls["rollRangeSlider" .. i].shown = false
-				controls["rollRangeValue" .. i].shown = false
-				offset = offset + 20
-				t_insert(shownExplicits, i)
-			end
-		end
-		explicitOffset = offset
-	end
-	local function setImplicitControlsShown(implicitNum, canChangeImplicits)
-		for i = 1, 4 do
-			local shown = canChangeImplicits and i <= implicitNum
-			controls["implicit" .. i].shown = shown
-			controls["implicit" .. i .. "Label"].shown = shown
-		end
-		controls.implicitCannotBeChangedLabel.shown = implicitNum > 0 and not canChangeImplicits
-	end
-	controls.implicits = new("ButtonControl", { "TOPLEFT", nil, "TOPLEFT" }, { 5, 5, 80, 20 }, "Implicits",
-		function()
-			local implicitNum = currentModType == "Corrupted" and 2 or 4
-			local canChangeImplicits = currentModType ~= "Corrupted" or not self.displayItem.implicitsCannotBeChanged
-			setImplicitControlsShown(implicitNum, canChangeImplicits)
-			for _, i in ipairs(shownExplicits) do
-				controls["rollRangeLabel" .. i].shown = false
-				controls["rollRangeSlider" .. i].shown = false
-				controls["rollRangeValue" .. i].shown = false
-			end
-			controls.source.shown = true
-			controls.sourceLabel.shown = true
-			controls.sort.shown = true
-			controls.sortLabel.shown = true
-			main.popups[1].height = 103 + 20 * implicitNum
-		end)
-	controls.implicits.shown = function()
-		return self.displayItem.rarity == "UNIQUE" or self.displayItem.rarity == "RELIC"
-	end
-	controls.rolls = new("ButtonControl", { "LEFT", controls.implicits, "RIGHT" }, { 5, 0, 80, 20 },
-		"Roll Ranges",
-		function()
-			setImplicitControlsShown(0, false)
-			for _, i in ipairs(shownExplicits) do
-				controls["rollRangeLabel" .. i].shown = true
-				controls["rollRangeSlider" .. i].shown = true
-				controls["rollRangeValue" .. i].shown = true
-			end
-			controls.source.shown = false
-			controls.sourceLabel.shown = false
-			controls.sort.shown = false
-			controls.sortLabel.shown = false
-			main.popups[1].height = 55 + explicitOffset
-		end)
-	controls.rolls.shown = function()
-		return self.displayItem.rarity == "UNIQUE" or self.displayItem.rarity == "RELIC"
-	end
-	controls.sourceLabel = new("LabelControl", { "TOPRIGHT", nil, "TOPLEFT" }, { 95, 30, 0, 16 },
-		"^7Source:")
-	controls.source = new("DropDownControl", { "TOPLEFT", nil, "TOPLEFT" }, { 100, 30, 150, 18 },
-		sourceList, function(index, value)
-			if value == "Scourge" then
-				currentModType = "ScourgeUpside"
-				buildImplicitList("ScourgeUpside")
-				buildImplicitList("ScourgeDownside")
-				local implicitNum = (self.displayItem.rarity == "UNIQUE" or self.displayItem.rarity == "RELIC") and 4 or 3
-				setImplicitControlsShown(implicitNum, true)
-				main.popups[1].height = 103 + 20 * implicitNum
-				buildList(controls.implicit3, controls.implicit4, "ScourgeDownside")
-				buildList(controls.implicit4, controls.implicit3, "ScourgeDownside")
-			else
-				currentModType = value
-				setImplicitControlsShown(2, not self.displayItem.implicitsCannotBeChanged)
-				main.popups[1].height = 103 + 20 * 2
-			end
-			if controls.sort then
-				applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-			else
-				buildList(controls.implicit1, controls.implicit2, currentModType)
-				buildList(controls.implicit2, controls.implicit1, currentModType)
-			end
-			controls.implicit1:SetSel(1)
-			controls.implicit2:SetSel(1)
-			controls.implicit3:SetSel(1)
-			controls.implicit4:SetSel(1)
-		end)
-	controls.source.enabled = #sourceList > 1
-	controls.sortLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {350, 20, 0, 16}, "^7Sort by:")
-	controls.sort = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {355, 20, 240, 18}, sortList, function(index, value)
-		applySort(value.stat)
-	end)
-	local implicitRowSize = 20
-	local implicitYPos = 35
-	controls.implicitCannotBeChangedLabel = new("LabelControl", { "TOPLEFT", nil, "TOPLEFT" }, { 20, implicitYPos + implicitRowSize, 0, 20 }, "^7This Items Implicits Cannot Be Changed")
-	controls.implicitCannotBeChangedLabel.shown = self.displayItem.implicitsCannotBeChanged
-	for i = 1, 4 do
-		local controlName = "implicit" .. i
-		controls[controlName .. "Label"] = new("LabelControl", { "TOPRIGHT", nil, "TOPLEFT" }, { 75, implicitYPos + i * implicitRowSize, 0, 16 },
-			string.format("^7Implicit #%d:", i))
-		controls[controlName] = new("DropDownControl", { "TOPLEFT", nil, "TOPLEFT" }, { 80, implicitYPos + i * implicitRowSize, 440, 18 }, nil)
-		controls[controlName].tooltipFunc = function(tooltip, mode, index, value)
-			tooltip:Clear()
-			if mode ~= "OUT" and value and value.mod then
-				for _, line in ipairs(value.mod) do
-					tooltip:AddLine(16, "^7" .. line)
-				end
-				self:AddModComparisonTooltip(tooltip, value.mod)
-			end
-		end
-		local shownVal
-		if i < 3 then
-			shownVal = not self.displayItem.implicitsCannotBeChanged
-		else
-			shownVal = false
-		end
-		controls[controlName].shown = shownVal
-		controls[controlName .. "Label"].shown = shownVal
-	end
-	for i = 1, 4 do
-		controls["implicit" .. i].selFunc = function()
-			local otherIdx = (i % 2 == 0) and (i - 1) or (i + 1)
-			-- remove selected entry from other dropdown of the same type
-			buildList(controls["implicit" .. otherIdx], controls["implicit" .. i], i < 3 and currentModType or "ScourgeDownside")
-		end
-		if i < 3 then
-			controls["implicit" .. i].selFunc()
-		end
-	end
-	controls.save = new("ButtonControl", { "BOTTOM", nil, "BOTTOM" }, { -45, -4, 80, 20 }, modType, function()
-		self:SetDisplayItem(corruptItem(controls.implicit1.shown))
-		main:ClosePopup()
-	end)
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		self:AddItemTooltip(tooltip, corruptItem(controls.implicit1.shown), nil, false)
-	end
-	controls.close = new("ButtonControl", { "BOTTOM", nil, "BOTTOM" }, { 45, -4, 80, 20 }, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(605, 103 + 20 * 2, modType .. " Item", controls)
-end
-
--- Opens the custom modifier popup
-function ItemsTabClass:AddCustomModifierToDisplayItem()
-	local controls = { }
-	local sourceList = { }
-	local modList = { }
-	local sortList, sortStats = buildModSortList()
-	local function setDefaultSortOrder()
-		for index, listMod in ipairs(modList) do
-			listMod.defaultSortOrder = index
-			listMod.sortValue = nil
-			listMod.sortValues = nil
-		end
-	end
-	local function getSortValue(listMod, stat, calcFunc, slotName, useFullDPS)
-		listMod.sortValues = listMod.sortValues or { }
-		if listMod.sortValues[stat] ~= nil then
-			return listMod.sortValues[stat]
-		end
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		for _, line in ipairs(listMod.mod) do
-			t_insert(item.explicitModLines, { line = checkLineForAllocates(line, self.build.spec.nodes), modTags = listMod.mod.modTags, [listMod.type] = true })
-		end
-		item:BuildAndParseRaw()
-		local output = calcFunc({ repSlotName = slotName, repItem = item }, useFullDPS)
-		local value = data.powerStatList.GetFromOutput(output, sortStats[stat])
-		listMod.sortValues[stat] = value
-		return value
-	end
-	local function applySort(stat, selectFirst)
-		if not controls.modSelect or not controls.modSelect:IsShown() then
-			return
-		end
-		local selected = not selectFirst and modList[controls.modSelect.selIndex] or nil
-		if stat then
-			local slotName = self.displayItem:GetPrimarySlot()
-			local calcFunc = self.build.calcsTab:GetMiscCalculator()
-			local useFullDPS = stat == "FullDPS"
-			for _, listMod in ipairs(modList) do
-				listMod.sortValue = getSortValue(listMod, stat, calcFunc, slotName, useFullDPS)
-			end
-			table.sort(modList, function(a, b)
-				if a.sortValue ~= b.sortValue then
-					return a.sortValue > b.sortValue
-				end
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		else
-			table.sort(modList, function(a, b)
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		end
-		controls.modSelect:UpdateSearch()
-		if selected then
-			for index, listMod in ipairs(modList) do
-				if listMod == selected then
-					controls.modSelect.selIndex = index
-					break
-				end
-			end
-		else
-			controls.modSelect:SetSel(1, true)
-		end
-	end
-	---Mutates modList to contain mods from the specified source
-	---@param sourceId string @The crafting source id to build the list of mods for
-	local function buildMods(sourceId)
-		wipeTable(modList)
-		if sourceId == "MASTER" then
-			local excludeGroups = { }
-			for _, modLine in ipairs({ self.displayItem.prefixes, self.displayItem.suffixes }) do
-				for i = 1, (modLine.limit or (self.displayItem.affixLimit / 2)) do
-					if modLine[i] and modLine[i].modId ~= "None" then
-						excludeGroups[self.displayItem.affixes[modLine[i].modId].group] = true
-					end
-				end
-			end
-			for i, craft in ipairs(self.build.data.masterMods) do
-				if craft.types[self.displayItem.type] and not excludeGroups[craft.group] then
-					t_insert(modList, {
-						label = table.concat(craft, "/") .. " ^8(" .. craft.type .. ")",
-						mod = craft,
-						type = "crafted",
-						affixType = craft.type,
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				if a.affixType ~= b.affixType then
-					return a.affixType == "Prefix" and b.affixType == "Suffix"
-				else
-					return a.defaultOrder < b.defaultOrder
-				end
-			end)
-		elseif sourceId == "ESSENCE" then
-			for _, essence in pairs(self.build.data.essences) do
-				local modId = essence.mods[self.displayItem.type]
-				local mod = self.displayItem.affixes[modId]
-				t_insert(modList, {
-					label = essence.name .. "   " .. "^8[" .. table.concat(mod, "/") .. "]" .. " (" .. mod.type .. ")",
-					mod = mod,
-					type = "custom",
-					essence = essence,
-				})
-			end
-			table.sort(modList, function(a, b)
-				if a.essence.type ~= b.essence.type then
-					return a.essence.type > b.essence.type
-				else
-					return a.essence.tier > b.essence.tier
-				end
-			end)
-		elseif sourceId == "PREFIX" or sourceId == "SUFFIX" then
-			for _, mod in pairs(self.displayItem.affixes) do
-				if sourceId:lower() == mod.type:lower() and self.displayItem:GetModSpawnWeight(mod) > 0 then
-					t_insert(modList, {
-						label = mod.affix .. "   ^8[" .. table.concat(mod, "/") .. "]",
-						mod = mod,
-						type = "custom",
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				local modA = a.mod
-				local modB = b.mod
-				for i = 1, m_max(#modA, #modB) do
-					if not modA[i] then
-						return true
-					elseif not modB[i] then
-						return false
-					elseif modA.statOrder[i] ~= modB.statOrder[i] then
-						return modA.statOrder[i] < modB.statOrder[i]
-					end
-				end
-				return modA.level > modB.level
-			end)
-		elseif sourceId == "VEILED" then
-			for i, mod in pairs(self.build.data.veiledMods) do
-				if self.displayItem:GetModSpawnWeight(mod) > 0 then
-					t_insert(modList, {
-						label = table.concat(mod, "/") .. " (" .. mod.type .. ")",
-						mod = mod,
-						affixType = mod.type,
-						type = "custom",
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				if a.affixType ~= b.affixType then
-					return a.affixType == "Prefix" and b.affixType == "Suffix"
-				else
-					return a.defaultOrder < b.defaultOrder
-				end
-			end)
-		elseif sourceId == "DELVE" then
-			for i, mod in pairs(self.displayItem.affixes) do
-				if self.displayItem:CheckIfModIsDelve(mod) and self.displayItem:GetModSpawnWeight(mod) > 0 then
-					t_insert(modList, {
-						label = table.concat(mod, "/") .. " (" .. mod.type .. ")",
-						mod = mod,
-						affixType = mod.type,
-						type = "custom",
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				if a.affixType ~= b.affixType then
-					return a.affixType == "Prefix" and b.affixType == "Suffix"
-				else
-					return a.defaultOrder < b.defaultOrder
-				end
-			end)
-		elseif sourceId == "NECROPOLIS" then
-			for i, mod in pairs(self.build.data.necropolisMods) do
-				if self.displayItem:GetNecropolisModSpawnWeight(mod) > 0 then
-					t_insert(modList, {
-						label = table.concat(mod, "/") .. " (" .. mod.type .. ")",
-						mod = mod,
-						affixType = mod.type,
-						type = "custom",
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				if a.affixType ~= b.affixType then
-					return a.affixType == "Prefix" and b.affixType == "Suffix"
-				else
-					return a.defaultOrder < b.defaultOrder
-				end
-			end)
-		elseif sourceId == "BEASTCRAFT" then
-			for i, mod in pairs(self.build.data.beastCraft) do
-				t_insert(modList, {
-					label = table.concat(mod, "/") .. " (" .. mod.type .. ")",
-					mod = mod,
-					affixType = mod.type,
-					type = "custom",
-					defaultOrder = i,
-				})
-			end
-			table.sort(modList, function(a, b)
-				if a.affixType ~= b.affixType then
-					return a.affixType == "Prefix" and b.affixType == "Suffix"
-				else
-					return a.defaultOrder < b.defaultOrder
-				end
-			end)
-		end
-		setDefaultSortOrder()
-	end
-	if self.displayItem.type ~= "Tincture" and self.displayItem.type ~= "Graft" then
-		if self.displayItem.type ~= "Jewel" then
-			t_insert(sourceList, { label = "Crafting Bench", sourceId = "MASTER" })
-		end
-		if self.displayItem.type ~= "Jewel" and self.displayItem.type ~= "Flask" and self.displayItem.type ~= "Graft" then
-			t_insert(sourceList, { label = "Essence", sourceId = "ESSENCE" })
-			t_insert(sourceList, { label = "Veiled", sourceId = "VEILED"})
-			t_insert(sourceList, { label = "Beastcraft", sourceId = "BEASTCRAFT" })
-		end
-		if self.displayItem.type == "Helmet" or self.displayItem.type == "Body Armour" or self.displayItem.type == "Gloves" or self.displayItem.type == "Boots" then
-			t_insert(sourceList, { label = "Necropolis", sourceId = "NECROPOLIS"})
-		end
-		if not self.displayItem.clusterJewel and self.displayItem.type ~= "Flask" and self.displayItem.type ~= "Graft" then
-			t_insert(sourceList, { label = "Delve", sourceId = "DELVE"})
-		end
-		if not self.displayItem.crafted then
-			t_insert(sourceList, { label = "Prefix", sourceId = "PREFIX" })
-			t_insert(sourceList, { label = "Suffix", sourceId = "SUFFIX" })
-		end
-	end
-	if self.displayItem.rareLikeUnique then
-		local applicableSourceIds = self.displayItem.rareLikeUnique.supportsCustomModifiers
-		if applicableSourceIds then
-			local newSourceList = {}
-			for _, list in ipairs(sourceList) do
-				if applicableSourceIds[list.sourceId] then
-					table.insert(newSourceList, list)
-				end
-			end
-			sourceList = newSourceList
-		end
-	end
-	t_insert(sourceList, { label = "Custom", sourceId = "CUSTOM" })
-	buildMods(sourceList[1].sourceId)
-	local function addModifier()
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		local sourceId = sourceList[controls.source.selIndex].sourceId
-		if sourceId == "CUSTOM" then
-			if controls.custom.buf:match("%S") then
-				t_insert(item.explicitModLines, { line = controls.custom.buf, custom = true })
-			end
-		else
-			local listMod = modList[controls.modSelect.selIndex]
-			if listMod then
-				for _, line in ipairs(listMod.mod) do
-					t_insert(item.explicitModLines, { line = line, modTags = listMod.mod.modTags, [listMod.type] = true })
-				end
-			end
-		end
-		item:BuildAndParseRaw()
-		return item
-	end
-	controls.sourceLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 20, 0, 16}, "^7Source:")
-	controls.source = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 20, 150, 18}, sourceList, function(index, value)
-		buildMods(value.sourceId)
-		controls.modSelect:SetSel(1)
-		if controls.sort then
-			applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-		end
-	end)
-	controls.source.enabled = #sourceList > 1
-	controls.sortLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {350, 20, 0, 16}, "^7Sort by:")
-	controls.sortLabel.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.sort = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {355, 20, 240, 18}, sortList, function(index, value)
-		applySort(value.stat, true)
-	end)
-	controls.sort.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modSelectLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 45, 0, 16}, "^7Modifier:")
-	controls.modSelect = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 45, 600, 18}, modList)
-	controls.modSelect.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modSelect.tooltipFunc = function(tooltip, mode, index, value)
-		tooltip:Clear()
-		if mode ~= "OUT" and value then
-			for _, line in ipairs(value.mod) do
-				tooltip:AddLine(16, "^7"..line)
-			end
-			self:AddModComparisonTooltip(tooltip, value.mod)
-		end
-	end
-	controls.custom = new("EditControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 45, 440, 18})
-	controls.custom.shown = function()
-		return sourceList[controls.source.selIndex].sourceId == "CUSTOM"
-	end
-	controls.save = new("ButtonControl", nil, {-45, 75, 80, 20}, "Add", function()
-		self:SetDisplayItem(addModifier())
-		main:ClosePopup()
-	end)
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		self:AddItemTooltip(tooltip, addModifier())
-	end
-	controls.close = new("ButtonControl", nil, {45, 75, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(710, 105, "Add Modifier to Item", controls, "save", sourceList[controls.source.selIndex].sourceId == "CUSTOM" and "custom")
-end
-
--- Opens the crucible modifier popup
-function ItemsTabClass:AddCrucibleModifierToDisplayItem()
-	local controls = { }
-	local modList = {[1] = {"None"}, [2] = {"None"}, [3] = {"None"}, [4] = {"None"}, [5] = {"None"}}
-	local itemModMap, nodeSelections = { }, { }
-	local function getLabelFromMod(mod)
-		local label = copyTable(mod)
-		for index, line in ipairs(mod) do
-			label[index] = checkLineForAllocates(line, self.build.spec.nodes)
-		end
-		return table.concat(label, "/")
-	end
-	local function buildCrucibleMods()
-		for i, mod in pairs(self.build.data.crucible) do
-			if self.displayItem:CanHaveMod(mod) then
-				-- item mod must match the whole mod, whether that's one line or two
-				if itemModMap[checkLineForAllocates(mod[1], self.build.spec.nodes)] and ((mod[2] and itemModMap[checkLineForAllocates(mod[2], self.build.spec.nodes)]) or not mod[2]) then
-					-- for multi nodes, if the first location is taken, use second
-					-- works for multi vs single node, ambiguous for multi vs multi (3,4 vs 3,4) but both mods load
-					if nodeSelections[mod.nodeLocation[1]] and mod.nodeLocation[2] then
-						nodeSelections[mod.nodeLocation[2]] = i
-					-- nodeSelections[nodeId] = defaultOrder, used later to match with sorted modList to get selIndex
-					else
-						nodeSelections[mod.nodeLocation[1]] = i
-					end
-				end
-				for _, location in ipairs(mod.nodeLocation) do
-					t_insert(modList[location], {
-						label = getLabelFromMod(mod) .. " - Tier: " .. mod.tier,
-						mod = mod,
-						affixType = mod.type,
-						type = "crucible",
-						defaultOrder = i,
-					})
-				end
-			end
-		end
-		for _, tierList in ipairs(modList) do
-			table.sort(tierList, function(a, b)
-				if b ~= "None" then
-					if a.affixType ~= b.affixType then
-						return a.affixType == "Spawn" and b.affixType == "MergeOnly"
-					else
-						return a.defaultOrder < b.defaultOrder
-					end
-				end
-			end)
-		end
-	end
-	local function addModifier()
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		item.crucibleModLines = { }
-		local listMod = {
-			modList[1][controls.modSelectNode1.selIndex],
-			modList[2][controls.modSelectNode2.selIndex],
-			modList[3][controls.modSelectNode3.selIndex],
-			modList[4][controls.modSelectNode4.selIndex],
-			modList[5][controls.modSelectNode5.selIndex],
-		}
-		for _, nodeMod in ipairs(listMod) do
-			if nodeMod ~= "None" then
-				for index, line in ipairs(nodeMod.mod) do
-					t_insert(item.crucibleModLines, { line = checkLineForAllocates(line, self.build.spec.nodes), modTags = nodeMod.mod.modTags, [nodeMod.type] = true })
-				end
-			end
-		end
-		item:BuildAndParseRaw()
-		return item
-	end
-	-- set up name map to know what modLines the item has as we build the mods out
-	for _, mod in ipairs(self.displayItem.crucibleModLines) do
-		itemModMap[mod.line] = true
-	end
-	buildCrucibleMods()
-	local y = 45
-	for i = 1,5 do
-		controls["modSelectNode"..i.."Label"] = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, y, 0, 16}, "^7Node "..i..":")
-		controls["modSelectNode"..i] = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, y, 555, 18}, modList[i])
-		controls["modSelectNode"..i].tooltipFunc = function(tooltip, mode, index, value)
-			tooltip:Clear()
-			if mode ~= "OUT" and value and value ~= "None" then
-				for _, line in ipairs(value.mod) do
-					tooltip:AddLine(16, "^7"..checkLineForAllocates(line, self.build.spec.nodes))
-				end
-				self:AddModComparisonTooltip(tooltip, value.mod)
-			end
-		end
-		y = y + 22
-	end
-	-- populate dropdowns with item mods
-	for nodeId, defaultOrder in pairs(nodeSelections) do
-		for index, mod in pairs(modList[nodeId]) do
-			if defaultOrder == mod.defaultOrder then
-				controls["modSelectNode"..nodeId].selIndex = index
-			end
-		end
-	end
-	controls.save = new("ButtonControl", nil, {-45, 157, 80, 20}, "Add", function()
-		self:SetDisplayItem(addModifier())
-		main:ClosePopup()
-	end)
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		self:AddItemTooltip(tooltip, addModifier())
-	end
-	controls.close = new("ButtonControl", nil, {45, 157, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(710, 185, "Add Crucible Modifier to Item", controls, "save")
-end
-
--- Opens the custom Implicit popup
-function ItemsTabClass:AddImplicitToDisplayItem()
-	local controls = { }
-	local sourceList = { }
-	local modList = { }
-	local modGroups = {}
-	local sortList, sortStats = buildModSortList()
-	local function setDefaultSortOrder()
-		for groupIndex, group in ipairs(modGroups) do
-			group.defaultSortOrder = groupIndex
-			group.sortValue = nil
-		end
-		for _, listMods in ipairs(modList) do
-			for index, listMod in ipairs(listMods) do
-				listMod.defaultSortOrder = index
-				listMod.sortValue = nil
-				listMod.sortValues = nil
-			end
-		end
-	end
-	---Mutates modList to contain mods from the specified source
-	---@param sourceId string @The crafting source id to build the list of mods for
-	local function buildMods(sourceId)
-		wipeTable(modList)
-		wipeTable(modGroups)
-		local groupIndexes = {}
-		if sourceId == "EXARCH" or sourceId == "EATER" then
-			for i, mod in pairs(self.displayItem.affixes) do
-				if self.displayItem:GetModSpawnWeight(mod) > 0 and sourceId:lower() == mod.type:lower() then
-					local modLabel = table.concat(mod, "/")
-					local group = mod.group:gsub("PinnaclePresence", ""):gsub("UniquePresence", "")
-					if not groupIndexes[group] then
-						t_insert(modList, {})
-						t_insert(modGroups, {
-							label = modLabel,
-							mod = mod,
-							modListIndex = #modList,
-							defaultOrder = i,
-						})
-						groupIndexes[group] = #modGroups
-					end
-					t_insert(modList[groupIndexes[group]], {
-						label = modLabel,
-						mod = mod,
-						affixType = mod.type,
-						type = sourceId:lower(),
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modGroups, function(a, b)
-				local modA = a.mod
-				local modB = b.mod
-				for i = 1, m_max(#modA, #modB) do
-					if not modA[i] then
-						return true
-					elseif not modB[i] then
-						return false
-					elseif modA.statOrder[i] ~= modB.statOrder[i] then
-						return modA.statOrder[i] < modB.statOrder[i]
-					end
-				end
-				return modA.level > modB.level
-			end)
-			for i, _ in pairs(modList) do
-				table.sort(modList[i], function(a, b)
-					local modA = a.mod
-					local modB = b.mod
-					if modA.group ~= modB.group then
-						if modA.group:match("PinnaclePresence") then
-							return false
-						elseif modB.group:match("PinnaclePresence") then
-							return true
-						elseif modA.group:match("UniquePresence") then
-							return false
-						else
-							return true
-						end
-					end
-					for j = 1, m_max(#modA, #modB) do
-						if not modA[j] then
-							return true
-						elseif not modB[j] then
-							return false
-						elseif modA.statOrder[j] ~= modB.statOrder[j] then
-							return modA.statOrder[j] < modB.statOrder[j]
-						else
-							local modAVal = tonumber(a.defaultOrder:match("%d+$"))
-							local modBVal = tonumber(b.defaultOrder:match("%d+$"))
-							return modAVal < modBVal
-						end
-					end
-					return modA.level > modB.level
-				end)
-			end
-			for i, _ in pairs(modGroups) do
-				modGroups[i].label = modList[modGroups[i].modListIndex][1].label:gsub("%([%d%.]+%-[%d%.]+%)", "#"):gsub("[%d%.]+", "#")
-			end
-		elseif sourceId == "SYNTHESIS" then
-			for i, mod in pairs(self.displayItem.affixes) do
-				if sourceId:lower() == mod.type:lower() then -- weights are missing and so are 0, how do I determine what goes on what item?, also arn't these supposed to work on jewels?
-					t_insert(modList, {
-						label = table.concat(mod, "/"),
-						mod = mod,
-						affixType = mod.type,
-						type = "synthesis",
-						defaultOrder = i,
-					})
-				end
-			end
-			table.sort(modList, function(a, b)
-				return a.defaultOrder < b.defaultOrder
-			end)
-		elseif sourceId == "DelveImplicit" then
-			for i, mod in pairs(self.displayItem.affixes) do
-				if self.displayItem:GetModSpawnWeight(mod) > 0 and mod.type and sourceId:lower() == mod.type:lower() then
-					local modLabel = table.concat(mod, "/")
-					if not groupIndexes[mod.group] then
-						t_insert(modList, {})
-						t_insert(modGroups, {
-							label = modLabel,
-							mod = mod,
-							modListIndex = #modList,
-							defaultOrder = i,
-						})
-						groupIndexes[mod.group] = #modGroups
-					--elseif mod[1].len() < modGroups[groupIndexes[mod.group] ].mod[1].len() then
-					--	modGroups[groupIndexes[mod.group]].label = modLabel
-					--	modGroups[groupIndexes[mod.group]].mod = mod
-					end
-					t_insert(modList[groupIndexes[mod.group]], {
-						label = modLabel,
-						mod = mod,
-						affixType = mod.type,
-						type = "custom",
-						defaultOrder = i,
-					})
-				end
-			end
-			for i, _ in pairs(modList) do
-				table.sort(modList[i], function(a, b)
-					return a.defaultOrder < b.defaultOrder
-				end)
-			end
-		end
-		setDefaultSortOrder()
-	end
-	if (self.displayItem.rarity ~= "UNIQUE" and self.displayItem.rarity ~= "RELIC") and (self.displayItem.type == "Helmet" or self.displayItem.type == "Body Armour" or self.displayItem.type == "Gloves" or self.displayItem.type == "Boots") then
-		if self.displayItem.cleansing then
-			t_insert(sourceList, { label = "Searing Exarch", sourceId = "EXARCH" })
-		end
-		if self.displayItem.tangle then
-			t_insert(sourceList, { label = "Eater of Worlds", sourceId = "EATER" })
-		end
-	end
-	if self.displayItem.type ~= "Flask" and self.displayItem.type ~= "Jewel" and self.displayItem.type ~= "Graft" then
-		--t_insert(sourceList, { label = "Synth", sourceId = "SYNTHESIS" }) -- synth removed until we get proper support for where the mods go
-		t_insert(sourceList, { label = "Delve", sourceId = "DelveImplicit" })
-	end
-	t_insert(sourceList, { label = "Custom", sourceId = "CUSTOM" })
-	buildMods(sourceList[1].sourceId)
-	---Applies a candidate listMod to the item, mirroring the mutation addModifier()
-	---performs at click-time. Eldritch (exarch/eater) sources replace an existing
-	---implicit of the same type when present; other sources append.
-	local function applyCandidateMod(item, listMod)
-		if listMod.type == "exarch" or listMod.type == "eater" then
-			local index
-			for i, implicitMod in ipairs(item.implicitModLines) do
-				if implicitMod[listMod.type] then
-					index = i
-					break
-				end
-			end
-			if index then
-				for i, line in ipairs(listMod.mod) do
-					item.implicitModLines[index + i - 1] = { line = line, modTags = listMod.mod.modTags, [listMod.type] = true }
-				end
-				return
-			end
-		end
-		for _, line in ipairs(listMod.mod) do
-			t_insert(item.implicitModLines, { line = line, modTags = listMod.mod.modTags, [listMod.type] = true })
-		end
-	end
-	local function getSortValue(listMod, stat, calcFunc, slotName, useFullDPS)
-		listMod.sortValues = listMod.sortValues or { }
-		if listMod.sortValues[stat] ~= nil then
-			return listMod.sortValues[stat]
-		end
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		applyCandidateMod(item, listMod)
-		item:BuildAndParseRaw()
-		local output = calcFunc({ repSlotName = slotName, repItem = item }, useFullDPS)
-		local value = data.powerStatList.GetFromOutput(output, sortStats[stat])
-		listMod.sortValues[stat] = value
-		return value
-	end
-	local function applySort(stat, selectFirst)
-		if not controls.modSelect or not controls.modGroupSelect or not controls.modSelect:IsShown() then
-			return
-		end
-		local selectedGroup = not selectFirst and modGroups[controls.modGroupSelect.selIndex] or nil
-		local selectedMod = not selectFirst and controls.modSelect.list and controls.modSelect.list[controls.modSelect.selIndex] or nil
-		if stat then
-			local slotName = self.displayItem:GetPrimarySlot()
-			local calcFunc = self.build.calcsTab:GetMiscCalculator()
-			local useFullDPS = stat == "FullDPS"
-			for _, listMods in ipairs(modList) do
-				for _, listMod in ipairs(listMods) do
-					listMod.sortValue = getSortValue(listMod, stat, calcFunc, slotName, useFullDPS)
-				end
-				table.sort(listMods, function(a, b)
-					if a.sortValue ~= b.sortValue then
-						return a.sortValue > b.sortValue
-					end
-					return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-				end)
-			end
-			for _, group in ipairs(modGroups) do
-				local best
-				for _, listMod in ipairs(modList[group.modListIndex] or { }) do
-					if not best or listMod.sortValue > best then
-						best = listMod.sortValue
-					end
-				end
-				group.sortValue = best or 0
-			end
-			table.sort(modGroups, function(a, b)
-				if a.sortValue ~= b.sortValue then
-					return a.sortValue > b.sortValue
-				end
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		else
-			for _, listMods in ipairs(modList) do
-				table.sort(listMods, function(a, b)
-					return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-				end)
-			end
-			table.sort(modGroups, function(a, b)
-				return (a.defaultSortOrder or 0) < (b.defaultSortOrder or 0)
-			end)
-		end
-		controls.modGroupSelect:UpdateSearch()
-		if selectedGroup then
-			for index, group in ipairs(modGroups) do
-				if group == selectedGroup then
-					controls.modGroupSelect.selIndex = index
-					break
-				end
-			end
-		else
-			controls.modGroupSelect:SetSel(1, true)
-		end
-		controls.modSelect.list = modList[modGroups[controls.modGroupSelect.selIndex].modListIndex]
-		controls.modSelect:UpdateSearch()
-		if selectedMod then
-			for index, listMod in ipairs(controls.modSelect.list) do
-				if listMod == selectedMod then
-					controls.modSelect.selIndex = index
-					break
-				end
-			end
-		else
-			controls.modSelect:SetSel(1, true)
-		end
-	end
-	local function addModifier()
-		local item = new("Item", self.displayItem:BuildRaw())
-		item.id = self.displayItem.id
-		local sourceId = sourceList[controls.source.selIndex].sourceId
-		if sourceId == "CUSTOM" then
-			if controls.custom.buf:match("%S") then
-				t_insert(item.implicitModLines, { line = controls.custom.buf, custom = true })
-			end
-		elseif sourceId == "SYNTHESIS" then
-			applyCandidateMod(item, modList[controls.modSelect.selIndex])
-		else
-			applyCandidateMod(item, modList[modGroups[controls.modGroupSelect.selIndex].modListIndex][controls.modSelect.selIndex])
-		end
-		item:BuildAndParseRaw()
-		return item
-	end
-	controls.sourceLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 20, 0, 16}, "^7Source:")
-	controls.source = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 20, 150, 18}, sourceList, function(index, value)
-		if value.sourceId ~= "CUSTOM" then
-			controls.modSelectLabel.y = 70
-			buildMods(value.sourceId)
-			controls.modGroupSelect:SetSel(1)
-			controls.modSelect.list = modList[modGroups[1].modListIndex]
-			controls.modSelect:SetSel(1)
-			if controls.sort then
-				applySort(controls.sort.list[controls.sort.selIndex].stat, true)
-			end
-		else
-			controls.modSelectLabel.y = 45
-		end
-	end)
-	controls.source.enabled = #sourceList > 1
-	controls.sortLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {350, 20, 0, 16}, "^7Sort by:")
-	controls.sortLabel.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.sort = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {355, 20, 240, 18}, sortList, function(index, value)
-		applySort(value.stat, true)
-	end)
-	controls.sort.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modGroupSelectLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 45, 0, 16}, "^7Type:")
-	controls.modGroupSelect = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 45, 600, 18}, modGroups, function(index, value)
-		controls.modSelect.list = modList[value.modListIndex]
-		controls.modSelect:SetSel(1)
-	end)
-	controls.modGroupSelectLabel.shown = function()
-		if sourceList[controls.source.selIndex].sourceId == "CUSTOM" then
-			controls.modSelectLabel.y = 45
-		end
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modGroupSelect.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modGroupSelect.tooltipFunc = function(tooltip, mode, index, value)
-		tooltip:Clear()
-		if mode ~= "OUT" and value then
-			for _, line in ipairs(value.mod) do
-				tooltip:AddLine(16, "^7"..line)
-			end
-			self:AddModComparisonTooltip(tooltip, value.mod)
-		end
-	end
-	controls.modSelectLabel = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, {95, 70, 0, 16}, "^7Modifier:")
-	controls.modSelect = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 70, 600, 18}, sourceList[controls.source.selIndex].sourceId ~= "CUSTOM" and modList[modGroups[1].modListIndex] or { })
-	controls.modSelect.shown = function()
-		return sourceList[controls.source.selIndex].sourceId ~= "CUSTOM"
-	end
-	controls.modSelect.tooltipFunc = function(tooltip, mode, index, value)
-		tooltip:Clear()
-		if mode ~= "OUT" and value then
-			for _, line in ipairs(value.mod) do
-				tooltip:AddLine(16, "^7"..line)
-			end
-			self:AddModComparisonTooltip(tooltip, value.mod)
-		end
-	end
-	controls.custom = new("EditControl", {"TOPLEFT",nil,"TOPLEFT"}, {100, 45, 440, 18})
-	controls.custom.shown = function()
-		return sourceList[controls.source.selIndex].sourceId == "CUSTOM"
-	end
-	controls.save = new("ButtonControl", nil, {-45, 100, 80, 20}, "Add", function()
-		self:SetDisplayItem(addModifier())
-		main:ClosePopup()
-	end)
-	controls.save.tooltipFunc = function(tooltip)
-		tooltip:Clear()
-		self:AddItemTooltip(tooltip, addModifier())
-	end
-	controls.close = new("ButtonControl", nil, {45, 100, 80, 20}, "Cancel", function()
-		main:ClosePopup()
-	end)
-	main:OpenPopup(710, 130, "Add Implicit to Item", controls, "save", sourceList[controls.source.selIndex].sourceId == "CUSTOM" and "custom")
-end
 
 function ItemsTabClass:AddItemSetTooltip(tooltip, itemSet)
 	for _, slot in ipairs(self.orderedSlots) do
@@ -5049,7 +2424,7 @@ function ItemsTabClass:AddItemTooltip(tooltip, item, slot, dbMode, maxWidth)
 		-- Build sorted list of slots to compare with
 		local compareSlots = { }
 		for slotName, slot in pairs(self.slots) do
-			if self:IsItemValidForSlot(item, slotName) and not slot.inactive and (not slot.weaponSet or slot.weaponSet == (self.activeItemSet.useSecondWeaponSet and 2 or 1)) and slot.shown() then
+			if self:IsItemValidForSlot(item, slotName) and not slot.inactive and (not slot.weaponSet or slot.weaponSet == (self.activeItemSet.useSecondWeaponSet and 2 or 1)) and slot:IsShown() then
 				t_insert(compareSlots, slot)
 			end
 		end

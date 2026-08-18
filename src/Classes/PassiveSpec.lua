@@ -2296,15 +2296,6 @@ end
 
 function PassiveSpecClass:RestoreUndoState(state, treeVersion)
 	self:ImportFromNodeList(nil, state.classId, state.ascendClassId, state.secondaryAscendClassId, state.hashList, state.hashOverrides, state.masteryEffects, treeVersion or state.treeVersion)
-	self:SetWindowTitleWithBuildClass()
-end
-
-function PassiveSpecClass:SetWindowTitleWithBuildClass()
-	local classText = self.curAscendClassId == 0 and self.curClassName or self.curAscendClassName
-	if self.curSecondaryAscendClassId and self.curSecondaryAscendClassId ~= 0 and self.curSecondaryAscendClassName then
-		classText = classText .. " + " .. self.curSecondaryAscendClassName
-	end
-	main:SetWindowTitleSubtext(string.format("%s (%s)", self.build.buildName, classText))
 end
 
 --- Adds a line to or replaces a node given a line to add/replace with

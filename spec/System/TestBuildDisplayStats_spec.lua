@@ -11,7 +11,7 @@ describe("Build display stats", function()
 	end)
 
 	local function getSidebarStat(label)
-		for _, stat in ipairs(build.controls.statBox.list) do
+		for _, stat in ipairs(build.statBoxList) do
 			if stat[1] and stat[1]:find(label .. ":", 1, true) then
 				return stat[2]
 			end

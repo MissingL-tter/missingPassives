@@ -1,7 +1,7 @@
 -- Path of Building
 --
 -- Module: Calcs Tab
--- Calculations breakdown tab for the current build.
+-- Calculations controller for the current build.
 --
 local pairs = pairs
 local ipairs = ipairs
@@ -9,17 +9,8 @@ local t_insert = table.insert
 local m_max = math.max
 local m_floor = math.floor
 
-local buffModeDropList = {
-	{ label = "Unbuffed", buffMode = "UNBUFFED" },
-	{ label = "Buffed", buffMode = "BUFFED" },
-	{ label = "In Combat", buffMode = "COMBAT" },
-	{ label = "Effective DPS", buffMode = "EFFECTIVE" } 
-}
-
-local CalcsTabClass = newClass("CalcsTab", "UndoHandler", "ControlHost", "Control", function(self, build)
+local CalcsTabClass = newClass("CalcsTab", "UndoHandler", function(self, build)
 	self.UndoHandler()
-	self.ControlHost()
-	self.Control()
 
 	self.build = build
 
@@ -29,127 +20,9 @@ local CalcsTabClass = newClass("CalcsTab", "UndoHandler", "ControlHost", "Contro
 	self.input.skill_number = 1
 	self.input.misc_buffMode = "EFFECTIVE"
 
-	self.colWidth = 230
-	self.sectionList = { }
+	-- Collapsed-state of the calcs view sections, preserved for the build file
+	self.sectionStateList = { }
 
-	self.controls.search = new("EditControl", {"TOPLEFT",self,"TOPLEFT"}, {4, 5, 260, 20}, "", "Search", "%c", 100, nil, nil, nil, true)
-	t_insert(self.controls, self.controls.search)
-
-	-- Special section for skill/mode selection
-	self:NewSection(3, "SkillSelect", 1, colorCodes.NORMAL, {{ defaultCollapsed = false, label = "View Skill Details", data = {
-		{ label = "Socket Group", { controlName = "mainSocketGroup", 
-			control = new("DropDownControl", nil, {0, 0, 300, 16}, nil, function(index, value) 
-				self.input.skill_number = index
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end) {
-				tooltipFunc = function(tooltip, mode, index, value)
-					local socketGroup = self.build.skillsTab.socketGroupList[index]
-					if socketGroup and tooltip:CheckForUpdate(socketGroup, self.build.outputRevision) then
-						self.build.skillsTab:AddSocketGroupTooltip(tooltip, socketGroup)
-					end
-				end
-			}
-		}, },
-		{ label = "Active Skill", { controlName = "mainSkill", 
-			control = new("DropDownControl", nil, {0, 0, 300, 16}, nil, function(index, value)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				mainSocketGroup.mainActiveSkillCalcs = index
-				self.build.buildFlag = true
-			end)
-		}, },
-		{ label = "Skill Part", playerFlag = "multiPart", { controlName = "mainSkillPart", 
-			control = new("DropDownControl", nil, {0, 0, 250, 16}, nil, function(index, value)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				local srcInstance = mainSocketGroup.displaySkillListCalcs[mainSocketGroup.mainActiveSkillCalcs].activeEffect.srcInstance
-				srcInstance.skillPartCalcs = index
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end)
-		}, },{ label = "Skill Stages", playerFlag = "multiStage", { controlName = "mainSkillStageCount",
-			control = new("EditControl", nil, {0, 0, 52, 16}, nil, nil, "%D", nil, function(buf)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				local srcInstance = mainSocketGroup.displaySkillListCalcs[mainSocketGroup.mainActiveSkillCalcs].activeEffect.srcInstance
-				srcInstance.skillStageCountCalcs = tonumber(buf)
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end)
-		}, },
-		{ label = "Active Mines", playerFlag = "mine", { controlName = "mainSkillMineCount",
-			control = new("EditControl", nil, {0, 0, 52, 16}, nil, nil, "%D", nil, function(buf)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				local srcInstance = mainSocketGroup.displaySkillListCalcs[mainSocketGroup.mainActiveSkillCalcs].activeEffect.srcInstance
-				srcInstance.skillMineCountCalcs = tonumber(buf)
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end)
-		}, },
-		{ label = "Show Minion Stats", flag = "haveMinion", { controlName = "showMinion", 
-			control = new("CheckBoxControl", nil, {0, 0, 18}, nil, function(state)
-				self.input.showMinion = state
-				self:AddUndoState()
-			end, "Show stats for the minion instead of the player.")
-		}, },
-		{ label = "Minion", flag = "minion", { controlName = "mainSkillMinion",
-			control = new("DropDownControl", nil, {0, 0, 160, 16}, nil, function(index, value)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				local srcInstance = mainSocketGroup.displaySkillListCalcs[mainSocketGroup.mainActiveSkillCalcs].activeEffect.srcInstance
-				if value.itemSetId then
-					srcInstance.skillMinionItemSetCalcs = value.itemSetId
-				else
-					srcInstance.skillMinionCalcs = value.minionId
-				end
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end)
-		} },
-		{ label = "Spectre Library", flag = "spectre", { controlName = "mainSkillMinionLibrary",
-			control = new("ButtonControl", nil, {0, 0, 100, 16}, "Manage Spectres...", function()
-				self.build:OpenSpectreLibrary()
-			end)
-		} },
-		{ label = "Minion Skill", flag = "haveMinion", { controlName = "mainSkillMinionSkill",
-			control = new("DropDownControl", nil, {0, 0, 200, 16}, nil, function(index, value)
-				local mainSocketGroup = self.build.skillsTab.socketGroupList[self.input.skill_number]
-				local srcInstance = mainSocketGroup.displaySkillListCalcs[mainSocketGroup.mainActiveSkillCalcs].activeEffect.srcInstance
-				srcInstance.skillMinionSkillCalcs = index
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end)
-		} },
-		{ label = "Calculation Mode", { 
-			controlName = "mode", 
-			control = new("DropDownControl", nil, {0, 0, 100, 16}, buffModeDropList, function(index, value) 
-				self.input.misc_buffMode = value.buffMode 
-				self:AddUndoState()
-				self.build.buildFlag = true
-			end, [[
-This controls the calculation of the stats shown in this tab.
-The stats in the sidebar are always shown in Effective DPS mode, regardless of this setting.
-
-Unbuffed: No auras, buffs, or other support skills or effects will apply. This is equivalent to standing in town.
-Buffed: Aura and buff skills apply. This is equivalent to standing in your hideout with auras and buffs turned on.
-In Combat: Charges and combat buffs such as Onslaught will also apply. This will show your character sheet stats in combat.
-Effective DPS: Curses and enemy properties (such as resistances and status conditions) will also apply. This estimates your true DPS.]]) 
-		}, },
-		{ label = "Aura and Buff Skills", flag = "buffs", textSize = 12, { format = "{output:BuffList}", { breakdown = "SkillBuffs" } }, },
-		{ label = "Combat Buffs", flag = "combat", textSize = 12, { format = "{output:CombatList}" }, },
-		{ label = "Curses and Debuffs", flag = "effective", textSize = 12, { format = "{output:CurseList}", { breakdown = "SkillDebuffs" } }, },
-	}}}, function(section)
-		self.build:RefreshSkillSelectControls(section.controls, self.input.skill_number, "Calcs")
-		section.controls.showMinion.state = self.input.showMinion
-		section.controls.mode:SelByValue(self.input.misc_buffMode, "buffMode")
-	end)
-
-	-- Add sections from the CalcSections module
-	local sectionData = LoadModule("Modules/CalcSections")
-	for _, section in ipairs(sectionData) do
-		self:NewSection(unpack(section))
-	end
-
-	self.controls.breakdown = new("CalcBreakdownControl", self)
-
-	self.controls.scrollBar = new("ScrollBarControl", {"TOPRIGHT",self,"TOPRIGHT"}, {0, 0, 18, 0}, 50, "VERTICAL", true)
 	self.powerBuilderInitialized = nil
 end)
 
@@ -176,16 +49,12 @@ function CalcsTabClass:Load(xml, dbFileName)
 					launch:ShowErrMsg("^1Error parsing '%s': 'Section' element missing id attribute", fileName)
 					return true
 				end
-				for _, section in ipairs(self.sectionList) do
-					if section.id == node.attrib.id and node.attrib.subsection then
-						for _, subsection in ipairs(section.subSection) do
-							if subsection.id == node.attrib.subsection then
-								subsection.collapsed = node.attrib.collapsed == "true"
-								break
-							end
-						end
-						break
-					end
+				if node.attrib.subsection then
+					t_insert(self.sectionStateList, {
+						id = node.attrib.id,
+						subsection = node.attrib.subsection,
+						collapsed = node.attrib.collapsed,
+					})
 				end
 			end
 		end
@@ -205,185 +74,13 @@ function CalcsTabClass:Save(xml)
 		end
 		t_insert(xml, child)
 	end
-	for _, section in ipairs(self.sectionList) do
-		for _, subSection in ipairs(section.subSection) do
-			t_insert(xml, { elem = "Section", attrib = {
-				id = section.id,
-				subsection = subSection.id,
-				collapsed = tostring(subSection.collapsed),
-			} })
-		end
+	for _, sectionState in ipairs(self.sectionStateList) do
+		t_insert(xml, { elem = "Section", attrib = {
+			id = sectionState.id,
+			subsection = sectionState.subsection,
+			collapsed = sectionState.collapsed,
+		} })
 	end
-end
-
-function CalcsTabClass:Draw(viewPort, inputEvents)
-	self.x = viewPort.x
-	self.y = viewPort.y
-	self.width = viewPort.width
-	self.height = viewPort.height
-
-	-- Arrange the sections
-	local baseX = viewPort.x + 4
-	local baseY = viewPort.y + 30
-	local maxCol = m_floor(viewPort.width / (self.colWidth + 8))
-	if main.portraitMode then maxCol = 3 end
-	local colY = { }
-	local maxY = 0
-	for _, section in ipairs(self.sectionList) do
-		section:UpdateSize()
-		if section.enabled and not section.isOverlay then
-			local col
-			if section.group == 1 then
-				-- Group 1: Offense or 3 wide sections
-				-- This group is put into the first 3 columns, with each section placed into the highest available location
-				col = 1
-				if section.width == self.colWidth then -- if 1 col wide
-					local minY = colY[col] or baseY
-					for c = 2, 3 do
-						if (colY[c] or baseY) < minY then
-							col = c
-							minY = colY[c] or baseY
-						end
-					end
-				else
-					for c = 2, 3 do
-						colY[col] = m_max(colY[col] or baseY, colY[c] or baseY)
-					end
-				end
-			elseif section.group == 2 then
-				-- Group 2: Defense (the first 4 sections)
-				-- This group is put entirely into the 4th column
-				if maxCol >= 4 then
-					col = 4
-				end
-			elseif section.group == 3 then
-				-- Group 3: Defense (the remaining sections)
-				-- This group is put into a 5th column if there's room for one, otherwise they are handled separately
-				if maxCol >= 5 then
-					col = 5
-				end
-			end
-			if col then
-				section.x = baseX + (self.colWidth + 8) * (col - 1)
-				section.y = colY[col] or baseY
-				for c = col, col + section.widthCols - 1 do
-					colY[c] = section.y + section.height + 8
-				end
-				maxY = m_max(maxY, colY[col])
-			end
-		end
-	end
-	if maxCol < 5 then
-		-- There's no room for a 5th column
-		-- Each section from group 3 will instead be placed into column 4 if there's room, otherwise they'll be put in columns 1-3
-		for c = 1, 3 do
-			colY[c] = m_max(colY[1], colY[2], colY[3])
-		end
-		for _, section in ipairs(self.sectionList) do
-			if section.enabled and not section.isOverlay and (main.portraitMode and section.group == 2 or section.group == 3) then
-				local col = 3
-				if colY[col] + section.height + 4 >= m_max(viewPort.y + viewPort.height, maxY) then
-					-- No room in the 4th column, find the highest available location in columns 1-4
-					local minY = colY[col]
-					for c = 3, 1, -1 do
-						if colY[c] < minY then
-							col = c
-							minY = colY[c]
-						end
-					end
-				end
-				section.x = baseX + (self.colWidth + 8) * (col - 1)
-				section.y = colY[col]
-				colY[col] = section.y + section.height + 8
-				maxY = m_max(maxY, colY[col])
-			end
-		end
-	end
-	self.controls.scrollBar.height = viewPort.height
-	self.controls.scrollBar:SetContentDimension(maxY - (baseY - 26), viewPort.height)
-	for _, section in ipairs(self.sectionList) do
-		if not section.isOverlay then
-			-- Give sections their actual Y position and let them update
-			section.y = section.y - self.controls.scrollBar.offset
-			section:UpdatePos()
-		end
-	end
-	
-	self.controls.search.y = 4 - self.controls.scrollBar.offset
-
-	for _, event in ipairs(inputEvents) do
-		if event.type == "KeyDown" then
-			if event.key == "z" and IsKeyDown("CTRL") then
-				self:Undo()
-				self.build.buildFlag = true
-			elseif event.key == "y" and IsKeyDown("CTRL") then
-				self:Redo()
-				self.build.buildFlag = true
-			elseif event.key == "f" and IsKeyDown("CTRL") then
-				self:SelectControl(self.controls.search)
-			end
-		end
-	end
-	self:ProcessControlsInput(inputEvents, viewPort)
-	for _, event in ipairs(inputEvents) do
-		if event.type == "KeyUp" then
-			if self.controls.scrollBar:IsScrollDownKey(event.key) then
-				self.controls.scrollBar:Scroll(1)
-			elseif self.controls.scrollBar:IsScrollUpKey(event.key) then
-				self.controls.scrollBar:Scroll(-1)
-			end
-		end
-	end
-
-	main:DrawBackground(viewPort)
-
-	if not self.displayPinned then
-		self.displayData = nil
-	end
-
-	local breakdown = self.controls.breakdown
-	local overlayBreakdown = breakdown.sourceData and breakdown.sourceData.calcSection and breakdown.sourceData.calcSection.isOverlay
-	if overlayBreakdown then
-		breakdown.shown = false
-	end
-	self:DrawControls(viewPort, self.selControl)
-	if overlayBreakdown then
-		breakdown.shown = true
-	end
-
-	if self.displayData then
-		if self.displayPinned and not self.selControl then
-			self:SelectControl(self.controls.breakdown)
-		end
-	else
-		self.controls.breakdown:SetBreakdownData()
-	end
-end
-
-function CalcsTabClass:NewSection(width, ...)
-	local section = new("CalcSectionControl", self, width * self.colWidth + 8 * (width - 1), ...)
-	section.widthCols = width
-	t_insert(self.controls, section)
-	t_insert(self.sectionList, section)
-end
-
-function CalcsTabClass:ClearDisplayStat()
-	self.displayData = nil
-	self.displayPinned = nil
-	self.controls.breakdown:SetBreakdownData()
-end
-
-function CalcsTabClass:SetDisplayStat(displayData, pin)
-	if not displayData or (not pin and self.displayPinned) then
-		return
-	end
-	if pin and self.displayPinned and self.displayData == displayData then
-		self:ClearDisplayStat()
-		return
-	end
-	self.displayData = displayData
-	self.displayPinned = pin
-	self.controls.breakdown:SetBreakdownData(displayData, pin)
 end
 
 function CalcsTabClass:CheckFlag(obj, actor)
@@ -425,24 +122,9 @@ function CalcsTabClass:CheckFlag(obj, actor)
 	return true
 end
 
-function CalcsTabClass:SearchMatch(txt)
-	local searchStr = self.controls.search.buf:lower()
-	return string.len(searchStr) > 0 and txt:lower():find(searchStr)
-end
-
 -- Build the calculation output tables
 function CalcsTabClass:BuildOutput()
 	self.powerBuildFlag = true
-
-	--[[
-	local start = GetTime()
-	SetProfiling(true)
-	for i = 1, 1000  do
-		self.calcs.buildOutput(self.build, "MAIN")
-	end
-	SetProfiling(false)
-	ConPrintf("Calc time: %d ms", GetTime() - start)
-	--]]
 
 	for _, node in pairs(self.build.spec.nodes) do
 		-- Set default final mod list for all nodes; some may not be set during the main pass
@@ -454,11 +136,6 @@ function CalcsTabClass:BuildOutput()
 	self.calcsEnv = self.calcs.buildOutput(self.build, "CALCS")
 	self.calcsOutput = self.calcsEnv.player.output
 
-	if self.displayData then
-		self.controls.breakdown:SetBreakdownData()
-		self.controls.breakdown:SetBreakdownData(self.displayData, self.displayPinned)
-	end
-	
 	-- Retrieve calculator functions
 	self.nodeCalculator = { self.calcs.getNodeCalculator(self.build) }
 	self.miscCalculator = { self.calcs.getMiscCalculator(self.build) }
@@ -553,7 +230,7 @@ function CalcsTabClass:PowerBuilder()
 			end
 		end
 	end
-	
+
 	local start = GetTime()
 	local nodeIndex = 0
 	local total = 0

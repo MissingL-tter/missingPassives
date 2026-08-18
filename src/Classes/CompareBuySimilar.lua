@@ -277,21 +277,17 @@ function M.addModEntries(item, modTypeSources)
 	end
 	return modEntries
 end
--- Open the Buy Similar popup for a compared item
+-- Build the Buy Similar search model for a compared item
 function M.openPopup(item, slotName, primaryBuild)
 	if not item then return end
 
 	local isUnique = item.rarity == "UNIQUE" or item.rarity == "RELIC"
 	local controls = {}
 	local uri = ""
-	local rowHeight = 24
-	local popupWidth = 700
-	local leftMargin = 20
-	local minFieldX = popupWidth - 130
-	local maxFieldX = popupWidth - 50
-	local fieldW = 74
-	local fieldH = 20
-	local checkboxSize = 20
+
+	local function newNumericField(initial, changeFunc)
+		return { buf = initial or "", changeFunc = changeFunc }
+	end
 
 	---@class ModTypeSources
 	local modTypeSources = {
@@ -328,14 +324,14 @@ function M.openPopup(item, slotName, primaryBuild)
 		end
 	end
 
-	-- Build controls
-	local ctrlY = 25
-
-	-- Realm and league dropdowns
+	-- Realm and league selectors
 	local tradeQuery = primaryBuild.itemsTab and primaryBuild.itemsTab.tradeQuery
 	local tradeQueryRequests = tradeQuery and tradeQuery.tradeQueryRequests
 	if not tradeQueryRequests then
 		tradeQueryRequests = new("TradeQueryRequests")
+		if tradeQuery then
+			tradeQuery.tradeQueryRequests = tradeQueryRequests
+		end
 	end
 
 	local function rebuildUrl()
@@ -373,9 +369,8 @@ function M.openPopup(item, slotName, primaryBuild)
 		end)
 	end
 
-	-- Realm dropdown
-	controls.realmLabel = new("LabelControl", {"TOPLEFT", nil, "TOPLEFT"}, {leftMargin, ctrlY, 0, 16}, "^7Realm:")
-	controls.realmDrop = new("DropDownControl", {"LEFT", controls.realmLabel, "RIGHT"}, {4, 0, 80, 20}, {"PC", "PS4", "Xbox"}, function(index, value)
+	-- Realm selector
+	controls.realmDrop = new("Selector", {"PC", "PS4", "Xbox"}, function(index, value)
 		local realmApiId = REALM_API_IDS[value] or "pc"
 		fetchLeaguesForRealm(realmApiId)
 		rebuildUrl()
@@ -385,150 +380,82 @@ function M.openPopup(item, slotName, primaryBuild)
 		controls.realmDrop:SetSel(M.lastRealmIdx, true)
 	end
 
-	-- League dropdown
-	controls.leagueLabel = new("LabelControl", {"LEFT", controls.realmDrop, "RIGHT"}, {12, 0, 0, 16}, "^7League:")
-	controls.leagueDrop = new("DropDownControl", { "LEFT", controls.leagueLabel, "RIGHT" }, { 4, 0, 160, 20 },
-		{ "Loading..." }, function(index, value)
-			local realmApiId = REALM_API_IDS[controls.realmDrop:GetSelValue()] or "pc"
-			M.lastLeagueByRealm = M.lastLeagueByRealm or {}
-			M.lastLeagueByRealm[realmApiId] = value
-			rebuildUrl()
+	-- League selector
+	controls.leagueDrop = new("Selector", { "Loading..." }, function(index, value)
+		local realmApiId = REALM_API_IDS[controls.realmDrop:GetSelValue()] or "pc"
+		M.lastLeagueByRealm = M.lastLeagueByRealm or {}
+		M.lastLeagueByRealm[realmApiId] = value
+		rebuildUrl()
 	end)
 	controls.leagueDrop.enabled = function() return #controls.leagueDrop.list > 0 and controls.leagueDrop.list[1] ~= "Loading..." end
 
-	-- Listed status dropdown
-	controls.listedDrop = new("DropDownControl", { "TOPRIGHT", nil, "TOPRIGHT" }, { -leftMargin, ctrlY, 242, 20 }, LISTED_STATUS_LABELS, function(index, value)
+	-- Listed status selector
+	controls.listedDrop = new("Selector", LISTED_STATUS_LABELS, function(index, value)
 		M.lastListedIndex = index
 		rebuildUrl()
 	end)
 	if M.lastListedIndex then
 		controls.listedDrop:SetSel(M.lastListedIndex, true)
 	end
-	controls.listedLabel = new("LabelControl", {"RIGHT", controls.listedDrop, "LEFT"}, {-4, 0, 0, 16}, "^7Listed:")
 
 	-- Fetch initial leagues for the selected realm
 	fetchLeaguesForRealm(REALM_API_IDS[controls.realmDrop:GetSelValue()] or "pc")
-	ctrlY = ctrlY + rowHeight + 4
 
-
-	if isUnique then
-		-- Unique item name label
-		controls.nameLabel = new("LabelControl", nil, {0, ctrlY, 0, 16}, "^x" .. (colorCodes[item.rarity] or "FFFFFF"):gsub("%^x","") .. item.name)
-		ctrlY = ctrlY + rowHeight
-	else
-		-- Category label
-		local categoryLabel = tradeHelpers.getTradeCategoryLabel(slotName, item)
-		controls.categoryLabel = new("LabelControl", {"TOPLEFT", nil, "TOPLEFT"}, {leftMargin, ctrlY, 0, 16}, "^7Category: " .. categoryLabel)
-		ctrlY = ctrlY + rowHeight
-
-		-- Base type checkbox
-		controls.baseTypeCheck = new("CheckBoxControl", nil, {-popupWidth/2 + leftMargin + checkboxSize/2, ctrlY, checkboxSize}, "", rebuildUrl)
-		controls.baseTypeLabel = new("LabelControl", {"LEFT", controls.baseTypeCheck, "RIGHT"}, {4, 0, 0, 16}, "^7Use specific base: " .. (item.baseName or "Unknown"))
-		ctrlY = ctrlY + rowHeight
+	if not isUnique then
+		-- Base type toggle
+		controls.baseTypeCheck = { state = false, changeFunc = rebuildUrl }
 
 		-- Item level
-		ctrlY = ctrlY + 4
-		controls.ilvlLabel = new("LabelControl", {"TOPLEFT", nil, "TOPLEFT"}, {leftMargin, ctrlY, 0, 16}, "^7Item Level:")
-		controls.ilvlMin = tradeHelpers.newPlainNumericEdit(nil, { minFieldX - popupWidth / 2, ctrlY, fieldW, fieldH }, "", "Min", 4, true, rebuildUrl)
-		controls.ilvlMax = tradeHelpers.newPlainNumericEdit(nil, { maxFieldX - popupWidth / 2, ctrlY, fieldW, fieldH }, "", "Max", 4, true, rebuildUrl)
-		ctrlY = ctrlY + rowHeight
+		controls.ilvlMin = newNumericField("", rebuildUrl)
+		controls.ilvlMax = newNumericField("", rebuildUrl)
 
 		-- Defence stat rows
 		for i, def in ipairs(defenceEntries) do
 			local prefix = "def" .. i
-			controls[prefix .. "Check"] = new("CheckBoxControl", nil, {-popupWidth/2 + leftMargin + checkboxSize/2, ctrlY, checkboxSize}, "", rebuildUrl)
-			controls[prefix .. "Label"] = new("LabelControl", {"LEFT", controls[prefix .. "Check"], "RIGHT"}, {4, 0, 0, 16}, "^7" .. def.label)
-			controls[prefix .. "Min"] = tradeHelpers.newPlainNumericEdit(nil, { minFieldX - popupWidth / 2, ctrlY, fieldW, fieldH }, tostring(m_floor(def.value)), "Min", 6, true, rebuildUrl)
-			controls[prefix .. "Max"] = tradeHelpers.newPlainNumericEdit(nil, { maxFieldX - popupWidth / 2, ctrlY, fieldW, fieldH }, "", "Max", 6, true, rebuildUrl)
-			ctrlY = ctrlY + rowHeight
-		end
-
-		-- Separator between defence stats and mods
-		if #defenceEntries > 0 then
-			ctrlY = ctrlY + 8
+			controls[prefix .. "Check"] = { state = false, changeFunc = rebuildUrl }
+			controls[prefix .. "Min"] = newNumericField(tostring(m_floor(def.value)), rebuildUrl)
+			controls[prefix .. "Max"] = newNumericField("", rebuildUrl)
 		end
 	end
 
 	-- Mod rows
-	local prevType
 	for i, entry in ipairs(modEntries) do
-		-- add extra row to separate e.g. implicits
-		if prevType and prevType ~= entry.type then
-			ctrlY = ctrlY + rowHeight
-		end
-		prevType = entry.type
 		local prefix = "mod" .. i
 		local canSearch = #entry.tradeIds > 0
 
-		local rows = #entry.formattedLines
-
-		local fontSize = 16
-		-- adjust down by half a text row for each row over 1
-		local controlYPos = ctrlY + (rows - 1) * 8
-		local checkBoxXPos = -popupWidth/2 + leftMargin + checkboxSize/2
-		controls[prefix .. "Check"] = new("CheckBoxControl", nil, {checkBoxXPos, controlYPos, checkboxSize}, "", rebuildUrl)
+		controls[prefix .. "Check"] = { state = false, changeFunc = rebuildUrl }
 		controls[prefix .. "Check"].enabled = function() return canSearch end
 
-
-		-- Truncate long mod text to fit
-		--- @type string[]
-		local displayTexts = entry.formattedLines
-		for index, displayText in ipairs(displayTexts) do
-			-- shorten time-lost jewel affix labels to fit better
-			displayText = displayText:gsub(" Passive Skills in Radius also grant", ":")
-			local colorCodeLength = displayText:match("(%^x%x%x%x%x%x%x)") or displayText:gsub("(%^%x)", "") or ""
-
-			if not canSearch then
-				-- strip color codes and replace with gray
-				displayText = "^8" .. displayText:gsub("%^x%x%x%x%x%x%x", ""):gsub("%^%x", "")
-			end
-			if #displayText > (#colorCodeLength + 62) then
-				displayText = displayText:sub(1, #colorCodeLength + 54) .. "..."
-			end
-			displayTexts[index] = displayText
-		end
-
-
-		local displayText = table.concat(displayTexts, "\n")
-		-- labels anchor based on the first row instead of the middle row, so adjust upwards
-		local labelXOffset = (rows - 1) * -8
-
-		controls[prefix .. "Label"] = new("LabelControl", {"LEFT", controls[prefix .. "Check"], "RIGHT"},{ 4, labelXOffset, 0, fontSize },
-			displayText)
 		-- when the trade site has a dropdown for the value, we opt to disable
 		-- the inputs as they are numeric
 		if not (entry.isOption or entry.needsExactValue) and entry.value then
-			controls[prefix .. "Min"] = tradeHelpers.newPlainNumericEdit(nil, { minFieldX - popupWidth / 2, controlYPos, fieldW, fieldH }, entry.value ~= 0 and tostring(entry.value) or "", "Min", 8, nil, rebuildUrl)
-			controls[prefix .. "Max"] = tradeHelpers.newPlainNumericEdit(nil, { maxFieldX - popupWidth / 2, controlYPos, fieldW, fieldH }, "", "Max", 8, nil, rebuildUrl)
+			controls[prefix .. "Min"] = newNumericField(entry.value ~= 0 and tostring(entry.value) or "", rebuildUrl)
+			controls[prefix .. "Max"] = newNumericField("", rebuildUrl)
 			if not canSearch then
 				controls[prefix .. "Min"].enabled = function() return false end
 				controls[prefix .. "Max"].enabled = function() return false end
 			end
 		end
-		ctrlY = ctrlY + math.max(rowHeight, fontSize*rows + 8)
 	end
 
-	-- Search button
-	ctrlY = ctrlY + 8
-	controls.search = new("ButtonControl", nil, {0, ctrlY, 110, 20}, "Open URL", function()
-		Copy(uri)
-		OpenURL(uri)
-	end, nil)
-	controls.search.tooltipText = "The URL is also copied to the clipboard."
+	-- Search action
+	controls.search = {
+		onClick = function()
+			Copy(uri)
+			OpenURL(uri)
+		end
+	}
 	controls.search.enabled = function()
 		return uri and uri ~= ""
 	end
 
-	controls.close = new("ButtonControl", nil, {popupWidth/2 - 50, ctrlY, 60, 20}, "Close", function()
-		main:ClosePopup()
-	end)
+	controls.close = {
+		onClick = function()
+			main:ClosePopup()
+		end
+	}
 
-	-- Calculate popup height from final control position
-	local popupHeight = ctrlY + fieldH + 16
-	if popupHeight > 600 then popupHeight = 600 end
-
-	local title = "Buy Similar"
-	main:OpenPopup(popupWidth, popupHeight, title, controls, "search", nil, "close")
+	main:OpenPopup(nil, nil, "Buy Similar", controls, "search", nil, "close")
 end
 
 return M

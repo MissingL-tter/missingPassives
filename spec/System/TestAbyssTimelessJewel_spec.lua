@@ -388,9 +388,6 @@ describe("Abyss timeless jewels", function()
 		build.timelessData.searchListFallback = ""
 		build.treeTab:FindTimelessJewel()
 		local controls = main.popups[1].controls
-		local _, protectLabelY = controls.protectAllocatedLabel:GetPos()
-		local _, requiredAscendancyY = controls.abyssAscendancySelect:GetPos()
-		assert.is_true(requiredAscendancyY + controls.abyssAscendancySelect:GetProperty("height") < protectLabelY)
 		for _, option in ipairs(controls.nodeSelect.list) do
 			assert.is_nil(option.id and option.id:match("^abyss_special_ascendancy_notable_"))
 		end
@@ -429,8 +426,6 @@ describe("Abyss timeless jewels", function()
 		assert.is_true(#tooltip.lines > 0)
 		assert.are.same(spec.tree.nodes[53884].sd, protectedOption.descriptions)
 		controls.protectAllocatedButtonAdd.onClick()
-		local _, requiredAscendancyYAfterAdd = controls.abyssAscendancySelect:GetPos()
-		assert.are.equal(requiredAscendancyY, requiredAscendancyYAfterAdd)
 		controls.searchButton.onClick()
 		assert.are.equal(0, #build.timelessData.searchResults)
 	end)

@@ -87,24 +87,11 @@ describe("BuildListHelpers", function()
 		assert.are.same("Builds/Cloud.xml", cloudErrorPath)
 	end)
 
-	it("blocks descendant folder targets and selects duplicate filenames by path", function()
+	it("blocks descendant folder targets", function()
 		local rootFolder = { folderName = "Alpha", subPath = "" }
 		local childFolder = { folderName = "Beta", subPath = "Alpha/" }
-		local firstBuild = { fileName = "Same.xml", subPath = "Alpha/", fullFileName = "Builds/Alpha/Same.xml" }
-		local secondBuild = { fileName = "Same.xml", subPath = "Other/", fullFileName = "Builds/Other/Same.xml" }
-		local listMode = {
-			list = { firstBuild, secondBuild },
-			subPath = "",
-			BuildList = function() end,
-		}
-		local control = new("BuildListControl", nil, { 0, 0, 500, 500 }, listMode)
 
-		control:SelByFullFileName("Builds/Other/Same.xml")
-
-		assert.are.same(secondBuild, control.selValue)
-		assert.is_false(control:CanDragToValue(1, childFolder, { selValue = rootFolder }))
+		assert.is_false(buildListHelpers.CanMoveToSubPath(rootFolder, childFolder.subPath .. childFolder.folderName .. "/"))
 		assert.is_true(buildListHelpers.CanMoveToSubPath(rootFolder, "Other/"))
-		control:SelByFullFileName("Builds/Missing.xml")
-		assert.is_nil(control.selValue)
 	end)
 end)
