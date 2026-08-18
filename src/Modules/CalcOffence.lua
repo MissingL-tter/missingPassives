@@ -3235,14 +3235,19 @@ function calcs.offence(env, actor, activeSkill)
 		local hitRate = output.HitChance / 100 * (globalOutput.HitSpeed or globalOutput.Speed) * skillData.dpsMultiplier
 
 		-- Calculate culling DPS
-		local criticalCull = skillModList:Max(cfg, "CriticalCullPercent") or 0
-		if criticalCull > 0 then
-			criticalCull = m_min(criticalCull, criticalCull * (1 - (1 - output.CritChance / 100) ^ hitRate))
+		if env.configInput.excludeCullingDPS then
+			globalOutput.CullPercent = 0
+			globalOutput.CullMultiplier = 1
+		else
+			local criticalCull = skillModList:Max(cfg, "CriticalCullPercent") or 0
+			if criticalCull > 0 then
+				criticalCull = m_min(criticalCull, criticalCull * (1 - (1 - output.CritChance / 100) ^ hitRate))
+			end
+			local regularCull = skillModList:Max(cfg, "CullPercent") or 0
+			local maxCullPercent = m_max(criticalCull, regularCull)
+			globalOutput.CullPercent = maxCullPercent
+			globalOutput.CullMultiplier = 100 / (100 - globalOutput.CullPercent)
 		end
-		local regularCull = skillModList:Max(cfg, "CullPercent") or 0
-		local maxCullPercent = m_max(criticalCull, regularCull)
-		globalOutput.CullPercent = maxCullPercent
-		globalOutput.CullMultiplier = 100 / (100 - globalOutput.CullPercent)
 
 		--Calculate reservation DPS
 		globalOutput.ReservationDpsMultiplier = 100 / (100 - enemyDB:Sum("BASE", nil, "LifeReservationPercent"))
