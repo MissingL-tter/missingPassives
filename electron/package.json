@@ -1,0 +1,13 @@
+{
+  "name": "missingpassives",
+  "version": "0.1.0",
+  "description": "Electron shell for the missingPassives headless Path of Building engine",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^43.4.0"
+  }
+}

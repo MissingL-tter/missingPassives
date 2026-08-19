@@ -1,0 +1,293 @@
+@font-face {
+	font-family: "AnthropicSans";
+	src: url("fonts/claudeSans.woff2") format("woff2");
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "AnthropicSerif";
+	src: url("fonts/claudeSerif.woff2") format("woff2");
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "AnthropicMono";
+	src: url("fonts/claudeMono.woff2") format("woff2");
+	font-display: swap;
+}
+
+:root {
+	--font-sans: "AnthropicSans", "Segoe UI", system-ui, sans-serif;
+	--font-serif: "AnthropicSerif", Georgia, "Times New Roman", serif;
+	--font-mono: "AnthropicMono", ui-monospace, Consolas, monospace;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background: #0d0d0f;
+	color: #d0d0d0;
+	font: 13px/1.45 var(--font-sans);
+	height: 100vh;
+	overflow: hidden;
+}
+
+#layout {
+	display: grid;
+	grid-template-columns: 240px 340px 1fr;
+	height: 100vh;
+}
+
+aside, main {
+	padding: 12px;
+	overflow-y: auto;
+}
+
+#buildPanel {
+	background: #131316;
+	border-right: 1px solid #26262b;
+}
+
+#sidebar {
+	background: #101013;
+	border-right: 1px solid #26262b;
+}
+
+h1 {
+	font-size: 15px;
+	color: #e7c15c;
+	margin-bottom: 12px;
+}
+
+.panelLabel {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #6f6f78;
+	margin: 12px 0 6px;
+}
+
+#buildList {
+	list-style: none;
+}
+
+#buildList li {
+	padding: 5px 8px;
+	border-radius: 4px;
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#buildList li:hover {
+	background: #1e1e24;
+}
+
+#buildList li.active {
+	background: #2a2a33;
+	color: #fff;
+}
+
+/* Menu/action items carry the serif voice */
+button, select {
+	width: 100%;
+	margin-top: 10px;
+	padding: 6px 8px;
+	background: #1e1e24;
+	color: #d0d0d0;
+	border: 1px solid #33333c;
+	border-radius: 4px;
+	cursor: pointer;
+	font: inherit;
+	font-family: var(--font-serif);
+}
+
+button:hover {
+	background: #26262e;
+}
+
+#engineStatus {
+	margin-top: 12px;
+	font-size: 11px;
+	color: #6f6f78;
+}
+
+#engineStatus.statusReady {
+	color: #6fbf6f;
+}
+
+#engineStatus.statusError {
+	color: #d05050;
+}
+
+#summary {
+	padding-bottom: 6px;
+	border-bottom: 1px solid #26262b;
+}
+
+#summary .buildName {
+	color: #fff;
+	font-weight: 600;
+}
+
+#summary .buildMeta {
+	color: #8a8a93;
+	font-size: 12px;
+}
+
+#statBox {
+	font-size: 12.5px;
+	font-variant-numeric: tabular-nums;
+}
+
+.statRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.statRow .statLabel {
+	white-space: nowrap;
+}
+
+/* Technical values render in the mono voice */
+.statRow .statValue {
+	white-space: nowrap;
+	font-family: var(--font-mono);
+	font-size: 12px;
+}
+
+.statSpacer {
+	height: 6px;
+}
+
+.statCenter {
+	text-align: center;
+	color: #b9a05c;
+}
+
+#warnings {
+	margin-top: 10px;
+	color: #d05050;
+	font-size: 12px;
+}
+
+#content {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	overflow: hidden;
+}
+
+#treePanel {
+	flex: 1;
+	position: relative;
+	overflow: hidden;
+}
+
+#treeCanvas {
+	display: block;
+	cursor: default;
+}
+
+#treeSearch {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	width: 280px;
+	padding: 6px 8px;
+	background: #16161bee;
+	color: #d0d0d0;
+	border: 1px solid #33333c;
+	border-radius: 4px;
+	font: 12px var(--font-sans);
+	outline: none;
+}
+
+#treeSearch:focus {
+	border-color: #5a5a68;
+}
+
+#logPanel {
+	border-top: 1px solid #26262b;
+	padding: 6px 12px;
+	max-height: 180px;
+	overflow-y: auto;
+	flex-shrink: 0;
+}
+
+#logPanel summary {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #6f6f78;
+	cursor: pointer;
+	user-select: none;
+}
+
+#engineLog {
+	font: 11px/1.5 var(--font-mono);
+	color: #56565f;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+#treeTooltip {
+	display: none;
+	position: fixed;
+	z-index: 10;
+	max-width: 380px;
+	background: #16161b;
+	border: 1px solid #3a3a44;
+	border-radius: 6px;
+	padding: 8px 10px;
+	pointer-events: none;
+	font-size: 12px;
+}
+
+#treeTooltip .ttTitle {
+	color: #e7c15c;
+	font-weight: 600;
+}
+
+#treeTooltip .ttMeta {
+	color: #8a8a93;
+	font-size: 11px;
+	margin-top: 2px;
+}
+
+#treeTooltip .ttStat {
+	color: #8888e0;
+	margin-top: 2px;
+}
+
+#masteryMenu {
+	display: none;
+	position: fixed;
+	z-index: 11;
+	width: 400px;
+	max-height: 60vh;
+	overflow-y: auto;
+	background: #16161b;
+	border: 1px solid #3a3a44;
+	border-radius: 6px;
+	padding: 4px;
+	font-size: 12px;
+}
+
+#masteryMenu .masteryItem {
+	padding: 6px 8px;
+	border-radius: 4px;
+	cursor: pointer;
+	color: #8888e0;
+}
+
+#masteryMenu .masteryItem:hover {
+	background: #24242c;
+	color: #b9b9f0;
+}

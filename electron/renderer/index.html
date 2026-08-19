@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+	<title>missingPassives</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="layout">
+		<aside id="buildPanel">
+			<h1>missingPassives</h1>
+			<div class="panelLabel">Builds</div>
+			<ul id="buildList"></ul>
+			<button id="newBuildButton">New build</button>
+			<div id="engineStatus" class="statusBooting">engine: idle</div>
+		</aside>
+		<aside id="sidebar">
+			<div id="summary"></div>
+			<div class="panelLabel">Main skill</div>
+			<select id="skillSelect"></select>
+			<div class="panelLabel">Stats</div>
+			<div id="statBox"></div>
+			<div id="warnings"></div>
+		</aside>
+		<main id="content">
+			<div id="treePanel">
+				<canvas id="treeCanvas"></canvas>
+				<input id="treeSearch" type="text" placeholder="Search nodes… (oil: for anoints)" spellcheck="false">
+			</div>
+			<details id="logPanel">
+				<summary>Engine log</summary>
+				<pre id="engineLog"></pre>
+			</details>
+		</main>
+	</div>
+	<div id="treeTooltip"></div>
+	<div id="masteryMenu"></div>
+	<script src="tree.js"></script>
+	<script src="renderer.js"></script>
+</body>
+</html>
