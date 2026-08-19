@@ -5,7 +5,8 @@
   "main": "main.js",
   "private": true,
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "test:search": "set ELECTRON_RUN_AS_NODE=1&& electron test/search.test.js"
   },
   "devDependencies": {
     "electron": "^43.4.0"

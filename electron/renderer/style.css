@@ -195,22 +195,60 @@ button:hover {
 	cursor: default;
 }
 
-#treeSearch {
+#treeSearchBox {
 	position: absolute;
 	top: 10px;
 	left: 10px;
+	display: flex;
+	align-items: center;
+	gap: 2px;
 	width: 280px;
-	padding: 6px 8px;
+	padding: 2px 4px 2px 8px;
 	background: #16161bee;
-	color: #d0d0d0;
 	border: 1px solid #33333c;
 	border-radius: 4px;
+}
+
+#treeSearchBox:focus-within {
+	border-color: #5a5a68;
+}
+
+#treeSearchBox.searchInvalid {
+	border-color: #c05555;
+}
+
+#treeSearch {
+	flex: 1;
+	min-width: 0;
+	padding: 4px 0;
+	background: none;
+	color: #d0d0d0;
+	border: none;
 	font: 12px var(--font-sans);
 	outline: none;
 }
 
-#treeSearch:focus {
-	border-color: #5a5a68;
+.searchToggle {
+	flex: none;
+	width: 22px;
+	padding: 3px 0;
+	background: none;
+	color: #7a7a86;
+	border: 1px solid transparent;
+	border-radius: 3px;
+	font: 11px var(--font-mono);
+	cursor: default;
+}
+
+.searchToggle:hover {
+	color: #d0d0d0;
+	border-color: #3d3d47;
+}
+
+.searchToggle[aria-pressed="true"] {
+	color: #e7c15c;
+	background: #2a2a33;
+	border-color: #4c4c58;
 }
 
 #logPanel {

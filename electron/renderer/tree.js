@@ -65,7 +65,9 @@ class TreeView {
 		this.resize();
 	}
 
-	async loadTree() {
+	// fit: false refetches geometry without resetting zoom/pan, for refreshes
+	// that happen mid-edit (a mastery pick rewrites the node's stat lines)
+	async loadTree({ fit = true } = {}) {
 		const tree = await window.pob.call("getTree");
 		this.nodes.clear();
 		for (const node of tree.nodes) {
@@ -75,11 +77,20 @@ class TreeView {
 		this.classes = tree.classes;
 		this.nodeCount = tree.nodeCount;
 		this.clearHover();
-		this.fitView();
+		if (fit) {
+			this.fitView();
+		}
 		this.render();
+		if (this.callbacks.onTreeLoaded) {
+			this.callbacks.onTreeLoaded(this.nodes);
+		}
 	}
 
 	setSearchMatches(nodeIds) {
+		// Matching is cheap, repainting the whole canvas is not
+		if (nodeIds.length === this.searchMatches.size && nodeIds.every((id) => this.searchMatches.has(id))) {
+			return;
+		}
 		this.searchMatches = new Set(nodeIds);
 		this.render();
 	}
@@ -398,6 +409,9 @@ class TreeView {
 				try {
 					this.busy = true;
 					const state = await window.pob.call("selectMasteryEffect", { id: node.id, effectId: effect.id });
+					// The pick rewrites this node's stat lines engine-side, and
+					// nodeCount does not change, so nothing else would refresh them
+					await this.loadTree({ fit: false });
 					this.callbacks.onState(state);
 				} catch (err) {
 					this.callbacks.onError(err);

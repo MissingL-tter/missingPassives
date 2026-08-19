@@ -129,7 +129,6 @@ local function serializeTreeState()
 		curClassId = spec.curClassId,
 		curClassName = spec.curClassName,
 		curAscendClassName = spec.curAscendClassName,
-		searchStr = build.treeTab.viewer.searchStr or "",
 	}
 end
 
@@ -340,106 +339,6 @@ function methods.selectMasteryEffect(params)
 	build.treeTab:SelectMasteryEffect(node, params.effectId)
 	runCallback("OnFrame")
 	return fullState()
-end
-
--- Tree search, ported from the old tree view: quoted phrases and words, Lua
--- patterns with (a|b) alternation via string.matchOrPattern, and "oil:" to
--- search anoint recipes; matches against name, stats, mod names, and type
-local function prepSearch(search)
-	search = search:lower()
-	local searchWords = {}
-	for matchstring, v in search:gmatch('"([^"]*)"') do
-		searchWords[#searchWords+1] = matchstring
-		search = search:gsub('"'..matchstring:gsub("([%(%)])", "%%%1")..'"', "")
-	end
-	for matchstring, v in search:gmatch("(%S*)") do
-		if matchstring:match("%S") ~= nil then
-			searchWords[#searchWords+1] = matchstring
-		end
-	end
-	return searchWords
-end
-
-local function nodeMatchesSearch(node, searchParams)
-	if node.type == "ClassStart" or (node.type == "Mastery" and not node.masteryEffects) then
-		return
-	end
-
-	local needMatches = copyTable(searchParams)
-	local err
-
-	local function search(haystack, need)
-		for i=#need, 1, -1 do
-			if haystack:matchOrPattern(need[i]) then
-				table.remove(need, i)
-			end
-		end
-		return need
-	end
-
-	-- Check recipes
-	if needMatches[1] == "oil:" then
-		if node.recipe then
-			for _, recipeName in ipairs(node.recipe) do
-				err, needMatches = PCall(search, recipeName:gsub("Oil",""):lower(), needMatches)
-				if err then return false end
-				if #needMatches == 1 and needMatches[1] == "oil:" then
-					return true
-				end
-			end
-		end
-		return false
-	end
-
-	-- Check node name
-	err, needMatches = PCall(search, node.dn:lower(), needMatches)
-	if err then return false end
-	if #needMatches == 0 then
-		return true
-	end
-
-	-- Check node description
-	for index, line in ipairs(node.sd) do
-		-- Check display text first
-		err, needMatches = PCall(search, line:lower(), needMatches)
-		if err then return false end
-		if #needMatches == 0 then
-			return true
-		end
-		if #needMatches > 0 and node.mods[index].list then
-			-- Then check modifiers
-			for _, mod in ipairs(node.mods[index].list) do
-				err, needMatches = PCall(search, mod.name, needMatches)
-				if err then return false end
-				if #needMatches == 0 then
-					return true
-				end
-			end
-		end
-	end
-
-	-- Check node type
-	err, needMatches = PCall(search, node.type:lower(), needMatches)
-	if err then return false end
-	if #needMatches == 0 then
-		return true
-	end
-end
-
-function methods.searchNodes(params)
-	local query = tostring(params and params.query or "")
-	build.treeTab.viewer.searchStr = query
-	build.treeTab.searchFlag = query ~= build.treeTab.viewer.searchStrSaved
-	local matches = jsonArray({ })
-	local searchParams = prepSearch(query)
-	if #searchParams > 0 then
-		for nodeId, node in pairs(build.spec.nodes) do
-			if nodeMatchesSearch(node, searchParams) then
-				matches[#matches + 1] = nodeId
-			end
-		end
-	end
-	return { matches = matches, query = query }
 end
 
 function methods.undoTree()

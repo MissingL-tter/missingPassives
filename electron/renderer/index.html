@@ -26,7 +26,11 @@
 		<main id="content">
 			<div id="treePanel">
 				<canvas id="treeCanvas"></canvas>
-				<input id="treeSearch" type="text" placeholder="Search nodes… (oil: for anoints)" spellcheck="false">
+				<div id="treeSearchBox">
+					<input id="treeSearch" type="text" placeholder="Search nodes…" spellcheck="false">
+					<button id="treeSearchCase" class="searchToggle" type="button" aria-pressed="false" title="Match case">Aa</button>
+					<button id="treeSearchRegex" class="searchToggle" type="button" aria-pressed="false" title="Use regular expression">.*</button>
+				</div>
 			</div>
 			<details id="logPanel">
 				<summary>Engine log</summary>
@@ -37,6 +41,7 @@
 	<div id="treeTooltip"></div>
 	<div id="masteryMenu"></div>
 	<script src="tree.js"></script>
+	<script src="search.js"></script>
 	<script src="renderer.js"></script>
 </body>
 </html>

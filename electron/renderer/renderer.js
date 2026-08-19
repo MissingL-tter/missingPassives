@@ -25,6 +25,7 @@ const treeView = new TreeView(
 	{
 		onState: (state) => renderState(state),
 		onError: (err) => setStatus(String(err), "statusError"),
+		onTreeLoaded: (nodes) => rebuildSearchCorpus(nodes),
 	}
 );
 
@@ -129,26 +130,62 @@ function renderWarnings(warnings) {
 	}
 }
 
+// Tree search is entirely local: the corpus is rebuilt whenever tree geometry
+// is (re)fetched, and matching runs on the next frame after any input, so no
+// keystroke ever reaches the engine
+const treeSearchBoxEl = document.getElementById("treeSearchBox");
 const treeSearchEl = document.getElementById("treeSearch");
-let searchSeq = 0;
+const searchCaseEl = document.getElementById("treeSearchCase");
+const searchRegexEl = document.getElementById("treeSearchRegex");
 
-async function runTreeSearch(query) {
-	const seq = ++searchSeq;
-	try {
-		const result = await window.pob.call("searchNodes", { query });
-		if (seq === searchSeq) {
-			treeView.setSearchMatches(result.matches);
-		}
-	} catch (err) {
-		setStatus(String(err), "statusError");
+let searchCorpus = [];
+let searchFrame = null;
+
+function loadSearchToggle(el, key) {
+	if (localStorage.getItem(key) === "1") {
+		el.setAttribute("aria-pressed", "true");
 	}
+	el.addEventListener("click", () => {
+		const next = el.getAttribute("aria-pressed") !== "true";
+		el.setAttribute("aria-pressed", String(next));
+		localStorage.setItem(key, next ? "1" : "0");
+		applySearch();
+	});
 }
 
-let searchDebounce = null;
-treeSearchEl.addEventListener("input", () => {
-	clearTimeout(searchDebounce);
-	searchDebounce = setTimeout(() => runTreeSearch(treeSearchEl.value), 200);
-});
+loadSearchToggle(searchCaseEl, "search.matchCase");
+loadSearchToggle(searchRegexEl, "search.regex");
+
+function setSearchError(message) {
+	treeSearchBoxEl.classList.toggle("searchInvalid", Boolean(message));
+	treeSearchEl.title = message || "";
+}
+
+// Called explicitly rather than only from the input event, so a preset search
+// (SMOKE_SEARCH assigns .value, which fires nothing) and corpus rebuilds match
+function applySearch() {
+	const compiled = PobSearch.compileQuery(treeSearchEl.value, {
+		regex: searchRegexEl.getAttribute("aria-pressed") === "true",
+		matchCase: searchCaseEl.getAttribute("aria-pressed") === "true",
+	});
+	setSearchError(compiled.error);
+	treeView.setSearchMatches(compiled.test ? PobSearch.matchCorpus(searchCorpus, compiled) : []);
+}
+
+function scheduleSearch() {
+	if (searchFrame !== null) return;
+	searchFrame = requestAnimationFrame(() => {
+		searchFrame = null;
+		applySearch();
+	});
+}
+
+treeSearchEl.addEventListener("input", scheduleSearch);
+
+function rebuildSearchCorpus(nodes) {
+	searchCorpus = PobSearch.buildCorpus(nodes.values());
+	applySearch();
+}
 
 function renderState(state) {
 	renderSummary(state.summary);
@@ -156,17 +193,9 @@ function renderState(state) {
 	renderStatBox(state.statBox);
 	renderWarnings(state.warnings);
 	if (state.treeState) {
+		// Node text only changes when geometry is refetched, and that path
+		// rebuilds the corpus and re-matches on its own
 		treeView.setState(state.treeState);
-		// Restore a search saved in the build, and re-run the active one after
-		// tree mutations so highlights track cluster-jewel node changes
-		if (document.activeElement !== treeSearchEl && !treeSearchEl.value && state.treeState.searchStr) {
-			treeSearchEl.value = state.treeState.searchStr;
-		}
-		if (treeSearchEl.value) {
-			runTreeSearch(treeSearchEl.value);
-		} else {
-			treeView.setSearchMatches([]);
-		}
 	}
 	if (firstRender) {
 		firstRender = false;
