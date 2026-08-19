@@ -326,14 +326,12 @@ end
 function methods.getMasteryEffects(params)
 	local node = build.spec.nodes[params.id]
 	assert(node and node.type == "Mastery", "not a mastery node: " .. tostring(params.id))
+	local options, selected = build.treeTab:GetMasteryEffectOptions(node)
 	local effects = jsonArray({ })
-	for _, effect in pairs(node.masteryEffects or { }) do
-		local assignedNodeId = isValueInTable(build.spec.masterySelections, effect.effect)
-		if not assignedNodeId or assignedNodeId == node.id then
-			effects[#effects + 1] = { id = effect.effect, label = table.concat(effect.stats or { }, " / ") }
-		end
+	for _, option in ipairs(options) do
+		effects[#effects + 1] = { id = option.id, label = table.concat(option.stats, " / ") }
 	end
-	return { effects = effects, selected = build.spec.masterySelections[node.id] }
+	return { effects = effects, selected = selected }
 end
 
 function methods.selectMasteryEffect(params)

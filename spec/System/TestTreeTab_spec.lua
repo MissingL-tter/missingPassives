@@ -60,4 +60,51 @@ describe("TreeTab", function()
 		assert.are.same(10, report[2].power)
 		assert.are.same("Two Hand Mastery: Gain 10 Damage", report[2].name)
 	end)
+
+	describe("GetMasteryEffectOptions", function()
+		local masteryNode
+
+		before_each(function()
+			masteryNode = {
+				id = 1,
+				type = "Mastery",
+				dn = "Two Hand Mastery",
+				masteryEffects = {
+					{ effect = 101, stats = { "Gain 10 Damage" } },
+					{ effect = 102, stats = { "Gain 20 Damage" } },
+				},
+			}
+			build.spec.nodes = { [masteryNode.id] = masteryNode }
+			build.spec.masterySelections = { }
+		end)
+
+		it("offers every effect when none are assigned", function()
+			local options, selected = build.treeTab:GetMasteryEffectOptions(masteryNode)
+
+			assert.are.same(2, #options)
+			assert.are.same(101, options[1].id)
+			assert.are.same({ "Gain 10 Damage" }, options[1].stats)
+			assert.are.same(102, options[2].id)
+			assert.is_nil(selected)
+		end)
+
+		it("excludes an effect held by another mastery node", function()
+			build.spec.masterySelections = { [7] = 101 }
+
+			local options = build.treeTab:GetMasteryEffectOptions(masteryNode)
+
+			assert.are.same(1, #options)
+			assert.are.same(102, options[1].id)
+		end)
+
+		it("keeps this node's own selection and reports it", function()
+			build.spec.masterySelections = { [masteryNode.id] = 101 }
+
+			local options, selected = build.treeTab:GetMasteryEffectOptions(masteryNode)
+
+			assert.are.same(2, #options)
+			assert.are.same(101, options[1].id)
+			assert.are.same(101, selected)
+		end)
+	end)
 end)

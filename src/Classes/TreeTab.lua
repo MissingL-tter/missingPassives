@@ -121,6 +121,21 @@ function TreeTabClass:SelectMasteryEffect(node, effectId)
 	self.build.buildFlag = true
 end
 
+-- The effects a mastery node may still be given: an effect already assigned to
+-- a different mastery is spent, but this node keeps its own current selection.
+-- Returns the eligible effects in tree order plus this node's selection, if any
+function TreeTabClass:GetMasteryEffectOptions(node)
+	local masterySelections = self.build.spec.masterySelections
+	local options = { }
+	for _, effect in ipairs(node.masteryEffects or { }) do
+		local assignedNodeId = isValueInTable(masterySelections, effect.effect)
+		if not assignedNodeId or assignedNodeId == node.id then
+			t_insert(options, { id = effect.effect, stats = effect.stats or { } })
+		end
+	end
+	return options, masterySelections[node.id]
+end
+
 function TreeTabClass:GetSpecList()
 	local newSpecList = { }
 	for _, spec in ipairs(self.specList) do
