@@ -160,3 +160,38 @@ var SkillType = struct {
 	SupportedByCrabTotem: 131, SupportedBySpellTotem: 132, CreatesCorpse: 133,
 	RequiresStaff: 134, Pact: 135,
 }
+
+// modFlagNames and keywordFlagNames mirror iterating the ModFlag/KeywordFlag
+// tables with pairs(), as modLib.formatFlags does: every named flag whose bits
+// are wholly contained in a value contributes its name.
+var modFlagNames = map[string]int64{
+	"Attack": ModFlag.Attack, "Spell": ModFlag.Spell, "Hit": ModFlag.Hit,
+	"Dot": ModFlag.Dot, "Cast": ModFlag.Cast, "Melee": ModFlag.Melee,
+	"Area": ModFlag.Area, "Projectile": ModFlag.Projectile,
+	"SourceMask": ModFlag.SourceMask, "Ailment": ModFlag.Ailment,
+	"MeleeHit": ModFlag.MeleeHit, "Weapon": ModFlag.Weapon,
+	"Axe": ModFlag.Axe, "Bow": ModFlag.Bow, "Claw": ModFlag.Claw,
+	"Dagger": ModFlag.Dagger, "Mace": ModFlag.Mace, "Staff": ModFlag.Staff,
+	"Sword": ModFlag.Sword, "Wand": ModFlag.Wand, "Unarmed": ModFlag.Unarmed,
+	"Fishing": ModFlag.Fishing, "WeaponMelee": ModFlag.WeaponMelee,
+	"WeaponRanged": ModFlag.WeaponRanged, "Weapon1H": ModFlag.Weapon1H,
+	"Weapon2H": ModFlag.Weapon2H, "WeaponMask": ModFlag.WeaponMask,
+}
+
+var keywordFlagNames = map[string]int64{
+	"Aura": KeywordFlag.Aura, "Curse": KeywordFlag.Curse,
+	"Warcry": KeywordFlag.Warcry, "Movement": KeywordFlag.Movement,
+	"Physical": KeywordFlag.Physical, "Fire": KeywordFlag.Fire,
+	"Cold": KeywordFlag.Cold, "Lightning": KeywordFlag.Lightning,
+	"Chaos": KeywordFlag.Chaos, "Vaal": KeywordFlag.Vaal,
+	"Bow": KeywordFlag.Bow, "Arrow": KeywordFlag.Arrow,
+	"Trap": KeywordFlag.Trap, "Mine": KeywordFlag.Mine,
+	"Totem": KeywordFlag.Totem, "Minion": KeywordFlag.Minion,
+	"Attack": KeywordFlag.Attack, "Spell": KeywordFlag.Spell,
+	"Hit": KeywordFlag.Hit, "Ailment": KeywordFlag.Ailment,
+	"Brand": KeywordFlag.Brand, "Poison": KeywordFlag.Poison,
+	"Bleed": KeywordFlag.Bleed, "Ignite": KeywordFlag.Ignite,
+	"PhysicalDot": KeywordFlag.PhysicalDot, "LightningDot": KeywordFlag.LightningDot,
+	"ColdDot": KeywordFlag.ColdDot, "FireDot": KeywordFlag.FireDot,
+	"ChaosDot": KeywordFlag.ChaosDot, "MatchAll": KeywordFlag.MatchAll,
+}

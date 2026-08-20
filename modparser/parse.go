@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // The scan tables, built once. specialModList is assembled exactly as the
@@ -73,13 +74,46 @@ func (e jewelFuncEntry) tagValue(c caps) Tag {
 // pass 1, then pass 2 when pass 1 produced modifiers but left a remainder.
 // It returns the modifier list (nil when the line was not understood) and the
 // unconsumed remainder ("" when everything was consumed).
+//
+// Results are cached per line and deep-copied on every return, exactly as the
+// reference's cache wrapper does — callers (SetSource among them) mutate what
+// they are given.
 func Parse(line string) (mods []any, extra string) {
-	mods, extra = parseMod(line, 1)
-	if mods != nil && extra != "" {
-		mods, extra = parseMod(line, 2)
+	parseCacheMu.Lock()
+	entry, hit := parseCache[line]
+	parseCacheMu.Unlock()
+	if !hit {
+		entry.mods, entry.extra = parseMod(line, 1)
+		if entry.mods != nil && entry.extra != "" {
+			entry.mods, entry.extra = parseMod(line, 2)
+		}
+		parseCacheMu.Lock()
+		parseCache[line] = entry
+		parseCacheMu.Unlock()
 	}
-	return mods, extra
+	if entry.mods == nil {
+		return nil, entry.extra
+	}
+	out := make([]any, len(entry.mods))
+	for i, m := range entry.mods {
+		if mm, ok := m.(*Mod); ok {
+			out[i] = CopyMod(mm)
+		} else {
+			out[i] = copyAny(m)
+		}
+	}
+	return out, entry.extra
 }
+
+type parseResult struct {
+	mods  []any
+	extra string
+}
+
+var (
+	parseCache   = map[string]parseResult{}
+	parseCacheMu sync.Mutex
+)
 
 // parseMod ports ModParser.lua's parseMod (line 6580). order decides whether
 // the skill name is looked for after (1) or before (2) the modifier name.
