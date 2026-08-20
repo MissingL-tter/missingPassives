@@ -115,7 +115,7 @@ func TestTablesAgainstReference(t *testing.T) {
 // with different skill ids, and Lua's pairs() order decides which survives —
 // three consecutive runs of the reference's own loop produced both answers.
 // The Go side deterministically keeps affliction_curse_effect_small (the
-// lexicographically greatest, see tools/gen_vocab.lua).
+// lexicographically greatest, see modparser/vocab.go).
 var referenceNondeterminism = map[string]map[string]bool{
 	"clusterJewelSkills|added small passive skills grant: 2% increased effect of your curses": {
 		`{"1":{"flags":0,"keywordFlags":0,"name":"JewelData","type":"LIST","value":{"key":"clusterJewelSkill","value":"affliction_curse_effect"}}}`:       true,

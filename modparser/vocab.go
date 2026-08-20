@@ -1,5 +1,7 @@
-// Code generated from .archive/src/Data by tools/gen_vocab.lua. DO NOT EDIT.
-// Regenerate from .archive/src/ with: luajit ../../tools/gen_vocab.lua
+// The mod parser vocabulary: what ModParser.lua read from data.skills,
+// data.gems and data.clusterJewels. Extracted one-time from the reference;
+// maintained here in Go. A Go-native regeneration path arrives with the
+// game-data module.
 
 package modparser
 

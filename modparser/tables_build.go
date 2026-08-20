@@ -8,7 +8,7 @@ import (
 // Construction of the data-driven tables — ModParser.lua:6040-6094 (skill name
 // lookups plus per-skill specialModList entries), 5881-5886 (keystones) and
 // 6540-6553 (cluster jewel skills). The loops are ported as written; the data
-// they iterate comes from vocab_gen.go.
+// they iterate comes from vocab.go.
 
 // skillLists bundles the three tables the gem loop fills, so plain var
 // initialisers (which Go orders by dependency, unlike init functions) build
