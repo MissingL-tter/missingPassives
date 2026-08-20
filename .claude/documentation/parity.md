@@ -127,6 +127,24 @@ Domain logic and presentation interleaved. The seam column names where they sepa
 | `build-list` | `Modules/BuildList.lua` `BuildListHelpers.lua` `Classes/BuildListControl.lua` `FolderListControl.lua` | 796 | scan, filter, sort, header parsing and folder moves are logic (`BuildListHelpers`); the screen is view |
 | `ext-build-lists` | `ExtBuildListControl` `ExtBuildListProvider` `PoBArchivesProvider` | 646 | providers are logic; the listing is view |
 
+## Assets
+
+`src/Assets/` — 87 images plus `ascendants/` (class portrait jpegs). Not code, but every one
+is bound to a module and a rendering rule.
+
+| family | files | bound to |
+|---|---|---|
+| item slot icons (`icon_amulet` … `icon_weapon_2_swap`) | 16 | `items-view` |
+| tooltip headers, 9-sliced left/middle/right per rarity (white, magic, rare, unique, gem, foil) | 18 + 6 separators | `tooltips` |
+| passive headers, 9-sliced per node type (normal, notable, keystone, jewel, mastery allocated/unallocated, ascendancy) | 15 | `tooltips` |
+| influence icons (shaper, elder, crusader, redeemer, hunter, warlord, exarch, eater, synthesis, fractured, veiled, breach, memory, experimented, vestigial) | 15 | `items-view`, `tooltips` |
+| radius rings: `ring.png` (jewel socket hover), `ShadedInnerRing`/`ShadedOuterRing` + `Flipped` variants (Thread of Hope), `small_ring.png` (search highlight) | 6 | `tree-view` |
+| `range_guide.png` + `game_ui_small.png` overlay | 2 | `calcs-view` area-of-effect scale |
+| `intangibilitybg.png`, `memorybg.png`, `ascendants/` portraits | — | `tree-view` |
+
+Tree art is separate and lives in `TreeData/` under `tree-data` (sprite sheets, mastery,
+frame, group and connector images, `jewel-radius.png`).
+
 ## Tooling
 
 | module | files | lines |
@@ -155,6 +173,7 @@ build-core ──> every mixed module
 compare ──> tree-view, items, skills, config, calcs
 launcher ──> poe-api, build-sites, updater, trade
 build-list-helpers ──> build-list
+assets ──> tooltips, items-view, tree-view, calcs-view
 ```
 
 Nothing depends on: `notes`, `party`, `toast`, `minion-library`, `ext-build-lists`,
