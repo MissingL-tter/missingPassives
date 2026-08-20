@@ -12,6 +12,28 @@ takes nothing from ModParser.lua at runtime and keeps working when that file is
 deleted. **All patterns are ordinary Go regular expressions**, written as
 backtick literals in the table files and compiled once at start-up.
 
+## export
+
+A Go rewrite of `.archive/src/Export/` — the tool that reads the game's
+`.dat64` tables out of the GGPK and generates every `Data/*.lua` file marked
+"automatically generated". `export/` holds the dat64 reader, column schemas,
+the stat-description engine and 23 of the 24 export scripts (`legionSprites`,
+a GIMP sprite-sheet pipeline, is excluded by decision); `cmd/pobexport` is the
+CLI:
+
+```sh
+# extraction stays with bun_extract_file.exe — see .archive/src/Export/ggpk/README.md
+go run ./cmd/pobexport -src .archive/src/Export/ggpk -out <dir> [script ...]
+```
+
+**`TestExportAgainstReference`** runs every script over the extracted GGPK and
+byte-compares all 123 generated files against the checked-in copies the Lua
+exporter produced from the same game version. **123 / 123 agree.** Where the
+reference leaks LuaJIT internals into its output, the port replicates them
+exactly: the default-seeded `math.random` stream (`export/luaprng.go`) and
+number-keyed `pairs()` iteration order (`export/luatab.go`, verified against
+LuaJIT over 3,000 randomized tables).
+
 ## Verification
 
 Two differential tests, both of which **fail on any disagreement**:
@@ -26,6 +48,12 @@ Two differential tests, both of which **fail on any disagreement**:
   a function there. Reference keys (Lua patterns) are mapped onto the regex
   keys via `internal/luapat`. This covers the entries no corpus line reaches.
   **8,800 / 8,800 agree.**
+- **`TestModToolsAgainstReference`** — the rest of modLib (the formatting
+  family, `parseTags`, `parseFormattedSourceMod`, `compareModParams`,
+  `setSource`, the deep-copying parse cache) replayed over every parsed
+  modifier of the corpus: 12,736 mods x 7 behaviours.
+  **0 disagreements.** `mergeKeystones` is deferred to the mod-store port,
+  where its dependencies (live ModDB, tree keystone map) exist.
 
 ```sh
 go test ./...        # test/ holds the differential harnesses
@@ -49,10 +77,11 @@ luajit ../../tools/dump_tables.lua    # -> test/testdata/tables_oracle.jsonl
 | `modparser/forms.go` `names.go` `modflags.go` `preflags.go` `tags.go` `smalltables.go` | the pattern tables — regex keys; `names.go`/`modflags.go` and the cost/suffix tables are literal-substring tables, exactly as the reference scans them |
 | `modparser/special.go` | specialModList, converted mechanically and verified by both oracles |
 | `modparser/special_hand.go` | the ~70 specialModList closures needing real statements, hand-ported with source line citations |
+| `modparser/modtools.go` | the rest of modLib: ParseTags / ParseFormattedSourceMod / CompareModParams / Format* / SetSource / CopyMod |
 | `modparser/helpers.go` | grantedExtraSkill / triggerExtraSkill / extraSupport / explodeFunc / dealNoNonDamageType |
 | `modparser/jewels.go` | radius-jewel node functions (getSimpleConv / getPerStat / getThreshold families) against narrow `modStoreWriter` interfaces, for the future calc-engine port. Keys are exact mod text; parametric entries are keyed by regex and wrapped in `jewelFactory` |
 | `modparser/tables_build.go` | the data-driven construction loops (skill names, gem specials, keystones, cluster jewel skills) |
-| `modparser/vocab_gen.go` | GENERATED from `.archive/src/Data` by `tools/gen_vocab.lua` — the game vocabulary the loops consume. Regenerate each league |
+| `modparser/vocab.go` | the game vocabulary the loops consume (skills, gems, cluster notables, ailment defaults). Extracted one-time from the reference, Go-maintained; regeneration lands with the game-data module |
 | `modparser/canon.go` | canonical serialiser, byte-compatible with `tools/canon.lua` |
 | `internal/luapat` | Lua-pattern → regex converter, used only by the table-oracle test to map the reference's keys; deleted with the Lua |
 
@@ -95,5 +124,5 @@ outside-groups weight preserves the intended specific-over-generic ordering
 - Pattern tables iterate in sorted key order (the reference uses `pairs()`,
   which is arbitrary), so residual ties resolve deterministically.
 - Duplicate cluster-jewel enchant texts resolve to the lexicographically
-  greatest skill id in `tools/gen_vocab.lua` (the reference's winner was
+  greatest skill id in `modparser/vocab.go` (the reference's winner was
   whichever `pairs()` visited last); the table test flags any disagreement.

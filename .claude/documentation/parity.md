@@ -26,9 +26,9 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
 | | count |
 |---|---|
-| done | 0 |
-| in progress | 1 (`mod-parser`) |
-| not started | 39 |
+| done | 2 (`mod-parser`, `export-tooling`) |
+| in progress | 0 |
+| not started | 38 |
 
 ---
 
@@ -40,8 +40,8 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 | `[ ]` | `calc-offence` | `Modules/CalcOffence.lua` `CalcActiveSkill.lua` `CalcMirages.lua` `CalcTriggers.lua` | 9,145 | |
 | `[ ]` | `calc-defence` | `Modules/CalcDefence.lua` | 3,828 | |
 | `[ ]` | `calc-breakdown` | `Modules/CalcBreakdown.lua` | 251 | |
-| `[~]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/oracle_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800. ModParser.lua fully ported (`/modparser`). ModTools.lua remainder outstanding: `parseTags`, `formatMod`/`formatValue`/`formatSourceMod`, `compareModParams`, `mergeKeystones`, mod-cache save/load (createMod itself is ported as `mod()`) |
-| `[ ]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `/modparser` already defines the consumer-side interfaces (`modStoreWriter`) its jewel functions need |
+| `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/oracle_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map |
+| `[ ]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `/modparser` already defines the consumer-side interfaces (`modStoreWriter`) its jewel functions need. Also owns `modLib.mergeKeystones` (ModTools.lua:226), deferred here from `mod-parser` because it needs a live ModDB + tree keystone map |
 | `[ ]` | `stat-describer` | `Modules/StatDescriber.lua` | 292 | |
 
 `mod-parser` converts the game's English mod text into structured modifiers:
@@ -56,7 +56,7 @@ area, effMult, dot, critDot, leech, multiChain) consumed by `calcs-view`.
 
 | status | module | files | lines | verified by |
 |---|---|---|---|---|
-| `[ ]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | partial: `/modparser/vocab_gen.go` extracts the parser's vocabulary (skills, gems, cluster notables, ailment defaults) via `tools/gen_vocab.lua`; the module proper (full data load in Go) is unstarted |
+| `[ ]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | partial: `/modparser/vocab.go` carries the parser's vocabulary (skills, gems, cluster notables, ailment defaults), extracted one-time and Go-maintained; regeneration and the module proper (full data load in Go) land here |
 | `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
 | `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
 | `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |
@@ -173,13 +173,22 @@ mastery, frame, group and connector images, `jewel-radius.png`).
 
 ## Tooling
 
-| status | module | files | lines |
-|---|---|---|---|
-| `[ ]` | `export-tooling` | `src/Export/` (65 files) | 51,545 |
+| status | module | files | lines | verified by |
+|---|---|---|---|---|
+| `[x]` | `export-tooling` | `src/Export/` (65 files) | 51,545 | `test/export_test.go` 123/123 files byte-identical |
 
-Development tool for regenerating `Data/` from game files. Separate application
-with its own `Main.lua` and `Launch.lua`. May stay Lua indefinitely — decide
-when `game-data` is ported.
+Reads the GGPK's dat files and generates every `Data/*.lua` table (the files
+marked "automatically generated, do not edit"). Ported to `/export` +
+`cmd/pobexport`: dat64 reader (`dat.go`), column schemas (`spec_gen.go`,
+one-time transform of `spec.lua`, Go-maintained), statdesc engine
+(`statdesc.go`), LuaJIT PRNG (`luaprng.go`) and hash-table iteration
+(`luatab.go`) replicas, and 23 of 24 `Scripts/*.lua`. Extraction stays with
+`bun_extract_file.exe` (Export/ggpk/README.md); `WriteEnumFiles` replaces
+`enums.lua`'s synthetic dat writes. Oracle: run everything over the extracted
+GGPK and byte-compare all 123 generated files against the checked-in copies —
+`TestExportAgainstReference`, 123/123. Excluded by decision: `legionSprites.lua`
+(GIMP sprite-sheet asset pipeline; the checked-in PNGs/tree-legion.lua stay
+as-is).
 
 ## Dependencies
 
@@ -201,12 +210,13 @@ compare ──> tree-view, items, skills, config, calcs
 launcher ──> poe-api, build-sites, updater, trade
 build-list-helpers ──> build-list
 assets ──> tooltips, items-view, tree-view, calcs-view
+export-tooling ──> game-data          (done; generates its input from the GGPK)
 ```
 
-Claimable now (dependencies met or absent): `mod-store` (finish `mod-parser`'s
-ModTools remainder alongside it), `stat-describer`, `pantheon`, `undo`,
+Claimable now (dependencies met or absent): `mod-store`, `stat-describer`, `pantheon`, `undo`,
 `common`, `notes` (logic), `party` (logic), `toast`, `minion-library`,
-`ext-build-lists`, `display-stats`, `build-list` (logic).
+`ext-build-lists`, `display-stats`, `build-list` (logic), `game-data`
+(export-tooling now feeds it).
 
 ## Cross-cutting behaviours
 
