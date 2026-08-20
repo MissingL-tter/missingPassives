@@ -1,0 +1,199 @@
+// Scaffolding shared by the ported Export/Scripts/*.lua: the execution
+// context (Main.lua's dat()/getFile() environment) and Lua-faithful output
+// writing.
+
+package export
+
+import (
+	"fmt"
+	"math"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+// Ctx is what a ported script runs against.
+type Ctx struct {
+	Dats   *DatSet
+	SrcDir string // extracted GGPK root (holds Data/, Metadata/)
+	OutDir string // stands for the Lua src/ dir: holds Data/, Export/
+	TplDir string // the real src/ tree, for reading hand-maintained templates
+
+	txtCache         map[string]string
+	otCache          map[string]string
+	sd               *statDescState
+	modItemExclusive map[string]*modEntry
+	modFoulborn      map[string]*modEntry
+	flavourEntries   []flavourEntry
+}
+
+// Script is one ported export script.
+type Script struct {
+	Name string   // the Lua script's basename, e.g. "costs"
+	Outs []string // files it writes, relative to OutDir, e.g. "Costs.lua"
+	Run  func(*Ctx) error
+}
+
+// Scripts lists every ported script.
+var Scripts []Script
+
+// Dat is Main.lua's dat().
+func (x *Ctx) Dat(name string) *DatFile {
+	return x.Dats.Dat(name)
+}
+
+// GetFile is Main.lua's getFile(): the raw bytes of a file in the extracted
+// GGPK, cached, or "" when absent.
+func (x *Ctx) GetFile(name string) string {
+	name = strings.ToLower(name)
+	if x.txtCache == nil {
+		x.txtCache = map[string]string{}
+	}
+	if s, ok := x.txtCache[name]; ok {
+		return s
+	}
+	b, err := os.ReadFile(filepath.Join(x.SrcDir, filepath.FromSlash(name)))
+	if err != nil {
+		return ""
+	}
+	x.txtCache[name] = string(b)
+	return string(b)
+}
+
+// OutFile buffers one generated file; contents are compared or written on
+// Close.
+type OutFile struct {
+	path string
+	b    strings.Builder
+}
+
+// Out opens the named output file; the path is relative to OutDir, which
+// stands for the Lua src/ directory ("../Data/X.lua" from Export/ is
+// "Data/X.lua" here).
+func (x *Ctx) Out(name string) *OutFile {
+	return &OutFile{path: filepath.Join(x.OutDir, filepath.FromSlash(name))}
+}
+
+// W mirrors Lua's out:write(...): accepts strings and numbers only (ported
+// call sites convert other values explicitly, as the Lua does with tostring).
+func (o *OutFile) W(args ...any) {
+	for _, a := range args {
+		switch v := a.(type) {
+		case string:
+			o.b.WriteString(v)
+		case int:
+			o.b.WriteString(strconv.Itoa(v))
+		case int64:
+			o.b.WriteString(strconv.FormatInt(v, 10))
+		case float64:
+			o.b.WriteString(luaNum(v))
+		default:
+			panic(fmt.Sprintf("OutFile.W: unsupported type %T", a))
+		}
+	}
+}
+
+// Close writes the buffered contents to disk.
+func (o *OutFile) Close() error {
+	if err := os.MkdirAll(filepath.Dir(o.path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(o.path, []byte(o.b.String()), 0o644)
+}
+
+// luaNum formats a float64 the way LuaJIT's tostring/write does (%.14g, with
+// inf/nan spelled Lua-style).
+func luaNum(f float64) string {
+	if math.IsInf(f, 1) {
+		return "inf"
+	}
+	if math.IsInf(f, -1) {
+		return "-inf"
+	}
+	if math.IsNaN(f) {
+		return "nan"
+	}
+	s := strconv.FormatFloat(f, 'g', 14, 64)
+	// Go writes exponents as 1e+05 like C's %g; keep that. Trim Go's lack of
+	// difference aside, the formats agree for %.14g.
+	return s
+}
+
+// luaStr mirrors tostring() for the value kinds scripts hit: nil, booleans,
+// numbers and strings.
+func luaStr(v any) string {
+	switch t := v.(type) {
+	case nil:
+		return "nil"
+	case bool:
+		if t {
+			return "true"
+		}
+		return "false"
+	case string:
+		return t
+	case int:
+		return strconv.Itoa(t)
+	case int64:
+		return strconv.FormatInt(t, 10)
+	case float64:
+		return luaNum(t)
+	}
+	panic(fmt.Sprintf("luaStr: unsupported type %T", v))
+}
+
+// modEntry is one exported mod's data as written by mods.lua, kept in memory
+// for the scripts that reload the generated files (uModsToText,
+// mapUniqueToFoulborn).
+type modEntry struct {
+	lines  []string
+	orders []float64
+	tags   []string
+}
+
+// EnsureMods runs the mods script if it hasn't populated the caches yet
+// (the Lua equivalent: dofile("Scripts/mods.lua") when table.containsId is
+// missing).
+func (x *Ctx) EnsureMods() error {
+	if x.modItemExclusive != nil {
+		return nil
+	}
+	return scriptMods(x)
+}
+
+// flavourEntry is one FlavourText.lua entry (id and name), kept for
+// mapUniqueToFoulborn.
+type flavourEntry struct {
+	id, name string
+}
+
+// ProcessTemplateFile ports Main.lua's processTemplateFile: copies the
+// template through, dispatching #directive lines.
+func (x *Ctx) ProcessTemplateFile(name, inDir, outDir string, directives map[string]func(args string, out *OutFile)) (*OutFile, error) {
+	raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", filepath.FromSlash(inDir), name+".txt"))
+	if err != nil {
+		return nil, err
+	}
+	rel := strings.TrimPrefix(outDir, "../")
+	out := x.Out(rel + name + ".lua")
+	out.W("-- This file is automatically generated, do not edit!\n")
+	lines := strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n")
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	for _, line := range lines {
+		if m := reDirective.FindStringSubmatch(line); m != nil {
+			if fn := directives[m[1]]; fn != nil {
+				fn(m[2], out)
+			}
+			// unknown directives just print a warning in the Lua
+		} else {
+			out.W(line, "\n")
+		}
+	}
+	return out, nil
+}
+
+var reDirective = regexp.MustCompile(`#([A-Za-z]+) ?(.*)`)
