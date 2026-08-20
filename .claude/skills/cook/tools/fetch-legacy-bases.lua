@@ -1,14 +1,14 @@
 -- Refreshes data/legacy-bases.tsv: the item bases PoB still ships that the game no
--- longer has. Run from src/, MANUALLY and rarely - only after a PoB data update that
+-- longer has. Run from .archive/src/, MANUALLY and rarely - only after a PoB data update that
 -- changes the base list. Needs network; nothing else in the skill does.
---   luajit ../.claude/skills/cook/tools/fetch-legacy-bases.lua
+--   luajit ../../.claude/skills/cook/tools/fetch-legacy-bases.lua
 --
 -- Why it exists: PoB has an obtainability flag on uniques but none on bases, and
 -- Data/Bases/*.lua is every base GGG ever shipped. A removed base looks exactly like a
 -- live one in the UI, the dropdown and the parser. poewiki's `drop_enabled` is the only
 -- signal, so it is pulled once, here, and frozen into a checked-in file that
 -- dump-bases.lua reads offline.
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
 

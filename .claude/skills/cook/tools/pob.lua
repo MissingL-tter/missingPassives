@@ -1,6 +1,6 @@
 -- Headless PoB bootstrap. Every tool here starts with:
---     local pob = dofile("../.claude/skills/cook/tools/pob.lua")
--- Requires cwd == src/ (HeadlessWrapper.lua resolves relatively).
+--     local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
+-- Requires cwd == .archive/src/ (HeadlessWrapper.lua resolves relatively).
 -- No cpath line -> "module 'lua-utf8' not found"; no path line -> "module 'xml' not found".
 -- Pure-Lua deps live in runtime/lua/, native ones are .dll files loose in runtime/.
 package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path

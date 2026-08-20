@@ -5,14 +5,14 @@ disable-model-invocation: true
 ---
 
 Build a PoE1 character meeting the recipe named by the argument, verified in headless PoB,
-saved as `.xml` in `src/Builds/`. Filename = tree version, skill, ascendancy, defence:
+saved as `.xml` in `.archive/src/Builds/`. Filename = tree version, skill, ascendancy, defence:
 `3.29 CoC Blazing Salvo Assassin CI.xml`, never `salvo.xml`. Ask before overwriting an
-existing `src/Builds/` file.
+existing `.archive/src/Builds/` file.
 
 Measurable -> headless PoB; obtainable -> `data/`; mechanics -> the web. Ask questions as they
 arise.
 
-Start every build from an empty file; never skeleton off another `src/Builds/` build. Path the
+Start every build from an empty file; never skeleton off another `.archive/src/Builds/` build. Path the
 tree fresh; derive gear and links from the recipe.
 
 ## The request
@@ -127,10 +127,10 @@ accepted. Gotchas:
 
 ## Tools
 
-Run from `src/`:
+Run from `.archive/src/`:
 
 ```sh
-luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
+luajit ../../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 ```
 
 - `pob.lua` - headless bootstrap (`load`, `refresh`, `save`; binds real zlib `Inflate`/`Deflate`

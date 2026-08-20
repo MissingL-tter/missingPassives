@@ -1,5 +1,5 @@
--- League-legality validator. Run from src/:
---   luajit ../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
+-- League-legality validator. Run from .archive/src/:
+--   luajit ../../.claude/skills/cook/tools/validate.lua "Builds/My Build.xml"
 -- Exit status is 0 only when it reports 0 problems.
 --
 -- Checks, each with its source of truth:
@@ -17,7 +17,7 @@
 --   tree        PointsUsed / AscUsed / SecondaryAscUsed within Build.lua:884's budgets
 local BUILD = arg[1] or os.getenv("BUILDXML")
 assert(BUILD, "usage: luajit validate.lua <path to build .xml>")
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local build = pob.load(BUILD)
 local data = pob.data()
 

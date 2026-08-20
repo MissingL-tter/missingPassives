@@ -1,6 +1,6 @@
 -- Regenerates data/uniques.md AND data/uniques.db from one collection pass.
--- Run from src/ (sqlite3 must be on PATH):
---   luajit ../.claude/skills/cook/tools/dump-uniques.lua
+-- Run from .archive/src/ (sqlite3 must be on PATH):
+--   luajit ../../.claude/skills/cook/tools/dump-uniques.lua
 --
 -- Obtainability is PoB's own flag, not a heuristic. ItemDBControl.lua:114 computes it as
 --   not (source == "No longer obtainable" or item.league == "Race Events")
@@ -8,7 +8,7 @@
 -- uniques and mod lines reachable through at least one non-legacy variant reach either
 -- output. Items are built as real Item objects so the parse - variant tags,
 -- implicit/explicit split, PoB mod support - matches PoB's exactly.
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
 local q, qn, num = pob.q, pob.qn, pob.num

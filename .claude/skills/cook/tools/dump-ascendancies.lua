@@ -1,13 +1,13 @@
 -- Regenerates data/ascendancies.md AND data/ascendancies.db from one collection pass.
--- Run from src/ (sqlite3 must be on PATH):
---   luajit ../.claude/skills/cook/tools/dump-ascendancies.lua
+-- Run from .archive/src/ (sqlite3 must be on PATH):
+--   luajit ../../.claude/skills/cook/tools/dump-ascendancies.lua
 --
 -- Primary and secondary share one dataset because they draw on the same 8 points: a
 -- Bloodline node is only ever evaluable against the class node it displaces.
 --
 -- Every node is included. Do not filter on isNotable - major nodes such as Assassin's
 -- "Knife in the Back" are not flagged notable and would be silently dropped.
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 pob.data()
 local tree = _G.build.spec.tree
 local OUT = "../.claude/skills/cook/data/"

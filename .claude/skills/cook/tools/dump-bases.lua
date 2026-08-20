@@ -1,6 +1,6 @@
 -- Regenerates data/bases.md AND data/bases.db from one collection pass.
--- Run from src/ (sqlite3 must be on PATH):
---   luajit ../.claude/skills/cook/tools/dump-bases.lua
+-- Run from .archive/src/ (sqlite3 must be on PATH):
+--   luajit ../../.claude/skills/cook/tools/dump-bases.lua
 --
 -- Source is data.itemBases (Data/Bases/*.lua, GGG's BaseItemTypes verbatim). Three
 -- exclusions, none of them judgement calls:
@@ -14,7 +14,7 @@
 --     "Random Two Hand Sword", unreferenced anywhere in src/, no damage, no class tags.
 -- The db answers "which base", never "which mod": affix legality is spawn weight, and
 -- only tools/affixes.lua resolves that.
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
 local q, qn, num = pob.q, pob.qn, pob.num

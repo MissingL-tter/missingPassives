@@ -1,6 +1,6 @@
--- Legal affix pool for an item base. Run from src/:
---   luajit ../.claude/skills/cook/tools/affixes.lua "Sorcerer Gloves" [pattern] [flags]
---   luajit ../.claude/skills/cook/tools/affixes.lua "Hubris Circlet" "Energy Shield" --tiers
+-- Legal affix pool for an item base. Run from .archive/src/:
+--   luajit ../../.claude/skills/cook/tools/affixes.lua "Sorcerer Gloves" [pattern] [flags]
+--   luajit ../../.claude/skills/cook/tools/affixes.lua "Hubris Circlet" "Energy Shield" --tiers
 --
 -- Legality is PoB's own ItemClass:GetModSpawnWeight (Item.lua:1654), never pool membership.
 -- Armour bases have no dedicated pool, so Item.lua:1008 falls back to data.itemMods.Item -
@@ -30,7 +30,7 @@ end
 assert(baseName, 'usage: luajit affixes.lua "<base name>" [pattern] [--tiers] [--shaper ...]'
 	.. ' [--skill=<cluster skill tag>]')
 
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 
 local item = new("Item", "Rarity: RARE\nAffix Probe\n" .. baseName .. "\n")

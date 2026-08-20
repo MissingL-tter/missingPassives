@@ -1,5 +1,5 @@
--- Mechanical leaf prune, snapshot-safe. Run from src/ once every constraint measures green:
---   luajit ../.claude/skills/cook/tools/prune.lua "Builds/My Build.xml"
+-- Mechanical leaf prune, snapshot-safe. Run from .archive/src/ once every constraint measures green:
+--   luajit ../../.claude/skills/cook/tools/prune.lua "Builds/My Build.xml"
 --
 -- The two hard-won rules this tool encodes (faq.md "Tree surgery"):
 --   * DeallocNode drops ALL dependents; restoring only the target node loses branches.
@@ -13,7 +13,7 @@
 -- "<build>.preprune.bak" beside the scratchless original first.
 local BUILD = arg[1] or os.getenv("BUILDXML")
 assert(BUILD, 'usage: luajit prune.lua "Builds/My Build.xml"')
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local build = pob.load(BUILD)
 local spec = build.spec
 

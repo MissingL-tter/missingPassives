@@ -1,12 +1,12 @@
 -- Regenerates data/gems.md AND data/gems.db from one collection pass.
--- Run from src/ (sqlite3 must be on PATH):
---   luajit ../.claude/skills/cook/tools/dump-gems.lua
+-- Run from .archive/src/ (sqlite3 must be on PATH):
+--   luajit ../../.claude/skills/cook/tools/dump-gems.lua
 --
 -- Obtainability source of truth: grantedEffect.legacy, the flag GemTooltip.lua renders as
 -- "Gem only exists in Standard League". It lives in Data/Skills/sup_*.lua; the tags live
 -- in Data/Gems.lua. Legacy gems reach neither output - every db row is obtainable.
 -- Numeric stats are snapshotted at the gem's natural max level.
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local OUT = "../.claude/skills/cook/data/"
 local q, qn, num = pob.q, pob.qn, pob.num

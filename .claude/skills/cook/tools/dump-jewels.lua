@@ -2,13 +2,13 @@
 -- tree. The md holds the doctrine - cluster mechanics/authoring, historic/timeless
 -- conquests, radius/rule jewels; the db holds the cluster listings (sizes, skills,
 -- notables). Plain stat jewels are ordinary affix items - affixes.lua.
--- Run from src/ (sqlite3 must be on PATH):
---   luajit ../.claude/skills/cook/tools/dump-jewels.lua
+-- Run from .archive/src/ (sqlite3 must be on PATH):
+--   luajit ../../.claude/skills/cook/tools/dump-jewels.lua
 --
 -- Sources: data.clusterJewels + Data/ModJewelCluster + tree.clusterNodeMap (cluster section);
 -- data.uniques.jewel raw text (historic + radius sections); data.timelessJewelSeedMin/Max;
 -- PassiveSpec.lua:1098+ conquest semantics, verified headless (see prose).
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local data = pob.data()
 local tree = _G.build.spec.tree
 local clusterMods = LoadModule("Data/ModJewelCluster")

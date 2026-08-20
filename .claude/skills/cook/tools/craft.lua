@@ -1,6 +1,6 @@
--- Bakes affix-authored items into real mods. Run from src/ after authoring or after
+-- Bakes affix-authored items into real mods. Run from .archive/src/ after authoring or after
 -- editing any Prefix:/Suffix: line, BEFORE measuring anything:
---   luajit ../.claude/skills/cook/tools/craft.lua "Builds/My Build.xml"
+--   luajit ../../.claude/skills/cook/tools/craft.lua "Builds/My Build.xml"
 --
 -- Item:Craft() is only ever called by the ItemsTab UI (ItemsTab.lua:808), never on load. A
 -- freshly authored item carries only Prefix:/Suffix: property lines: it parses and validates
@@ -17,7 +17,7 @@
 -- whole loop.
 local BUILD = arg[1] or os.getenv("BUILDXML")
 assert(BUILD, 'usage: luajit craft.lua "Builds/My Build.xml"')
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local build = pob.load(BUILD)
 
 local n = 0

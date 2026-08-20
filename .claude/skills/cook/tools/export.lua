@@ -1,5 +1,5 @@
--- Uploads a build to pobb.in and prints the link. Run from src/:
---   luajit ../.claude/skills/cook/tools/export.lua "Builds/My Build.xml"
+-- Uploads a build to pobb.in and prints the link. Run from .archive/src/:
+--   luajit ../../.claude/skills/cook/tools/export.lua "Builds/My Build.xml"
 --
 -- HeadlessWrapper stubs Deflate to return "" (a literal "TODO: Might need this"), so PoB's
 -- own export path silently yields an empty code headless. Deflate through runtime/zlib1.dll
@@ -15,7 +15,7 @@ int compress2(uint8_t *dest, unsigned long *destLen,
 ]])
 local zlib = ffi.load("../runtime/zlib1.dll")
 
-local pob = dofile("../.claude/skills/cook/tools/pob.lua")
+local pob = dofile("../../.claude/skills/cook/tools/pob.lua")
 local build = pob.load(BUILD)
 local xml = build:SaveDB("code")
 assert(xml and #xml > 1000, "SaveDB returned nothing")
