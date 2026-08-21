@@ -36,6 +36,14 @@ type jewelNode interface {
 // jewelNodeFunc mirrors the Lua signature function(node, out, data).
 type jewelNodeFunc func(node any, out modStoreWriter, data Tag)
 
+// Exported aliases so the calc engine can implement the interfaces and
+// call the functions carried in JewelFunc modifier values.
+type (
+	JewelStoreWriter = modStoreWriter
+	JewelNodeRef     = jewelNode
+	JewelNodeFn      = jewelNodeFunc
+)
+
 // jewelFactory is a parse-time factory: given the pattern's captures it
 // returns the node function to embed.
 type jewelFactory func(c caps) jewelNodeFunc
@@ -127,9 +135,12 @@ func getThreshold(attrib any, name, modType string, value any, rest ...any) jewe
 		} else if numValue(data["total"]) >= 40 {
 			m := *baseMod
 			m.Source, _ = data["modSource"].(string)
+			m.SourceSet = true
 			if valueTag, ok := baseMod.Value.(Tag); ok {
 				if inner, ok := valueTag["mod"].(*Mod); ok {
+					// the reference mutates the SHARED inner mod's source
 					inner.Source, _ = data["modSource"].(string)
+					inner.SourceSet = true
 				}
 			}
 			out.AddMod(&m)
