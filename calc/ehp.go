@@ -227,6 +227,13 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	env.ehpStun(actor, damageCategoryConfig)
 	env.ehpPools(actor)
 	env.ehpGuard(actor, damageCategoryConfig)
+	env.ehpHitCounts(actor, damageCategoryConfig)
+	env.ehpRecoup(actor, damageCategoryConfig)
+	env.ehpMaxHit(actor)
+	env.ehpDegens(actor, damageCategoryConfig)
+	if truthy(env.ConfigInput["PvpScaling"]) {
+		panic("ehp: PvP scaling unported (no corpus build enables it)")
+	}
 }
 
 // enemyDamageNames is the reference's `"Damage", <type>.."Damage",

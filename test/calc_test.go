@@ -610,6 +610,7 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		var fixture, allocOrders, nodeOrders, grantedNodes, grantedAsc, ebItems, dbs, skills, skillLists string
 		var performDbs, performOutput, performMinionDb, performMinionOutput string
 		var defenceDbs, defenceOutput, defenceMinionDb, defenceMinionOutput string
+		var ehpDbs, ehpOutput, ehpMinionDb, ehpMinionOutput string
 		forEachCalcRecord(t, path, func(k, c string) {
 			switch k {
 			case variant + ".fixture":
@@ -646,6 +647,14 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 				defenceMinionDb = c
 			case variant + ".defenceMinionOutput":
 				defenceMinionOutput = c
+			case variant + ".ehpDbs":
+				ehpDbs = c
+			case variant + ".ehpOutput":
+				ehpOutput = c
+			case variant + ".ehpMinionDb":
+				ehpMinionDb = c
+			case variant + ".ehpMinionOutput":
+				ehpMinionOutput = c
 			}
 		})
 		if fixture == "" || allocOrders == "" || nodeOrders == "" || grantedNodes == "" || grantedAsc == "" || ebItems == "" || dbs == "" || skills == "" || skillLists == "" {
@@ -656,6 +665,9 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		}
 		if defenceDbs == "" || defenceOutput == "" {
 			t.Fatalf("%s: missing defence records for %s", file, variant)
+		}
+		if ehpDbs == "" || ehpOutput == "" {
+			t.Fatalf("%s: missing ehp records for %s", file, variant)
 		}
 		var m map[string]any
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
@@ -758,6 +770,27 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			}
 			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != defenceMinionOutput {
 				t.Errorf("%s defenceMinionOutput diverged:\n%s", variant, diffWindow(got, defenceMinionOutput))
+			}
+		}
+		// EHP stage, on the post-defence state, player then minion.
+		env.RunEHP()
+		gotEHP := luacanon.Encode(dbsShadow{
+			Mod:   shadowOf(env.ModDB),
+			Enemy: shadowOf(env.EnemyDB),
+			Item:  shadowOf(env.ItemModDB),
+		})
+		if gotEHP != ehpDbs {
+			t.Errorf("%s ehpDbs diverged:\n%s", variant, diffWindow(gotEHP, ehpDbs))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != ehpOutput {
+			t.Errorf("%s ehpOutput diverged:\n%s", variant, diffWindow(got, ehpOutput))
+		}
+		if env.Minion != nil {
+			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != ehpMinionDb {
+				t.Errorf("%s ehpMinionDb diverged:\n%s", variant, diffWindow(got, ehpMinionDb))
+			}
+			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != ehpMinionOutput {
+				t.Errorf("%s ehpMinionOutput diverged:\n%s", variant, diffWindow(got, ehpMinionOutput))
 			}
 		}
 		scrubWarcryResidue(env)
