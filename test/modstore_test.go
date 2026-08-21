@@ -341,7 +341,11 @@ func TestModStoreAgainstReference(t *testing.T) {
 				Vals  map[string]bool `json:"vals"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			baseOf[rec.Store].Conditions = rec.Vals
+			conds := map[string]any{}
+			for k, v := range rec.Vals {
+				conds[k] = v
+			}
+			baseOf[rec.Store].Conditions = conds
 		case "output":
 			var rec struct {
 				Actor string             `json:"actor"`
@@ -864,6 +868,9 @@ func decodeCanonMod(m map[string]any) *modparser.Mod {
 	if s, ok := m["source"].(string); ok {
 		mod.Source = s
 		mod.SourceSet = true
+	}
+	if s, ok := m["sourceSlot"].(string); ok {
+		mod.SourceSlot = s
 	}
 	mod.Value = decodeCanonVal(m["value"])
 	for i := 1; ; i++ {
