@@ -36,7 +36,16 @@ func diffWindow(s, other string) string {
 	if end > len(s) {
 		end = len(s)
 	}
-	return "[@" + strconv.Itoa(i) + "] ..." + s[start:end] + "..."
+	oend := i + 120
+	if oend > len(other) {
+		oend = len(other)
+	}
+	ostart := start
+	if ostart > len(other) {
+		ostart = len(other)
+	}
+	return "[@" + strconv.Itoa(i) + "] got  ..." + s[start:end] + "...\n" +
+		"          want ..." + other[ostart:oend] + "..."
 }
 
 // Structured mods inside the data tree canonicalise via their plain-table
