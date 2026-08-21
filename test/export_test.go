@@ -2,17 +2,31 @@ package test
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/export"
+	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/internal/luarender"
 )
 
-// The export differential test: runs every ported export script over the
-// extracted GGPK and byte-compares each generated file against the checked-in
-// copy under .archive/src (which the archive Lua exporter produced from the
-// same game version). Fails on any disagreement.
+// tplFS serves the hand-maintained template files to luarender from the
+// archive tree.
+type tplFS struct{ root string }
+
+func (t tplFS) Read(rel string) (string, error) {
+	b, err := os.ReadFile(filepath.Join(t.root, filepath.FromSlash(rel)))
+	return string(b), err
+}
+
+// The export differential test: builds every script's gamedata document over
+// the extracted GGPK, round-trips it through JSON, renders it back to Lua
+// with internal/luarender, and byte-compares each rendered file against the
+// checked-in copy under .archive/src (which the archive Lua exporter produced
+// from the same game version). Fails on any disagreement.
 //
 // Requires the extracted GGPK at .archive/src/Export/ggpk (see that
 // directory's README for bun_extract_file usage); skips when absent.
@@ -30,36 +44,121 @@ func TestExportAgainstReference(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loading dats: %v", err)
 	}
-	outDir := t.TempDir()
-	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir, OutDir: outDir, TplDir: refDir}
+	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir, TplDir: refDir}
 
 	var checked, disagree int
+	rawByName := map[string]json.RawMessage{}
 	for _, s := range export.Scripts {
-		if err := s.Run(ctx); err != nil {
-			t.Fatalf("%s: %v", s.Name, err)
+		data, err := s.Build(ctx)
+		if err != nil {
+			t.Fatalf("%s: build: %v", s.Name, err)
 		}
-		for _, rel := range s.Outs {
+		raw, err := json.Marshal(data)
+		if err != nil {
+			t.Fatalf("%s: marshal: %v", s.Name, err)
+		}
+		rawByName[s.Name] = raw
+		render, ok := luarender.Renderers[s.Name]
+		if !ok {
+			t.Fatalf("%s: no renderer registered", s.Name)
+		}
+		files, err := render(raw, tplFS{refDir})
+		if err != nil {
+			t.Fatalf("%s: render: %v", s.Name, err)
+		}
+		rels := make([]string, 0, len(files))
+		for rel := range files {
+			rels = append(rels, rel)
+		}
+		sort.Strings(rels)
+		for _, rel := range rels {
 			checked++
-			got, err := os.ReadFile(filepath.Join(outDir, filepath.FromSlash(rel)))
-			if err != nil {
-				disagree++
-				t.Errorf("%s: output %s not written: %v", s.Name, rel, err)
-				continue
-			}
 			want, err := os.ReadFile(filepath.Join(refDir, filepath.FromSlash(rel)))
 			if err != nil {
 				disagree++
 				t.Errorf("%s: reference %s unreadable: %v", s.Name, rel, err)
 				continue
 			}
-			if !bytes.Equal(got, want) {
+			if !bytes.Equal([]byte(files[rel]), want) {
 				disagree++
-				t.Errorf("%s: %s differs from the archive (%d vs %d bytes)", s.Name, rel, len(got), len(want))
+				t.Errorf("%s: %s differs from the archive (%d vs %d bytes)", s.Name, rel, len(files[rel]), len(want))
 			}
 		}
 	}
 	t.Logf("export vs archive: %d files checked, %d disagreements", checked, disagree)
+	if checked != 123 {
+		t.Errorf("expected 123 files, checked %d", checked)
+	}
 	if disagree > 0 {
 		t.Fatalf("%d disagreements with the archive", disagree)
+	}
+
+	// Negative control: corrupt one field of a built document, re-render and
+	// require the archive comparison to notice. Guards against the test
+	// degenerating into one that cannot fail.
+	corruptions := []struct {
+		script string
+		mutate func(t *testing.T, raw json.RawMessage) any
+	}{
+		{"costs", func(t *testing.T, raw json.RawMessage) any {
+			var d gamedata.Costs
+			mustUnmarshal(t, raw, &d)
+			d[0].Resource += "X"
+			return d
+		}},
+		{"mods", func(t *testing.T, raw json.RawMessage) any {
+			var d gamedata.ModsData
+			mustUnmarshal(t, raw, &d)
+			d.Pools["ModExplicit"][0].Lines[0] += "!"
+			return d
+		}},
+		{"skills", func(t *testing.T, raw json.RawMessage) any {
+			var d gamedata.SkillsData
+			mustUnmarshal(t, raw, &d)
+			f := d.Files["act_str"]
+			f.Skills[0].Name += "X"
+			d.Files["act_str"] = f
+			return d
+		}},
+		{"uModsToText", func(t *testing.T, raw json.RawMessage) any {
+			var d gamedata.Uniques
+			mustUnmarshal(t, raw, &d)
+			f := d["axe"]
+			f.Sections[0].Items[0][0] += "!"
+			d["axe"] = f
+			return d
+		}},
+	}
+	for _, c := range corruptions {
+		t.Run("corruption detected in "+c.script, func(t *testing.T) {
+			raw, err := json.Marshal(c.mutate(t, rawByName[c.script]))
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			files, err := luarender.Renderers[c.script](raw, tplFS{refDir})
+			if err != nil {
+				t.Fatalf("render: %v", err)
+			}
+			differs := 0
+			for rel, got := range files {
+				want, err := os.ReadFile(filepath.Join(refDir, filepath.FromSlash(rel)))
+				if err != nil {
+					t.Fatalf("reference %s unreadable: %v", rel, err)
+				}
+				if !bytes.Equal([]byte(got), want) {
+					differs++
+				}
+			}
+			if differs == 0 {
+				t.Fatalf("corrupted %s document still byte-matches the archive — the comparison cannot fail", c.script)
+			}
+		})
+	}
+}
+
+func mustUnmarshal(t *testing.T, raw json.RawMessage, v any) {
+	t.Helper()
+	if err := json.Unmarshal(raw, v); err != nil {
+		t.Fatalf("unmarshal: %v", err)
 	}
 }
