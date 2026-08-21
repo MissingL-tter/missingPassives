@@ -37,6 +37,10 @@ Once the recipe resolves, read all of these before anything else, every build, n
 3. `data/gems.md`, `data/uniques.md`, `data/ascendancies.md`, `data/bases.md`,
    `data/jewels.md` - the rules, and the schemas + canonical queries for their `.db`
    twins. Check ingredients against the dbs BEFORE designing around them.
+4. `../../documentation/poe-data-model.md` - the archive-verified data-model semantics:
+   mod types/aggregation, spawn-weight + mod-group legality, statMap scaling, gem/Vaal
+   variant links, the boss damage model behind the DPS config. Reason from it, don't
+   re-derive mechanics from memory.
 
 Echo the request back as a constraint checklist before building, headed by those reads
 marked done - cannot mark one, go read it. At the end report a measured figure against every
