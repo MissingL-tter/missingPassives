@@ -20,7 +20,9 @@ type KeystoneEnv struct {
 // #EVAL: archive parity — the reference mutates the keystone map's own mods
 // through setSource when the granting mod's source is not tree-flavoured, so
 // the tree's shared modList carries the last granter's source.
-func MergeKeystones(env *KeystoneEnv, modDB *DB) {
+// The reference calls it on a ModDB (perform) and on the tree's ModList
+// (initEnv), so any Store is accepted.
+func MergeKeystones(env *KeystoneEnv, modDB Store) {
 	if env.KeystonesAdded == nil {
 		env.KeystonesAdded = map[string]bool{}
 	}

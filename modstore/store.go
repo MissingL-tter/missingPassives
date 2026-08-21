@@ -18,6 +18,17 @@ import (
 // virtual calls).
 type Store interface {
 	base() *ModStore
+	// The ModStore aggregation surface, promoted from the embedded base so
+	// callers (calcLib) can hold either container behind one type.
+	Sum(modType string, cfg *Cfg, names ...string) float64
+	More(cfg *Cfg, names ...string) float64
+	Flag(cfg *Cfg, names ...string) bool
+	Override(cfg *Cfg, names ...string) any
+	List(cfg *Cfg, names ...string) []any
+	Tabulate(modType string, cfg *Cfg, names ...string) []TabEntry
+	TabulateAll(cfg *Cfg, names ...string) []TabEntry
+	GetCondition(varName string, cfg *Cfg) bool
+	GetMultiplier(varName string, cfg *Cfg) float64
 	AddMod(mod *modparser.Mod)
 	AddList(list []*modparser.Mod)
 	ReplaceModInternal(mod *modparser.Mod) bool
@@ -43,7 +54,7 @@ type ModStore struct {
 	Parent      Store
 	Actor       *Actor
 	Multipliers map[string]float64
-	Conditions  map[string]bool
+	Conditions  map[string]any // Lua truthiness: bools normally, class-name strings for Forbidden jewels
 }
 
 func newModStore(self, parent Store) ModStore {
@@ -51,7 +62,7 @@ func newModStore(self, parent Store) ModStore {
 		self:        self,
 		Parent:      parent,
 		Multipliers: map[string]float64{},
-		Conditions:  map[string]bool{},
+		Conditions:  map[string]any{},
 	}
 	if parent != nil {
 		ms.Actor = parent.base().Actor
@@ -379,7 +390,7 @@ func (ms *ModStore) GetCondition(varName string, cfg *Cfg) bool {
 
 func getCondition(s Store, varName string, cfg *Cfg, noMod bool) bool {
 	b := s.base()
-	if b.Conditions[varName] {
+	if truthy(b.Conditions[varName]) {
 		return true
 	}
 	if b.Parent != nil && getCondition(b.Parent, varName, cfg, true) {

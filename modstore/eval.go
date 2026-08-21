@@ -49,6 +49,7 @@ type Actor struct {
 	Player          *Actor
 	Enemy           *Actor
 	ParentActor     *Actor
+	Level           float64
 	Others          map[string]*Actor // any other actor types
 	DB              Store             // actor.modDB
 	Output          map[string]float64
