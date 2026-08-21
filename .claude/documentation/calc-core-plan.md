@@ -244,10 +244,41 @@ More #EVAL quirks in the EHP body:
   order-independent (sum / per-key init / subtract-from-all / min), so the
   Go maps need no ordering; only the dmgTypeList walks are sequenced.
 
-NEXT: calc-offence (CalcOffence + CalcActiveSkill + CalcMirages +
-CalcTriggers, ~9.1k lines). Same staging: keep the real calcs.triggers /
-mirages / offence in locals before stubbing, then call them explicitly
-after the EHP records so each stage stays independently comparable.
+IN PROGRESS: calc-offence. Checkpoints are live and the corpus is
+triaged; no Go ported yet.
+
+- The dump keeps calcs.triggers / mirages / offence in locals before
+  stubbing and calls them explicitly after the EHP records. Triggers gets
+  its OWN records (.triggersDbs/.triggersOutput/.triggersSkillData) ahead
+  of the offence ones, so it can be ported and verified on its own instead
+  of only becoming testable once all ~5.8k lines of offence exist.
+  All 9 sources dump cleanly with the real offence running, so no corpus
+  build makes the reference error in this stage.
+- TRIAGE, calcs.triggers: it is a NO-OP for 24 of the 25 variants (DBs and
+  output both unchanged). Only coc.full — the actual Cast on Critical
+  Strike build — has a live trigger path, and it writes just four output
+  keys (EffectiveSourceRate, SkillTriggerRate, Speed, TriggerRateCap) plus
+  skillData.triggerRate / triggerSourceUUID. So the corpus needs the entry
+  gate, the configTable dispatch, and the CoC branch of
+  defaultTriggerHandler — not the whole module.
+- BLOCKER for that one path: findTriggerSkill and defaultTriggerHandler
+  read GlobalCache.cachedData[env.mode][uuid].HitSpeed/.Speed, i.e. the
+  source skill's speed from a PREVIOUS full calculation pass. The trigger
+  rate 7.56756 for coc.full comes from Cyclone's cached speed. So the
+  stage cache (still unported, and the same machinery the Blight/Penance/
+  Earthquake stage panics need) has to land before triggers can be exact.
+  Options: port GlobalCache properly, or have the dump record the cached
+  source speed as fixture input the way .allocOrders records pairs order.
+
+- calcs.offence section map (L323-6168): prologue/AoE 323-493, skill data
+  494-1022, skill type stats 1023-1456, duration 1457-1625, uptime
+  1626-1658, costs 1659-1841, conversion 1878-1933, damage passes
+  1934-2110, hit rate 2111-2421, misc DPS 2422-2540, MAIN DAMAGE 2541-4009,
+  leech 4010-4064, AILMENTS 4065-5554, secondary 5555-5675, DoT 5676-5863,
+  self hit 5864-6010, combined DPS 6011-6168.
+
+NEXT: decide the GlobalCache approach, port calcs.triggers against its
+checkpoint, then work calcs.offence section by section.
 
 ## Dump gotchas (hard-won)
 
