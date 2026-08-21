@@ -261,14 +261,23 @@ triaged; no Go ported yet.
   skillData.triggerRate / triggerSourceUUID. So the corpus needs the entry
   gate, the configTable dispatch, and the CoC branch of
   defaultTriggerHandler — not the whole module.
-- BLOCKER for that one path: findTriggerSkill and defaultTriggerHandler
-  read GlobalCache.cachedData[env.mode][uuid].HitSpeed/.Speed, i.e. the
-  source skill's speed from a PREVIOUS full calculation pass. The trigger
-  rate 7.56756 for coc.full comes from Cyclone's cached speed. So the
-  stage cache (still unported, and the same machinery the Blight/Penance/
-  Earthquake stage panics need) has to land before triggers can be exact.
-  Options: port GlobalCache properly, or have the dump record the cached
-  source speed as fixture input the way .allocOrders records pairs order.
+- BLOCKER for that one path, and the ORDER IT IMPLIES: findTriggerSkill
+  and defaultTriggerHandler read GlobalCache.cachedData[mode][uuid]
+  .HitSpeed/.Speed — the SOURCE skill's speed. coc.full's trigger rate of
+  7.56756 is Cyclone's cached speed.
+  GlobalCache itself is trivial: Data/Global.lua L355 declares
+  `cachedData = {MAIN={}, CALCS={}, CALCULATOR={}}`, and Common.lua
+  cacheData() stores ~12 output values (Speed, HitSpeed, the costs, crit,
+  TotalDPS) per uuid. cacheSkillUUID is name_SLOT_gemIdx_groupIdx.
+  What is NOT trivial is FILLING it. CalcPerform L3918 calls cacheData at
+  the very END of perform, and Calcs.lua buildOutput (L202) drives it: for
+  every skill with includeInFullDPS it sets fullEnv.player.mainSkill and
+  runs a whole calcs.perform, so each skill caches its own final output.
+  Those values come from calcs.offence.
+  => The cache cannot be populated before offence exists. Correct order is
+  (1) calcs.offence, (2) the buildOutput driver loop + cacheData, then
+  (3) calcs.triggers. Porting GlobalCache "first" is not possible; it is a
+  consequence of offence, not a prerequisite.
 
 - calcs.offence section map (L323-6168): prologue/AoE 323-493, skill data
   494-1022, skill type stats 1023-1456, duration 1457-1625, uptime
@@ -277,8 +286,10 @@ triaged; no Go ported yet.
   leech 4010-4064, AILMENTS 4065-5554, secondary 5555-5675, DoT 5676-5863,
   self hit 5864-6010, combined DPS 6011-6168.
 
-NEXT: decide the GlobalCache approach, port calcs.triggers against its
-checkpoint, then work calcs.offence section by section.
+NEXT: calcs.offence, section by section against .offenceOutput /
+.offenceSkillOutput. Then the buildOutput driver + cacheData, then
+calcs.triggers (which only needs its entry gate, the configTable dispatch
+and the CoC branch for this corpus).
 
 ## Dump gotchas (hard-won)
 
