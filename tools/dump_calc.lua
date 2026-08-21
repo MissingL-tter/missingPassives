@@ -189,6 +189,9 @@ end
 -- explicitly, one stage at a time, on the post-perform-body state.
 local realDefence = calcs.defence
 local realBuildDefenceEstimations = calcs.buildDefenceEstimations
+local realTriggers = calcs.triggers
+local realMirages = calcs.mirages
+local realOffence = calcs.offence
 calcs.defence = function() end
 calcs.buildDefenceEstimations = function() end
 calcs.triggers = function() end
@@ -685,6 +688,30 @@ local function dumpVariant(name, build)
 	if env.minion then
 		emit(name .. ".ehpMinionDb", dbState(env.minion.modDB))
 		emit(name .. ".ehpMinionOutput", scalars(env.minion.output or {}))
+	end
+
+	-- Offence stage (CalcPerform L3726-3729), run explicitly on the
+	-- post-EHP state. calcs.triggers runs first because offence reads the
+	-- trigger rate it writes; mirages decides whether offence runs at all.
+	realTriggers(env, env.player)
+	if not realMirages(env) then
+		realOffence(env, env.player, env.player.mainSkill)
+	end
+	emit(name .. ".offenceDbs", {
+		mod = dbState(env.modDB),
+		enemy = dbState(env.enemyDB),
+		item = dbState(env.itemModDB),
+	})
+	emit(name .. ".offenceOutput", scalars(env.player.output or {}))
+	-- The main skill's own output bag is where offence puts most of its
+	-- product (damage, speed, DPS); the player output only carries the
+	-- summary.
+	emit(name .. ".offenceSkillOutput", scalars(env.player.mainSkill.skillData or {}))
+	if env.minion then
+		realTriggers(env, env.minion)
+		realOffence(env, env.minion, env.minion.mainSkill)
+		emit(name .. ".offenceMinionDb", dbState(env.minion.modDB))
+		emit(name .. ".offenceMinionOutput", scalars(env.minion.output or {}))
 	end
 end
 
