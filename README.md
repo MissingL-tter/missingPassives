@@ -67,23 +67,30 @@ LegionPassives layout offsets) and number-keyed `pairs()` iteration order
 (`export/luatab.go`, baked into tradeHashes entry order; verified against
 LuaJIT over 3,000 randomized tables).
 
-## data (in progress)
+## data
 
 The runtime data set — the Go port of `.archive/src/Modules/Data.lua`.
 `data.Load` assembles a typed `Data` value from the gamedata documents plus
-the tables Data.lua defines inline (misc constants, keystones, ailments,
-weapon types, jewel radii, ...), including the derived structures the Lua
-computes at load (combined mod pools, per-weapon-type enchant expansion,
-cluster-notable lookups, boss stat means, item base lists).
+the tables Data.lua defines inline, including everything the Lua computes at
+load: combined mod pools, per-weapon-type enchant expansion, cluster-notable
+lookups, boss stat means, item base lists, the full skill database (granted
+effects with structured mods, template statMaps and hand fragments), gems
+with their lookups and synthesized Vaal Alt gems, minions/spectres, and the
+programmatically generated uniques. The hand-written `mod(...)` fragments in
+templates are evaluated by a small constructor-expression parser
+(`data/modexpr.go`) — no Lua anywhere.
 
 **`TestGameDataAgainstReference`** boots the archive application, dumps the
 loaded `data` table subtree by subtree (`tools/dump_gamedata.lua` →
-canonical serialisation, murmur-hashed for the large pools) and compares the
-Go assembly against it: **113 subtrees, 0 disagreements.** Values that
-round-trip through Lua string literals are unescaped at load; text inside
-`[[...]]` long brackets is taken raw. Still to port: skills/gems, minions,
-skillStatMap, mapMods, the generated-uniques code, and the timeless-jewel
-tables.
+canonical serialisation, murmur-hashed for the large trees) and compares the
+Go assembly against it: **136 subtrees, 0 disagreements.** Values that
+round-trip through Lua string literals are unescaped at load; `[[...]]` long
+brackets are raw. Where the reference's pairs() order decides a winner
+(shared skill tables' mod sources, gem lookups), both sides re-derive in
+sorted order — documented divergences. Lua functions carried by the data
+(139 skill callbacks, 41 map-mod appliers) are `UnportedFn` markers whose
+bodies land with the calc/config modules; the four tree-dependent generated
+uniques land with tree-data.
 
 ## Verification
 

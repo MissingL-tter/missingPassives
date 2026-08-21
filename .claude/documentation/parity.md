@@ -26,8 +26,8 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
 | | count |
 |---|---|
-| done | 3 (`mod-parser`, `export-tooling`, `mod-store`) |
-| in progress | 1 (`game-data`) |
+| done | 4 (`mod-parser`, `export-tooling`, `mod-store`, `game-data`) |
+| in progress | 0 |
 | not started | 36 |
 
 ---
@@ -56,7 +56,7 @@ area, effMult, dot, critDot, leech, multiChain) consumed by `calcs-view`.
 
 | status | module | files | lines | verified by |
 |---|---|---|---|---|
-| `[~]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | `/data` package + `test/gamedata_test.go`: 113 subtrees of the loaded `data` table compared canonically against the booted archive (tools/dump_gamedata.lua), 0 disagreements. Done: Data.lua's own tables, Misc, costs, bosses+bossSkills, mod pools (itemMods/veiled/beast/necropolis/uniqueMods), enchantments, essences/pantheons/crucible/masterMods, modScalability, clusterJewels + notable lookup, itemBases + lists, rares, uniques (incl. race one-time-converted; graft placeholder), foulbornMap, rareLikeUniques. Remaining: skills+gems (structured mods + gem setup), minions/spectres, skillStatMap, mapMods (closures), Uniques/Special/Generated.lua (code), TimelessJewelData tables, vocab.go regeneration |
+| `[x]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | `/data` package + `test/gamedata_test.go`: 136 subtrees of the loaded `data` table compared canonically against the booted archive (tools/dump_gamedata.lua), 0 disagreements — the full load surface: all inline tables, mod pools, enchantments, item bases+lists, uniques (incl. the generated ones), skills (1,535 granted effects with structured mods, statMaps, template fragments), skillStatMap, gems + lookups, minions/spectres, cluster jewels, bosses+bossSkills, mapMods, timeless tables. Residuals owned by other modules: `UnportedFn` bodies (139 skill funcs, 41 mapMods applies → calc/config), 4 tree-built generated uniques (→ tree-data), describeStats (→ stat-describer), LUT readers (→ timeless-jewel-data), vocab.go regeneration (small follow-up) |
 | `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
 | `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
 | `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |
