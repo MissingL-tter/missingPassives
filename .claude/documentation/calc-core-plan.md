@@ -217,8 +217,37 @@ Defence traps (same family as perform's, worth expecting again):
   populate partyTab.
 - Negative control verified: perturbing one output value fails all 25.
 
-NEXT: CalcOffence (+ CalcActiveSkill, CalcMirages, CalcTriggers) and
-calcs.buildDefenceEstimations -> calc-core [x].
+DONE: calcs.buildDefenceEstimations (CalcDefence.lua L1635-3828), 25/25
+byte-identical on .ehpDbs/.ehpOutput/.ehpMinionDb/.ehpMinionOutput --
+GREEN ON THE FIRST RUN, verified real by perturbing overkillDamage by 1e-7
+inside reducePoolsByDamage (fails all 25). Files: calc/ehp.go (not-hit
+chances, enemy damage input, taken-as shifts, taken multipliers),
+ehphit.go (incoming hit mitigation), ehpstun.go, ehppools.go (life
+recoverable, Petrified Blood, ES bypass, MoM), ehpguard.go (guard, aegis,
+ally pools, Vaal Arctic Armour, total pools), ehpreduce.go
+(reducePoolsByDamage), ehphits.go (numberOfHitsToDie), ehpehp.go (hit
+counts, total EHP, survival time), ehprecoup.go, ehpmaxhit.go
+(takenHitFromDamage + the quadratic max-hit solve with smoothing),
+ehpdegen.go. Entry point: env.RunEHP().
+
+That makes CALC-DEFENCE COMPLETE for the corpus (calcs.defence +
+resistances + buildDefenceEstimations). PvP scaling panics (no corpus
+build sets PvpScaling).
+
+More #EVAL quirks in the EHP body:
+- Max-hit pool fixup reads `shared or 0 + typed or 0`, which Lua parses as
+  `shared or (0+typed) or 0` -- the typed guard rate/absorb is dead
+  whenever a shared value exists.
+- AnyTakenReflect is assigned false in BOTH branches ("this needs a rework
+  as well"), so the reflect multiplier block never runs.
+- Every pairs(damageTable) loop inside reducePoolsByDamage is
+  order-independent (sum / per-key init / subtract-from-all / min), so the
+  Go maps need no ordering; only the dmgTypeList walks are sequenced.
+
+NEXT: calc-offence (CalcOffence + CalcActiveSkill + CalcMirages +
+CalcTriggers, ~9.1k lines). Same staging: keep the real calcs.triggers /
+mirages / offence in locals before stubbing, then call them explicitly
+after the EHP records so each stage stays independently comparable.
 
 ## Dump gotchas (hard-won)
 
