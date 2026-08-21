@@ -45,7 +45,50 @@ int uncompress(uint8_t *dest, unsigned long *destLen, const uint8_t *source, uns
 end
 
 local canon = dofile("../../tools/canon.lua")
+
+-- The calc modules localize `pairs` at load time, so overriding the global
+-- BEFORE LoadModule scopes a deterministic iteration order to exactly the
+-- Calc* modules: numeric keys ascending, then string keys ascending, then
+-- other (table) keys in raw next() order. The Go replay mirrors the same
+-- order wherever it iterates these maps. Documented divergence from the
+-- vanilla app (whose hash order is random per process anyway); this also
+-- makes the dumps byte-stable across runs.
+local rawPairs = pairs
+local function sortedPairs(t)
+	local numKeys, strKeys, otherKeys = {}, {}, {}
+	for k in rawPairs(t) do
+		local ty = type(k)
+		if ty == "number" then
+			numKeys[#numKeys + 1] = k
+		elseif ty == "string" then
+			strKeys[#strKeys + 1] = k
+		else
+			otherKeys[#otherKeys + 1] = k
+		end
+	end
+	table.sort(numKeys)
+	table.sort(strKeys)
+	local keys = {}
+	for _, k in ipairs(numKeys) do
+		keys[#keys + 1] = k
+	end
+	for _, k in ipairs(strKeys) do
+		keys[#keys + 1] = k
+	end
+	for _, k in ipairs(otherKeys) do
+		keys[#keys + 1] = k
+	end
+	local i = 0
+	return function()
+		i = i + 1
+		if keys[i] ~= nil then
+			return keys[i], t[keys[i]]
+		end
+	end
+end
+pairs = sortedPairs
 local calcs = LoadModule("Modules/Calcs")
+pairs = rawPairs
 
 -- The tree merge iterates pairs(nodeList): LuaJIT hash order, deterministic
 -- per table state but not derivable in Go — and the table GROWS mid-initEnv
@@ -122,13 +165,25 @@ do
 	end
 end
 
+-- The perform checkpoint covers the perform BODY only: the final
+-- defence/offence handoff (CalcPerform L3721+) is stubbed out so the
+-- captured state is exactly what the ported body must reproduce.
+-- calcTotemLife stays real (mid-body call for totem skills).
+calcs.defence = function() end
+calcs.buildDefenceEstimations = function() end
+calcs.triggers = function() end
+calcs.mirages = function() return true end
+calcs.offence = function() end
+
 local recordedOrders
 local recordedNodeSeqs
 local origBuildModListForNodeList = calcs.buildModListForNodeList
 calcs.buildModListForNodeList = function(env, nodeList, finishJewels)
 	if recordedOrders then
 		local order = {}
-		for id in pairs(nodeList) do
+		-- must match the order the wrapped function iterates in (the calc
+		-- modules were loaded under sortedPairs)
+		for id in sortedPairs(nodeList) do
 			order[#order + 1] = id
 		end
 		recordedOrders[#recordedOrders + 1] = order
@@ -259,7 +314,12 @@ local function itemFixture(item)
 		foulborn = item.foulborn,
 		classRestriction = item.classRestriction,
 		limit = item.limit,
-		base = item.base and { subType = item.base.subType, type = item.base.type } or nil,
+		base = item.base and {
+			subType = item.base.subType,
+			type = item.base.type,
+			flask = item.base.flask and { life = item.base.flask.life or nil, mana = item.base.flask.mana or nil } or nil,
+		} or nil,
+		quality = item.quality,
 		modList = item.modList and modArray(item.modList) or nil,
 		slotModList = slotML,
 		baseModList = item.baseModList and modArray(item.baseModList) or nil,
@@ -396,7 +456,29 @@ local function dbState(db)
 	return { mods = db.mods, conditions = db.conditions, multipliers = db.multipliers }
 end
 
+-- The app's load-time calc and each variant's own perform run mutate
+-- shared skill tag tables in place (e.g. warcryBuff[1].warcryPowerBonus,
+-- CalcPerform L2330). That residue is perform-owned state recomputed on
+-- every perform, so scrub it before capturing each variant's
+-- post-initEnv checkpoints (documented divergence).
+local function scrubPerformResidue(t, seen)
+	if seen[t] then
+		return
+	end
+	seen[t] = true
+	for k, v in pairs(t) do
+		if k == "warcryPowerBonus" then
+			t[k] = nil
+		elseif type(v) == "table" then
+			scrubPerformResidue(v, seen)
+		end
+	end
+end
+
 local function dumpVariant(name, build)
+	-- Each variant's own perform run re-creates the shared-table residue;
+	-- scrub before capturing this variant's post-initEnv state.
+	scrubPerformResidue(data.skills, {})
 	local classStats = build.spec.tree.characterData and build.spec.tree.characterData[build.spec.curClassId]
 		or build.spec.tree.classes[build.spec.curClassId]
 	local allocNodes = {}
@@ -531,31 +613,26 @@ local function dumpVariant(name, build)
 		}
 	end
 	emit(name .. ".skillLists", skillLists)
-end
 
--- The app's own load-time calc runs a full perform, which mutates shared
--- skill tag tables in place (e.g. warcryBuff[1].warcryPowerBonus,
--- CalcPerform L2330). That residue is perform-owned state recomputed on
--- every perform, so scrub it before dumping the post-initEnv checkpoints
--- (documented divergence: the replay's initEnv never ran a perform).
-local function scrubPerformResidue(t, seen)
-	if seen[t] then
-		return
-	end
-	seen[t] = true
-	for k, v in pairs(t) do
-		if k == "warcryPowerBonus" then
-			t[k] = nil
-		elseif type(v) == "table" then
-			scrubPerformResidue(v, seen)
-		end
+	-- Run the perform body (tail stubbed above) over the same env and
+	-- capture its state. Everything above is post-initEnv; these records
+	-- are post-perform-body.
+	calcs.perform(env)
+	emit(name .. ".performDbs", {
+		mod = dbState(env.modDB),
+		enemy = dbState(env.enemyDB),
+		item = dbState(env.itemModDB),
+	})
+	emit(name .. ".performOutput", scalars(env.player.output or {}))
+	if env.minion then
+		emit(name .. ".performMinionDb", dbState(env.minion.modDB))
+		emit(name .. ".performMinionOutput", scalars(env.minion.output or {}))
 	end
 end
 
 if key == "empty" then
 	newBuild()
 	runCallback("OnFrame")
-	scrubPerformResidue(data.skills, {})
 	dumpVariant("empty", build)
 else
 	assert(buildPath, "usage: dump_calc.lua <key> <build xml path>")
@@ -564,7 +641,6 @@ else
 	f:close()
 	loadBuildFromXML(xml, key)
 	runCallback("OnFrame")
-	scrubPerformResidue(data.skills, {})
 
 	dumpVariant(key .. ".full", build)
 
