@@ -101,6 +101,9 @@ func writeCanonMod(sb *strings.Builder, m *Mod) {
 	if m.SourceSet {
 		kv["source"] = m.Source
 	}
+	if m.SourceSlot != "" {
+		kv["sourceSlot"] = m.SourceSlot
+	}
 	if m.Replaced {
 		kv["replaced"] = true
 	}

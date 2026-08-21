@@ -171,6 +171,9 @@ func ModCanon(m *modparser.Mod) map[string]any {
 	if m.SourceSet {
 		out["source"] = m.Source
 	}
+	if m.SourceSlot != "" {
+		out["sourceSlot"] = m.SourceSlot
+	}
 	for i, tag := range m.Tags {
 		if tag != nil {
 			out[strconv.Itoa(i+1)] = tag

@@ -17,6 +17,7 @@ type Mod struct {
 	KeywordFlags int64
 	Source       string
 	SourceSet    bool
+	SourceSlot   string // mod.sourceSlot, set by Item slot mod lists ("" = absent)
 	Replaced     bool // set by ModDB ReplaceMod bookkeeping (mod.replaced)
 	Converted    bool // set by ModDB ConvertMod bookkeeping (mod.converted)
 	Tags         []any
@@ -97,6 +98,12 @@ func mod(name, typ string, value any, rest ...any) *Mod {
 		m.Tags = m.Tags[:len(m.Tags)-1]
 	}
 	return m
+}
+
+// NewMod is modLib.createMod for the other packages: mod() with its
+// positional quirks, exported.
+func NewMod(name, typ string, value any, rest ...any) *Mod {
+	return mod(name, typ, value, rest...)
 }
 
 // flag mirrors ModParser's local helper: a FLAG mod set to true.
