@@ -27,8 +27,8 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 | | count |
 |---|---|
 | done | 3 (`mod-parser`, `export-tooling`, `mod-store`) |
-| in progress | 0 |
-| not started | 37 |
+| in progress | 1 (`game-data`) |
+| not started | 36 |
 
 ---
 
@@ -56,7 +56,7 @@ area, effMult, dot, critDot, leech, multiChain) consumed by `calcs-view`.
 
 | status | module | files | lines | verified by |
 |---|---|---|---|---|
-| `[ ]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | partial: `/gamedata` + the export builders now produce the generated data as typed JSON documents (no Lua); `/modparser/vocab.go` carries the parser's vocabulary, extracted one-time and Go-maintained. Remaining here: loading the documents into the app, the hand-maintained `Data/*.lua` parts, and vocab regeneration |
+| `[~]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | `/data` package + `test/gamedata_test.go`: 113 subtrees of the loaded `data` table compared canonically against the booted archive (tools/dump_gamedata.lua), 0 disagreements. Done: Data.lua's own tables, Misc, costs, bosses+bossSkills, mod pools (itemMods/veiled/beast/necropolis/uniqueMods), enchantments, essences/pantheons/crucible/masterMods, modScalability, clusterJewels + notable lookup, itemBases + lists, rares, uniques (incl. race one-time-converted; graft placeholder), foulbornMap, rareLikeUniques. Remaining: skills+gems (structured mods + gem setup), minions/spectres, skillStatMap, mapMods (closures), Uniques/Special/Generated.lua (code), TimelessJewelData tables, vocab.go regeneration |
 | `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
 | `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
 | `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |

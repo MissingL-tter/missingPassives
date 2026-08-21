@@ -67,6 +67,24 @@ LegionPassives layout offsets) and number-keyed `pairs()` iteration order
 (`export/luatab.go`, baked into tradeHashes entry order; verified against
 LuaJIT over 3,000 randomized tables).
 
+## data (in progress)
+
+The runtime data set — the Go port of `.archive/src/Modules/Data.lua`.
+`data.Load` assembles a typed `Data` value from the gamedata documents plus
+the tables Data.lua defines inline (misc constants, keystones, ailments,
+weapon types, jewel radii, ...), including the derived structures the Lua
+computes at load (combined mod pools, per-weapon-type enchant expansion,
+cluster-notable lookups, boss stat means, item base lists).
+
+**`TestGameDataAgainstReference`** boots the archive application, dumps the
+loaded `data` table subtree by subtree (`tools/dump_gamedata.lua` →
+canonical serialisation, murmur-hashed for the large pools) and compares the
+Go assembly against it: **113 subtrees, 0 disagreements.** Values that
+round-trip through Lua string literals are unescaped at load; text inside
+`[[...]]` long brackets is taken raw. Still to port: skills/gems, minions,
+skillStatMap, mapMods, the generated-uniques code, and the timeless-jewel
+tables.
+
 ## Verification
 
 Two differential tests, both of which **fail on any disagreement**:
