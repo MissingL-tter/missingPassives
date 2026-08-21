@@ -9,8 +9,6 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/export"
-	"github.com/MissingL-tter/missingPassives/gamedata"
 	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
@@ -66,49 +64,6 @@ var _ = func() bool {
 	return true
 }()
 
-// readStatMapCopies parses the skills.statMapKeys fixture record (the canon
-// string is itself JSON with arrays as {"1": ..} objects).
-func readStatMapCopies(t *testing.T, dumpPath string) map[string][]string {
-	t.Helper()
-	f, err := os.Open(dumpPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 1<<20), 1<<28)
-	for sc.Scan() {
-		var rec struct {
-			K string `json:"k"`
-			C string `json:"c"`
-		}
-		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
-			t.Fatal(err)
-		}
-		if rec.K != "skills.statMapKeys" {
-			continue
-		}
-		var raw map[string]map[string]string
-		if err := json.Unmarshal([]byte(rec.C), &raw); err != nil {
-			t.Fatalf("statMapKeys fixture: %v", err)
-		}
-		out := map[string][]string{}
-		for id, keys := range raw {
-			list := make([]string, len(keys))
-			for idx, key := range keys {
-				n, err := strconv.Atoi(idx)
-				if err != nil || n < 1 || n > len(keys) {
-					t.Fatalf("statMapKeys fixture: bad index %q", idx)
-				}
-				list[n-1] = key
-			}
-			out[id] = list
-		}
-		return out
-	}
-	return map[string][]string{}
-}
-
 // The game-data differential test: builds the gamedata documents over the
 // extracted GGPK, assembles the runtime data set with data.Load, and
 // compares each ported subtree canonically against the archive dump
@@ -116,56 +71,7 @@ func readStatMapCopies(t *testing.T, dumpPath string) map[string][]string {
 // any disagreement.
 func TestGameDataAgainstReference(t *testing.T) {
 	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
-	if _, err := os.Stat(dumpPath); err != nil {
-		t.Skipf("archive dump not present: %v", err)
-	}
-	srcDir := filepath.Join("..", ".archive", "src", "Export", "ggpk")
-	refDir := filepath.Join("..", ".archive", "src")
-	if _, err := os.Stat(filepath.Join(srcDir, "Data", "stats.datc64")); err != nil {
-		t.Skipf("extracted GGPK not present at %s: %v", srcDir, err)
-	}
-	if err := export.WriteEnumFiles(filepath.Join(srcDir, "Data")); err != nil {
-		t.Fatalf("writing enum tables: %v", err)
-	}
-	dats, err := export.LoadDats(filepath.Join(srcDir, "Data"))
-	if err != nil {
-		t.Fatalf("loading dats: %v", err)
-	}
-	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir, TplDir: refDir}
-
-	docs := map[string]any{}
-	for _, s := range export.Scripts {
-		switch s.Name {
-		case "miscdata", "costs", "bossData", "modScalability",
-			"essence", "pantheons", "crucible", "masters", "flavourText", "enchant",
-			"mods", "cluster", "bases", "uModsToText", "minions", "skills":
-			doc, err := s.Build(ctx)
-			if err != nil {
-				t.Fatalf("%s: build: %v", s.Name, err)
-			}
-			docs[s.Name] = doc
-		}
-	}
-	d := data.Load(data.Sources{
-		Misc:           docs["miscdata"].(gamedata.MiscData),
-		Costs:          docs["costs"].(gamedata.Costs),
-		Boss:           docs["bossData"].(gamedata.BossData),
-		ModScalability: docs["modScalability"].(gamedata.ModScalability),
-		Essences:       docs["essence"].(gamedata.Essences),
-		Pantheons:      docs["pantheons"].(gamedata.Pantheons),
-		Crucible:       docs["crucible"].(gamedata.CrucibleNodes),
-		Masters:        docs["masters"].(gamedata.MasterCrafts),
-		FlavourText:    docs["flavourText"].(gamedata.FlavourTexts),
-		Enchants:       docs["enchant"].(gamedata.Enchants),
-		Mods:           docs["mods"].(gamedata.ModsData),
-		Cluster:        docs["cluster"].(gamedata.ClusterJewels),
-		Bases:          docs["bases"].(gamedata.BasesData),
-		Uniques:        docs["uModsToText"].(gamedata.Uniques),
-		MinionsDoc:     docs["minions"].(gamedata.Minions),
-		Skills:         docs["skills"].(gamedata.SkillsData),
-		StatMapCopies:  readStatMapCopies(t, dumpPath),
-		FoulbornMapJSONC: readFile(t, filepath.Join(refDir, "Data", "ModFoulbornMap.jsonc")),
-	})
+	d := loadGameData(t)
 
 	checks := map[string]func() any{
 		"monsterEvasionTable":             func() any { return d.MonsterEvasionTable },
@@ -286,7 +192,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"gemVaalGemIdForBaseGemId":       func() any { return d.GemVaalGemIdForBaseGemId },
 		"skills.statMapKeys": func() any {
 			out := map[string][]string{}
-			for id, keys := range readStatMapCopies(t, dumpPath) {
+			for id, keys := range readStatMapCopiesHelper(dumpPath) {
 				out[id] = keys
 			}
 			return out
