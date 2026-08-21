@@ -694,6 +694,16 @@ local function dumpVariant(name, build)
 	-- post-EHP state. calcs.triggers runs first because offence reads the
 	-- trigger rate it writes; mirages decides whether offence runs at all.
 	realTriggers(env, env.player)
+	-- Triggers gets its own checkpoint: it is a separate 1.6k-line module
+	-- and offence reads the trigger rate it writes, so porting it first
+	-- gives an independently verifiable milestone.
+	emit(name .. ".triggersDbs", {
+		mod = dbState(env.modDB),
+		enemy = dbState(env.enemyDB),
+		item = dbState(env.itemModDB),
+	})
+	emit(name .. ".triggersOutput", scalars(env.player.output or {}))
+	emit(name .. ".triggersSkillData", scalars(env.player.mainSkill.skillData or {}))
 	if not realMirages(env) then
 		realOffence(env, env.player, env.player.mainSkill)
 	end
