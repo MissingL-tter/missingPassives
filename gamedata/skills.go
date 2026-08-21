@@ -54,6 +54,9 @@ type SkillHeader struct {
 }
 
 type SkillTail struct {
+	// ModsArgs is the raw #mods directive argument (the noBaseFlags/noStats/
+	// ... gates).
+	ModsArgs      string          `json:"modsArgs,omitempty"`
 	Support       bool            `json:"support,omitempty"`
 	BaseFlags     []string        `json:"baseFlags,omitempty"`
 	BaseMods      []string        `json:"baseMods,omitempty"` // raw template text

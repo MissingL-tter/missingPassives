@@ -466,9 +466,10 @@ func buildSkills(x *Ctx) (any, error) {
 	directives["baseMod"] = func(args string) {
 		state.skill.mods = append(state.skill.mods, args)
 	}
-	directives["mods"] = func(string) {
+	directives["mods"] = func(args string) {
 		skill := state.skill
 		tail := gamedata.SkillTail{
+			ModsArgs:      args,
 			Support:       skill.isSupport,
 			BaseFlags:     append([]string(nil), skill.baseFlags...),
 			BaseMods:      append([]string(nil), skill.mods...),
