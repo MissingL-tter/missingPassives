@@ -30,6 +30,11 @@ type Sources struct {
 	Cluster        gamedata.ClusterJewels
 	Bases          gamedata.BasesData
 	Uniques        gamedata.Uniques
+	MinionsDoc     gamedata.Minions
+	Skills         gamedata.SkillsData
+	// StatMapCopies lists, per skill, the statMap keys the booted archive's
+	// lazy copies materialised (a replay fixture from the archive dump).
+	StatMapCopies map[string][]string
 	// FoulbornMapJSONC is Data/ModFoulbornMap.jsonc's content.
 	FoulbornMapJSONC []byte
 }
@@ -92,6 +97,16 @@ type Data struct {
 	TimelessJewelSeedMin   map[int]float64
 	TimelessJewelSeedMax   map[int]float64
 	TimelessJewelAdditions int
+	// One-time-converted timeless jewel tables (typed by the
+	// timeless-jewel-data module later).
+	NodeIDList            map[string]any
+	AbyssNotableNames     map[string]any
+	TimelessJewelTradeIDs map[string]any
+	TimelessJewelLUTs     map[string]any
+
+	// MapMods is Data/ModMap.lua's table; the apply closures are Unported
+	// markers until the config module lands.
+	MapMods map[string]any
 
 	ItemTagSpecial                 map[string]map[string][]string
 	ItemTagSpecialExclusionPattern map[string]map[string][]string
@@ -101,6 +116,7 @@ type Data struct {
 	Costs []Cost
 
 	ItemMods       map[string]map[string]ItemModData
+	bbdPool        map[string]ItemModData
 	VeiledMods     map[string]ItemModData
 	BeastCraft     map[string]ItemModData
 	NecropolisMods map[string]ItemModData
@@ -132,6 +148,19 @@ type Data struct {
 	BossSkillsList     []ValLabel
 
 	FoulbornMap map[string]any
+
+	Minions  map[string]*Minion
+	Spectres map[string]*Minion
+
+	Skills       map[string]*GrantedEffect
+	SkillStatMap map[string]*StatMapEntry
+
+	Gems                           map[string]*Gem
+	GemForSkill                    map[*GrantedEffect]string
+	GemForBaseName                 map[string]string
+	GemsByGameId                   map[string]map[string]*Gem
+	GemGrantedEffectIdForVaalGemId map[string]string
+	GemVaalGemIdForBaseGemId       map[string]string
 
 	// Uniques holds the unique item text database by type, plus "race" and
 	// "new". The "generated" list (Uniques/Special/Generated.lua, real code)
@@ -201,6 +230,11 @@ func Load(src Sources) *Data {
 	d.TimelessJewelSeedMin = timelessJewelSeedMin
 	d.TimelessJewelSeedMax = timelessJewelSeedMax
 	d.TimelessJewelAdditions = 337 // #legionAdditions
+	d.NodeIDList = nodeIDListTable
+	d.AbyssNotableNames = abyssNotableNamesTable
+	d.TimelessJewelTradeIDs = timelessJewelTradeIDsTable
+	d.TimelessJewelLUTs = map[string]any{}
+	d.MapMods = mapModsTable
 	d.ItemTagSpecial = itemTagSpecial
 	d.ItemTagSpecialExclusionPattern = itemTagSpecialExclusionPattern
 	d.CasterTagCrucibleUniques = casterTagCrucibleUniques
@@ -229,6 +263,11 @@ func Load(src Sources) *Data {
 	d.loadBosses(src.Boss)
 	d.BossSkills, d.BossSkillsList = loadBossSkills(src.Boss)
 
+	d.SkillStatMap = skillStatMap
+	d.loadSkills(src.Skills, src.StatMapCopies)
+	d.loadGems(src.Skills)
+	d.loadMinions(src.MinionsDoc)
+
 	d.Uniques = map[string][]string{}
 	for typ, f := range src.Uniques {
 		var blobs []string
@@ -244,6 +283,7 @@ func Load(src Sources) *Data {
 	// Data/Uniques/graft.lua is a hand-maintained empty placeholder (the
 	// exporter doesn't generate graft uniques yet).
 	d.Uniques["graft"] = []string{}
+	d.buildGeneratedUniques()
 
 	if len(src.FoulbornMapJSONC) > 0 {
 		d.FoulbornMap = map[string]any{}

@@ -12,6 +12,7 @@ import (
 	"github.com/MissingL-tter/missingPassives/export"
 	"github.com/MissingL-tter/missingPassives/gamedata"
 	"github.com/MissingL-tter/missingPassives/internal/luacanon"
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 func readFile(t *testing.T, path string) []byte {
@@ -38,6 +39,74 @@ func diffWindow(s, other string) string {
 		end = len(s)
 	}
 	return "[@" + strconv.Itoa(i) + "] ..." + s[start:end] + "..."
+}
+
+// Structured mods inside the data tree canonicalise via their plain-table
+// shadow.
+var _ = func() bool {
+	luacanon.RegisterAdapter(func(v any) (any, bool) {
+		switch t := v.(type) {
+		case *modparser.Mod:
+			return data.ModCanon(t), true
+		case *modparser.D:
+			return data.DCanon(t), true
+		case *data.GrantedEffect:
+			return data.GrantedEffectCanon(t), true
+		case *data.StatMapEntry:
+			return data.StatMapEntryCanon(t), true
+		case *data.SkillLevel:
+			return data.SkillLevelCanon(t), true
+		case data.UnportedFn:
+			return luacanon.Fn{}, true
+		case *data.Gem:
+			return data.GemCanon(t), true
+		}
+		return nil, false
+	})
+	return true
+}()
+
+// readStatMapCopies parses the skills.statMapKeys fixture record (the canon
+// string is itself JSON with arrays as {"1": ..} objects).
+func readStatMapCopies(t *testing.T, dumpPath string) map[string][]string {
+	t.Helper()
+	f, err := os.Open(dumpPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 1<<20), 1<<28)
+	for sc.Scan() {
+		var rec struct {
+			K string `json:"k"`
+			C string `json:"c"`
+		}
+		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
+			t.Fatal(err)
+		}
+		if rec.K != "skills.statMapKeys" {
+			continue
+		}
+		var raw map[string]map[string]string
+		if err := json.Unmarshal([]byte(rec.C), &raw); err != nil {
+			t.Fatalf("statMapKeys fixture: %v", err)
+		}
+		out := map[string][]string{}
+		for id, keys := range raw {
+			list := make([]string, len(keys))
+			for idx, key := range keys {
+				n, err := strconv.Atoi(idx)
+				if err != nil || n < 1 || n > len(keys) {
+					t.Fatalf("statMapKeys fixture: bad index %q", idx)
+				}
+				list[n-1] = key
+			}
+			out[id] = list
+		}
+		return out
+	}
+	return map[string][]string{}
 }
 
 // The game-data differential test: builds the gamedata documents over the
@@ -69,7 +138,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 		switch s.Name {
 		case "miscdata", "costs", "bossData", "modScalability",
 			"essence", "pantheons", "crucible", "masters", "flavourText", "enchant",
-			"mods", "cluster", "bases", "uModsToText":
+			"mods", "cluster", "bases", "uModsToText", "minions", "skills":
 			doc, err := s.Build(ctx)
 			if err != nil {
 				t.Fatalf("%s: build: %v", s.Name, err)
@@ -92,6 +161,9 @@ func TestGameDataAgainstReference(t *testing.T) {
 		Cluster:        docs["cluster"].(gamedata.ClusterJewels),
 		Bases:          docs["bases"].(gamedata.BasesData),
 		Uniques:        docs["uModsToText"].(gamedata.Uniques),
+		MinionsDoc:     docs["minions"].(gamedata.Minions),
+		Skills:         docs["skills"].(gamedata.SkillsData),
+		StatMapCopies:  readStatMapCopies(t, dumpPath),
 		FoulbornMapJSONC: readFile(t, filepath.Join(refDir, "Data", "ModFoulbornMap.jsonc")),
 	})
 
@@ -151,6 +223,19 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"casterTagCrucibleUniques":       func() any { return d.CasterTagCrucibleUniques },
 		"minionTagCrucibleUniques":       func() any { return d.MinionTagCrucibleUniques },
 		"costs":                          func() any { return d.Costs },
+		"mapMods":                        func() any { return d.MapMods },
+		"nodeIDList":                     func() any { return d.NodeIDList },
+		"abyssNotableNames":              func() any { return d.AbyssNotableNames },
+		"timelessJewelTradeIDs":          func() any { return d.TimelessJewelTradeIDs },
+		"timelessJewelLUTs":              func() any { return d.TimelessJewelLUTs },
+		// function-valued members: ported by the stat-describer and
+		// timeless-jewel-data modules
+		"describeStats":              func() any { return luacanon.Fn{} },
+		"readLUT":                    func() any { return luacanon.Fn{} },
+		"repairLUTs":                 func() any { return luacanon.Fn{} },
+		"readAbyssJewelLUT":          func() any { return luacanon.Fn{} },
+		"resolveAbyssJewelComponent": func() any { return luacanon.Fn{} },
+		"getAbyssJewelComponentRoll": func() any { return luacanon.Fn{} },
 		"bosses":                         func() any { return d.Bosses },
 		"bossStats":                      func() any { return d.BossStats },
 		"enemyIsBossTooltip":             func() any { return d.EnemyIsBossTooltip },
@@ -180,11 +265,38 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"itemBaseTypeList": func() any { return d.ItemBaseTypeList },
 		"rares":            func() any { return d.Rares },
 		"rareLikeUniques":  func() any { return d.RareLikeUniques },
+		"minions":          func() any { return d.Minions },
+		"spectres":         func() any { return d.Spectres },
+		"skills":           func() any { return d.Skills },
+		"skillStatMap":     func() any { return d.SkillStatMap },
+		"gems":             func() any { return d.Gems },
+		"gemForSkill":      func() any { return d.GemForSkillCanon() },
+		"gemForBaseName":   func() any { return d.GemForBaseName },
+		"gemsByGameId": func() any {
+			out := map[string]map[string]string{}
+			for gameId, m := range d.GemsByGameId {
+				out[gameId] = map[string]string{}
+				for variantId, gem := range m {
+					out[gameId][variantId] = gem.Id
+				}
+			}
+			return out
+		},
+		"gemGrantedEffectIdForVaalGemId": func() any { return d.GemGrantedEffectIdForVaalGemId },
+		"gemVaalGemIdForBaseGemId":       func() any { return d.GemVaalGemIdForBaseGemId },
+		"skills.statMapKeys": func() any {
+			out := map[string][]string{}
+			for id, keys := range readStatMapCopies(t, dumpPath) {
+				out[id] = keys
+			}
+			return out
+		},
 	}
 	for typ := range d.Uniques {
 		typ := typ
 		checks["uniques."+typ] = func() any { return d.Uniques[typ] }
 	}
+	_ = checks["uniques.generated"] // built by data.buildGeneratedUniques
 	for key := range d.ItemMods {
 		key := key
 		checks["itemMods."+key] = func() any { return d.ItemMods[key] }

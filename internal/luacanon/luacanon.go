@@ -17,6 +17,15 @@ import (
 // Fn stands for a Lua function value ({"__fn":true} in canon).
 type Fn struct{}
 
+// adapters convert domain values (e.g. structured mods) into encodable
+// shapes before reflection sees them.
+var adapters []func(any) (any, bool)
+
+// RegisterAdapter installs a conversion tried on every non-scalar value.
+func RegisterAdapter(fn func(any) (any, bool)) {
+	adapters = append(adapters, fn)
+}
+
 // Encode canonicalises v. Supported: nil, bool, integers, floats, string,
 // Fn, maps (string or numeric keys), slices/arrays (1-based keys), pointers
 // (nil pointers vanish), and structs via `lua:"key"` tags (fields without a
@@ -32,6 +41,17 @@ func enc(b *strings.Builder, rv reflect.Value) {
 	if !rv.IsValid() {
 		b.WriteString("null")
 		return
+	}
+	if rv.CanInterface() {
+		k := rv.Kind()
+		if (k == reflect.Pointer || k == reflect.Interface || k == reflect.Struct) && !((k == reflect.Pointer || k == reflect.Interface) && rv.IsNil()) {
+			for _, ad := range adapters {
+				if conv, ok := ad(rv.Interface()); ok {
+					enc(b, reflect.ValueOf(conv))
+					return
+				}
+			}
+		}
 	}
 	switch rv.Kind() {
 	case reflect.Interface, reflect.Pointer:

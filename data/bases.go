@@ -93,6 +93,9 @@ type baseOnlyEntry struct {
 }
 
 func (d *Data) loadRareLikeUniques() {
+	if d.ItemBases["Ghostflame Blade"] == nil {
+		return // partial Sources (tests)
+	}
 	crimsonStormMods := map[string]ItemModData{}
 	for modId, mod := range d.VeiledMods {
 		if mod.Affix == "of the Order" {

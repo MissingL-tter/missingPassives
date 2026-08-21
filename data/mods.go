@@ -96,6 +96,8 @@ func (d *Data) loadItemMods(src gamedata.ModsData) {
 	d.VeiledMods = loadModPool(src.Pools["ModVeiled"])
 	d.BeastCraft = loadModPool(src.Pools["BeastCraft"])
 	d.NecropolisMods = loadModPool(src.Pools["ModNecropolis"])
+	// kept aside for the generated Bound by Destiny unique
+	d.bbdPool = loadModPool(src.Pools["BoundByDestiny"])
 
 	// combined table of many mod categories
 	item := map[string]ItemModData{}
