@@ -609,6 +609,7 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		}
 		var fixture, allocOrders, nodeOrders, grantedNodes, grantedAsc, ebItems, dbs, skills, skillLists string
 		var performDbs, performOutput, performMinionDb, performMinionOutput string
+		var defenceDbs, defenceOutput, defenceMinionDb, defenceMinionOutput string
 		forEachCalcRecord(t, path, func(k, c string) {
 			switch k {
 			case variant + ".fixture":
@@ -637,6 +638,14 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 				performMinionDb = c
 			case variant + ".performMinionOutput":
 				performMinionOutput = c
+			case variant + ".defenceDbs":
+				defenceDbs = c
+			case variant + ".defenceOutput":
+				defenceOutput = c
+			case variant + ".defenceMinionDb":
+				defenceMinionDb = c
+			case variant + ".defenceMinionOutput":
+				defenceMinionOutput = c
 			}
 		})
 		if fixture == "" || allocOrders == "" || nodeOrders == "" || grantedNodes == "" || grantedAsc == "" || ebItems == "" || dbs == "" || skills == "" || skillLists == "" {
@@ -644,6 +653,9 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		}
 		if performDbs == "" || performOutput == "" {
 			t.Fatalf("%s: missing perform records for %s", file, variant)
+		}
+		if defenceDbs == "" || defenceOutput == "" {
+			t.Fatalf("%s: missing defence records for %s", file, variant)
 		}
 		var m map[string]any
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
@@ -726,6 +738,28 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		// CalcPerform L2330) like the reference; the dump scrubs that
 		// residue at each variant start, so scrub before the next variant
 		// reuses the shared game data.
+		// Defence stage, run on the post-perform-body state exactly as the
+		// dump does (player then minion, back to back).
+		env.RunDefence()
+		gotDefence := luacanon.Encode(dbsShadow{
+			Mod:   shadowOf(env.ModDB),
+			Enemy: shadowOf(env.EnemyDB),
+			Item:  shadowOf(env.ItemModDB),
+		})
+		if gotDefence != defenceDbs {
+			t.Errorf("%s defenceDbs diverged:\n%s", variant, diffWindow(gotDefence, defenceDbs))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != defenceOutput {
+			t.Errorf("%s defenceOutput diverged:\n%s", variant, diffWindow(got, defenceOutput))
+		}
+		if env.Minion != nil {
+			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != defenceMinionDb {
+				t.Errorf("%s defenceMinionDb diverged:\n%s", variant, diffWindow(got, defenceMinionDb))
+			}
+			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != defenceMinionOutput {
+				t.Errorf("%s defenceMinionOutput diverged:\n%s", variant, diffWindow(got, defenceMinionOutput))
+			}
+		}
 		scrubWarcryResidue(env)
 		// Negative control: a corrupted input must stop matching.
 		bad := decodeCalcFixture(m)

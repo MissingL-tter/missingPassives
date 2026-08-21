@@ -1313,7 +1313,7 @@ var minionLifePoolBySkill = map[string]*lifePool{
 }
 
 // performAllyLife ports the needsAllyLife block (CalcPerform.lua
-// L3599-3718). Totem life needs calcTotemLife, which is unported.
+// L3599-3718).
 func (env *Env) performAllyLife() {
 	modDB := env.ModDB
 	output := env.playerPA.output
@@ -1431,11 +1431,52 @@ func (env *Env) performAllyLife() {
 		modDB.AddMod(newMod(spectreLifePool.life, "BASE", firstSpectreLife*(spectreLimit-spectreCount), spectreLifePool.source))
 	}
 
+	var normalTotem, vaalRejuvenationTotem *allyTotem
 	for _, activeSkill := range env.PlayerActiveSkills {
 		if activeSkill.SkillFlags["totem"] && !activeSkill.SkillFlags["disable"] && truthy(activeSkill.SkillData["totemLevel"]) && activeSkill.SkillTotemId != nil {
-			panic("perform: totem ally-life needs calcTotemLife (unported)")
+			life, _ := env.calcTotemLife(activeSkill)
+			totem := &allyTotem{name: activeSkill.ActiveEffect.GrantedEffect.Name, life: life}
+			if totem.name == "Vaal Rejuvenation Totem" {
+				vaalRejuvenationTotem = totem
+			} else if normalTotem == nil || life > normalTotem.life {
+				normalTotem = totem
+			}
 		}
 	}
+
+	// PoB cannot know which Totem is nearest, so use the eligible type with
+	// the most Life.
+	totemLifeOverride := modDB.Override(nil, "TotalTotemLife")
+	totemRedirect := modDB.Sum("BASE", nil, "takenFromTotemsBeforeYou")
+	nearestIsVaal := vaalRejuvenationTotem != nil &&
+		(normalTotem == nil || vaalRejuvenationTotem.life > normalTotem.life) && !truthy(totemLifeOverride)
+	nearestTotem := normalTotem
+	if nearestIsVaal {
+		nearestTotem = vaalRejuvenationTotem
+	}
+	if nearestTotem != nil && !nearestIsVaal && totemRedirect != 0 && !truthy(totemLifeOverride) {
+		modDB.AddMod(newMod("TotalTotemLife", "BASE", nearestTotem.life, "Totem"))
+	}
+	if vaalRejuvenationTotem != nil &&
+		(modDB.Sum("BASE", nil, "takenFromVaalRejuvenationTotemsBeforeYou") != 0 || (nearestIsVaal && totemRedirect != 0)) &&
+		!truthy(modDB.Override(nil, "TotalVaalRejuvenationTotemLife")) {
+		modDB.AddMod(newMod("TotalVaalRejuvenationTotemLife", "BASE", vaalRejuvenationTotem.life, "Vaal Rejuvenation Totem"))
+	}
+}
+
+// allyTotem is one candidate totem for the ally-life pools.
+type allyTotem struct {
+	name string
+	life float64
+}
+
+// calcTotemLife ports calcs.calcTotemLife (CalcOffence.lua L316).
+func (env *Env) calcTotemLife(activeSkill *ActiveSkill) (life, lifeMod float64) {
+	lifeMod = Mod(activeSkill.SkillModList, activeSkill.SkillCfg, "TotemLife")
+	totemLevel := int(anyNum(activeSkill.SkillData["totemLevel"]))
+	mult := env.Data.TotemLifeMult[int64(*activeSkill.SkillTotemId)]
+	life = roundDec(math.Floor(env.Data.MonsterAllyLifeTable[totemLevel-1]*mult)*lifeMod, 0)
+	return life, lifeMod
 }
 
 func atoiSafe(s string) int {
