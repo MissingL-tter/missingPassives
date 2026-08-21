@@ -22,6 +22,21 @@ untouched — it describes the reference, not the port.
 
 All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
+**Deleting `.archive/` is gated on more than the rows below.** Two known
+dependencies on the Lua tree survive a fully-ported checklist, both in the
+data pipeline rather than the runtime, and both need a home in the repo
+proper before the archive can go:
+
+- `cmd/pobexport -tpl` defaults to `.archive/src` for the hand-maintained
+  `Export/Uniques` and `Export/Skills` templates, so regenerating game data
+  still needs the Lua tree on disk.
+- `internal/luapat` (Lua-pattern → Go regex) is build-time tooling whose own
+  header says it is "deleted together with the Lua". Its one non-test caller
+  is `export/script_bases.go` (the `baseMatch` directive), which is correct —
+  it interprets Lua-pattern-shaped export specs. **Runtime code must never
+  call it**: convert once, ship Go regex in the data, and guard the shipped
+  table with a metacharacter test (see `test/itemtag_test.go`).
+
 ## Progress
 
 | | count |

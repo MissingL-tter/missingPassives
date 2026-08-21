@@ -26,7 +26,8 @@ DONE:
   nodes. Unreachable-in-corpus branches panic loudly: radius jewels,
   Energy Blade, corrupted-jewel-effect scaling, classRestriction (string
   condition — modstore Conditions is bool, widen when a corpus needs it),
-  Item.FindModifierSubstring (needs internal/luapat + itemTagSpecial).
+  Item.FindModifierSubstring (needs itemTagSpecial; match with Go regex
+  — luapat is build-time only).
   **TestCalcInitEnvAgainstReference: empty + coc.treeonly + coc.noskills
   post-initEnv modDB/enemyDB/itemModDB byte-identical, corrupted-input
   negative control.** Full suite green.
@@ -140,12 +141,45 @@ DONE:
   (DEE_FOUR_LOH_BAD, Inquisitor Storm Brand + spectres + Stone Golem +
   Animate Guardian + Brutal Restraint).
 
-NEXT: CalcPerform (with defenceForConditionals) and the post-perform
-checkpoint (dbs again + output allowlist). Still panicking (no corpus
-build reaches them): FindModifierSubstring (needs internal/luapat +
-itemTagSpecial; likely first hit during perform's ItemCondition evals),
-ProcessSocketGroup nameSpec migration path, CALCS mode,
-createMinionSkills (perform-stage). Corpus: 9 sources / 25 variants.
+DONE: CalcPerform body (L1252-3718) 25/25 byte-identical on
+.performDbs/.performOutput/.performMinionDb/.performMinionOutput.
+Files: calc/perform.go (prologue through charges + reservations),
+calc/performbuffs.go (buff/curse/link loop, curse slots, guards, buff
+application, ailments, exposures, ally-life, GemLevel tail),
+calc/performutil.go / performmisc.go / performminion.go /
+performflasks.go (doActor* + flask/tincture merges).
+FindModifierSubstring ported with plain Go regex (calc.patFind, cached);
+Item.D carries the data tables and the fixture's ExplicitLines/OtherLines
+are pre-filtered. It must NOT use internal/luapat: that package is
+build-time only ("deleted together with the Lua"), and calling it from the
+calc engine would pin it into the shipped runtime. Safe because the tables
+use no syntax beyond a leading ^ / trailing $, and searchCond comes from a
+letters-and-whitespace-only capture (ModParser.lua ItemCondition tags), so
+no metacharacter can reach the matcher; test/itemtag_test.go guards that.
+Perform traps found by the differential:
+- skillData `or` chains: a PRESENT 0 wins (0 truthy in Lua) — never use
+  `==0` as absence for skillData reads (reservation percents/Forced keys;
+  "no reservation" effects write explicit 0s).
+- Lua Flag() yields nil: `output.X = Flag(...)` stores no key when false
+  (ChaosInoculation) — only write the key when true.
+- Hex doom guard's trailing `and Sum(...,"MaxDoom")` is a bare number,
+  always truthy (#EVAL) — HexDoomLimit/HexDoom set for every hex curse.
+- Ailment gate first clause (`Val>0 or Sum(...)`) is always truthy
+  (#EVAL) — only the immune/avoid clause gates.
+- GemLevel/GemQuality output block (L3862+) runs AFTER the stubbed
+  defence/offence handoff — part of the perform checkpoint.
+- Ally-life (needsAllyLife) is corpus-reachable via Companionship support
+  (lowlife); calcTotemLife still panics (no corpus totem+redirect build).
+- Go test scrubs warcryPowerBonus tags after each Perform (mirror of the
+  dump's per-variant scrub) so shared gamedata stays clean across variants.
+
+Still panicking (no corpus build reaches them): Blight/Penance/EQ part-2
+stage caches (getCachedOutputValue), calcs.resistances
+(ManaIncreasedByOvercappedLightningRes), calcTotemLife, non-empty
+AffectedByAuraMod (nil-global in reference), ProcessSocketGroup nameSpec
+migration path, CALCS mode. Corpus: 9 sources / 25 variants.
+
+NEXT: CalcDefence, then CalcOffence (final outputs -> calc-core [x]).
 
 ## Dump gotchas (hard-won)
 
