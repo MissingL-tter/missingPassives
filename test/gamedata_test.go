@@ -1,0 +1,237 @@
+package test
+
+import (
+	"bufio"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strconv"
+	"testing"
+
+	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/export"
+	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/internal/luacanon"
+)
+
+func readFile(t *testing.T, path string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
+// diffWindow returns s around the first byte where s and other diverge.
+func diffWindow(s, other string) string {
+	i := 0
+	for i < len(s) && i < len(other) && s[i] == other[i] {
+		i++
+	}
+	start := i - 80
+	if start < 0 {
+		start = 0
+	}
+	end := i + 120
+	if end > len(s) {
+		end = len(s)
+	}
+	return "[@" + strconv.Itoa(i) + "] ..." + s[start:end] + "..."
+}
+
+// The game-data differential test: builds the gamedata documents over the
+// extracted GGPK, assembles the runtime data set with data.Load, and
+// compares each ported subtree canonically against the archive dump
+// (tools/dump_gamedata.lua run over the loaded Lua application). Fails on
+// any disagreement.
+func TestGameDataAgainstReference(t *testing.T) {
+	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
+	if _, err := os.Stat(dumpPath); err != nil {
+		t.Skipf("archive dump not present: %v", err)
+	}
+	srcDir := filepath.Join("..", ".archive", "src", "Export", "ggpk")
+	refDir := filepath.Join("..", ".archive", "src")
+	if _, err := os.Stat(filepath.Join(srcDir, "Data", "stats.datc64")); err != nil {
+		t.Skipf("extracted GGPK not present at %s: %v", srcDir, err)
+	}
+	if err := export.WriteEnumFiles(filepath.Join(srcDir, "Data")); err != nil {
+		t.Fatalf("writing enum tables: %v", err)
+	}
+	dats, err := export.LoadDats(filepath.Join(srcDir, "Data"))
+	if err != nil {
+		t.Fatalf("loading dats: %v", err)
+	}
+	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir, TplDir: refDir}
+
+	docs := map[string]any{}
+	for _, s := range export.Scripts {
+		switch s.Name {
+		case "miscdata", "costs", "bossData", "modScalability",
+			"essence", "pantheons", "crucible", "masters", "flavourText", "enchant",
+			"mods", "cluster", "bases", "uModsToText":
+			doc, err := s.Build(ctx)
+			if err != nil {
+				t.Fatalf("%s: build: %v", s.Name, err)
+			}
+			docs[s.Name] = doc
+		}
+	}
+	d := data.Load(data.Sources{
+		Misc:           docs["miscdata"].(gamedata.MiscData),
+		Costs:          docs["costs"].(gamedata.Costs),
+		Boss:           docs["bossData"].(gamedata.BossData),
+		ModScalability: docs["modScalability"].(gamedata.ModScalability),
+		Essences:       docs["essence"].(gamedata.Essences),
+		Pantheons:      docs["pantheons"].(gamedata.Pantheons),
+		Crucible:       docs["crucible"].(gamedata.CrucibleNodes),
+		Masters:        docs["masters"].(gamedata.MasterCrafts),
+		FlavourText:    docs["flavourText"].(gamedata.FlavourTexts),
+		Enchants:       docs["enchant"].(gamedata.Enchants),
+		Mods:           docs["mods"].(gamedata.ModsData),
+		Cluster:        docs["cluster"].(gamedata.ClusterJewels),
+		Bases:          docs["bases"].(gamedata.BasesData),
+		Uniques:        docs["uModsToText"].(gamedata.Uniques),
+		FoulbornMapJSONC: readFile(t, filepath.Join(refDir, "Data", "ModFoulbornMap.jsonc")),
+	})
+
+	checks := map[string]func() any{
+		"monsterEvasionTable":             func() any { return d.MonsterEvasionTable },
+		"monsterAccuracyTable":            func() any { return d.MonsterAccuracyTable },
+		"monsterLifeTable":                func() any { return d.MonsterLifeTable },
+		"monsterLifeTable2":               func() any { return d.MonsterLifeTable2 },
+		"monsterLifeTable3":               func() any { return d.MonsterLifeTable3 },
+		"monsterAllyLifeTable":            func() any { return d.MonsterAllyLifeTable },
+		"monsterDamageTable":              func() any { return d.MonsterDamageTable },
+		"monsterAllyDamageTable":          func() any { return d.MonsterAllyDamageTable },
+		"monsterArmourTable":              func() any { return d.MonsterArmourTable },
+		"monsterAilmentThresholdTable":    func() any { return d.MonsterAilmentThresholdTable },
+		"monsterPhysConversionMultiTable": func() any { return d.MonsterPhysConversionMultiTable },
+		"gameConstants":                   func() any { return d.GameConstants },
+		"characterConstants":              func() any { return d.CharacterConstants },
+		"monsterConstants":                func() any { return d.MonsterConstants },
+		"totemLifeMult":                   func() any { return d.TotemLifeMult },
+		"monsterVarietyLifeMult":          func() any { return d.MonsterVarietyLifeMult },
+		"mapLevelLifeMult":                func() any { return d.MapLevelLifeMult },
+		"mapLevelBossLifeMult":            func() any { return d.MapLevelBossLifeMult },
+		"mapLevelBossAilmentMult":         func() any { return d.MapLevelBossAilmentMult },
+		"goldRespecPrices":                func() any { return d.GoldRespecPrices },
+		"misc":                            func() any { return d.Misc },
+		"powerStatList": func() any {
+			m := map[string]any{"GetFromOutput": luacanon.Fn{}}
+			for i, e := range d.PowerStatList {
+				m[strconv.Itoa(i+1)] = e
+			}
+			return m
+		},
+		"skillColorMap":                  func() any { return d.SkillColorMap },
+		"monsterExperienceLevelMap":      func() any { return d.MonsterExperienceLevelMap },
+		"cursePriority":                  func() any { return d.CursePriority },
+		"keystones":                      func() any { return d.Keystones },
+		"ailmentTypeList":                func() any { return d.AilmentTypeList },
+		"elementalAilmentTypeList":       func() any { return d.ElementalAilmentTypeList },
+		"nonDamagingAilmentTypeList":     func() any { return d.NonDamagingAilmentTypeList },
+		"nonElementalAilmentTypeList":    func() any { return d.NonElementalAilmentTypeList },
+		"nonDamagingAilment":             func() any { return d.NonDamagingAilment },
+		"defaultHighPrecision":           func() any { return d.DefaultHighPrecision },
+		"highPrecisionMods":              func() any { return d.HighPrecisionMods },
+		"modScalability":                 func() any { return d.ModScalability },
+		"weaponTypeInfo":                 func() any { return d.WeaponTypeInfo },
+		"unarmedWeaponData":              func() any { return d.UnarmedWeaponData },
+		"jewelRadii":                     func() any { return d.JewelRadii },
+		"jewelRadius":                    func() any { return d.JewelRadius },
+		"maxJewelRadius":                 func() any { return d.MaxJewelRadius },
+		"enchantmentSource":              func() any { return d.EnchantmentSource },
+		"timelessJewelTypes":             func() any { return d.TimelessJewelTypes },
+		"timelessJewelSeedMin":           func() any { return d.TimelessJewelSeedMin },
+		"timelessJewelSeedMax":           func() any { return d.TimelessJewelSeedMax },
+		"timelessJewelAdditions":         func() any { return d.TimelessJewelAdditions },
+		"itemTagSpecial":                 func() any { return d.ItemTagSpecial },
+		"itemTagSpecialExclusionPattern": func() any { return d.ItemTagSpecialExclusionPattern },
+		"casterTagCrucibleUniques":       func() any { return d.CasterTagCrucibleUniques },
+		"minionTagCrucibleUniques":       func() any { return d.MinionTagCrucibleUniques },
+		"costs":                          func() any { return d.Costs },
+		"bosses":                         func() any { return d.Bosses },
+		"bossStats":                      func() any { return d.BossStats },
+		"enemyIsBossTooltip":             func() any { return d.EnemyIsBossTooltip },
+		"essences":                       func() any { return d.Essences },
+		"pantheons":                      func() any { return d.Pantheons },
+		"crucible":                       func() any { return d.Crucible },
+		"masterMods":                     func() any { return d.MasterMods },
+		"flavourText":                    func() any { return d.FlavourText },
+		"enchantments": func() any {
+			m := map[string]any{"Helmet": d.HelmetEnchants}
+			for k, v := range d.Enchantments {
+				m[k] = v
+			}
+			return m
+		},
+		"beastCraft":     func() any { return d.BeastCraft },
+		"necropolisMods": func() any { return d.NecropolisMods },
+		"uniqueMods":     func() any { return d.UniqueMods },
+		"veiledMods":     func() any { return d.VeiledMods },
+		"clusterJewels":  func() any { return d.ClusterJewels },
+		"clusterJewelInfoForNotable": func() any { return d.ClusterJewelInfoForNotable },
+		"bossSkills":       func() any { return d.BossSkills },
+		"bossSkillsList":   func() any { return d.BossSkillsList },
+		"foulbornMap":      func() any { return d.FoulbornMap },
+		"itemBases":        func() any { return d.ItemBases },
+		"itemBaseLists":    func() any { return d.ItemBaseLists },
+		"itemBaseTypeList": func() any { return d.ItemBaseTypeList },
+		"rares":            func() any { return d.Rares },
+		"rareLikeUniques":  func() any { return d.RareLikeUniques },
+	}
+	for typ := range d.Uniques {
+		typ := typ
+		checks["uniques."+typ] = func() any { return d.Uniques[typ] }
+	}
+	for key := range d.ItemMods {
+		key := key
+		checks["itemMods."+key] = func() any { return d.ItemMods[key] }
+	}
+
+	f, err := os.Open(dumpPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 1<<20), 1<<28)
+	var checked, disagree int
+	for sc.Scan() {
+		var rec struct {
+			K string `json:"k"`
+			C string `json:"c"`
+			H string `json:"h"`
+		}
+		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
+			t.Fatalf("bad dump line: %v", err)
+		}
+		check, ok := checks[rec.K]
+		if !ok {
+			disagree++
+			t.Errorf("%s: dumped but not ported/checked", rec.K)
+			continue
+		}
+		checked++
+		got := luacanon.Encode(check())
+		if rec.H != "" {
+			if msHash(got) != rec.H {
+				disagree++
+				t.Errorf("%s differs from the archive (canon hash mismatch, %d bytes)", rec.K, len(got))
+			}
+			continue
+		}
+		if got != rec.C {
+			disagree++
+			t.Errorf("%s differs from the archive\n  got:  %s\n  want: %s", rec.K, diffWindow(got, rec.C), diffWindow(rec.C, got))
+		}
+	}
+	if err := sc.Err(); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("game-data vs archive: %d subtrees checked, %d disagreements", checked, disagree)
+	if disagree > 0 {
+		t.Fatalf("%d disagreements with the archive", disagree)
+	}
+}

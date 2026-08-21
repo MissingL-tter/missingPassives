@@ -53,9 +53,11 @@ function canon.encode(v)
 	table.sort(keys)
 	local parts = {}
 	for _, k in ipairs(keys) do
-		local val = v[k]
+		-- rawget: pairs() only yields real keys, and __index metamethods
+		-- (e.g. data.costs' resource lookup) must not fire here.
+		local val = rawget(v, k)
 		if val == nil and tonumber(k) then
-			val = v[tonumber(k)]
+			val = rawget(v, tonumber(k))
 		end
 		parts[#parts + 1] = quote(k) .. ":" .. canon.encode(val)
 	end
