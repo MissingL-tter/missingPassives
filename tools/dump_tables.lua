@@ -1,5 +1,5 @@
 -- Dumps every entry of every ModParser pattern table, canonically encoded, to
--- test/testdata/tables_oracle.jsonl:
+-- test/testdata/tables_archive.jsonl:
 --   {"table":<name>,"key":<pattern>,"value":<canonical>}
 --
 -- Run from .archive/src/:  luajit ../../tools/dump_tables.lua
@@ -31,7 +31,7 @@ end
 text = text:gsub("end, cache%s*$", "end, cache, { " .. table.concat(fields, ", ") .. " }")
 local _, _, tables = assert(loadstring(text, "@ModParser.lua"))(launch)
 
-local out = assert(io.open("../../test/testdata/tables_oracle.jsonl", "w"))
+local out = assert(io.open("../../test/testdata/tables_archive.jsonl", "w"))
 local total = 0
 for _, name in ipairs(names) do
 	local keys = {}

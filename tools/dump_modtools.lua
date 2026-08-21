@@ -1,5 +1,5 @@
 -- Dumps modLib's formatting/parsing/comparison behaviour over every parsed
--- modifier of the corpus to test/testdata/modtools_oracle.jsonl.
+-- modifier of the corpus to test/testdata/modtools_archive.jsonl.
 --
 -- Run from .archive/src/:  luajit ../../tools/dump_modtools.lua
 --
@@ -8,7 +8,7 @@
 --   fmt      modLib.formatMod per mod
 --   params   modLib.formatModParams per mod
 --   tags     modLib.formatTags per mod (over its tag array)
---   srcfmt   modLib.formatSourceMod per mod, after setSource("GoOracle") on a
+--   srcfmt   modLib.formatSourceMod per mod, after setSource("GoPort") on a
 --            deep copy
 --   ptags    canon(modLib.parseTags(tags[i])) — the round-trip
 --   psrc     canon(modLib.parseFormattedSourceMod(srcfmt[i]))
@@ -44,7 +44,7 @@ local function jsonBoolArray(list)
 	return "[" .. table.concat(parts, ",") .. "]"
 end
 
-local out = assert(io.open("../../test/testdata/modtools_oracle.jsonl", "w"))
+local out = assert(io.open("../../test/testdata/modtools_archive.jsonl", "w"))
 local records, prevFirst = 0, nil
 for _, line in ipairs(lines) do
 	local modList = modLib.parseMod(line)
@@ -55,7 +55,7 @@ for _, line in ipairs(lines) do
 			params[i] = modLib.formatModParams(mod)
 			tags[i] = modLib.formatTags(mod)
 			local copy = copyTable(mod)
-			modLib.setSource(copy, "GoOracle")
+			modLib.setSource(copy, "GoPort")
 			srcfmt[i] = modLib.formatSourceMod(copy)
 			ptags[i] = canon.encode(modLib.parseTags(tags[i]))
 			psrc[i] = canon.encode(modLib.parseFormattedSourceMod(srcfmt[i]))
@@ -79,4 +79,4 @@ for _, line in ipairs(lines) do
 	end
 end
 out:close()
-io.stderr:write(string.format("modtools oracle: %d records\n", records))
+io.stderr:write(string.format("modtools archive dump: %d records\n", records))

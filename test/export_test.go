@@ -11,7 +11,7 @@ import (
 
 // The export differential test: runs every ported export script over the
 // extracted GGPK and byte-compares each generated file against the checked-in
-// copy under .archive/src (which the reference Lua exporter produced from the
+// copy under .archive/src (which the archive Lua exporter produced from the
 // same game version). Fails on any disagreement.
 //
 // Requires the extracted GGPK at .archive/src/Export/ggpk (see that
@@ -54,12 +54,12 @@ func TestExportAgainstReference(t *testing.T) {
 			}
 			if !bytes.Equal(got, want) {
 				disagree++
-				t.Errorf("%s: %s differs from the reference (%d vs %d bytes)", s.Name, rel, len(got), len(want))
+				t.Errorf("%s: %s differs from the archive (%d vs %d bytes)", s.Name, rel, len(got), len(want))
 			}
 		}
 	}
-	t.Logf("export oracle: %d files checked, %d disagreements", checked, disagree)
+	t.Logf("export vs archive: %d files checked, %d disagreements", checked, disagree)
 	if disagree > 0 {
-		t.Fatalf("%d disagreements with the reference", disagree)
+		t.Fatalf("%d disagreements with the archive", disagree)
 	}
 }

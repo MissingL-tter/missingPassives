@@ -1,12 +1,12 @@
 -- Dumps the reference parser's output for every known mod line to
--- test/testdata/oracle.jsonl, one JSON record per line:
+-- test/testdata/parse_archive.jsonl, one JSON record per line:
 --   {"line":<input>,"mods":<canonical>,"extra":<remainder or null>}
 --
--- Run from .archive/src/:  luajit ../../tools/dump_oracle.lua
+-- Run from .archive/src/:  luajit ../../tools/dump_parse.lua
 --
 -- The corpus is the key set of Data/ModCache.lua — every modifier line the
 -- application has ever parsed. Results are recomputed by the live parser, not
--- read from the cache, so the oracle reflects the parser as it stands.
+-- read from the cache, so the archive dump reflects the parser as it stands.
 package.cpath = "../runtime/?.dll;" .. package.cpath
 package.path = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;" .. package.path
 dofile("HeadlessWrapper.lua")
@@ -22,7 +22,7 @@ for line in pairs(corpus) do
 end
 table.sort(lines)
 
-local out = assert(io.open("../../test/testdata/oracle.jsonl", "w"))
+local out = assert(io.open("../../test/testdata/parse_archive.jsonl", "w"))
 local produced, empty, none = 0, 0, 0
 for _, line in ipairs(lines) do
 	local modList, extra = modLib.parseMod(line)

@@ -11,7 +11,7 @@ import (
 )
 
 // The table-level differential test: every entry of every pattern table,
-// compared canonically against the reference's own tables. The parse test only
+// compared canonically against the archive's own tables. The parse test only
 // verifies entries some corpus line reaches; this one verifies all of them —
 // data entries byte for byte, closure entries as agreeing that both sides hold
 // a function there.
@@ -25,9 +25,9 @@ type tableRecord struct {
 }
 
 func TestTablesAgainstReference(t *testing.T) {
-	f, err := os.Open("testdata/tables_oracle.jsonl")
+	f, err := os.Open("testdata/tables_archive.jsonl")
 	if err != nil {
-		t.Fatalf("table oracle not generated (run luajit ../../tools/dump_tables.lua from .archive/src/): %v", err)
+		t.Fatalf("table archive dump not generated (run luajit ../../tools/dump_tables.lua from .archive/src/): %v", err)
 	}
 	defer f.Close()
 
@@ -46,7 +46,7 @@ func TestTablesAgainstReference(t *testing.T) {
 		}
 		var rec tableRecord
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
-			t.Fatalf("decoding table oracle: %v", err)
+			t.Fatalf("decoding table archive dump: %v", err)
 		}
 		total++
 		goTable, ok := tables[rec.Table]
@@ -89,7 +89,7 @@ func TestTablesAgainstReference(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Entries the Go side has that the reference does not.
+	// Entries the Go side has that the archive does not.
 	var extra int
 	for name, goTable := range tables {
 		for k := range goTable {
@@ -97,23 +97,23 @@ func TestTablesAgainstReference(t *testing.T) {
 				extra++
 				if shown < 20 {
 					shown++
-					t.Errorf("%s[%q]: not present in the reference", name, k)
+					t.Errorf("%s[%q]: not present in the archive", name, k)
 				}
 			}
 		}
 	}
 
-	t.Logf("table oracle: %d entries, %d mismatched, %d missing, %d extra", total, mismatched, missing, extra)
+	t.Logf("table archive dump: %d entries, %d mismatched, %d missing, %d extra", total, mismatched, missing, extra)
 	if mismatched+missing+extra > 0 {
 		t.Fatalf("table comparison failed: %d mismatched, %d missing, %d extra of %d", mismatched, missing, extra, total)
 	}
 }
 
-// referenceNondeterminism lists entries where the reference itself gives
-// different values run to run, so the fresh-dump comparison accepts any of
-// them. The only known case: two cluster jewel sizes share this enchant text
+// #EVAL: referenceNondeterminism lists entries where the archive itself
+// gives different values run to run, so the fresh-dump comparison accepts
+// any of them. The only known case: two cluster jewel sizes share this enchant text
 // with different skill ids, and Lua's pairs() order decides which survives —
-// three consecutive runs of the reference's own loop produced both answers.
+// three consecutive runs of the archive's own loop produced both answers.
 // The Go side deterministically keeps affliction_curse_effect_small (the
 // lexicographically greatest, see modparser/vocab.go).
 var referenceNondeterminism = map[string]map[string]bool{

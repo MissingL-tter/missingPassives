@@ -10,7 +10,7 @@ import (
 )
 
 // The ModTools differential test: for every corpus line that parses to
-// modifiers, the reference's formatting, tag round-trip, source-mod round-trip
+// modifiers, the archive's formatting, tag round-trip, source-mod round-trip
 // and comparison results are replayed against this port's. Fails on any
 // disagreement.
 //
@@ -29,9 +29,9 @@ type modtoolsRecord struct {
 }
 
 func TestModToolsAgainstReference(t *testing.T) {
-	f, err := os.Open("testdata/modtools_oracle.jsonl")
+	f, err := os.Open("testdata/modtools_archive.jsonl")
 	if err != nil {
-		t.Fatalf("modtools oracle not generated (run luajit ../../tools/dump_modtools.lua from .archive/src/): %v", err)
+		t.Fatalf("modtools archive dump not generated (run luajit ../../tools/dump_modtools.lua from .archive/src/): %v", err)
 	}
 	defer f.Close()
 
@@ -46,12 +46,12 @@ func TestModToolsAgainstReference(t *testing.T) {
 		}
 		var rec modtoolsRecord
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
-			t.Fatalf("decoding modtools oracle: %v", err)
+			t.Fatalf("decoding modtools archive dump: %v", err)
 		}
 
 		mods, _ := modparser.Parse(rec.Line)
 		if len(mods) != len(rec.Fmt) {
-			t.Fatalf("%s: parsed %d mods, oracle has %d", rec.Line, len(mods), len(rec.Fmt))
+			t.Fatalf("%s: parsed %d mods, archive dump has %d", rec.Line, len(mods), len(rec.Fmt))
 		}
 
 		fail := func(what string, i int, want, got string) {
@@ -78,7 +78,7 @@ func TestModToolsAgainstReference(t *testing.T) {
 			}
 
 			cp := modparser.CopyMod(mm)
-			modparser.SetSource(cp, "GoOracle")
+			modparser.SetSource(cp, "GoPort")
 			if got := modparser.FormatSourceMod(cp); got != rec.SrcFmt[i] {
 				fail("formatSourceMod", i, rec.SrcFmt[i], got)
 			}
@@ -110,9 +110,9 @@ func TestModToolsAgainstReference(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("modtools oracle: %d mods checked across 7 behaviours, %d disagreements", checked, disagree)
+	t.Logf("modtools vs archive: %d mods checked across 7 behaviours, %d disagreements", checked, disagree)
 	if disagree > 0 {
-		t.Fatalf("%d disagreements with the reference", disagree)
+		t.Fatalf("%d disagreements with the archive", disagree)
 	}
 }
 

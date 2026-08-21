@@ -14,7 +14,7 @@ import (
 // (the key set of src/Data/ModCache.lua), replayed through this port and
 // compared byte for byte against what ModParser.lua produced for it.
 //
-// Regenerate the oracle from src/ with: luajit ../../tools/dump_oracle.lua
+// Regenerate the archive dump from src/ with: luajit ../../tools/dump_parse.lua
 //
 // This test FAILS unless every line agrees. That is the port's definition of
 // done.
@@ -24,7 +24,7 @@ var (
 	diffGrep = goflag.String("diffgrep", "", "print only disagreements whose line contains this substring")
 )
 
-type oracleRecord struct {
+type archiveRecord struct {
 	Line  string  `json:"line"`
 	Mods  *string `json:"-"`
 	Extra *string `json:"extra"`
@@ -32,7 +32,7 @@ type oracleRecord struct {
 
 // The mods field arrives as arbitrary JSON; it is recaptured as the raw
 // canonical text so no reserialisation can perturb the comparison.
-func (r *oracleRecord) UnmarshalJSON(b []byte) error {
+func (r *archiveRecord) UnmarshalJSON(b []byte) error {
 	var probe struct {
 		Line  string          `json:"line"`
 		Mods  json.RawMessage `json:"mods"`
@@ -50,36 +50,36 @@ func (r *oracleRecord) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func loadOracle(t *testing.T) []oracleRecord {
+func loadArchive(t *testing.T) []archiveRecord {
 	t.Helper()
-	f, err := os.Open("testdata/oracle.jsonl")
+	f, err := os.Open("testdata/parse_archive.jsonl")
 	if err != nil {
-		t.Fatalf("oracle not generated (run luajit ../../tools/dump_oracle.lua from .archive/src/): %v", err)
+		t.Fatalf("archive dump not generated (run luajit ../../tools/dump_parse.lua from .archive/src/): %v", err)
 	}
 	defer f.Close()
-	var out []oracleRecord
+	var out []archiveRecord
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 0, 1<<20), 1<<24)
 	for sc.Scan() {
 		if len(sc.Bytes()) == 0 {
 			continue
 		}
-		var rec oracleRecord
+		var rec archiveRecord
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
-			t.Fatalf("decoding oracle: %v", err)
+			t.Fatalf("decoding archive dump: %v", err)
 		}
 		out = append(out, rec)
 	}
 	if err := sc.Err(); err != nil {
-		t.Fatalf("reading oracle: %v", err)
+		t.Fatalf("reading archive dump: %v", err)
 	}
 	return out
 }
 
 func TestAgainstReference(t *testing.T) {
-	records := loadOracle(t)
+	records := loadArchive(t)
 	if len(records) == 0 {
-		t.Fatal("empty oracle")
+		t.Fatal("empty archive dump")
 	}
 
 	agree, disagree, shown := 0, 0, 0
@@ -117,7 +117,7 @@ func TestAgainstReference(t *testing.T) {
 
 	t.Logf("corpus %d lines: %d agree, %d disagree", len(records), agree, disagree)
 	if disagree > 0 {
-		t.Fatalf("%d of %d lines disagree with the reference", disagree, len(records))
+		t.Fatalf("%d of %d lines disagree with the archive", disagree, len(records))
 	}
 }
 

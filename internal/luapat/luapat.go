@@ -1,7 +1,7 @@
 // Package luapat converts Lua patterns to Go regular expressions. It exists
 // for the transition away from the reference's Lua tables: the shipped parser
 // tables are plain Go regex, and this converter is used by the one-time source
-// rewriter and by the table-oracle test to map the reference's keys onto the
+// rewriter and by the table-archive test to map the reference's keys onto the
 // converted ones. It is deleted together with the Lua.
 package luapat
 
