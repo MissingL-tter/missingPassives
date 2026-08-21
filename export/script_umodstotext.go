@@ -1,9 +1,8 @@
-// Port of .archive/src/Export/Scripts/uModsToText.lua: rewrites the unique
-// item text files (Data/Uniques/<type>.lua) from the mod-id templates in
-// Export/Uniques/<type>.lua.
+// Port of .archive/src/Export/Scripts/uModsToText.lua: resolves the mod-id
+// templates in Export/Uniques/<type>.lua into the unique item text database.
 //
 // uTextToMods.lua is the inverse tool; its itemTypes list is fully commented
-// out in the reference, so it does nothing and is registered as a no-op.
+// out in the reference, so it does nothing and has no port.
 
 package export
 
@@ -14,15 +13,49 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	var outs []string
-	for _, name := range uniqueItemTypes {
-		outs = append(outs, "Data/Uniques/"+name+".lua")
+	Scripts = append(Scripts, Script{Name: "uModsToText", Build: buildUModsToText})
+}
+
+// splitUniqueFile parses the transform's output lines into sections of item
+// blobs; renderUniques inverts it exactly.
+func splitUniqueFile(lines []string) gamedata.UniqueFile {
+	var f gamedata.UniqueFile
+	var pending []string
+	var cur []string
+	inItem := false
+	sec := -1
+	for _, line := range lines {
+		switch {
+		case !inItem && line == "[[":
+			f.Sections = append(f.Sections, gamedata.UniqueSection{Pre: pending})
+			pending = nil
+			sec = len(f.Sections) - 1
+			cur = []string{}
+			inItem = true
+		case inItem && line == "]],[[":
+			f.Sections[sec].Items = append(f.Sections[sec].Items, cur)
+			cur = []string{}
+		case inItem && (line == "]]," || line == "]]" || line == "]],}"):
+			f.Sections[sec].Items = append(f.Sections[sec].Items, cur)
+			f.Sections[sec].Closer = line
+			cur = nil
+			inItem = false
+		case inItem:
+			cur = append(cur, line)
+		default:
+			pending = append(pending, line)
+		}
 	}
-	Scripts = append(Scripts, Script{Name: "uModsToText", Outs: outs, Run: scriptUModsToText})
-	Scripts = append(Scripts, Script{Name: "uTextToMods", Outs: nil, Run: func(*Ctx) error { return nil }})
+	if inItem {
+		panic("uModsToText: unterminated item block")
+	}
+	f.Post = pending
+	return f
 }
 
 var uniqueItemTypes = []string{
@@ -50,9 +83,9 @@ var (
 	reRangePair    = regexp.MustCompile(`\[([0-9.\-]+),([0-9.\-]+)\]`)
 )
 
-func scriptUModsToText(x *Ctx) error {
+func buildUModsToText(x *Ctx) (any, error) {
 	if err := x.EnsureMods(); err != nil {
-		return err
+		return nil, err
 	}
 	// The Lua script inherits whatever stat file happens to be loaded; the
 	// checked-in Data/Uniques were generated with mods.lua's state (tincture,
@@ -61,12 +94,14 @@ func scriptUModsToText(x *Ctx) error {
 	x.LoadStatFile("tincture_stat_descriptions.txt")
 	mods := x.Dat("Mods")
 
+	doc := gamedata.Uniques{}
 	for _, name := range uniqueItemTypes {
 		raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", "Uniques", name+".lua"))
 		if err != nil {
-			return err
+			return nil, err
 		}
-		out := x.Out("Data/Uniques/" + name + ".lua")
+		var outLines []string
+		emit := func(line string) { outLines = append(outLines, line) }
 
 		statOrder := map[float64][]string{}
 		modLines := 0
@@ -81,7 +116,7 @@ func scriptUModsToText(x *Ctx) error {
 			sort.Float64s(orders)
 			for _, o := range orders {
 				for _, line := range statOrder[o] {
-					out.W(line, "\n")
+					emit(line)
 				}
 			}
 		}
@@ -99,7 +134,7 @@ func scriptUModsToText(x *Ctx) error {
 			specMatch := reSpecLine.FindStringSubmatch(line)
 			if strings.Contains(line, "]],") { // start new unique
 				writeStatOrder()
-				out.W(line, "\n")
+				emit(line)
 				statOrder = map[float64][]string{}
 				modLines = 0
 				nextOrder = 100000
@@ -192,7 +227,7 @@ func scriptUModsToText(x *Ctx) error {
 						statOrder[nextOrder] = append(statOrder[nextOrder], line)
 						nextOrder++
 					} else {
-						out.W(line, "\n")
+						emit(line)
 					}
 				}
 			} else { // spec line
@@ -200,7 +235,7 @@ func scriptUModsToText(x *Ctx) error {
 					n, _ := strconv.Atoi(specMatch[2])
 					implicits = &n
 				} else {
-					out.W(line, "\n")
+					emit(line)
 				}
 			}
 			if implicits != nil && *implicits == 0 {
@@ -208,7 +243,7 @@ func scriptUModsToText(x *Ctx) error {
 				for _, l := range statOrder {
 					count += len(l)
 				}
-				out.W("Implicits: ", count, "\n")
+				emit("Implicits: " + strconv.Itoa(count))
 				writeStatOrder()
 				implicits = nil
 				statOrder = map[float64][]string{}
@@ -216,9 +251,7 @@ func scriptUModsToText(x *Ctx) error {
 			}
 		}
 		writeStatOrder()
-		if err := out.Close(); err != nil {
-			return err
-		}
+		doc[name] = splitUniqueFile(outLines)
 	}
-	return nil
+	return doc, nil
 }

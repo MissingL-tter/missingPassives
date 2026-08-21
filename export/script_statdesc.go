@@ -12,14 +12,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	var outs []string
-	for _, name := range statFileList {
-		outs = append(outs, "Data/StatDescriptions/"+name+".lua")
-	}
-	Scripts = append(Scripts, Script{Name: "statdesc", Outs: outs, Run: scriptStatdesc})
+	Scripts = append(Scripts, Script{Name: "statdesc", Build: buildStatdesc})
 }
 
 var statFileList = []string{
@@ -49,79 +47,63 @@ var statFileList = []string{
 
 var reParentInclude = regexp.MustCompile(`include "Metadata/StatDescriptions/(.+)\.txt"$`)
 
-// limitEntryTable builds the {[1]=,[2]=} limit table with number or string
-// values as the Lua stores them.
-func limitEntry(a, b any) luaTable {
-	t := luaTable{}
-	if a != nil {
-		t[1] = a
-	}
-	if b != nil {
-		t[2] = b
-	}
-	return t
-}
-
-func numOrStr(s string) any {
+func sdNum(s string) *gamedata.NumOrStr {
 	if n, err := strconv.ParseFloat(s, 64); err == nil {
-		return n
+		return &gamedata.NumOrStr{Num: &n}
 	}
-	return s
+	return &gamedata.NumOrStr{Str: &s}
 }
 
-func scriptStatdesc(x *Ctx) error {
+func sdStr(s string) *gamedata.NumOrStr {
+	return &gamedata.NumOrStr{Str: &s}
+}
+
+func buildStatdesc(x *Ctx) (any, error) {
+	docs := gamedata.StatDescs{}
 	for _, name := range statFileList {
-		if err := processStatFile(x, name); err != nil {
-			return err
-		}
+		docs[name] = parseStatFile(x, name)
 	}
-	return nil
+	return docs, nil
 }
 
-func processStatFile(x *Ctx, name string) error {
-	statDescriptor := luaTable{}
-	arrayLen := 0
-	var curLang *luaTable // nil while in a non-English lang block
-	var curLangLen int
-	curDescriptor := luaTable{}
+func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
+	f := &gamedata.StatDescFile{}
+	var descs []*gamedata.StatDescriptor
+	// curDescriptor starts detached, as in the Lua: lines before the first
+	// description mutate a table never added to the file.
+	curDescriptor := &gamedata.StatDescriptor{Lang: []gamedata.DescLine{}}
+	inEnglish := false
 	prepend := ""
 
 	processLine := func(line string) {
 		line = prepend + line
 		prepend = ""
 		if m := reParentInclude.FindStringSubmatch(line); m != nil {
-			statDescriptor["parent"] = m[1]
+			f.Parent = m[1]
 			return
 		}
 		if m := reNoDesc.FindStringSubmatch(line); m != nil {
-			arrayLen++
-			statDescriptor[arrayLen] = luaTable{"stats": luaTable{1: m[1]}}
-			statDescriptor[m[1]] = float64(arrayLen)
+			descs = append(descs, &gamedata.StatDescriptor{
+				NoDesc: true,
+				Stats:  []string{m[1]},
+			})
 			return
 		}
 		if strings.Contains(line, "handed_description") ||
 			(strings.Contains(line, "description") && !strings.Contains(line, "_description")) {
-			lang := luaTable{}
-			curLang = &lang
-			curLangLen = 0
-			curDescriptor = luaTable{1: lang}
+			curDescriptor = &gamedata.StatDescriptor{Lang: []gamedata.DescLine{}}
+			inEnglish = true
 			if m := reDescName.FindStringSubmatch(line); m != nil {
-				curDescriptor["name"] = m[1]
+				curDescriptor.Name = m[1]
 			}
-			arrayLen++
-			statDescriptor[arrayLen] = curDescriptor
+			descs = append(descs, curDescriptor)
 			return
 		}
-		if curDescriptor["stats"] == nil {
+		if curDescriptor.Stats == nil {
 			if m := reStatsLine.FindStringSubmatch(line); m != nil {
-				stats := luaTable{}
-				si := 0
-				for _, stat := range reStatWord.FindAllString(m[1], -1) {
-					si++
-					stats[si] = stat
-					statDescriptor[stat] = float64(arrayLen)
-				}
-				curDescriptor["stats"] = stats
+				stats := []string{}
+				stats = append(stats, reStatWord.FindAllString(m[1], -1)...)
+				curDescriptor.Stats = stats
 			} else {
 				// Try to combine it with the next line.
 				prepend = line
@@ -129,10 +111,10 @@ func processStatFile(x *Ctx, name string) error {
 			return
 		}
 		if reLangLine.MatchString(line) {
-			curLang = nil
+			inEnglish = false
 			return
 		}
-		if curLang == nil || strings.Contains(line, "table_only") {
+		if !inEnglish || strings.Contains(line, "table_only") {
 			return
 		}
 		m := reDescLine.FindStringSubmatch(line)
@@ -140,58 +122,54 @@ func processStatFile(x *Ctx, name string) error {
 			return
 		}
 		statLimits, quality, text, special := m[1], m[2], m[3], m[4]
-		desc := luaTable{"text": escapeGGGString(text), "limit": luaTable{}}
-		descLen := 0
-		limits := desc["limit"].(luaTable)
-		limitLen := 0
+		desc := gamedata.DescLine{Text: escapeGGGString(text), Limits: []gamedata.DescLimit{}}
 		for _, statLimit := range reLimitTok.FindAllString(statLimits, -1) {
-			var limit luaTable
+			var limit gamedata.DescLimit
 			if statLimit == "#" {
-				limit = limitEntry("#", "#")
+				limit = gamedata.DescLimit{Min: sdStr("#"), Max: sdStr("#")}
 			} else if reLimitNum.MatchString(statLimit) {
 				n, _ := strconv.ParseFloat(statLimit, 64)
-				limit = limitEntry(n, n)
+				limit = gamedata.DescLimit{Min: &gamedata.NumOrStr{Num: &n}, Max: &gamedata.NumOrStr{Num: &n}}
 			} else if neg := reLimitNeg.FindStringSubmatch(statLimit); neg != nil {
 				n, _ := strconv.ParseFloat(neg[1], 64)
-				limit = limitEntry("!", n)
+				limit = gamedata.DescLimit{Min: sdStr("!"), Max: &gamedata.NumOrStr{Num: &n}}
 			} else if r := reLimitRange.FindStringSubmatch(statLimit); r != nil {
-				limit = limitEntry(numOrStr(r[1]), numOrStr(r[2]))
-			} else {
-				limit = luaTable{}
+				limit = gamedata.DescLimit{Min: sdNum(r[1]), Max: sdNum(r[2])}
 			}
-			limitLen++
-			limits[limitLen] = limit
+			desc.Limits = append(desc.Limits, limit)
 		}
 		tokens := reSpecialTok.FindAllString(special, -1)
 		for ti := 0; ti < len(tokens); {
 			token := tokens[ti]
 			if token == "canonical_line" {
-				descLen++
-				desc[descLen] = luaTable{"k": "canonical_line", "v": true}
+				v := true
+				desc.Specials = append(desc.Specials, gamedata.DescSpecial{K: "canonical_line", VBool: &v})
 				ti++
 			} else if ti+1 < len(tokens) {
-				descLen++
-				desc[descLen] = luaTable{"k": token, "v": numOrStr(tokens[ti+1])}
+				sp := gamedata.DescSpecial{K: token}
+				if ns := sdNum(tokens[ti+1]); ns.Num != nil {
+					sp.VNum = ns.Num
+				} else {
+					sp.VStr = ns.Str
+				}
+				desc.Specials = append(desc.Specials, sp)
 				ti += 2
 			} else {
 				ti++
 			}
 		}
 		if strings.Contains(quality, "gem_quality") {
-			desc[quality] = true
+			desc.Quality = quality
 		}
-		curLangLen++
-		(*curLang)[curLangLen] = desc
+		curDescriptor.Lang = append(curDescriptor.Lang, desc)
 	}
 
 	text := convertUTF16to8([]byte(x.GetFile("Metadata/StatDescriptions/"+name+".txt")), 0)
 	for _, l := range reLine.FindAllString(text, -1) {
 		processLine(l)
 	}
-
-	out := x.Out("Data/StatDescriptions/" + name + ".lua")
-	out.W("-- This file is automatically generated, do not edit!\n")
-	out.W("-- Item data (c) Grinding Gear Games\n\nreturn ")
-	writeLuaTable(out, statDescriptor, 1)
-	return out.Close()
+	for _, d := range descs {
+		f.Descriptors = append(f.Descriptors, *d)
+	}
+	return f
 }

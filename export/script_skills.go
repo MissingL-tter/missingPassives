@@ -7,14 +7,12 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	outs := []string{"Data/Gems.lua"}
-	for _, name := range skillTemplateFiles {
-		outs = append(outs, "Data/Skills/"+name+".lua")
-	}
-	Scripts = append(Scripts, Script{Name: "skills", Outs: outs, Run: scriptSkills})
+	Scripts = append(Scripts, Script{Name: "skills", Build: buildSkills})
 }
 
 var skillTemplateFiles = []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"}
@@ -40,7 +38,15 @@ func cleanAndSplitSkills(str string) []string {
 	return lines
 }
 
-func scriptSkills(x *Ctx) error {
+// skillDesc applies writeDesc's escaping.
+func skillDesc(desc string) string {
+	s := strings.ReplaceAll(desc, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	return escapeGGGString(s)
+}
+
+func buildSkills(x *Ctx) (any, error) {
 	var skillTypeMap []string
 	x.Dat("ActiveSkillType").Rows(func(row *Row) bool {
 		skillTypeMap = append(skillTypeMap, luaStr(row.Get("Id")))
@@ -127,29 +133,26 @@ func scriptSkills(x *Ctx) error {
 		skill         *skillInfo
 	}
 	var state *skillsState
+	var curFile *gamedata.SkillFile
 
-	writeDesc := func(out *OutFile, key, desc string) {
-		s := strings.ReplaceAll(desc, "\"", "\\\"")
-		s = strings.ReplaceAll(s, "\r", "")
-		s = strings.ReplaceAll(s, "\n", "\\n")
-		out.W("\t", key, " = \"", escapeGGGString(s), "\",\n")
-	}
-
-	directives := map[string]func(args string, out *OutFile){}
-	directives["noGem"] = func(args string, out *OutFile) { state.noGem = true }
-	directives["addSkillTypes"] = func(args string, out *OutFile) {
+	directives := map[string]func(args string){}
+	directives["noGem"] = func(string) { state.noGem = true }
+	directives["addSkillTypes"] = func(args string) {
 		state.addSkillTypes = reWord.FindAllString(args, -1)
 	}
-	directives["skill"] = func(args string, out *OutFile) {
+	directives["skill"] = func(args string) {
 		grantedId := args
 		displayName := args
 		if m := reSkillHead.FindStringSubmatch(args); m != nil {
 			grantedId, displayName = m[1], m[2]
 		}
-		out.W("skills[\"", grantedId, "\"] = {\n")
+		hdr := gamedata.SkillHeader{GrantedId: grantedId}
 		granted := x.Dat("GrantedEffects").GetRow("Id", grantedId)
 		if granted == nil {
-			return // the Lua ConPrintfs and leaves the previous skill state
+			// the Lua ConPrintfs and leaves the previous skill state
+			hdr.Invalid = true
+			curFile.Skills = append(curFile.Skills, hdr)
+			return
 		}
 		gemEffect := x.Dat("GemEffects").GetRow("GrantedEffect", granted)
 		secondaryEffect := false
@@ -162,7 +165,7 @@ func scriptSkills(x *Ctx) error {
 		var skillGem *Row
 		if gemEffect != nil {
 			gemEffectId := luaStr(gemEffect.Get("Id"))
-			x.Dat("SkillGems").Rows(func(gem *Row) bool {
+		 	x.Dat("SkillGems").Rows(func(gem *Row) bool {
 				for _, variant := range listRows(gem.Get("GemVariants")) {
 					if gemEffectId == luaStr(variant.Get("Id")) {
 						skillGem = gem
@@ -188,9 +191,10 @@ func scriptSkills(x *Ctx) error {
 				if !fullNameGems[luaStr(base.Get("Id"))] {
 					name = strings.ReplaceAll(name, " Support", "")
 				}
-				out.W("\tname = \"", name, "\",\n")
+				hdr.Name = name
 				if desc := luaStr(gemEffect.Get("Description")); len(desc) > 0 {
-					writeDesc(out, "description", desc)
+					d := skillDesc(desc)
+					hdr.Description = &d
 				}
 			} else {
 				activeName := luaStr(granted.Get("ActiveSkill").(*Row).Get("DisplayName"))
@@ -200,10 +204,10 @@ func scriptSkills(x *Ctx) error {
 						name = tn
 					}
 				}
-				out.W("\tname = \"", name, "\",\n")
+				hdr.Name = name
 				// Hybrid gems (e.g. Vaal gems) use the display name of the
 				// active skill e.g. Vaal Summon Skeletons of Sorcery
-				out.W("\tbaseTypeName = \"", activeName, "\",\n")
+				hdr.BaseTypeName = &activeName
 			}
 		} else {
 			if displayName == args && !isSupport {
@@ -215,121 +219,98 @@ func scriptSkills(x *Ctx) error {
 					displayName = luaStr(granted.Get("ActiveSkill").(*Row).Get("DisplayName"))
 				}
 			}
-			out.W("\tname = \"", displayName, "\",\n")
-			out.W("\thidden = true,\n")
+			hdr.Name = displayName
+			hdr.Hidden = true
 		}
 		if skillGem != nil {
 			if ft, ok := skillGem.Get("BaseItemType").(*Row).Get("FlavourTextKey").(*Row); ok {
-				out.W("\tflavourText = {")
-				for _, line := range cleanAndSplitSkills(luaStr(ft.Get("Text"))) {
-					out.W("\"", line, "\", ")
-				}
-				out.W("},\n")
+				hdr.HasFlavour = true
+				hdr.FlavourText = cleanAndSplitSkills(luaStr(ft.Get("Text")))
 			}
 		}
 		state.noGem = false
 		skill.addSkillTypes = state.addSkillTypes
 		state.addSkillTypes = nil
 		statSets := granted.Get("GrantedEffectStatSets").(*Row)
-		out.W("\tcolor = ", granted.Get("Attribute").(int64), ",\n")
+		hdr.Color = granted.Get("Attribute").(int64)
 		if be := statSets.Get("BaseEffectiveness").(float64); be != 1 {
-			out.W("\tbaseEffectiveness = ", luaNum(be), ",\n")
+			hdr.BaseEffectiveness = &be
 		}
 		if ie := statSets.Get("IncrementalEffectiveness").(float64); ie != 0 {
-			out.W("\tincrementalEffectiveness = ", luaNum(ie), ",\n")
+			hdr.IncrementalEffectiveness = &ie
 		}
-		writeWeaponTypes := func(classes []*Row) {
+		weaponTypesOf := func(classes []*Row) []string {
 			weaponTypes := map[string]bool{}
 			for _, class := range classes {
 				if mapped, ok := weaponClassMap[luaStr(class.Get("Id"))]; ok {
 					weaponTypes[mapped] = true
 				}
 			}
-			if len(weaponTypes) > 0 {
-				out.W("\tweaponTypes = {\n")
-				keys := make([]string, 0, len(weaponTypes))
-				for k := range weaponTypes {
-					keys = append(keys, k)
-				}
-				sort.Strings(keys)
-				for _, typ := range keys {
-					out.W("\t\t[\"", typ, "\"] = true,\n")
-				}
-				out.W("\t},\n")
+			keys := make([]string, 0, len(weaponTypes))
+			for k := range weaponTypes {
+				keys = append(keys, k)
 			}
+			sort.Strings(keys)
+			return keys
 		}
 		if isSupport {
 			skill.isSupport = true
-			out.W("\tsupport = true,\n")
-			out.W("\trequireSkillTypes = { ")
+			hdr.Support = true
+			hdr.RequireSkillTypes = []string{}
 			for _, typ := range listRows(granted.Get("SupportTypes")) {
-				out.W(mapAST(typ), ", ")
+				hdr.RequireSkillTypes = append(hdr.RequireSkillTypes, mapAST(typ))
 			}
-			out.W("},\n")
-			out.W("\taddSkillTypes = { ")
-			isTrigger := false
+			hdr.AddSkillTypes = []string{}
 			for _, typ := range listRows(granted.Get("AddTypes")) {
 				typeString := mapAST(typ)
 				if typeString == "SkillType.Triggered" {
-					isTrigger = true
+					hdr.IsTrigger = true
 				}
-				out.W(typeString, ", ")
+				hdr.AddSkillTypes = append(hdr.AddSkillTypes, typeString)
 			}
-			out.W("},\n")
-			out.W("\texcludeSkillTypes = { ")
+			hdr.ExcludeSkillTypes = []string{}
 			for _, typ := range listRows(granted.Get("ExcludeTypes")) {
-				out.W(mapAST(typ), ", ")
+				hdr.ExcludeSkillTypes = append(hdr.ExcludeSkillTypes, mapAST(typ))
 			}
-			out.W("},\n")
-			if isTrigger {
-				out.W("\tisTrigger = true,\n")
-			}
-			if granted.Get("SupportGemsOnly").(bool) {
-				out.W("\tsupportGemsOnly = true,\n")
-			}
-			if granted.Get("IgnoreMinionTypes").(bool) {
-				out.W("\tignoreMinionTypes = true,\n")
-			}
+			hdr.SupportGemsOnly = granted.Get("SupportGemsOnly").(bool)
+			hdr.IgnoreMinionTypes = granted.Get("IgnoreMinionTypes").(bool)
 			if pv, ok := granted.Get("PlusVersionOf").(*Row); ok {
-				out.W("\tplusVersionOf = \"", luaStr(pv.Get("Id")), "\",\n")
+				id := luaStr(pv.Get("Id"))
+				hdr.PlusVersionOf = &id
 			}
-			writeWeaponTypes(listRows(granted.Get("WeaponRestrictions")))
-			out.W("\tstatDescriptionScope = \"gem_stat_descriptions\",\n")
+			hdr.WeaponTypes = weaponTypesOf(listRows(granted.Get("WeaponRestrictions")))
+			hdr.StatDescriptionScope = "gem_stat_descriptions"
 		} else {
 			activeSkill := granted.Get("ActiveSkill").(*Row)
 			if desc := luaStr(activeSkill.Get("Description")); len(desc) > 0 {
-				writeDesc(out, "description", desc)
+				d := skillDesc(desc)
+				hdr.Description = &d
 			}
-			out.W("\tskillTypes = { ")
+			hdr.SkillTypes = []string{}
 			for _, typ := range listRows(activeSkill.Get("SkillTypes")) {
-				out.W("[", mapAST(typ), "] = true, ")
+				hdr.SkillTypes = append(hdr.SkillTypes, mapAST(typ))
 			}
 			for _, typ := range skill.addSkillTypes {
-				out.W("[SkillType.", typ, "] = true, ")
+				hdr.SkillTypes = append(hdr.SkillTypes, "SkillType."+typ)
 			}
-			out.W("},\n")
-			minionTypes := listRows(activeSkill.Get("MinionSkillTypes"))
-			if len(minionTypes) > 0 {
-				out.W("\tminionSkillTypes = { ")
-				for _, typ := range minionTypes {
-					out.W("[", mapAST(typ), "] = true, ")
-				}
-				out.W("},\n")
+			for _, typ := range listRows(activeSkill.Get("MinionSkillTypes")) {
+				hdr.MinionSkillTypes = append(hdr.MinionSkillTypes, mapAST(typ))
 			}
-			writeWeaponTypes(listRows(activeSkill.Get("WeaponRestrictions")))
+			hdr.WeaponTypes = weaponTypesOf(listRows(activeSkill.Get("WeaponRestrictions")))
 			scope := skillStatScope[luaStr(activeSkill.Get("Id"))]
 			if scope == "" {
 				scope = "skill_stat_descriptions"
 			}
-			out.W("\tstatDescriptionScope = \"", scope, "\",\n")
+			hdr.StatDescriptionScope = scope
 			if st := activeSkill.Get("SkillTotem").(int64); st <= 21 {
-				out.W("\tskillTotemId = ", st, ",\n")
+				hdr.SkillTotemId = &st
 			}
-			out.W("\tcastTime = ", luaNum(float64(granted.Get("CastTime").(int64))/1000), ",\n")
-			if granted.Get("CannotBeSupported").(bool) {
-				out.W("\tcannotBeSupported = true,\n")
-			}
+			ct := float64(granted.Get("CastTime").(int64)) / 1000
+			hdr.CastTime = &ct
+			hdr.CannotBeSupported = granted.Get("CannotBeSupported").(bool)
 		}
+		curFile.Skills = append(curFile.Skills, hdr)
+
 		statsPerLevel := x.Dat("GrantedEffectStatSetsPerLevel").GetRowList("GrantedEffectStatSets", statSets)
 		var statMapOrder []string
 		statMap := map[string]bool{}
@@ -479,112 +460,74 @@ func scriptSkills(x *Ctx) error {
 			}
 		}
 	}
-	directives["flags"] = func(args string, out *OutFile) {
+	directives["flags"] = func(args string) {
 		state.skill.baseFlags = append(state.skill.baseFlags, reWord.FindAllString(args, -1)...)
 	}
-	directives["baseMod"] = func(args string, out *OutFile) {
+	directives["baseMod"] = func(args string) {
 		state.skill.mods = append(state.skill.mods, args)
 	}
-	directives["mods"] = func(args string, out *OutFile) {
+	directives["mods"] = func(string) {
 		skill := state.skill
-		if !strings.Contains(args, "noBaseFlags") && !skill.isSupport {
-			out.W("\tbaseFlags = {\n")
-			for _, flag := range skill.baseFlags {
-				out.W("\t\t", flag, " = true,\n")
-			}
-			out.W("\t},\n")
+		tail := gamedata.SkillTail{
+			Support:       skill.isSupport,
+			BaseFlags:     append([]string(nil), skill.baseFlags...),
+			BaseMods:      append([]string(nil), skill.mods...),
+			Stats:         append([]string{}, skill.stats...),
+			NotMinionStat: append([]string(nil), skill.cannotGrantToMinion...),
 		}
-		if !strings.Contains(args, "noBaseMods") && len(skill.mods) > 0 {
-			out.W("\tbaseMods = {\n")
-			for _, mod := range skill.mods {
-				out.W("\t\t", mod, ",\n")
-			}
-			out.W("\t},\n")
+		for _, stat := range skill.qualityStats {
+			tail.QualityStats = append(tail.QualityStats, gamedata.StatValue{Id: stat[0].(string), Value: stat[1].(float64)})
 		}
-		if !strings.Contains(args, "noQualityStats") && len(skill.qualityStats) > 0 {
-			out.W("\tqualityStats = {\n")
-			for _, stat := range skill.qualityStats {
-				out.W("\t\t{ \"", stat[0].(string), "\", ", luaStrAny(stat[1]), " },\n")
-			}
-			out.W("\t},\n")
+		for _, stat := range skill.constantStats {
+			tail.ConstantStats = append(tail.ConstantStats, gamedata.StatValue{Id: stat[0].(string), Value: float64(stat[1].(int64))})
 		}
-		if !strings.Contains(args, "noStats") {
-			if len(skill.constantStats) > 0 {
-				out.W("\tconstantStats = {\n")
-				for _, stat := range skill.constantStats {
-					out.W("\t\t{ \"", stat[0].(string), "\", ", luaStrAny(stat[1]), " },\n")
+		for _, level := range skill.levels {
+			l := gamedata.SkillLevel{Level: level.level}
+			for _, v := range level.values {
+				switch n := v.(type) {
+				case int64:
+					l.Values = append(l.Values, float64(n))
+				case float64:
+					l.Values = append(l.Values, n)
 				}
-				out.W("\t},\n")
 			}
-			out.W("\tstats = {\n")
-			for _, stat := range skill.stats {
-				out.W("\t\t\"", stat, "\",\n")
-			}
-			out.W("\t},\n")
-			if len(skill.cannotGrantToMinion) > 0 {
-				out.W("\tnotMinionStat = {\n")
-				for _, stat := range skill.cannotGrantToMinion {
-					out.W("\t\t\"", stat, "\",\n")
-				}
-				out.W("\t},\n")
-			}
-		}
-		if !strings.Contains(args, "noLevels") {
-			out.W("\tlevels = {\n")
-			for _, level := range skill.levels {
-				out.W("\t\t[", level.level, "] = { ")
-				for _, v := range level.values {
-					out.W(luaStrAny(v), ", ")
-				}
-				extraKeys := make([]string, 0, len(level.extra))
-				for k := range level.extra {
-					extraKeys = append(extraKeys, k)
-				}
-				sort.Strings(extraKeys)
-				for _, k := range extraKeys {
-					out.W(k, " = ", luaStrAny(level.extra[k]), ", ")
-				}
-				if len(level.interp.vals) > 0 {
-					out.W("statInterpolation = { ")
-					for _, t := range level.interp.vals {
-						out.W(luaStrAny(t), ", ")
+			if len(level.extra) > 0 {
+				l.Extra = map[string]float64{}
+				for k, v := range level.extra {
+					switch n := v.(type) {
+					case int64:
+						l.Extra[k] = float64(n)
+					case float64:
+						l.Extra[k] = n
 					}
-					out.W("}, ")
 				}
-				if len(level.cost) > 0 {
-					out.W("cost = { ")
-					costKeys := make([]string, 0, len(level.cost))
-					for k := range level.cost {
-						costKeys = append(costKeys, k)
-					}
-					sort.Strings(costKeys)
-					for _, k := range costKeys {
-						out.W(k, " = ", level.cost[k], ", ")
-					}
-					out.W("}, ")
-				}
-				out.W("},\n")
 			}
-			out.W("\t},\n")
+			for _, t := range level.interp.vals {
+				l.Interp = append(l.Interp, luaStrAny(t))
+			}
+			if len(level.cost) > 0 {
+				l.Cost = map[string]int64{}
+				for k, v := range level.cost {
+					l.Cost[k] = v
+				}
+			}
+			tail.Levels = append(tail.Levels, l)
 		}
-		out.W("}")
+		curFile.Tails = append(curFile.Tails, tail)
 		state.skill = nil
 	}
 
+	doc := gamedata.SkillsData{Files: map[string]gamedata.SkillFile{}}
 	for _, name := range skillTemplateFiles {
 		state = &skillsState{}
-		out, err := x.ProcessTemplateFile(name, "Skills/", "../Data/Skills/", directives)
-		if err != nil {
-			return err
+		var f gamedata.SkillFile
+		curFile = &f
+		if err := x.WalkTemplate(name, "Skills/", directives); err != nil {
+			return nil, err
 		}
-		if err := out.Close(); err != nil {
-			return err
-		}
+		doc.Files[name] = f
 	}
 
-	out := x.Out("Data/Gems.lua")
-	out.W("-- This file is automatically generated, do not edit!\n")
-	out.W("-- Gem data (c) Grinding Gear Games\n\nreturn {\n")
 	x.Dat("SkillGems").Rows(func(skillGem *Row) bool {
 		for _, ge := range listRows(skillGem.Get("GemVariants")) {
 			gemEffectId := luaStr(ge.Get("Id"))
@@ -596,7 +539,7 @@ func scriptSkills(x *Ctx) error {
 			delete(gems, gemEffectId)
 			base := skillGem.Get("BaseItemType").(*Row)
 			grantedEffect := ge.Get("GrantedEffect").(*Row)
-			out.W("\t[\"", "Metadata/Items/Gems/SkillGem"+gemEffectId, "\"] = {\n")
+			g := gamedata.GemDef{VariantId: gemEffectId}
 			name := luaStr(base.Get("Name"))
 			if !fullNameGems[luaStr(base.Get("Id"))] {
 				if tn, ok := trueGemNames[gemEffectId]; ok {
@@ -605,48 +548,45 @@ func scriptSkills(x *Ctx) error {
 					name = strings.ReplaceAll(name, " Support", "")
 				}
 			}
-			out.W("\t\tname = \"", name, "\",\n")
+			g.Name = name
 			// Hybrid gems (e.g. Vaal gems) use the display name of the
 			// active skill e.g. Vaal Summon Skeletons of Sorcery
 			if !skillGem.Get("IsSupport").(bool) {
-				out.W("\t\tbaseTypeName = \"", luaStr(grantedEffect.Get("ActiveSkill").(*Row).Get("DisplayName")), "\",\n")
+				btn := luaStr(grantedEffect.Get("ActiveSkill").(*Row).Get("DisplayName"))
+				g.BaseTypeName = &btn
 			}
-			out.W("\t\tgameId = \"", luaStr(base.Get("Id")), "\",\n")
-			out.W("\t\tvariantId = \"", gemEffectId, "\",\n")
-			out.W("\t\tgrantedEffectId = \"", luaStr(grantedEffect.Get("Id")), "\",\n")
+			g.GameId = luaStr(base.Get("Id"))
+			g.GrantedEffectId = luaStr(grantedEffect.Get("Id"))
 			if ge2, ok := ge.Get("GrantedEffect2").(*Row); ok {
-				out.W("\t\tsecondaryGrantedEffectId = \"", luaStr(ge2.Get("Id")), "\",\n")
+				id := luaStr(ge2.Get("Id"))
+				g.SecondaryGrantedEffectId = &id
 			}
 			if sn := luaStr(ge.Get("SecondarySupportName")); len(sn) > 0 {
-				out.W("\t\tsecondaryEffectName = \"", sn, "\",\n")
+				g.SecondaryEffectName = &sn
 			}
-			if skillGem.Get("IsVaalGem").(bool) {
-				out.W("\t\tvaalGem = true,\n")
-			}
+			g.VaalGem = skillGem.Get("IsVaalGem").(bool)
 			var tagNames []string
-			out.W("\t\ttags = {\n")
+			g.Tags = []string{}
 			for _, tag := range listRows(ge.Get("Tags")) {
 				escaped := escapeGGGString(luaStr(tag.Get("Name")))
 				tag.SetCell("Name", escaped)
-				out.W("\t\t\t", luaStr(tag.Get("Id")), " = true,\n")
+				g.Tags = append(g.Tags, luaStr(tag.Get("Id")))
 				if len(escaped) > 0 {
 					tagNames = append(tagNames, escaped)
 				}
 			}
-			out.W("\t\t},\n")
-			out.W("\t\ttagString = \"", strings.Join(tagNames, ", "), "\",\n")
-			out.W("\t\treqStr = ", skillGem.Get("Str").(int64), ",\n")
-			out.W("\t\treqDex = ", skillGem.Get("Dex").(int64), ",\n")
-			out.W("\t\treqInt = ", skillGem.Get("Int").(int64), ",\n")
+			g.TagString = strings.Join(tagNames, ", ")
+			g.ReqStr = skillGem.Get("Str").(int64)
+			g.ReqDex = skillGem.Get("Dex").(int64)
+			g.ReqInt = skillGem.Get("Int").(int64)
 			naturalMaxLevel := len(x.Dat("ItemExperiencePerLevel").GetRowList("ItemExperienceType", skillGem.Get("GemLevelProgression")))
 			if naturalMaxLevel == 0 {
 				naturalMaxLevel = 1
 			}
-			out.W("\t\tnaturalMaxLevel = ", naturalMaxLevel, ",\n")
-			out.W("\t},\n")
+			g.NaturalMaxLevel = naturalMaxLevel
+			doc.Gems = append(doc.Gems, g)
 		}
 		return true
 	})
-	out.W("}")
-	return out.Close()
+	return doc, nil
 }

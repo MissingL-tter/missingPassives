@@ -4,14 +4,18 @@ package export
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	Scripts = append(Scripts, Script{Name: "minions", Outs: []string{"Data/Spectres.lua", "Data/Minions.lua"}, Run: scriptMinions})
+	Scripts = append(Scripts, Script{Name: "minions", Build: buildMinions})
 }
 
 // tableToString ports minions.lua's tableToString: sorted keys, nested
@@ -121,7 +125,28 @@ func (x *Ctx) getOTStats(otFile string, modList []any) []any {
 	return modList
 }
 
-func scriptMinions(x *Ctx) error {
+// WalkTemplate reads a hand-maintained template and calls the handler for
+// each #directive line (the build-side half of processTemplateFile).
+func (x *Ctx) WalkTemplate(name, inDir string, directives map[string]func(args string)) error {
+	raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", filepath.FromSlash(inDir), name+".txt"))
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n")
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	for _, line := range lines {
+		if m := reDirective.FindStringSubmatch(line); m != nil {
+			if fn := directives[m[1]]; fn != nil {
+				fn(m[2])
+			}
+		}
+	}
+	return nil
+}
+
+func buildMinions(x *Ctx) (any, error) {
 	itemClassMap := map[string]string{
 		"Claw":                     "Claw",
 		"Dagger":                   "Dagger",
@@ -146,9 +171,10 @@ func scriptMinions(x *Ctx) error {
 		extraModList, extraSkillList    []string
 	}
 	state := &minionState{}
+	var defs *[]gamedata.MinionDef
 
-	directives := map[string]func(args string, out *OutFile){}
-	directives["monster"] = func(args string, out *OutFile) {
+	directives := map[string]func(args string){}
+	directives["monster"] = func(args string) {
 		*state = minionState{}
 		for _, arg := range strings.Fields(args) {
 			if state.varietyId == "" {
@@ -170,86 +196,81 @@ func scriptMinions(x *Ctx) error {
 			state.name = args
 		}
 	}
-	directives["limit"] = func(args string, out *OutFile) { state.limit = args }
-	directives["hostile"] = func(args string, out *OutFile) { state.hostile = args }
-	directives["mod"] = func(args string, out *OutFile) { state.extraModList = append(state.extraModList, args) }
-	directives["skill"] = func(args string, out *OutFile) { state.extraSkillList = append(state.extraSkillList, args) }
-	directives["emit"] = func(args string, out *OutFile) {
+	directives["limit"] = func(args string) { state.limit = args }
+	directives["hostile"] = func(args string) { state.hostile = args }
+	directives["mod"] = func(args string) { state.extraModList = append(state.extraModList, args) }
+	directives["skill"] = func(args string) { state.extraSkillList = append(state.extraSkillList, args) }
+	directives["emit"] = func(string) {
 		mv := x.Dat("MonsterVarieties").GetRow("Id", state.varietyId)
 		if mv == nil {
-			return // the Lua prints "Invalid Variety"
+			// The Lua prints "Invalid Variety"; keep the emit sequence aligned.
+			*defs = append(*defs, gamedata.MinionDef{Skip: true})
+			return
 		}
 		typ := mv.Get("Type").(*Row)
-		out.W("minions[\"", state.name, "\"] = {\n")
-		out.W("\tname = \"", luaStr(mv.Get("Name")), "\",\n")
-		out.W("\tmonsterTags = { ")
+		d := gamedata.MinionDef{
+			Key:  state.name,
+			Name: luaStr(mv.Get("Name")),
+		}
 		for _, tag := range listRows(mv.Get("Tags")) {
-			out.W("\"", luaStr(tag.Get("Id")), "\", ")
+			d.MonsterTags = append(d.MonsterTags, luaStr(tag.Get("Id")))
 		}
-		out.W("},\n")
-		if typ.Get("BaseDamageIgnoresAttackSpeed").(bool) {
-			out.W("\tbaseDamageIgnoresAttackSpeed = true,\n")
-		}
-		out.W("\tlife = ", luaNum(float64(mv.Get("LifeMultiplier").(int64))/100), ",\n")
+		d.BaseDamageIgnoresAttackSpeed = typ.Get("BaseDamageIgnoresAttackSpeed").(bool)
+		d.Life = float64(mv.Get("LifeMultiplier").(int64)) / 100
 		if typ.Get("AltLife1").(bool) {
-			out.W("\tlifeScaling = \"AltLife1\",\n")
+			d.LifeScaling = append(d.LifeScaling, "AltLife1")
 		}
 		if typ.Get("AltLife2").(bool) {
-			out.W("\tlifeScaling = \"AltLife2\",\n")
+			d.LifeScaling = append(d.LifeScaling, "AltLife2")
 		}
 		if es := typ.Get("EnergyShield").(int64); es != 0 {
-			out.W("\tenergyShield = ", luaNum(0.4*float64(es)/100), ",\n")
+			v := 0.4 * float64(es) / 100
+			d.EnergyShield = &v
 		}
 		if ar := typ.Get("Armour").(int64); ar != 0 {
-			out.W("\tarmour = ", luaNum(float64(ar)/100), ",\n")
+			v := float64(ar) / 100
+			d.Armour = &v
 		}
 		if ev := typ.Get("Evasion").(int64); ev != 0 {
-			out.W("\tevasion = ", luaNum(float64(ev)/100), ",\n")
+			v := float64(ev) / 100
+			d.Evasion = &v
 		}
 		res := typ.Get("Resistances").(*Row)
-		out.W("\tfireResist = ", res.Get("FireMerciless").(int64), ",\n")
-		out.W("\tcoldResist = ", res.Get("ColdMerciless").(int64), ",\n")
-		out.W("\tlightningResist = ", res.Get("LightningMerciless").(int64), ",\n")
-		out.W("\tchaosResist = ", res.Get("ChaosMerciless").(int64), ",\n")
-		out.W("\tdamage = ", luaNum(float64(mv.Get("DamageMultiplier").(int64))/100), ",\n")
-		out.W("\tdamageSpread = ", luaNum(float64(typ.Get("DamageSpread").(int64))/100), ",\n")
-		out.W("\tattackTime = ", luaNum(float64(mv.Get("AttackDuration").(int64))/1000), ",\n")
-		out.W("\tattackRange = ", mv.Get("MaximumAttackRange").(int64), ",\n")
-		out.W("\taccuracy = ", luaNum(float64(typ.Get("Accuracy").(int64))/100), ",\n")
+		d.FireResist = res.Get("FireMerciless").(int64)
+		d.ColdResist = res.Get("ColdMerciless").(int64)
+		d.LightningResist = res.Get("LightningMerciless").(int64)
+		d.ChaosResist = res.Get("ChaosMerciless").(int64)
+		d.Damage = float64(mv.Get("DamageMultiplier").(int64)) / 100
+		d.DamageSpread = float64(typ.Get("DamageSpread").(int64)) / 100
+		d.AttackTime = float64(mv.Get("AttackDuration").(int64)) / 1000
+		d.AttackRange = mv.Get("MaximumAttackRange").(int64)
+		d.Accuracy = float64(typ.Get("Accuracy").(int64)) / 100
 		for _, mod := range listRows(mv.Get("Mods")) {
 			switch luaStr(mod.Get("Id")) {
 			case "MonsterSpeedAndDamageFixupSmall":
-				out.W("\tdamageFixup = 0.11,\n")
+				d.DamageFixups = append(d.DamageFixups, 0.11)
 			case "MonsterSpeedAndDamageFixupLarge":
-				out.W("\tdamageFixup = 0.22,\n")
+				d.DamageFixups = append(d.DamageFixups, 0.22)
 			case "MonsterSpeedAndDamageFixupComplete":
-				out.W("\tdamageFixup = 0.33,\n")
+				d.DamageFixups = append(d.DamageFixups, 0.33)
 			}
 		}
 		if mh, ok := mv.Get("MainHandItemClass").(*Row); ok {
 			if mapped, found := itemClassMap[luaStr(mh.Get("Id"))]; found {
-				out.W("\tweaponType1 = \"", mapped, "\",\n")
+				d.WeaponType1 = &mapped
 			}
 		}
 		if oh, ok := mv.Get("OffHandItemClass").(*Row); ok {
 			if mapped, found := itemClassMap[luaStr(oh.Get("Id"))]; found {
-				out.W("\tweaponType2 = \"", mapped, "\",\n")
+				d.WeaponType2 = &mapped
 			}
 		}
-		if state.limit != "" {
-			out.W("\tlimit = \"", state.limit, "\",\n")
-		}
-		if state.hostile != "" {
-			out.W("\thostile = ", state.hostile, ",\n")
-		}
-		out.W("\tskillList = {\n")
+		d.Limit = state.limit
+		d.Hostile = state.hostile
 		for _, ge := range listRows(mv.Get("GrantedEffects")) {
-			out.W("\t\t\"", luaStr(ge.Get("Id")), "\",\n")
+			d.SkillList = append(d.SkillList, luaStr(ge.Get("Id")))
 		}
-		for _, skill := range state.extraSkillList {
-			out.W("\t\t\"", skill, "\",\n")
-		}
-		out.W("\t},\n")
+		d.SkillList = append(d.SkillList, state.extraSkillList...)
 
 		var modList []any
 		for _, mod := range listRows(mv.Get("Mods")) {
@@ -261,7 +282,6 @@ func scriptMinions(x *Ctx) error {
 		if objType := luaStr(mv.Get("ObjectType")); objType != "" && objType != "Metadata/Monsters/Monster" {
 			modList = x.getOTStats(objType, modList)
 		}
-		out.W("\tmodList = {\n")
 		for _, entry := range modList {
 			// modStatX reads Stat<i> / Stat<i>Value off either a Mods row or
 			// an .ot stat entry.
@@ -293,7 +313,7 @@ func scriptMinions(x *Ctx) error {
 				modStats := " [" + statId + " = " + luaNum(statVal) + "]"
 				mapping, found := skillStatMap[statId]
 				if !found {
-					out.W("\t\t-- ", entryId, modStats, "\n")
+					d.ModList = append(d.ModList, "-- "+entryId+modStats)
 					continue
 				}
 				newMod := mapping[1].(luaTable)
@@ -313,8 +333,8 @@ func scriptMinions(x *Ctx) error {
 							mult = m
 						}
 						div := 1.0
-						if d, ok := mapping["div"].(float64); ok {
-							div = d
+						if dv, ok := mapping["div"].(float64); ok {
+							div = dv
 						}
 						valueStr = luaNum(statVal * mult / div)
 					}
@@ -327,36 +347,37 @@ func scriptMinions(x *Ctx) error {
 				if f, ok := newMod["keywordFlags"].(float64); ok {
 					kwFlags = luaNum(f)
 				}
-				out.W("\t\tmod(\"", luaStr(newMod["name"]), "\", \"", luaStr(newMod["type"]), "\", ", valueStr, ", ", flags, ", ", kwFlags)
+				line := "mod(\"" + luaStr(newMod["name"]) + "\", \"" + luaStr(newMod["type"]) + "\", " + valueStr + ", " + flags + ", " + kwFlags
 				for j := 1; ; j++ {
 					extra, ok := newMod[j].(luaTable)
 					if !ok {
 						break
 					}
-					out.W(", ", tableToString(extra, ""))
+					line += ", " + tableToString(extra, "")
 				}
-				out.W("), -- ", entryId, modStats, "\n")
+				line += "), -- " + entryId + modStats
+				d.ModList = append(d.ModList, line)
 			}
 		}
 		for _, mod := range state.extraModList {
-			out.W("\t\t", mod, ",\n")
+			d.ModList = append(d.ModList, mod+",")
 		}
-		out.W("\t},\n")
-		out.W("}\n")
+		*defs = append(*defs, d)
 	}
-	directives["spectre"] = func(args string, out *OutFile) {
-		directives["monster"](args, out)
-		directives["emit"]("", out)
+	directives["spectre"] = func(args string) {
+		directives["monster"](args)
+		directives["emit"]("")
 	}
 
-	for _, name := range []string{"Spectres", "Minions"} {
-		out, err := x.ProcessTemplateFile(name, "Minions/", "../Data/", directives)
-		if err != nil {
-			return err
-		}
-		if err := out.Close(); err != nil {
-			return err
+	var doc gamedata.Minions
+	for _, tf := range []struct {
+		name string
+		list *[]gamedata.MinionDef
+	}{{"Spectres", &doc.Spectres}, {"Minions", &doc.Minions}} {
+		defs = tf.list
+		if err := x.WalkTemplate(tf.name, "Minions/", directives); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	return doc, nil
 }

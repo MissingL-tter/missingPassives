@@ -5,13 +5,14 @@ package export
 import (
 	"math"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	Scripts = append(Scripts, Script{Name: "bossData", Outs: []string{"Data/BossSkills.lua", "Data/Bosses.lua"}, Run: scriptBossData})
+	Scripts = append(Scripts, Script{Name: "bossData", Build: buildBossData})
 }
 
 var bossMonsterBaseDamage = []float64{
@@ -68,7 +69,8 @@ var (
 	reSpeedMult      = regexp.MustCompile(`speedMult = ([0-9]+),`)
 )
 
-func scriptBossData(x *Ctx) error {
+func buildBossData(x *Ctx) (any, error) {
+	var doc gamedata.BossData
 	unique := x.Dat("Mods").GetRow("Id", "MonsterUnique5").Get("Stat1Value").(Interval)[0]
 	uniqueAttackPenalty := x.Dat("Mods").GetRow("Id", "MonsterUnique8").Get("Stat1Value").(Interval)[0]
 	rarityDamageMult := map[string]float64{
@@ -566,27 +568,20 @@ func scriptBossData(x *Ctx) error {
 		return base, uber
 	}
 
-	writeStatSet := func(out *OutFile, set *addStatsSet) {
-		keys := make([]string, 0, len(set.vals))
-		for k := range set.vals {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for i, k := range keys {
-			if i > 0 {
-				out.W(",")
-			}
-			out.W("\n\t\t\t\t", k, " = ")
-			if s, ok := set.vals[k].(string); ok {
-				out.W(s)
+	renderStatSet := func(set *addStatsSet) map[string]string {
+		out := map[string]string{}
+		for k, v := range set.vals {
+			if s, ok := v.(string); ok {
+				out[k] = s
 			} else {
-				out.W(luaNum(set.vals[k].(float64)))
+				out[k] = luaNum(v.(float64))
 			}
 		}
+		return out
 	}
 
-	skillsDirectives := map[string]func(args string, out *OutFile){}
-	skillsDirectives["boss"] = func(args string, out *OutFile) {
+	skillsDirectives := map[string]func(args string){}
+	skillsDirectives["boss"] = func(args string) {
 		m := reBossSkill4.FindStringSubmatch(args)
 		bossData := x.Dat("MonsterVarieties").GetRow("Id", m[2])
 		b := &bossInfo{
@@ -609,7 +604,7 @@ func scriptBossData(x *Ctx) error {
 		}
 		state.boss = b
 	}
-	skillsDirectives["skill"] = func(args string, out *OutFile) {
+	skillsDirectives["skill"] = func(args string) {
 		m := reSkillArgs.FindStringSubmatch(args)
 		displayName, grantedId := m[1], m[2]
 		switch displayName {
@@ -668,61 +663,51 @@ func scriptBossData(x *Ctx) error {
 		state.DamageData = map[string]any{}
 		state.DamageType = getDamageType()
 		calcSkillDamage()
-		// output
-		out.W("	[\"", boss.displayName, " ", displayName, "\"] = {\n")
-		out.W("		DamageType = \"", state.DamageType, "\",\n")
-		out.W("		DamageMultipliers = {\n")
-		dCount := 0
+		bs := gamedata.BossSkill{
+			Key:        boss.displayName + " " + displayName,
+			DamageType: state.DamageType,
+		}
 		for _, dt := range bossDamageTypes {
 			if mn, ok := state.DamageData[dt+"DamageMultMin"].(float64); ok {
-				dCount++
-				if dCount > 1 {
-					out.W(",\n")
-				}
 				mx := state.DamageData[dt+"DamageMultMax"].(float64)
-				out.W("			", dt, " = { ", luaNum(mn), ", ", luaNum((mx-mn)/100), " }")
+				bs.DamageMultipliers = append(bs.DamageMultipliers, gamedata.BossDamageMult{
+					Type: dt, Min: mn, Spread: (mx - mn) / 100,
+				})
 			}
 		}
-		out.W("\n		}")
 		if um, ok := state.DamageData["SkillUberDamageMult"].(float64); ok {
-			out.W(",\n		UberDamageMultiplier = ", luaNum(um/100))
+			v := um / 100
+			bs.UberDamageMultiplier = &v
+		}
+		penEntries := func(keys []string, strip bool) []gamedata.PenEntry {
+			var entries []gamedata.PenEntry
+			for _, penType := range keys {
+				v := state.DamageData[penType]
+				if f, ok := v.(float64); ok && f == 0 {
+					continue
+				}
+				name := penType
+				if strip {
+					name = strings.ReplaceAll(name, "Uber", "")
+				}
+				text := "\"\""
+				if f, ok := v.(float64); ok {
+					text = luaNum(f)
+				}
+				entries = append(entries, gamedata.PenEntry{Name: name, Text: text})
+			}
+			return entries
 		}
 		if getPenetration() {
-			out.W(",\n		DamagePenetrations = {\n")
-			dCount = 0
-			writePen := func(keys []string, strip bool) {
-				for _, penType := range keys {
-					v := state.DamageData[penType]
-					if f, ok := v.(float64); ok && f == 0 {
-						continue
-					}
-					dCount++
-					if dCount > 1 {
-						out.W(",\n")
-					}
-					name := penType
-					if strip {
-						name = strings.ReplaceAll(name, "Uber", "")
-					}
-					out.W("			", name, " = ")
-					if s, ok := v.(string); ok && s == "" {
-						out.W("\"\"")
-					} else {
-						out.W(luaNum(v.(float64)))
-					}
-				}
-			}
-			writePen([]string{"PhysOverwhelm", "LightningPen", "ColdPen", "FirePen"}, false)
-			out.W("\n		}")
+			bs.HasPen = true
+			bs.Pens = penEntries([]string{"PhysOverwhelm", "LightningPen", "ColdPen", "FirePen"}, false)
 			nonZero := func(k string) bool {
 				f, ok := state.DamageData[k].(float64)
 				return !(ok && f == 0)
 			}
 			if nonZero("PhysUberOverwhelm") || nonZero("LightningUberPen") || nonZero("ColdUberPen") || nonZero("FireUberPen") {
-				out.W(",\n		UberDamagePenetrations = {\n")
-				dCount = 0
-				writePen([]string{"PhysUberOverwhelm", "LightningUberPen", "ColdUberPen", "FireUberPen"}, true)
-				out.W("\n		}")
+				bs.HasUberPen = true
+				bs.UberPens = penEntries([]string{"PhysUberOverwhelm", "LightningUberPen", "ColdUberPen", "FireUberPen"}, true)
 			}
 		}
 		if sm := reSpeedMult.FindStringSubmatch(args); sm != nil {
@@ -731,56 +716,33 @@ func scriptBossData(x *Ctx) error {
 			state.skill.hasSpeedMult = true
 		}
 		speed, uberSpeed, _, hasUberSpeed := getSpeed()
-		if speed != 700 {
-			out.W(",\n		speed = ", luaNum(speed))
+		bs.Speed = speed
+		if hasUberSpeed {
+			bs.UberSpeed = &uberSpeed
 		}
-		if hasUberSpeed && uberSpeed != 700 {
-			out.W(",\n		UberSpeed = ", luaNum(uberSpeed))
-		}
-		critChance := int64(math.Ceil(float64(skill.statsPerLevel[0].Get("AttackCritChance").(int64)) / 100))
-		if critChance != 5 {
-			out.W(",\n		critChance = ", critChance)
-		}
-		if boss.earlierUber {
-			out.W(",\n		earlierUber = true")
-		}
+		bs.CritChance = int64(math.Ceil(float64(skill.statsPerLevel[0].Get("AttackCritChance").(int64)) / 100))
+		bs.EarlierUber = boss.earlierUber
 		baseSet, uberSet := getAdditionalStats()
 		if baseSet != nil {
-			out.W(",\n		additionalStats = {")
-			if baseSet.count > 0 {
-				out.W("\n			base = {")
-				writeStatSet(out, baseSet)
-				out.W("\n			}")
-			}
-			if uberSet.count > 0 {
-				if baseSet.count > 0 {
-					out.W(",")
-				}
-				out.W("\n			uber = {")
-				writeStatSet(out, uberSet)
-				out.W("\n			}")
-			}
-			out.W("\n		}")
+			bs.HasAdditional = true
+			bs.BaseCount = baseSet.count
+			bs.UberCount = uberSet.count
+			bs.BaseVals = renderStatSet(baseSet)
+			bs.UberVals = renderStatSet(uberSet)
 		}
+		doc.Skills = append(doc.Skills, bs)
 	}
-	skillsDirectives["tooltip"] = func(args string, out *OutFile) {
-		out.W(",\n		tooltip = ", args, "\n")
-		out.W("	},\n")
+	skillsDirectives["tooltip"] = func(string) {
 		state.skill = nil
 	}
-	skillsDirectives["skillList"] = func(args string, out *OutFile) {
-		out.W("},{\n")
-		out.W("    { val = \"None\", label = \"None\" }")
-		for _, skillName := range state.skillList {
-			out.W(",\n    { val = \"", skillName, "\", label = \"", skillName, "\" }")
-		}
-		out.W("\n}")
+	skillsDirectives["skillList"] = func(string) {
+		doc.SkillLists = append(doc.SkillLists, append([]string{}, state.skillList...))
 		state.boss = nil
 		state.skillList = nil
 	}
 
-	monstersDirectives := map[string]func(args string, out *OutFile){}
-	monstersDirectives["boss"] = func(args string, out *OutFile) {
+	monstersDirectives := map[string]func(args string){}
+	monstersDirectives["boss"] = func(args string) {
 		var displayName, monsterId string
 		isUber := false
 		if m := reBossMon3.FindStringSubmatch(args); m != nil {
@@ -791,30 +753,23 @@ func scriptBossData(x *Ctx) error {
 		}
 		monsterType := x.Dat("MonsterTypes").GetRow("Id", monsterId)
 		if monsterType == nil {
-			return // the Lua prints "Invalid Type"
+			doc.Bosses = append(doc.Bosses, nil) // the Lua prints "Invalid Type"
+			return
 		}
-		out.W("bosses[\"", displayName, "\"] = {\n")
-		out.W("\tarmourMult = ", monsterType.Get("Armour").(int64), ",\n")
-		out.W("\tevasionMult = ", monsterType.Get("Evasion").(int64), ",\n")
-		if isUber {
-			out.W("\tisUber = true,\n")
-		} else {
-			out.W("\tisUber = false,\n")
-		}
-		out.W("}\n")
+		doc.Bosses = append(doc.Bosses, &gamedata.BossMonster{
+			DisplayName: displayName,
+			ArmourMult:  monsterType.Get("Armour").(int64),
+			EvasionMult: monsterType.Get("Evasion").(int64),
+			IsUber:      isUber,
+		})
 	}
 
 	state = &skillState{}
-	out, err := x.ProcessTemplateFile("BossSkills", "Enemies/", "../Data/", skillsDirectives)
-	if err != nil {
-		return err
+	if err := x.WalkTemplate("BossSkills", "Enemies/", skillsDirectives); err != nil {
+		return nil, err
 	}
-	if err := out.Close(); err != nil {
-		return err
+	if err := x.WalkTemplate("Bosses", "Enemies/", monstersDirectives); err != nil {
+		return nil, err
 	}
-	out, err = x.ProcessTemplateFile("Bosses", "Enemies/", "../Data/", monstersDirectives)
-	if err != nil {
-		return err
-	}
-	return out.Close()
+	return doc, nil
 }

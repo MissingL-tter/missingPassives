@@ -1,5 +1,4 @@
-// Port of .archive/src/Export/Scripts/tattooPassives.lua, including its
-// private stringify() serializer.
+// Port of .archive/src/Export/Scripts/tattooPassives.lua.
 
 package export
 
@@ -7,78 +6,26 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	Scripts = append(Scripts, Script{Name: "tattooPassives", Outs: []string{"Data/TattooPassives.lua"}, Run: scriptTattooPassives})
+	Scripts = append(Scripts, Script{Name: "tattooPassives", Build: buildTattooPassives})
 }
 
 var reDotDdsEnd = regexp.MustCompile(`\.dds$`)
 
-// stringifyTattoo ports the script's stringify(): sorted keys, "\n\t"-led
-// entries, trailing ", " after every value, nested tables re-indented by one
-// tab, no string escaping.
-func stringifyTattoo(v any) string {
-	switch t := v.(type) {
-	case string:
-		return t
-	case bool:
-		return luaStr(t)
-	case int:
-		return luaStr(t)
-	case int64:
-		return luaStr(t)
-	case float64:
-		return luaNum(t)
-	case luaTable:
-		var b strings.Builder
-		b.WriteString("{")
-		keys := make([]any, 0, len(t))
-		for k := range t {
-			keys = append(keys, k)
-		}
-		sort.Slice(keys, func(a, b int) bool {
-			if ka, ok := keys[a].(string); ok {
-				return ka < keys[b].(string)
-			}
-			return keyNum(keys[a]) < keyNum(keys[b])
-		})
-		for _, k := range keys {
-			b.WriteString("\n\t")
-			if ks, ok := k.(string); ok {
-				b.WriteString("[\"" + ks + "\"] = ")
-			} else {
-				b.WriteString("[" + luaNum(keyNum(k)) + "] = ")
-			}
-			val := t[k]
-			if s, ok := val.(string); ok {
-				b.WriteString("\"" + s + "\", ")
-			} else if sub, ok := val.(luaTable); ok {
-				b.WriteString(strings.ReplaceAll(stringifyTattoo(sub)+", ", "\n", "\n\t"))
-			} else {
-				b.WriteString(stringifyTattoo(val) + ", ")
-			}
-		}
-		b.WriteString("\n}")
-		return b.String()
-	}
-	panic("stringifyTattoo: unsupported type")
+// passiveStat converts a describeStats-mutated statVal into its gamedata
+// form.
+func passiveStat(id string, v *statVal) gamedata.PassiveStat {
+	return gamedata.PassiveStat{Id: id, Min: v.min, Max: v.max, Fmt: v.fmt, MinZ: v.minZ, MaxZ: v.maxZ}
 }
 
-// statValTable converts a describeStats-mutated statVal into the Lua table
-// the script serializes (min/max/fmt plus the mutation flags).
-func statValTable(v *statVal) luaTable {
-	t := luaTable{"min": v.min, "max": v.max}
-	if v.fmt != "" {
-		t["fmt"] = v.fmt
-	}
-	if v.minZ {
-		t["minZ"] = true
-	}
-	if v.maxZ {
-		t["maxZ"] = true
-	}
-	return t
+// sortStatsById sorts stably by stat id, preserving insertion order for
+// duplicates (the Lua's table overwrite keeps the last).
+func sortStatsById(stats []gamedata.PassiveStat) {
+	sort.SliceStable(stats, func(a, b int) bool { return stats[a].Id < stats[b].Id })
 }
 
 // listRows iterates a Key-list cell the way Lua ipairs does: stopping at the
@@ -95,7 +42,7 @@ func listRows(cell any) []*Row {
 	return out
 }
 
-func scriptTattooPassives(x *Ctx) error {
+func buildTattooPassives(x *Ctx) (any, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 	x.LoadStatFile("passive_skill_stat_descriptions.txt")
 
@@ -111,28 +58,32 @@ func scriptTattooPassives(x *Ctx) error {
 		sort.Slice(sd, func(a, b int) bool { return descOrders[sd[a]] < descOrders[sd[b]] })
 	}
 
-	parsePassiveStats := func(row *Row, nodeStats luaTable, sd *[]string) {
+	parsePassiveStats := func(row *Row) (nodeStats []gamedata.PassiveStat, sd []string) {
 		descOrders := map[string]float64{}
 		for idx, statKey := range listRows(row.Get("Stats")) {
 			statId := luaStr(stats.GetRowByIndex(statKey.Index).Get("Id"))
 			rangeV := float64(row.Get("Stat" + luaStr(idx+1)).(int64))
 			sv := &statVal{min: rangeV, max: rangeV}
 			lines := x.DescribeStats(map[string]*statVal{statId: sv})
-			entry := statValTable(sv)
-			entry["index"] = idx + 1
+			entry := passiveStat(statId, sv)
+			index := idx + 1
+			entry.Index = &index
 			if len(lines.Orders) > 0 {
-				entry["statOrder"] = lines.Orders[0]
+				order := lines.Orders[0]
+				entry.StatOrder = &order
 			}
-			nodeStats[statId] = entry
+			nodeStats = append(nodeStats, entry)
 			for i, line := range lines.Lines {
-				*sd = append(*sd, line)
+				sd = append(sd, line)
 				descOrders[line] = lines.Orders[i]
 			}
 		}
-		sortSd(*sd, descOrders)
+		sortSd(sd, descOrders)
+		sortStatsById(nodeStats)
+		return nodeStats, sd
 	}
 
-	parseStats := func(rowMap map[string]any, nodeStats luaTable, sd *[]string) {
+	parseStats := func(rowMap map[string]any) (nodeStats []gamedata.PassiveStat, sd []string) {
 		descOrders := map[string]float64{}
 		statMap := map[string]*statVal{}
 		values := rowMap["StatValues"].([]any)
@@ -143,13 +94,15 @@ func scriptTattooPassives(x *Ctx) error {
 		}
 		lines := x.DescribeStats(statMap)
 		for id, sv := range statMap {
-			nodeStats[id] = statValTable(sv)
+			nodeStats = append(nodeStats, passiveStat(id, sv))
 		}
+		sortStatsById(nodeStats)
 		for i, line := range lines.Lines {
-			*sd = append(*sd, line)
+			sd = append(sd, line)
 			descOrders[line] = lines.Orders[i]
 		}
-		sortSd(*sd, descOrders)
+		sortSd(sd, descOrders)
+		return nodeStats, sd
 	}
 
 	dumpRow := func(d *DatFile, i int) map[string]any {
@@ -160,9 +113,7 @@ func scriptTattooPassives(x *Ctx) error {
 		return m
 	}
 
-	data := luaTable{}
-	nodes := luaTable{}
-	data["nodes"] = nodes
+	var doc gamedata.TattooPassives
 
 	tattooDatRows := map[string]map[string]any{}
 	for i := 1; i <= tattoosDat.RowCount; i++ {
@@ -178,38 +129,34 @@ func scriptTattooPassives(x *Ctx) error {
 		if tattooDatRow == nil {
 			tattooDatRow = tattooDatRows["DisplayRandomKeystone"]
 		}
-		node := luaTable{}
-		node["id"] = id
+		node := gamedata.TattooNode{Id: id}
 
-		var sd []string
-		nodeStats := luaTable{}
-		node["stats"] = nodeStats
-		node["isTattoo"] = true
 		overrideType := luaStr(rowMap["OverrideType"].(*Row).Get("Id"))
-		node["overrideType"] = overrideType
-		node["ks"] = false
+		node.OverrideType = overrideType
 		nodeTarget := tattooDatRow["NodeTarget"].(*Row)
 		targetType := luaStr(nodeTarget.Get("Type"))
-		node["not"] = targetType == "Notable"
-		node["m"] = overrideType == "AlternateMastery"
-		node["targetType"] = targetType
-		node["targetValue"] = luaStr(nodeTarget.Get("Value"))
+		node.Not = targetType == "Notable"
+		node.M = overrideType == "AlternateMastery"
+		node.TargetType = targetType
+		node.TargetValue = luaStr(nodeTarget.Get("Value"))
 
 		minConn := rowMap["MinimumConnected"].(int64)
 		maxConn := rowMap["MaximumConnected"].(int64)
 		if minConn > 0 {
 			text := luaStr(clientStrings.GetRow("Id", "PassiveSkillTattooAdjacentRequirementLower").Get("Text"))
-			node["reminderText"] = luaTable{1: strings.ReplaceAll(text, "{}", luaStr(minConn))}
+			reminder := strings.ReplaceAll(text, "{}", luaStr(minConn))
+			node.ReminderText = &reminder
 		}
-		node["MinimumConnected"] = minConn
+		node.MinimumConnected = minConn
 		if maxConn > 0 {
 			text := luaStr(clientStrings.GetRow("Id", "PassiveSkillTattooAdjacentRequirementUpper").Get("Text"))
-			node["reminderText"] = luaTable{1: strings.ReplaceAll(text, "{}", luaStr(maxConn))}
+			reminder := strings.ReplaceAll(text, "{}", luaStr(maxConn))
+			node.ReminderText = &reminder
 		}
 		if maxConn > 0 {
-			node["MaximumConnected"] = maxConn
+			node.MaximumConnected = maxConn
 		} else {
-			node["MaximumConnected"] = int64(100)
+			node.MaximumConnected = 100
 		}
 
 		var limitText string
@@ -221,63 +168,45 @@ func scriptTattooPassives(x *Ctx) error {
 			haveLimit = true
 		}
 
-		node["activeEffectImage"] = luaStr(rowMap["Background"]) + ".png"
+		node.ActiveEffectImage = luaStr(rowMap["Background"]) + ".png"
 
 		// After this switch the Lua rebinds datFileRow for keystones; these
 		// carry the post-switch reads.
 		var finalName, finalIcon, finalId string
+		var sd []string
 		if overrideType == "KeystoneTattoo" {
-			node["ks"] = true
+			node.Ks = true
 			ps := rowMap["PassiveSkill"].(*Row)
-			parsePassiveStats(ps, nodeStats, &sd)
+			node.Stats, sd = parsePassiveStats(ps)
 			finalName = luaStr(ps.Get("Name"))
 			finalIcon = luaStr(ps.Get("Icon"))
 			finalId = luaStr(ps.Get("Id"))
 		} else {
-			if overrideType == "AlternateMastery" {
-				node["name"] = "Runegraft Mastery"
-			}
-			parseStats(rowMap, nodeStats, &sd)
+			node.Stats, sd = parseStats(rowMap)
 			finalName = luaStr(rowMap["Name"])
 			finalIcon = luaStr(rowMap["Icon"])
 			finalId = id
 		}
 
-		node["dn"] = finalName
-		if finalName != "" && node["ks"] == false {
+		node.Name = finalName
+		if finalName != "" && !node.Ks {
 			if bit := baseItemTypes.GetRow("Name", finalName); bit != nil {
 				if ce := currencyExchange.GetRow("BaseItemType", bit); ce != nil {
-					node["legacy"] = !ce.Get("EnabledInLeague").(bool)
+					legacy := !ce.Get("EnabledInLeague").(bool)
+					node.Legacy = &legacy
 				}
 			}
 		}
 
-		node["icon"] = reDotDdsEnd.ReplaceAllString(finalIcon, ".png")
+		node.Icon = reDotDdsEnd.ReplaceAllString(finalIcon, ".png")
 		if haveLimit {
 			sd = append(sd, limitText)
 		}
-		sdTable := luaTable{}
-		for i, line := range sd {
-			sdTable[i+1] = line
-		}
-		node["sd"] = sdTable
+		node.Sd = sd
 
 		if finalId != "DisplayRandomKeystone" && !strings.Contains(finalName, "DNT") && !strings.Contains(finalName, "of the Test") {
-			nodes[finalName] = node
+			doc.Nodes = append(doc.Nodes, node)
 		}
 	}
-
-	data["groups"] = luaTable{
-		float64(1e9): luaTable{
-			"x":  float64(-6500),
-			"y":  float64(-6500),
-			"oo": luaTable{},
-			"n":  luaTable{},
-		},
-	}
-
-	out := x.Out("Data/TattooPassives.lua")
-	out.W("-- This file is automatically generated, do not edit!\n-- Item data (c) Grinding Gear Games\n\n")
-	out.W("return " + stringifyTattoo(data))
-	return out.Close()
+	return doc, nil
 }

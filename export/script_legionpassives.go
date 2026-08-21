@@ -7,10 +7,12 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
 func init() {
-	Scripts = append(Scripts, Script{Name: "legionPassives", Outs: []string{"Data/TimelessJewelData/LegionPassives.lua"}, Run: scriptLegionPassives})
+	Scripts = append(Scripts, Script{Name: "legionPassives", Build: buildLegionPassives})
 }
 
 var (
@@ -50,7 +52,7 @@ func intListContains(cell any, val int64) bool {
 	return false
 }
 
-func scriptLegionPassives(x *Ctx) error {
+func buildLegionPassives(x *Ctx) (any, error) {
 	x.LoadStatFile("passive_skill_stat_descriptions.txt")
 
 	stats := x.Dat("Stats")
@@ -65,8 +67,8 @@ func scriptLegionPassives(x *Ctx) error {
 		return m
 	}
 
-	// parseStats fills the node's stats/sd/sortedStats.
-	parseStats := func(rowMap map[string]any, node luaTable) {
+	// parseStats yields the node's sd, stats and sortedStats.
+	parseStats := func(rowMap map[string]any) (sd []string, statsOut []gamedata.PassiveStat, sorted []string) {
 		type entry struct {
 			sv        *statVal
 			index     int
@@ -93,28 +95,26 @@ func scriptLegionPassives(x *Ctx) error {
 		// A description can combine several stats, such as minimum and
 		// maximum added damage, so describe the complete set together.
 		lines := x.DescribeStats(statMap)
-		sd := luaTable{}
-		for i, line := range lines.Lines {
-			sd[i+1] = line
-		}
-		node["sd"] = sd
-		nodeStats := luaTable{}
-		for id, e := range entries {
-			t := statValTable(e.sv)
-			t["index"] = e.index
-			if e.hasOrder {
-				t["statOrder"] = e.statOrder
-			}
-			nodeStats[id] = t
-		}
-		node["stats"] = nodeStats
+		sd = lines.Lines
 		ids := make([]string, 0, len(entries))
 		for id := range entries {
 			ids = append(ids, id)
 		}
 		sort.Strings(ids)
-		sort.Slice(ids, func(a, b int) bool {
-			ea, eb := entries[ids[a]], entries[ids[b]]
+		for _, id := range ids {
+			e := entries[id]
+			ps := passiveStat(id, e.sv)
+			index := e.index
+			ps.Index = &index
+			if e.hasOrder {
+				order := e.statOrder
+				ps.StatOrder = &order
+			}
+			statsOut = append(statsOut, ps)
+		}
+		sortIds := append([]string(nil), ids...)
+		sort.Slice(sortIds, func(a, b int) bool {
+			ea, eb := entries[sortIds[a]], entries[sortIds[b]]
 			oa, ob := math.Inf(1), math.Inf(1)
 			if ea.hasOrder {
 				oa = ea.statOrder
@@ -124,88 +124,53 @@ func scriptLegionPassives(x *Ctx) error {
 			}
 			return oa < ob || (oa == ob && ea.index < eb.index)
 		})
-		sortedStats := luaTable{}
-		for i, id := range ids {
-			sortedStats[i+1] = id
-		}
-		node["sortedStats"] = sortedStats
+		return sd, statsOut, sortIds
 	}
 
-	data := luaTable{}
-	nodes := luaTable{}
-	groups := luaTable{}
-	additions := luaTable{}
-	data["nodes"] = nodes
-	data["groups"] = groups
-	data["additions"] = additions
+	var doc gamedata.LegionPassives
 	ksCount := int64(-1)
 	prng := newLuaPRNG()
 
 	for i := 1; i <= altSkills.RowCount; i++ {
 		rowMap := dumpRow(altSkills, i)
 		fixLegionDatErrors(rowMap)
-		node := luaTable{}
-		node["id"] = luaStr(rowMap["Id"])
-		node["icon"] = luaStr(rowMap["DDSIcon"])
-		ks := intListContains(rowMap["PassiveType"], 4)
-		node["ks"] = ks
-		if ks {
+		node := gamedata.LegionNode{
+			Id:   luaStr(rowMap["Id"]),
+			Icon: luaStr(rowMap["DDSIcon"]),
+			Dn:   luaStr(rowMap["Name"]),
+		}
+		node.Ks = intListContains(rowMap["PassiveType"], 4)
+		if node.Ks {
 			ksCount++
 		}
-		node["not"] = intListContains(rowMap["PassiveType"], 3)
-		node["dn"] = luaStr(rowMap["Name"])
-		node["m"] = false
-		node["isJewelSocket"] = false
-		node["isMultipleChoice"] = false
-		node["isMultipleChoiceOption"] = false
-		node["passivePointsGranted"] = 0
-		node["spc"] = luaTable{}
+		node.Not = intListContains(rowMap["PassiveType"], 3)
 
-		parseStats(rowMap, node)
+		node.Sd, node.Stats, node.SortedStats = parseStats(rowMap)
 
-		if node["id"] == "vaal_keystone_2_v2" { // Immortal Ambition needs to be manually added
-			node["sd"] = luaTable{
-				1: "Energy Shield starts at zero",
-				2: "Cannot Recharge or Regenerate Energy Shield",
-				3: "Lose 5% of Energy Shield per second",
-				4: "Life Leech effects are not removed when Unreserved Life is Filled",
-				5: "Life Leech effects Recover Energy Shield instead while on Full Life",
+		if node.Id == "vaal_keystone_2_v2" { // Immortal Ambition needs to be manually added
+			node.Sd = []string{
+				"Energy Shield starts at zero",
+				"Cannot Recharge or Regenerate Energy Shield",
+				"Lose 5% of Energy Shield per second",
+				"Life Leech effects are not removed when Unreserved Life is Filled",
+				"Life Leech effects Recover Energy Shield instead while on Full Life",
 			}
 		}
 
-		node["g"] = float64(1e9)
-		if ks {
-			node["o"] = 4
-			node["oidx"] = ksCount * 3
+		if node.Ks {
+			node.Oidx = float64(ksCount * 3)
 		} else {
-			node["o"] = 3
-			node["oidx"] = math.Floor(prng.random() * 1e5)
+			// #EVAL: archive parity — a LuaJIT-PRNG layout offset baked into
+			// the data; deserves a deterministic layout once Go-owned.
+			node.Oidx = math.Floor(prng.random() * 1e5)
 		}
-		node["sa"] = 0
-		node["da"] = 0
-		node["ia"] = 0
-		node["out"] = luaTable{}
-		node["in"] = luaTable{}
-
-		nodes[i] = node
-	}
-
-	groupN := luaTable{}
-	for i := 1; i <= altSkills.RowCount; i++ {
-		groupN[i] = i
-	}
-	groups[float64(1e9)] = luaTable{
-		"x":  float64(-6500),
-		"y":  float64(-6500),
-		"oo": luaTable{},
-		"n":  groupN,
+		doc.Nodes = append(doc.Nodes, node)
 	}
 
 	for i := 1; i <= altAdditions.RowCount; i++ {
 		rowMap := dumpRow(altAdditions, i)
 		fixLegionDatErrors(rowMap)
-		add := luaTable{}
-		add["id"] = luaStr(rowMap["Id"])
+		add := gamedata.LegionAddition{Id: luaStr(rowMap["Id"])}
 		// Additions have no name, so construct one from the id.
 		dn := strings.ReplaceAll(luaStr(rowMap["Id"]), "_", " ")
 		dn = reLeadWordSpace.ReplaceAllString(dn, "")
@@ -213,14 +178,10 @@ func scriptLegionPassives(x *Ctx) error {
 		dn = reWordCap.ReplaceAllStringFunc(dn, func(m string) string {
 			return strings.ToUpper(m[:1]) + m[1:]
 		})
-		add["dn"] = dn
+		add.Dn = dn
 
-		parseStats(rowMap, add)
-		additions[i] = add
+		add.Sd, add.Stats, add.SortedStats = parseStats(rowMap)
+		doc.Additions = append(doc.Additions, add)
 	}
-
-	out := x.Out("Data/TimelessJewelData/LegionPassives.lua")
-	out.W("-- This file is automatically generated, do not edit!\n-- Item data (c) Grinding Gear Games\n\n")
-	out.W("return " + stringifyTattoo(data))
-	return out.Close()
+	return doc, nil
 }
