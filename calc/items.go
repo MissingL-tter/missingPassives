@@ -82,7 +82,7 @@ func (env *Env) buildItems() {
 
 	pool := map[int]*Item{}
 	for id, ii := range in.ItemsTab.Items {
-		pool[id] = &Item{In: ii}
+		pool[id] = &Item{In: ii, D: env.Data}
 	}
 	env.ItemPool = pool
 
@@ -351,7 +351,7 @@ func (env *Env) buildItems() {
 			// the Item machinery; the dump captured the result. No fixture
 			// entry means the info-nil/Bow fallthrough (mods merge normally).
 			if ebIn := env.Replay.EnergyBladeItems[slotName]; ebIn != nil {
-				env.Player.ItemList[slotName] = &Item{In: ebIn}
+				env.Player.ItemList[slotName] = &Item{In: ebIn, D: env.Data}
 			} else {
 				env.ItemModDB.ScaleAddList(srcList, scale, false)
 			}

@@ -43,6 +43,12 @@ type ActiveSkill struct {
 	BuffListTyped     []*Buff // buffList
 	MinionList        []string
 	Minion            *Minion
+
+	// perform-stage marks
+	BuffSkill       bool
+	MinionBuffSkill bool
+	TotemBuffSkill  bool
+	DebuffSkill     bool
 }
 
 // geFromItem reads grantedEffect.fromItem: the template key, or the

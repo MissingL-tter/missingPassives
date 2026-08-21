@@ -104,8 +104,16 @@ type SlotInput struct {
 }
 
 type ItemBaseInput struct {
-	SubType *string `lua:"subType"`
-	Type    *string `lua:"type"`
+	SubType *string         `lua:"subType"`
+	Type    *string         `lua:"type"`
+	Flask   *FlaskBaseInput `lua:"flask"`
+}
+
+// FlaskBaseInput carries base.flask.life/mana: recovery amounts (numbers)
+// whose presence the calc reads as truthiness.
+type FlaskBaseInput struct {
+	Life any `lua:"life"`
+	Mana any `lua:"mana"`
 }
 
 // ItemInput is the per-item slice of Item.lua state the calc stages read.
@@ -128,6 +136,7 @@ type ItemInput struct {
 	Foulborn                    *bool                     `lua:"foulborn"`
 	ClassRestriction            *string                   `lua:"classRestriction"`
 	Limit                       *float64                  `lua:"limit"`
+	Quality                     *float64                  `lua:"quality"`
 	Base                        *ItemBaseInput            `lua:"base"`
 	ModList                     []*modparser.Mod          `lua:"modList"`
 	SlotModList                 map[int][]*modparser.Mod  `lua:"slotModList"`

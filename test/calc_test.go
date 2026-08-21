@@ -112,9 +112,14 @@ func decodeCalcItem(m map[string]any) *calc.ItemInput {
 		ExplicitLines:               decodeCalcStrings(m["explicitLines"]),
 		OtherLines:                  decodeCalcStrings(m["otherLines"]),
 	}
+	item.Quality = optCalcFloat(m, "quality")
 	if v, ok := m["base"]; ok {
 		b := v.(map[string]any)
 		item.Base = &calc.ItemBaseInput{SubType: optCalcString(b, "subType"), Type: optCalcString(b, "type")}
+		if fv, ok := b["flask"]; ok {
+			f := fv.(map[string]any)
+			item.Base.Flask = &calc.FlaskBaseInput{Life: f["life"], Mana: f["mana"]}
+		}
 	}
 	if v, ok := m["modList"]; ok {
 		item.ModList = decodeCalcModList(v)
@@ -603,6 +608,7 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			t.Skipf("archive dump not present: %v", err)
 		}
 		var fixture, allocOrders, nodeOrders, grantedNodes, grantedAsc, ebItems, dbs, skills, skillLists string
+		var performDbs, performOutput, performMinionDb, performMinionOutput string
 		forEachCalcRecord(t, path, func(k, c string) {
 			switch k {
 			case variant + ".fixture":
@@ -623,10 +629,21 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 				skills = c
 			case variant + ".skillLists":
 				skillLists = c
+			case variant + ".performDbs":
+				performDbs = c
+			case variant + ".performOutput":
+				performOutput = c
+			case variant + ".performMinionDb":
+				performMinionDb = c
+			case variant + ".performMinionOutput":
+				performMinionOutput = c
 			}
 		})
 		if fixture == "" || allocOrders == "" || nodeOrders == "" || grantedNodes == "" || grantedAsc == "" || ebItems == "" || dbs == "" || skills == "" || skillLists == "" {
 			t.Fatalf("%s: missing records for %s", file, variant)
+		}
+		if performDbs == "" || performOutput == "" {
+			t.Fatalf("%s: missing perform records for %s", file, variant)
 		}
 		var m map[string]any
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
@@ -677,6 +694,39 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		if got := luacanon.Encode(shadows); got != skillLists {
 			t.Errorf("%s skillLists diverged:\n%s", variant, diffWindow(got, skillLists))
 		}
+		// Perform runs on the same env (mirroring the dump) and the
+		// post-perform-body state is compared against the archive.
+		env.Perform()
+		gotPerform := luacanon.Encode(dbsShadow{
+			Mod:   shadowOf(env.ModDB),
+			Enemy: shadowOf(env.EnemyDB),
+			Item:  shadowOf(env.ItemModDB),
+		})
+		if gotPerform != performDbs {
+			t.Errorf("%s performDbs diverged:\n%s", variant, diffWindow(gotPerform, performDbs))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != performOutput {
+			t.Errorf("%s performOutput diverged:\n%s", variant, diffWindow(got, performOutput))
+		}
+		if env.Minion != nil {
+			if performMinionDb == "" || performMinionOutput == "" {
+				t.Errorf("%s: Go perform produced a minion but the archive has no minion records", variant)
+			} else {
+				if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != performMinionDb {
+					t.Errorf("%s performMinionDb diverged:\n%s", variant, diffWindow(got, performMinionDb))
+				}
+				if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != performMinionOutput {
+					t.Errorf("%s performMinionOutput diverged:\n%s", variant, diffWindow(got, performMinionOutput))
+				}
+			}
+		} else if performMinionDb != "" {
+			t.Errorf("%s: archive has minion perform records but Go produced no minion", variant)
+		}
+		// Perform mutates shared skill tag tables (warcryPowerBonus,
+		// CalcPerform L2330) like the reference; the dump scrubs that
+		// residue at each variant start, so scrub before the next variant
+		// reuses the shared game data.
+		scrubWarcryResidue(env)
 		// Negative control: a corrupted input must stop matching.
 		bad := decodeCalcFixture(m)
 		bad.ConfigModList = bad.ConfigModList[1:]
@@ -700,6 +750,23 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		t.Fatalf("expected 25 variants checked, got %d", checked)
 	}
 	t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
+}
+
+// scrubWarcryResidue mirrors dump_calc.lua's scrubPerformResidue: perform
+// writes warcryPowerBonus into shared skill tag tables; remove it so the
+// next variant starts clean.
+func scrubWarcryResidue(env *calc.Env) {
+	for _, as := range env.PlayerActiveSkills {
+		for _, buff := range as.BuffListTyped {
+			for _, mod := range buff.ModList {
+				for _, tv := range mod.Tags {
+					if tag, ok := tv.(modparser.Tag); ok {
+						delete(tag, "warcryPowerBonus")
+					}
+				}
+			}
+		}
+	}
 }
 
 // TestCalcFixtureEchoDetectsCorruption is the negative control: a mutated

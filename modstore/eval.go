@@ -52,7 +52,7 @@ type Actor struct {
 	Level           float64
 	Others          map[string]*Actor // any other actor types
 	DB              Store             // actor.modDB
-	Output          map[string]float64
+	Output          map[string]any // numeric stats plus perform-owned tables/flags (Lua actor.output)
 	ItemList        map[string]Item
 	WeaponData1     map[string]any
 	WeaponData2     map[string]any
@@ -60,6 +60,20 @@ type Actor struct {
 	MinionData      *MinionData
 	ManaEfficiency  float64
 	HasReservation  float64 // the SkillType.HasReservation id the fixtures key on
+}
+
+// outNum reads a numeric output entry (non-numbers act as 0, as Lua
+// arithmetic on them would error before reaching here in practice).
+func outNum(v any) float64 {
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int64:
+		return float64(n)
+	case int:
+		return float64(n)
+	}
+	return 0
 }
 
 func (a *Actor) byType(actorType string) *Actor {
@@ -161,7 +175,7 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 	}
 	reservedPercent := func(totalStat, baseKey string) float64 {
 		reserved := 0.0
-		total := actor.Output[totalStat]
+		total := outNum(actor.Output[totalStat])
 		if total == 0 {
 			return 0
 		}
@@ -180,17 +194,18 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 	case "LifeReservedPercent":
 		return reservedPercent("Life", "LifeReservedBase")
 	}
-	if v, present := actor.Output[stat]; stat == "ManaUnreserved" && present {
+	if raw, present := actor.Output[stat]; stat == "ManaUnreserved" && present {
+		v := outNum(raw)
 		if math.IsNaN(v) {
-			return actor.Output["Mana"]
+			return outNum(actor.Output["Mana"])
 		}
 		if v < 0 {
-			reservedPercentBeforeEfficiency := (math.Abs(actor.Output["ManaUnreservedPercent"]) + 100) * ((100 + actor.ManaEfficiency) / 100)
-			return actor.Output["Mana"] * (math.Ceil(reservedPercentBeforeEfficiency) / 100)
+			reservedPercentBeforeEfficiency := (math.Abs(outNum(actor.Output["ManaUnreservedPercent"])) + 100) * ((100 + actor.ManaEfficiency) / 100)
+			return outNum(actor.Output["Mana"]) * (math.Ceil(reservedPercentBeforeEfficiency) / 100)
 		}
 	}
 	if v, present := actor.Output[stat]; present {
-		return v
+		return outNum(v)
 	}
 	if cfg != nil && cfg.SkillStats != nil {
 		if v, present := cfg.SkillStats[stat]; present {

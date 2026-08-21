@@ -8,7 +8,9 @@ package calc
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -32,6 +34,7 @@ type GrantedSkill struct {
 // Implements modstore.Item for the ItemCondition eval tag.
 type Item struct {
 	In *ItemInput
+	D  *data.Data // itemTagSpecial pools for FindModifierSubstring
 	// jewelData.limitDisabled
 	JewelLimitDisabled bool
 }
@@ -43,10 +46,58 @@ func (it *Item) Corrupted() bool  { return it.In.Corrupted != nil && *it.In.Corr
 func (it *Item) Shaper() bool     { return it.In.Shaper != nil && *it.In.Shaper }
 func (it *Item) Elder() bool      { return it.In.Elder != nil && *it.In.Elder }
 
-// FindModifierSubstring needs Lua-pattern find over the item's active mod
-// lines plus the data.itemTagSpecial pools — ported with the perform stage.
+// patFind reports whether pat matches s. The item-tag patterns are Go
+// regex, like the rest of the shipped tables: the only syntax they use is
+// a leading ^ / trailing $, which means the same in both dialects, and the
+// searchCond argument comes from a [a-zA-Z \t\n\v\f\r]+ capture, so no
+// metacharacter can reach here. TestItemTagPatternsAreLiteral guards that.
+// The cache is fine single-threaded (the calc pipeline is sequential).
+var patCache = map[string]*regexp.Regexp{}
+
+func patFind(s, pat string) bool {
+	re, ok := patCache[pat]
+	if !ok {
+		re = regexp.MustCompile(pat)
+		patCache[pat] = re
+	}
+	return re.MatchString(s)
+}
+
+// FindModifierSubstring ports Item:FindModifierSubstring (Item.lua:284).
+// The fixture's ExplicitLines/OtherLines are already filtered for disabled
+// and variant, matching the reference's per-line checks.
 func (it *Item) FindModifierSubstring(substring, itemSlotName string) bool {
-	panic("calc: Item.FindModifierSubstring unported (perform stage)")
+	explicit := strings.Count(substring, "explicit ")
+	substring = strings.ReplaceAll(substring, "explicit ", "")
+	modLines := append([]string{}, it.In.ExplicitLines...)
+	if explicit < 1 {
+		modLines = append(modLines, it.In.OtherLines...)
+	}
+	for _, line := range modLines {
+		lower := strings.ToLower(line)
+		if patFind(lower, substring) && !patFind(lower, substring+" modifier") {
+			excluded := false
+			if slotPats := it.D.ItemTagSpecialExclusionPattern[substring]; slotPats != nil {
+				for _, specialMod := range slotPats[itemSlotName] {
+					if patFind(lower, strings.ToLower(specialMod)) {
+						excluded = true
+						break
+					}
+				}
+			}
+			if !excluded {
+				return true
+			}
+		}
+		if slotPats := it.D.ItemTagSpecial[substring]; slotPats != nil {
+			for _, specialMod := range slotPats[itemSlotName] {
+				if patFind(lower, strings.ToLower(specialMod)) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // influence property map of CalcSetup L1105/L1190 (map iteration order is
@@ -165,6 +216,15 @@ type Env struct {
 	// for triggered granted skills (ProcessSocketGroup mutates the shared
 	// table; kept per-env). The perform-stage cost reads must consult it.
 	TriggeredCostWipes map[*data.SkillLevel]bool
+
+	// perform-stage actor bundles
+	playerPA, enemyPA, minionPA *performActor
+	aegisItem                   modstore.Item
+	Minion                      *Minion // env.minion (main skill's minion)
+	Buffs                       map[string]*modstore.List
+	MinionBuffsOut              map[string]*modstore.List
+	Debuffs                     map[string]*modstore.List
+	CurseSlots                  []any
 }
 
 // statMapLookup is grantedEffect.statMap[key] including the metatable's

@@ -32,6 +32,13 @@ type Minion struct {
 	LifeTable   []float64
 	WeaponData1 map[string]any
 	WeaponData2 map[string]any
+
+	// perform-stage actor state
+	DB              *modstore.DB
+	Ms              *modstore.Actor
+	Output          map[string]any
+	ActiveSkillList []*ActiveSkill
+	MainSkill       *ActiveSkill
 }
 
 // Buff is one activeSkill.buffList entry: scalar keys as a bag plus the
@@ -1036,3 +1043,14 @@ func setKV(kv map[string]any, k string, v any) {
 		kv[k] = v
 	}
 }
+
+// keywordFlagByName is KeywordFlag[name] for dynamic lookups.
+var keywordFlagByName = func() map[string]int64 {
+	out := map[string]int64{}
+	rv := reflect.ValueOf(modparser.KeywordFlag)
+	rt := rv.Type()
+	for i := 0; i < rt.NumField(); i++ {
+		out[rt.Field(i).Name] = rv.Field(i).Int()
+	}
+	return out
+}()

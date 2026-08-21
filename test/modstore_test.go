@@ -352,7 +352,11 @@ func TestModStoreAgainstReference(t *testing.T) {
 				Vals  map[string]float64 `json:"vals"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			actorsByName[rec.Actor].Output = rec.Vals
+			outVals := map[string]any{}
+			for k, v := range rec.Vals {
+				outVals[k] = v
+			}
+			actorsByName[rec.Actor].Output = outVals
 		case "gameIds":
 			var rec struct {
 				Vals map[string]string `json:"vals"`
