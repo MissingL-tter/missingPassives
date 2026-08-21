@@ -56,7 +56,7 @@ area, effMult, dot, critDot, leech, multiChain) consumed by `calcs-view`.
 
 | status | module | files | lines | verified by |
 |---|---|---|---|---|
-| `[ ]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | partial: `/modparser/vocab.go` carries the parser's vocabulary (skills, gems, cluster notables, ailment defaults), extracted one-time and Go-maintained; regeneration and the module proper (full data load in Go) land here |
+| `[ ]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | partial: `/gamedata` + the export builders now produce the generated data as typed JSON documents (no Lua); `/modparser/vocab.go` carries the parser's vocabulary, extracted one-time and Go-maintained. Remaining here: loading the documents into the app, the hand-maintained `Data/*.lua` parts, and vocab regeneration |
 | `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
 | `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
 | `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |
@@ -177,18 +177,22 @@ mastery, frame, group and connector images, `jewel-radius.png`).
 |---|---|---|---|---|
 | `[x]` | `export-tooling` | `src/Export/` (65 files) | 51,545 | `test/export_test.go` 123/123 files byte-identical |
 
-Reads the GGPK's dat files and generates every `Data/*.lua` table (the files
-marked "automatically generated, do not edit"). Ported to `/export` +
-`cmd/pobexport`: dat64 reader (`dat.go`), column schemas (`spec_gen.go`,
-one-time transform of `spec.lua`, Go-maintained), statdesc engine
-(`statdesc.go`), LuaJIT PRNG (`luaprng.go`) and hash-table iteration
-(`luatab.go`) replicas, and 23 of 24 `Scripts/*.lua`. Extraction stays with
+Reads the GGPK's dat files and produces the game data the application
+consumes — as **structured JSON documents** typed by `/gamedata` (one per
+script), no Lua in the pipeline. Ported to `/export` + `cmd/pobexport`: dat64
+reader (`dat.go`), column schemas (`spec_gen.go`, one-time transform of
+`spec.lua`, Go-maintained), statdesc engine (`statdesc.go`), LuaJIT PRNG
+(`luaprng.go`) and hash-table iteration (`luatab.go`) replicas (both baked
+into *data*: LegionPassives offsets, tradeHashes order), and 23 of 24
+`Scripts/*.lua` as document builders. Extraction stays with
 `bun_extract_file.exe` (Export/ggpk/README.md); `WriteEnumFiles` replaces
-`enums.lua`'s synthetic dat writes. Verification: run everything over the extracted
-GGPK and byte-compare all 123 generated files against the checked-in copies —
-`TestExportAgainstReference`, 123/123. Excluded by decision: `legionSprites.lua`
-(GIMP sprite-sheet asset pipeline; the checked-in PNGs/tree-legion.lua stay
-as-is).
+`enums.lua`'s synthetic dat writes. Verification: build every document over
+the extracted GGPK, round-trip through JSON, render back to the reference's
+`Data/*.lua` byte format with `internal/luarender` (test-only; holds all the
+Lua serialisation quirks and dies with the archive) and byte-compare all 123
+files against the checked-in copies — `TestExportAgainstReference`, 123/123.
+Excluded by decision: `legionSprites.lua` (GIMP sprite-sheet asset pipeline;
+the checked-in PNGs/tree-legion.lua stay as-is).
 
 ## Dependencies
 

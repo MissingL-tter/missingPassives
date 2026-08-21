@@ -34,23 +34,37 @@ disagreements.**
 ## export
 
 A Go rewrite of `.archive/src/Export/` — the tool that reads the game's
-`.dat64` tables out of the GGPK and generates every `Data/*.lua` file marked
-"automatically generated". `export/` holds the dat64 reader, column schemas,
-the stat-description engine and 23 of the 24 export scripts (`legionSprites`,
-a GIMP sprite-sheet pipeline, is excluded by decision); `cmd/pobexport` is the
-CLI:
+`.dat64` tables out of the GGPK and produces the game data the application
+consumes. Its output is **structured JSON documents** (one per script, typed
+by the `gamedata` package) — no Lua anywhere in the pipeline. `export/` holds
+the dat64 reader, column schemas, the stat-description engine and 23 of the
+24 export scripts as document builders (`legionSprites`, a GIMP sprite-sheet
+pipeline, is excluded by decision); `cmd/pobexport` is the CLI:
 
 ```sh
 # extraction stays with bun_extract_file.exe — see .archive/src/Export/ggpk/README.md
 go run ./cmd/pobexport -src .archive/src/Export/ggpk -out <dir> [script ...]
 ```
 
-**`TestExportAgainstReference`** runs every script over the extracted GGPK and
-byte-compares all 123 generated files against the checked-in copies the Lua
-exporter produced from the same game version. **123 / 123 agree.** Where the
-reference leaks LuaJIT internals into its output, the port replicates them
-exactly: the default-seeded `math.random` stream (`export/luaprng.go`) and
-number-keyed `pairs()` iteration order (`export/luatab.go`, verified against
+**`gamedata/`** defines the documents: typed, JSON-tagged structs (costs,
+mods, bases, skills, minions, uniques, stat descriptions, ...). This is the
+data model the calculation engine will consume.
+
+**`internal/luarender/`** turns those documents back into the byte-exact
+`Data/*.lua` files the reference Lua exporter produced. It exists only for
+the differential test and is imported by nothing else; the serialisation
+quirks of the reference (`%.14g` text, `pairs()` layouts, template
+interleaving) live here, and the package is deleted whole when the archive
+comparison stops being the contract.
+
+**`TestExportAgainstReference`** builds every document over the extracted
+GGPK, round-trips it through JSON, renders it back to Lua with luarender and
+byte-compares all 123 files against the checked-in copies the Lua exporter
+produced from the same game version. **123 / 123 agree.** Where the reference
+leaks LuaJIT internals into its *data*, the builders replicate them exactly:
+the default-seeded `math.random` stream (`export/luaprng.go`, baked into
+LegionPassives layout offsets) and number-keyed `pairs()` iteration order
+(`export/luatab.go`, baked into tradeHashes entry order; verified against
 LuaJIT over 3,000 randomized tables).
 
 ## Verification
