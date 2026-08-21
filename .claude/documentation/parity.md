@@ -7,9 +7,9 @@ with its dependencies met can be picked up at any time.
 **Checking a module off.** `[ ]` not started · `[~]` in progress / partial ·
 `[x]` done. Done means: ported to Go, with a differential test against the
 `.archive` implementation that **fails on any disagreement** and passes at
-100% — the modparser standard (its two oracles: 13,173/13,173 corpus lines,
-8,800/8,800 table entries). A module without a runnable Lua oracle (pure view
-code) instead states in its row what "verified" meant. Update the row's status,
+100% — the modparser standard (its archive dumps: 13,173/13,173 corpus lines,
+8,800/8,800 table entries). A module without a runnable Lua archive dump (pure
+view code) instead states in its row what "verified" meant. Update the row's status,
 add the verifying test's name, and keep the reference files/lines column
 untouched — it describes the reference, not the port.
 
@@ -18,7 +18,7 @@ untouched — it describes the reference, not the port.
 - `logic` — calculation, parsing, game data, persistent state. No presentation.
 - `view` — presentation, layout, input handling. No domain knowledge.
 - `mixed` — both, interleaved. The seam is named per row; port the logic half
-  first, oracle it, then build the view half on top.
+  first, verify it against the archive, then build the view half on top.
 
 All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
@@ -26,9 +26,9 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
 | | count |
 |---|---|
-| done | 2 (`mod-parser`, `export-tooling`) |
+| done | 3 (`mod-parser`, `export-tooling`, `mod-store`) |
 | in progress | 0 |
-| not started | 38 |
+| not started | 37 |
 
 ---
 
@@ -40,8 +40,8 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 | `[ ]` | `calc-offence` | `Modules/CalcOffence.lua` `CalcActiveSkill.lua` `CalcMirages.lua` `CalcTriggers.lua` | 9,145 | |
 | `[ ]` | `calc-defence` | `Modules/CalcDefence.lua` | 3,828 | |
 | `[ ]` | `calc-breakdown` | `Modules/CalcBreakdown.lua` | 251 | |
-| `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/oracle_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map |
-| `[ ]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `/modparser` already defines the consumer-side interfaces (`modStoreWriter`) its jewel functions need. Also owns `modLib.mergeKeystones` (ModTools.lua:226), deferred here from `mod-parser` because it needs a live ModDB + tree keystone map |
+| `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/parse_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map |
+| `[x]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `test/modstore_test.go` 18,525 checks, 0 disagreements: the parsed corpus distributed over a store tree with fixture actors/configs, every aggregation (Sum/More/Flag/Override/List/Tabulate/HasMod/Max/Min/GetMultiplier/GetCondition), construction behaviours (ScaleAdd/Merge/Replace/Convert), `mergeKeystones`, plus 59 synthetic mods covering the tag branches the corpus never produces. Reference crashes are part of the contract (recorded as error sentinels, the port fails identically) |
 | `[ ]` | `stat-describer` | `Modules/StatDescriber.lua` | 292 | |
 
 `mod-parser` converts the game's English mod text into structured modifiers:
@@ -73,7 +73,7 @@ orbit geometry, connector construction and cluster-jewel subgraph building.
 | `[ ]` | `build-core` | `Modules/Build.lua` | 2,091 | |
 | `[ ]` | `passive-spec` | `Classes/PassiveSpec.lua` | 2,407 | |
 | `[ ]` | `undo` | `Classes/UndoHandler.lua` | 51 | |
-| `[ ]` | `display-stats` | `Modules/BuildDisplayStats.lua` | 250 | output byte-locked (memory `statbox-byte-lock`) — oracle should be byte-level |
+| `[ ]` | `display-stats` | `Modules/BuildDisplayStats.lua` | 250 | output byte-locked (memory `statbox-byte-lock`) — the archive comparison should be byte-level |
 | `[ ]` | `common` | `Modules/Common.lua` `Utils.lua` | 1,209 | port pieces on demand; note what landed here |
 | `[ ]` | `headless-adapter` | `HeadlessWrapper.lua` | 227 | the host-environment contract; its Go analogue emerges from whatever the ported modules need |
 
@@ -103,7 +103,7 @@ redirect catcher.
 
 ## View
 
-No domain knowledge; presentation and input only. No Lua oracle is possible —
+No domain knowledge; presentation and input only. No Lua archive dump is possible —
 each row must state its own verification when checked off (golden screenshots,
 DOM/state assertions, or manual sign-off noted here).
 
@@ -184,7 +184,7 @@ one-time transform of `spec.lua`, Go-maintained), statdesc engine
 (`statdesc.go`), LuaJIT PRNG (`luaprng.go`) and hash-table iteration
 (`luatab.go`) replicas, and 23 of 24 `Scripts/*.lua`. Extraction stays with
 `bun_extract_file.exe` (Export/ggpk/README.md); `WriteEnumFiles` replaces
-`enums.lua`'s synthetic dat writes. Oracle: run everything over the extracted
+`enums.lua`'s synthetic dat writes. Verification: run everything over the extracted
 GGPK and byte-compare all 123 generated files against the checked-in copies —
 `TestExportAgainstReference`, 123/123. Excluded by decision: `legionSprites.lua`
 (GIMP sprite-sheet asset pipeline; the checked-in PNGs/tree-legion.lua stay
@@ -213,7 +213,7 @@ assets ──> tooltips, items-view, tree-view, calcs-view
 export-tooling ──> game-data          (done; generates its input from the GGPK)
 ```
 
-Claimable now (dependencies met or absent): `mod-store`, `stat-describer`, `pantheon`, `undo`,
+Claimable now (dependencies met or absent): `calc-core` (mod-store done), `stat-describer`, `pantheon`, `undo`,
 `common`, `notes` (logic), `party` (logic), `toast`, `minion-library`,
 `ext-build-lists`, `display-stats`, `build-list` (logic), `game-data`
 (export-tooling now feeds it).
