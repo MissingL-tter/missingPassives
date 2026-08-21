@@ -418,3 +418,9 @@ func ModTags(m *Mod) []Tag {
 	}
 	return out
 }
+
+// CopyValue deep-copies a mod value the way copyTable does (for stores that
+// need to mutate evaluated copies).
+func CopyValue(v any) any {
+	return copyAny(v)
+}

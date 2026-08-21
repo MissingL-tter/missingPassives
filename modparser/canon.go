@@ -101,6 +101,12 @@ func writeCanonMod(sb *strings.Builder, m *Mod) {
 	if m.SourceSet {
 		kv["source"] = m.Source
 	}
+	if m.Replaced {
+		kv["replaced"] = true
+	}
+	if m.Converted {
+		kv["converted"] = true
+	}
 	keys := make([]string, 0, len(kv)+len(m.Tags))
 	for i := range m.Tags {
 		if m.Tags[i] != nil { // a nil tag is a hole in the Lua table

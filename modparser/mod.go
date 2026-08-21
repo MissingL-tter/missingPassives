@@ -17,6 +17,8 @@ type Mod struct {
 	KeywordFlags int64
 	Source       string
 	SourceSet    bool
+	Replaced     bool // set by ModDB ReplaceMod bookkeeping (mod.replaced)
+	Converted    bool // set by ModDB ConvertMod bookkeeping (mod.converted)
 	Tags         []any
 }
 
@@ -179,10 +181,9 @@ func newScanTable(name string, m map[string]any, plain bool) *scanTable {
 // an ASCII-lowercased copy while the remainder is cut from the original.
 //
 // Earliest match wins; ties go to the longest match. A full tie (same span)
-// prefers the entry with fewer capture groups — the more literal, more
+// prefers the entry with the higher literalWeight — the more literal, more
 // specific pattern — then the longer pattern text. The reference broke this
-// tie by Lua pattern length, which the regex conversion does not preserve;
-// group count expresses the same specificity ordering.
+// tie by Lua pattern length, which the regex conversion does not preserve.
 func scan(line string, t *scanTable) (value any, rest string, caps []string) {
 	lineLower := asciiLower(line)
 	var bestVal any
