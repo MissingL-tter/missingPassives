@@ -68,6 +68,22 @@ local function sortedPairs(t)
 	end
 	table.sort(numKeys)
 	table.sort(strKeys)
+	-- Table keys are sets of objects (env.flasks, env.tinctures): their
+	-- pairs() order is LuaJIT hash order over addresses, i.e. random per
+	-- process. Two flasks granting an identical mod then differ only by
+	-- which one is merged first, so the dump was not reproducible. Order
+	-- them by item id when every key carries one; the Go replay sorts the
+	-- same way (calc.sortedFlasks).
+	local allHaveId = #otherKeys > 0
+	for _, k in ipairs(otherKeys) do
+		if type(k) ~= "table" or type(rawget(k, "id")) ~= "number" then
+			allHaveId = false
+			break
+		end
+	end
+	if allHaveId then
+		table.sort(otherKeys, function(a, b) return a.id < b.id end)
+	end
 	local keys = {}
 	for _, k in ipairs(numKeys) do
 		keys[#keys + 1] = k
@@ -169,6 +185,10 @@ end
 -- defence/offence handoff (CalcPerform L3721+) is stubbed out so the
 -- captured state is exactly what the ported body must reproduce.
 -- calcTotemLife stays real (mid-body call for totem skills).
+-- The real handoff functions are kept so later checkpoints can run them
+-- explicitly, one stage at a time, on the post-perform-body state.
+local realDefence = calcs.defence
+local realBuildDefenceEstimations = calcs.buildDefenceEstimations
 calcs.defence = function() end
 calcs.buildDefenceEstimations = function() end
 calcs.triggers = function() end
@@ -627,6 +647,44 @@ local function dumpVariant(name, build)
 	if env.minion then
 		emit(name .. ".performMinionDb", dbState(env.minion.modDB))
 		emit(name .. ".performMinionOutput", scalars(env.minion.output or {}))
+	end
+
+	-- Defence stage, run explicitly on the post-perform-body state (the
+	-- reference reaches it at CalcPerform L3721). buildDefenceEstimations
+	-- and the offence side stay stubbed, so these records are exactly what
+	-- calcs.defence produces. The player and minion calls are back-to-back
+	-- here, where the reference interleaves buildDefenceEstimations between
+	-- them; the replay does the same, so the comparison stays honest.
+	realDefence(env, env.player)
+	if env.minion then
+		realDefence(env, env.minion)
+	end
+	emit(name .. ".defenceDbs", {
+		mod = dbState(env.modDB),
+		enemy = dbState(env.enemyDB),
+		item = dbState(env.itemModDB),
+	})
+	emit(name .. ".defenceOutput", scalars(env.player.output or {}))
+	if env.minion then
+		emit(name .. ".defenceMinionDb", dbState(env.minion.modDB))
+		emit(name .. ".defenceMinionOutput", scalars(env.minion.output or {}))
+	end
+
+	-- EHP / max-hit stage (CalcPerform L3723). Same technique: run it
+	-- explicitly on the post-defence state, player then minion.
+	realBuildDefenceEstimations(env, env.player)
+	if env.minion then
+		realBuildDefenceEstimations(env, env.minion)
+	end
+	emit(name .. ".ehpDbs", {
+		mod = dbState(env.modDB),
+		enemy = dbState(env.enemyDB),
+		item = dbState(env.itemModDB),
+	})
+	emit(name .. ".ehpOutput", scalars(env.player.output or {}))
+	if env.minion then
+		emit(name .. ".ehpMinionDb", dbState(env.minion.modDB))
+		emit(name .. ".ehpMinionOutput", scalars(env.minion.output or {}))
 	end
 end
 
