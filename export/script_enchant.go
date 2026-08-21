@@ -267,8 +267,9 @@ func scriptEnchant(x *Ctx) error {
 		// the Lua (no outer break).
 		findSkill := func(col string, stat *Row) {
 			for _, as := range x.Dat("ActiveSkills").GetRowList(col, stat) {
-				// The Lua compares SkillTypes rows against the number 39,
-				// which is always false; only the id check can set isVaal.
+				// #EVAL: archive parity — the Lua compares SkillTypes ROWS
+				// against the number 39, which is always false; only the id
+				// substring check can set isVaal.
 				isVaal := strings.Contains(luaStr(as.Get("Id")), "vaal")
 				if dn := luaStr(as.Get("DisplayName")); !isVaal && dn != "" {
 					skill = dn

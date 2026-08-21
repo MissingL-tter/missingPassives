@@ -523,7 +523,8 @@ func scriptBossData(x *Ctx) error {
 					if level == 0 {
 						set.count += 3
 					} else {
-						// The Lua adds to base.count here (a bug it keeps).
+						// #EVAL: archive parity — the Lua adds to base.count here
+						// instead of uber.count (a bug it keeps).
 						set.count = base.count + 3
 					}
 				}

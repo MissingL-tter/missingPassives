@@ -90,8 +90,8 @@ func scriptSkills(x *Ctx) error {
 	gems := map[string]bool{}
 	trueGemNames := map[string]string{}
 
-	// statInterpolation cells are aliased and mutated across levels sharing
-	// a stat row, as in the Lua.
+	// #EVAL: archive parity — statInterpolation cells are aliased and
+	// mutated across levels sharing a stat row, exactly as the Lua does.
 	type interpHolder struct{ vals []any }
 	interpHolders := map[*Row]*interpHolder{}
 	interpFor := func(statRow *Row) *interpHolder {

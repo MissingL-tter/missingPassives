@@ -2952,6 +2952,8 @@ var specialModListData = map[string]any{
 		return []any{mod("CooldownRecovery", "OVERRIDE", c.n(1), nil, 0, KeywordFlag.Warcry)}
 	}),
 	`non-instant warcries you use yourself have no cooldown`: fn(func(c caps) any {
+		// #EVAL: archive parity — the reference writes SkillType.Totem here,
+		// which does not exist in Global.lua, so the list carries nil.
 		return []any{mod("CooldownRecovery", "OVERRIDE", 0, nil, 0, KeywordFlag.Warcry, Tag{"type": "SkillType", "skillTypeList": []any{SkillType.Instant, nil, SkillType.Triggered}, "neg": true})}
 	}),
 	`non-instant warcries ignore their cooldown when used`: fn(func(c caps) any {

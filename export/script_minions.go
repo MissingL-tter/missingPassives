@@ -15,7 +15,9 @@ func init() {
 }
 
 // tableToString ports minions.lua's tableToString: sorted keys, nested
-// tables inlined with a dotted prefix, comma placement by sorted index.
+// tables inlined with a dotted prefix.
+// #EVAL: archive parity — the comma logic skips nested-table entries, so a
+// nested table directly abuts its neighbour without a separator.
 func tableToString(tbl luaTable, pre string) string {
 	s := "{ "
 	keys := make([]any, 0, len(tbl))

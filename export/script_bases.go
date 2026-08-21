@@ -92,7 +92,8 @@ func scriptBases(x *Ctx) error {
 				if idx >= 0 {
 					tags = append(tags[:idx], tags[idx+1:]...)
 				} else if len(tags) > 0 {
-					// table.remove(tags, nil) pops the last element.
+					// #EVAL: archive parity — a remove_tag for an absent tag is
+					// table.remove(tags, nil), which pops the LAST element.
 					tags = tags[:len(tags)-1]
 				}
 			} else if strings.Contains(line, "tag") {

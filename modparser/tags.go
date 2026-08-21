@@ -659,7 +659,8 @@ var modTagList = map[string]any{
 	}),
 	`for each different non-instant spell you[' ]h?a?ve cast recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "NonInstantSpellCastRecently"}},
 	`if you[' ]h?a?ve used a warcry recently`:                          Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
-	// "when you warcry" appears twice in the reference with the same value.
+	// #EVAL: archive parity — "when you warcry" appears twice in the
+	// reference with the same value (duplicate table key).
 	`when you warcry`:                                 Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
 	`if you[' ]h?a?ve warcried recently`:              Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
 	`if you[' ]h?a?ve not warcried recently`:          Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently", "neg": true}},

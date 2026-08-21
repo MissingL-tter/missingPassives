@@ -2,6 +2,9 @@
 // with period 2^223, seeded exactly as LuaJIT seeds it at startup (seed 0.0).
 // legionPassives.lua consumes math.random() without seeding, so its output
 // depends on this exact sequence.
+//
+// #EVAL: archive parity only — once the generated data format is Go-owned,
+// random layout offsets in it deserve replacing, and this file goes away.
 
 package export
 
