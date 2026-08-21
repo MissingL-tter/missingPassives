@@ -128,6 +128,11 @@ func (x *Ctx) getOTStats(otFile string, modList []any) []any {
 // WalkTemplate reads a hand-maintained template and calls the handler for
 // each #directive line (the build-side half of processTemplateFile).
 func (x *Ctx) WalkTemplate(name, inDir string, directives map[string]func(args string)) error {
+	return x.WalkTemplateLines(name, inDir, directives, nil)
+}
+
+// WalkTemplateLines additionally reports passthrough (non-directive) lines.
+func (x *Ctx) WalkTemplateLines(name, inDir string, directives map[string]func(args string), passthrough func(line string)) error {
 	raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", filepath.FromSlash(inDir), name+".txt"))
 	if err != nil {
 		return err
@@ -141,6 +146,8 @@ func (x *Ctx) WalkTemplate(name, inDir string, directives map[string]func(args s
 			if fn := directives[m[1]]; fn != nil {
 				fn(m[2])
 			}
+		} else if passthrough != nil {
+			passthrough(line)
 		}
 	}
 	return nil

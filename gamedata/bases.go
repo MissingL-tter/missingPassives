@@ -8,6 +8,10 @@ package gamedata
 type BasesData struct {
 	Types map[string][][]ItemBase `json:"types"`
 	Rares []*RareItem             `json:"rares"`
+	// RareBlobs is the complete ordered rare-template list as the generated
+	// file carries it: the directive outputs interleaved with the
+	// hand-written blobs the template holds as passthrough.
+	RareBlobs [][]string `json:"rareBlobs"`
 }
 
 // RareItem is one generated crafted-item template ([[...]] block).

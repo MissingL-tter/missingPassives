@@ -301,6 +301,24 @@ func buildBases(x *Ctx) (any, error) {
 	doc := gamedata.BasesData{Types: map[string][][]gamedata.ItemBase{}}
 	var curEvents *[][]gamedata.ItemBase
 
+	// While walking the Rares template, mirror the generated file's line
+	// stream (directive blobs merged with the hand-written passthrough
+	// blobs) to recover the complete rare list.
+	inRares := false
+	var raresStream []string
+	streamBlob := func(lines []string) {
+		if !inRares {
+			return
+		}
+		if n := len(raresStream); n > 0 && raresStream[n-1] == "]]," {
+			raresStream[n-1] = "]],[["
+		} else {
+			raresStream = append(raresStream, "[[")
+		}
+		raresStream = append(raresStream, lines...)
+		raresStream = append(raresStream, "]],")
+	}
+
 	directives := map[string]func(args string){}
 	directives["type"] = func(args string) { state.typ = args }
 	directives["subType"] = func(args string) { s := args; state.subType = &s }
@@ -377,6 +395,7 @@ func buildBases(x *Ctx) (any, error) {
 			valueLines(&lines, values)
 		}
 		doc.Rares = append(doc.Rares, &gamedata.RareItem{Lines: lines})
+		streamBlob(lines)
 	}
 	directives["setBase"] = func(args string) {
 		var baseName, itemName, values string
@@ -426,18 +445,32 @@ func buildBases(x *Ctx) (any, error) {
 			valueLines(&lines, group)
 		}
 		doc.Rares = append(doc.Rares, &gamedata.RareItem{Lines: lines})
+		streamBlob(lines)
 	}
 
 	for _, name := range append(append([]string{}, basesItemTypes...), "Rares") {
 		state = &baseState{}
 		var events [][]gamedata.ItemBase
 		curEvents = &events
+		if name == "Rares" {
+			inRares = true
+			err := x.WalkTemplateLines(name, "Bases/", directives, func(line string) {
+				raresStream = append(raresStream, line)
+			})
+			inRares = false
+			if err != nil {
+				return nil, err
+			}
+			f := splitUniqueFile(raresStream)
+			for _, sec := range f.Sections {
+				doc.RareBlobs = append(doc.RareBlobs, sec.Items...)
+			}
+			continue
+		}
 		if err := x.WalkTemplate(name, "Bases/", directives); err != nil {
 			return nil, err
 		}
-		if name != "Rares" {
-			doc.Types[name] = events
-		}
+		doc.Types[name] = events
 	}
 	return doc, nil
 }

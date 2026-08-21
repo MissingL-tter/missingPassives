@@ -24,6 +24,8 @@ type BossSkill struct {
 	UberSpeed   *float64 `json:"uberSpeed,omitempty"` // emitted when set and != 700
 	CritChance  int64    `json:"critChance"`          // emitted when != 5
 	EarlierUber bool     `json:"earlierUber,omitempty"`
+	// Tooltip is the raw #tooltip template argument (a Lua string literal).
+	Tooltip string `json:"tooltip"`
 
 	// Additional stats; the counts gate emission and reproduce the
 	// reference's base/uber count bookkeeping. Values are pre-rendered

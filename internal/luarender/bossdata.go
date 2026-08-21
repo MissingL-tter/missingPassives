@@ -96,8 +96,8 @@ func renderBossData(d gamedata.BossData, tpl Templates) (map[string]string, erro
 				b.W("\n		}")
 			}
 		},
-		"tooltip": func(args string, b *B) {
-			b.W(",\n		tooltip = ", args, "\n")
+		"tooltip": func(_ string, b *B) {
+			b.W(",\n		tooltip = ", d.Skills[nextSkill-1].Tooltip, "\n")
 			b.W("	},\n")
 		},
 		"skillList": func(_ string, b *B) {

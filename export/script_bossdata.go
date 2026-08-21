@@ -732,7 +732,8 @@ func buildBossData(x *Ctx) (any, error) {
 		}
 		doc.Skills = append(doc.Skills, bs)
 	}
-	skillsDirectives["tooltip"] = func(string) {
+	skillsDirectives["tooltip"] = func(args string) {
+		doc.Skills[len(doc.Skills)-1].Tooltip = args
 		state.skill = nil
 	}
 	skillsDirectives["skillList"] = func(string) {
