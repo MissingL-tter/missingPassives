@@ -255,7 +255,177 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 				entry.Mods[i] = processModBlind(ge, m, key)
 			}
 		}
+		if ge.FullCustom {
+			materializeFullCustom(ge)
+		}
 	}
+}
+
+// materializeFullCustom mirrors a full-custom skill's hand-written keys
+// into the typed GrantedEffect fields the calc engine reads. Tables are
+// SHARED with the Custom map (mutation visibility as in the reference);
+// the game-data canon still reads Custom for full-custom skills, so this
+// adds views without changing canon bytes.
+func materializeFullCustom(ge *GrantedEffect) {
+	c := ge.Custom
+	toBoolMap := func(v any) map[string]bool {
+		m, ok := v.(map[string]any)
+		if !ok {
+			return nil
+		}
+		out := map[string]bool{}
+		for k, e := range m {
+			if b, ok := e.(bool); ok && b {
+				out[k] = true
+			}
+		}
+		return out
+	}
+	if v, ok := c["skillTypes"].(map[string]any); ok {
+		ge.SkillTypes = map[int64]bool{}
+		for k, e := range v {
+			if n, err := parseLuaNumber(k); err == nil {
+				if b, ok := e.(bool); ok && b {
+					ge.SkillTypes[int64(n)] = true
+				}
+			}
+		}
+	}
+	if v, ok := c["minionSkillTypes"].(map[string]any); ok {
+		ge.MinionSkillTypes = map[int64]bool{}
+		for k, e := range v {
+			if n, err := parseLuaNumber(k); err == nil {
+				if b, ok := e.(bool); ok && b {
+					ge.MinionSkillTypes[int64(n)] = true
+				}
+			}
+		}
+	}
+	if bf := toBoolMap(c["baseFlags"]); bf != nil {
+		ge.HasBaseFlags = true
+		ge.BaseFlags = bf
+	}
+	if wt := toBoolMap(c["weaponTypes"]); wt != nil {
+		ge.WeaponTypes = wt
+	}
+	if v, ok := c["stats"].([]any); ok {
+		ge.HasStats = true
+		ge.Stats = nil
+		for _, s := range v {
+			if str, ok := s.(string); ok {
+				ge.Stats = append(ge.Stats, str)
+			}
+		}
+		if ge.Stats == nil {
+			ge.Stats = []string{}
+		}
+	}
+	if v, ok := c["baseMods"].([]any); ok {
+		ge.BaseMods = v
+	}
+	if v, ok := c["support"].(bool); ok {
+		ge.Support = v
+	}
+	if v, ok := c["castTime"].(float64); ok {
+		ge.CastTime = &v
+	}
+	toTypeList := func(v any) []any {
+		l, ok := v.([]any)
+		if !ok {
+			return nil
+		}
+		out := make([]any, len(l))
+		for i, e := range l {
+			if n, ok := e.(float64); ok {
+				out[i] = int64(n)
+			} else {
+				out[i] = e
+			}
+		}
+		return out
+	}
+	if l := toTypeList(c["addSkillTypes"]); l != nil {
+		ge.AddSkillTypes = l
+	}
+	if l := toTypeList(c["excludeSkillTypes"]); l != nil {
+		ge.ExcludeSkillTypes = l
+	}
+	if l := toTypeList(c["requireSkillTypes"]); l != nil {
+		ge.RequireSkillTypes = l
+	}
+	if v, ok := c["levels"].([]any); ok {
+		ge.HasLevels = true
+		ge.Levels = map[float64]*SkillLevel{}
+		for i, lvv := range v {
+			lvl := &SkillLevel{Values: []float64{}}
+			var kv map[string]any
+			switch t := lvv.(type) {
+			case map[string]any:
+				kv = t
+			case *modparser.D:
+				kv = t.KV
+				for _, av := range t.Arr {
+					if n, ok := av.(float64); ok {
+						lvl.Values = append(lvl.Values, n)
+					}
+				}
+			}
+			for k, e := range kv {
+				switch k {
+				case "statInterpolation":
+					if si, ok := e.([]any); ok {
+						for _, sv := range si {
+							if n, ok := sv.(float64); ok {
+								lvl.StatInterpolation = append(lvl.StatInterpolation, n)
+							}
+						}
+					}
+				case "cost":
+					lvl.Cost = map[string]float64{}
+					if cm, ok := e.(map[string]any); ok {
+						for ck, cv := range cm {
+							if n, ok := cv.(float64); ok {
+								lvl.Cost[ck] = n
+							}
+						}
+					}
+				default:
+					// Extra holds the numeric scalars; boolean level keys
+					// stay reachable through Custom["levels"]
+					if n, ok := e.(float64); ok {
+						lvl.Extra = mapSet(lvl.Extra, k, n)
+					}
+				}
+			}
+			ge.Levels[float64(i+1)] = lvl
+		}
+	}
+}
+
+func mapSet(m map[string]float64, k string, v float64) map[string]float64 {
+	if m == nil {
+		m = map[string]float64{}
+	}
+	m[k] = v
+	return m
+}
+
+// LazyStatMapCopy builds the skillStatMapMeta.__index result for a stat
+// key that is not in the skill's own statMap: a deep copy of the shared
+// skillStatMap entry run through the metatable's blind processMod pass
+// (Data.lua L1004-1016). Returns nil when the shared map lacks the key.
+// Pure: the caller memoizes (the calc replay keeps copies per env so the
+// shared data — whose canon the game-data test compares — stays pristine).
+func LazyStatMapCopy(ge *GrantedEffect, key string) *StatMapEntry {
+	base := skillStatMap[key]
+	if base == nil {
+		return nil
+	}
+	entry := copyStatMapEntry(base)
+	for i, m := range entry.Mods {
+		entry.Mods[i] = processModBlind(ge, m, key)
+	}
+	return entry
 }
 
 // anyList adapts []any so nil stays nil for forEachTableValue.
