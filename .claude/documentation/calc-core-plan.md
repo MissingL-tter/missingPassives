@@ -96,8 +96,19 @@ DONE:
   (id→type) + radiusNodeData (unallocated in-radius nodeFixtures) +
   conqueredBy; per-call buildModListForNode sequences captured as
   `.nodeOrders` (the tail beyond allocOrders = extraRadiusNodeList pairs
-  order — process-random, so radius-build dumps are NOT byte-stable
-  across runs; each file is self-consistent). modparser exports
+  order). That order WAS process-random, making radius-build dumps unstable
+  across runs; the sorted-pairs injection around LoadModule "Modules/Calcs"
+  fixed it. A SECOND source survived until the EHP stage exposed it: the
+  shim sorted numeric and string keys but left TABLE keys in raw order, and
+  env.flasks/env.tinctures are sets keyed by item tables, so pairs() walked
+  them in hash order over addresses — random per process. coc carries two
+  flasks granting an identical Armour mod, so the dedup kept whichever
+  merged first and `.performDbs` recorded a different mod `source` per run.
+  It passed only by luck (the Go side sorts by item id and the dump happened
+  to agree). Fixed by ordering table keys by item id when every key has one,
+  matching calc.sortedFlasks. VERIFY REPRODUCIBILITY by dumping one source
+  twice in separate processes and cmp-ing — not by re-running the Go test,
+  which cannot see a dump that is stable-but-wrong. modparser exports
   JewelStoreWriter/JewelNodeRef/JewelNodeFn aliases.
 - **Granted-skill socket groups PORTED** (skills.go): match-or-create
   groups from env.grantedSkills + processSocketGroup port (#EVAL: the
@@ -179,7 +190,35 @@ stage caches (getCachedOutputValue), calcs.resistances
 AffectedByAuraMod (nil-global in reference), ProcessSocketGroup nameSpec
 migration path, CALCS mode. Corpus: 9 sources / 25 variants.
 
-NEXT: CalcDefence, then CalcOffence (final outputs -> calc-core [x]).
+DONE: calcs.defence (CalcDefence.lua L636-1632) + calcs.resistances,
+25/25 byte-identical on .defenceDbs/.defenceOutput/.defenceMinionDb/
+.defenceMinionOutput. Files: calc/defence.go (resistances + shared
+helpers), defencebody.go (action speed, block, res-driven conversions),
+defenceprimary.go (ward/ES/armour/evasion, evade chance),
+defencerecovery.go (suppression, dodge, leech caps, regen, ES recharge),
+defencetail.go (recoup, damage reduction, avoidance, self-ailment
+duration/effect). Entry point: env.RunDefence() = player then minion,
+back to back, matching the dump.
+
+The dump reaches the stage by keeping the real calcs.defence in a local
+before stubbing the handoff, then calling it explicitly AFTER the perform
+records are emitted — so both checkpoints stay independent and can be
+compared separately. Same trick extends to the offence stages.
+
+Defence traps (same family as perform's, worth expecting again):
+- Lua Flag() yields nil, so `output.X = Flag(...)` writes NO key when
+  false: CappingES (an or-chain ending in a configInput read),
+  Corrupted-Blood/Maim/Hinder/Knockback immunity, and
+  EnergyShieldRechargeAppliesToLife (`Flag(A) and not Flag(B)` — absent
+  when A is unset, but present-and-false when A is set and B is too).
+  By contrast `not (...)` and `x ~= y` DO store real booleans.
+- Party-tab branches (BlockChance/MaxBlock/MaxLifeLeech equal-to-party,
+  MovementSpeedEqualHighestLinkedPlayers) panic: ladder builds never
+  populate partyTab.
+- Negative control verified: perturbing one output value fails all 25.
+
+NEXT: CalcOffence (+ CalcActiveSkill, CalcMirages, CalcTriggers) and
+calcs.buildDefenceEstimations -> calc-core [x].
 
 ## Dump gotchas (hard-won)
 
