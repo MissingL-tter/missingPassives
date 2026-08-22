@@ -392,6 +392,76 @@ cache stays a dump fixture. Porting it also removes the last reason
 calc/globalcache.go has to be a fixture boundary, and is a prerequisite for
 CALCS mode and getCachedOutputValue. Then CalcFormat.lua.
 
+DONE (2026-08-22): corpus 12 -> 25 builds / 75 variants, all byte-identical.
+Guard-driven: pull a build for a panic (`mb search`), dump it, port until
+green. Closed this pass: Explosive Trap random radius + preDamageFunc,
+Explosive Arrow explosiveArrowFunc, Blade Blast / Ice Spear of Splitting /
+Lightning Tendrils of Eccentricity (preDamage + postCrit) / Herald of the
+Breach / Penance Brand of Dissipation callbacks, the "cast when damage
+taken" and "TriggeredMoltenStrike" trigger configs, the jewel-func AddList
+ModList argument, and TWO WHOLE MIRAGE PATHS (Mirage Archer, Sacred Wisps)
+-- which meant porting calcs.copyActiveSkill, CALCULATOR-mode initEnv and
+the nested calcs.perform.
+
+Mirage sub-environments:
+- copyActiveSkill runs createActiveSkill FIRST, then a whole second
+  initEnv (mode CALCULATOR, inheriting env.override), then
+  buildActiveSkillModList. CALCULATOR differs from MAIN only in skipping
+  write-backs that exist for the UI (node.finalModList, displayEffect,
+  displayLabel, jewelRadiusData, superseded, group.mainActiveSkill);
+  `superseded` is read only by SkillsTab, so nothing behavioural.
+- That second initEnv consumes its own buildModListForNodeList orders, so
+  the dump records them separately (`.mirageAllocOrders`/`.mirageNodeOrders`)
+  and ReplayInput carries them.
+- The dump's stubbed handoff applies to the nested perform too, so the
+  sub-env's output is the perform-body state -- exactly what Go's
+  env.Perform() produces. Compared as `.mirage` (name/count/skillPart) and
+  `.mirageOutput`.
+- `mainSkill.ModFlags` / `.KeywordFlags`, which every mirage path passes to
+  NewMod, are never assigned anywhere in the archive: both are nil.
+
+THREE HARNESS BUGS FOUND, each hidden behind a formatting or folding step:
+
+1. `_grantedEffect` is process-random for a SHARED statMap. Data.lua:1039
+   sets `grantedEffect.statMap._grantedEffect = grantedEffect` inside a
+   `pairs(data.skills)` loop; ExplosiveTrapAltX aliases ExplosiveTrap's
+   statMap table, so the backref is last-writer-wins over a random order --
+   and the lazy statMap copies then stamp the winner as the mod source even
+   for the other skill. Two dumps of the trap build differed in exactly one
+   byte range. Fixed by settling it in sorted id order in dump_calc.lua
+   (matching dump_gamedata's reassign pass) and modelling it in Go as
+   GrantedEffect.StatMapOwner, which LazyStatMapCopy stamps with.
+   ALWAYS re-verify a new dump twice with cmp.
+
+2. Fixtures were serialised at %.14g, which is lossy. The cospri build's
+   trigger sim ran 1000 attacks off the cached source rate; the fixture's
+   10.063177748344 and the reference's true 10.063177748344373 are the same
+   14 digits but land on either side of the loop's `<` bound, so the sim
+   counted 1000 triggers instead of 1001 and the trigger rate came out
+   0.1% low. canon.encodeExact (%.17g) now serialises replay INPUT; the
+   compared canons stay at 14 digits on both sides. Only re-dumped builds
+   carry exact fixtures; re-dump when a build shows an unexplained tail-digit
+   divergence.
+
+3. Go folds untyped constant expressions at arbitrary precision. `1 / 0.033`
+   as a Go constant is 30.303030303030305; Lua's runtime division is
+   30.303030303030301. data.Misc.ServerTickRate fed a `m_ceil(x * rate)`
+   tick rounding, so Absolution's 3.3s duration ceilinged to the next tick
+   in Go and not in the reference. Fixed with `1 / float64(0.033)`, which
+   forces the typed-constant rounding. Swept the rest of data/tables.go --
+   no other constant expression differs from its runtime form.
+
+Test-isolation note: processMod sets `ge.HasGlobalEffect` on the granted
+effect it is passed, so a calc run mutates the SHARED data set (faithfully
+-- the reference mutates its own global tables the same way, and
+calc/skills.go:551 reads the flag). The game-data canon is the post-load
+state, so gamedata_helper_test records hasGlobalEffect at load and
+TestGameDataAgainstReference restores it before comparing.
+
+MP_ONLY=<variant prefix> narrows TestCalcInitEnvAgainstReference to one
+build, so an unrelated variant's guard panic cannot pre-empt the one being
+diagnosed.
+
 ## Dump gotchas (hard-won)
 
 - HeadlessWrapper stubs `Inflate` to "" — without binding runtime/zlib1.dll
