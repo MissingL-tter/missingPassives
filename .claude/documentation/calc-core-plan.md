@@ -244,8 +244,108 @@ More #EVAL quirks in the EHP body:
   order-independent (sum / per-key init / subtract-from-all / min), so the
   Go maps need no ordering; only the dmgTypeList walks are sequenced.
 
-IN PROGRESS: calc-offence. Checkpoints are live and the corpus is
-triaged; no Go ported yet.
+DONE: calcs.offence (CalcOffence.lua L323-6168) — 24 of 25 variants
+byte-identical on .offenceDbs/.offenceOutput/.offenceSkillOutput/
+.offenceMinionDb/.offenceMinionOutput. Files: calc/offence.go (damage-type
+flag sets, calcDamage/calcAilmentSourceDamage, radius maths, conversion
+table), offencebody.go (entry, calcAreaOfEffect, calcResistForType,
+runSkillFunc, prologue), offenceskilldata.go (stat-conversion chain,
+repeats, random phys, momentum), offencetypestats.go (minion limits,
+chain/projectile/pierce, melee range, aura/curse/warcry/link, reservation
+mults, trap/mine/totem/brand/corpse), offenceduration.go, offencecosts.go,
+offenceconv.go (explosions, canDeal, per-cfg conversion tables, passList,
+combineStat), offencehitrate.go (accuracy, speed, trauma), offencemisc.go,
+offencewarcry.go (exerts, pacts, ruthless), offencecrit.go (crit, double/
+triple damage, culling, Cryogenesis redirect, base hit damage),
+offencedamage.go (the two-pass damage loop, resists, leech), offencedps.go
+(per-pass DPS, combine, leech rates), offenceailments.go + offencebleed.go
+(affliction chances, bleed/poison/ignite, non-damaging ailments, knockback,
+stun, impale), offencedot.go (decay, burning ground, generic DoT, cost per
+second, combined DPS), offenceselfhit.go (+ applyDmgTakenConversion).
+Entry point: env.RunOffence() = player then minion, matching the dump.
+Negative control: +1e-7 on AverageHit fails all 24.
+
+DONE: calcs.triggers + calcs.mirages, closing CALC-OFFENCE at 25/25 with
+NO slice skipped. Files: calc/triggers.go (helpers, findTriggerSkill, the
+1000-attack calcMultiSpellRotationImpact rotation sim, the RunTriggers
+entry), triggerhandler.go (defaultTriggerHandler), triggerconfig.go (the
+80-key configTable dispatch), mirages.go, globalcache.go.
+Checkpoints: .triggersDbs/.triggersOutput/.triggersSkillData and the new
+.triggersMinionOutput/.triggersMinionSkillData; the test now runs the exact
+dump sequence RunTriggersPlayer -> RunOffencePlayer (mirage-gated) ->
+RunTriggersMinion -> RunOffenceMinion.
+Negative control: +1e-9 on the simulated trigger rate fails exactly 7
+checkpoints -- coc.full triggersOutput/triggersSkillData/offenceOutput/
+offenceSkillOutput and holyrelic.full triggersMinionOutput/
+triggersMinionSkillData/offenceMinionOutput -- proving both that the
+trigger checkpoints are load-bearing and that offence consumes the rate.
+
+GLOBALCACHE IS A DUMP FIXTURE (.globalCache), not something the ported
+stages compute. Earlier plan text had the ordering wrong: it assumed the
+cache had to be filled by porting Calcs.lua buildOutput first. In the dump
+the cache is already populated by the app's own OnFrame buildOutput, and
+the dump's manual calcs.perform then OVERWRITES the main skill's entry with
+a pre-offence one (Speed nil, because offence is stubbed). Triggers reads a
+bounded field set -- enumerate it with
+  grep -oE "GlobalCache\.cachedData\[env\.mode\]\[[a-zA-Z]+\]\.[A-Za-z.]+" CalcTriggers.lua
+-- so the dump snapshots exactly those, immediately before realTriggers.
+A cache miss in the Go replay panics rather than inventing a value.
+
+Trigger traps:
+- `ignoresTickRate = ignoresTickRate or (storedUses and storedUses > 1)`
+  writes a REAL false when storedUses is present but 1; only an absent
+  storedUses leaves the key absent. Cost two variants until fixed.
+- `triggeredSkills[1] == packageSkillDataForSimulation(...)` compares two
+  freshly built tables, never true, so that arm reduces to
+  `ignoresTickRate and not config.triggeredSkillCond` (#EVAL).
+- `actor.mainSkill.triggeredBy.ignoresTickRate` is dead: nothing in the
+  whole archive sets that field (#EVAL).
+- The triggerCD read guards on actor.mainSkill.triggeredBy but reads
+  env.player.mainSkill.triggeredBy (#EVAL; same table for the player).
+- ProcessSocketGroup's triggered-cost wipe (SkillsTab.lua L1161) assigns
+  `cost = {}`, not nil, and mutates the SHARED granted-effect level.
+
+Guarded, not ported (loud panic, no corpus build reaches): 78 of the 80
+trigger configs, helmetFocusHandler, CWCHandler, the Arcanist Brand /
+Kitava's Thirst / Battlemage's Cry / Infernal Cry / Manaforged / Doom Blast
+/ stagesAreOverlaps branches of defaultTriggerHandler, and all 5 mirage
+paths. Widening the corpus is what would shrink that surface.
+
+Hand-written skill callbacks now live in calc/skillfuncs.go, keyed
+"<grantedEffectId>:<callbackName>", consulted by runSkillFunc before the
+UnportedFn panic. Ported so far: Cyclone/CycloneAltX/VaalCyclone
+initialFunc, BloodSacramentUnique initialFunc, EnemyExplode preDamageFunc,
+StormBrand preDamageFunc, RighteousFire preDamageFunc.
+
+Offence traps found by the differential:
+- `Sum(...) or 0 + X + Y` parses as `Sum(...) or (0+X+Y)`, and Sum always
+  returns a number, so TripleDamageChance drops the enemy and on-crit
+  terms entirely (#EVAL).
+- `(Flag and 100 or 0) + Sum(Avoid...)` parses as
+  `Flag and 100 or (0 + Sum(...))`: an immune enemy yields exactly 100 and
+  the avoid sum is dead (#EVAL).
+- `skillModList:More("MORE", cfg, "Accuracy")` puts "MORE" in the cfg slot,
+  so the real cfg becomes a never-matching modifier name — that Accuracy
+  More is cfg-less. Ported as More(&Cfg{}, "Accuracy"): a non-nil EMPTY
+  cfg, because ModStore:EvalMod distinguishes `not cfg` from a cfg whose
+  fields are all nil (#EVAL).
+- `cfg` in the Mantra of Flames BuffOnSelf lines is an undeclared global
+  (the pass local died with the loop above), i.e. nil (#EVAL).
+- `dotCfg` in the hit-damage resistance lookup is likewise a global; only
+  the ailment sections declare a local of that name (#EVAL).
+- `ipairs({["FRDamageTaken"] = ...})` iterates zero times, so the Forbidden
+  Rite self-hit block never runs (#EVAL).
+- ModStore:GetStat is an `or` chain: a stored FALSE in actor.output falls
+  through to cfg.skillStats, a stored 0 does not. Cfg.SkillStats had to
+  widen to map[string]any so the weapon passes can alias output.MainHand /
+  output.OffHand live.
+- The bleed/poison/ignite dot cfgs give skillCond a metatable falling back
+  to skillCfg/cfg. Only "CriticalStrike" is mutated after construction and
+  the dot table shadows it, so a snapshot copy is exact.
+- ProcessSocketGroup's triggered-cost wipe (env.TriggeredCostWipes) has its
+  first consumer here: the cost section must not read a wiped level's cost.
+- calcAreaOfEffect is DEFINED at L345 but first CALLED at L1152, after the
+  skill-type-stats section sets actor.weaponRange1.
 
 - The dump keeps calcs.triggers / mirages / offence in locals before
   stubbing and calls them explicitly after the EHP records. Triggers gets
@@ -286,10 +386,11 @@ triaged; no Go ported yet.
   leech 4010-4064, AILMENTS 4065-5554, secondary 5555-5675, DoT 5676-5863,
   self hit 5864-6010, combined DPS 6011-6168.
 
-NEXT: calcs.offence, section by section against .offenceOutput /
-.offenceSkillOutput. Then the buildOutput driver + cacheData, then
-calcs.triggers (which only needs its entry gate, the configTable dispatch
-and the CoC branch for this corpus).
+NEXT (calc-core, not calc-offence): the Calcs.lua buildOutput driver +
+cacheData. That is what fills GlobalCache for real; until it exists the
+cache stays a dump fixture. Porting it also removes the last reason
+calc/globalcache.go has to be a fixture boundary, and is a prerequisite for
+CALCS mode and getCachedOutputValue. Then CalcFormat.lua.
 
 ## Dump gotchas (hard-won)
 
