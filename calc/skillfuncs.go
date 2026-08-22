@@ -27,6 +27,7 @@ var skillFuncs = map[string]skillFunc{
 	"StormBrand:preDamageFunc":         brandHitTimeOverride,
 	"RighteousFire:preDamageFunc":      righteousFirePreDamageFunc,
 	"BlazingSalvo:preDamageFunc":       blazingSalvoPreDamageFunc,
+	"ShrapnelBallista:preDamageFunc":   shrapnelBallistaPreDamageFunc,
 }
 
 // cycloneInitialFunc ports the Cyclone family's initialFunc: the melee range
@@ -200,4 +201,30 @@ func blazingSalvoPreDamageFunc(env *Env, c *offenceCtx) {
 		mult = anyNum(activeSkill.SkillData["dpsMultiplier"])
 	}
 	activeSkill.SkillData["dpsMultiplier"] = mult * outNum(output, "ProjectileCount")
+}
+
+// shrapnelBallistaPreDamageFunc ports Shrapnel Ballista's preDamageFunc: the
+// shotgunning overlap multiplies DPS, and splits that return add a
+// conditional more-multiplier.
+func shrapnelBallistaPreDamageFunc(env *Env, c *offenceCtx) {
+	activeSkill, output := c.activeSkill, c.output
+	skillModList, skillData := activeSkill.SkillModList, activeSkill.SkillData
+	if !skillModList.Flag(nil, "SequentialProjectiles") {
+		mult := 1.0
+		if truthy(skillData["dpsMultiplier"]) {
+			mult = anyNum(skillData["dpsMultiplier"])
+		}
+		// `overlap or (Rain and ProjectileCount or 1)`
+		overlap := 1.0
+		if truthy(skillData["ShrapnelBallistaProjectileOverlap"]) {
+			overlap = anyNum(skillData["ShrapnelBallistaProjectileOverlap"])
+		} else if activeSkill.SkillTypes[modparser.SkillType.Rain] {
+			overlap = outNum(output, "ProjectileCount")
+		}
+		skillData["dpsMultiplier"] = mult * math.Min(overlap, outNum(output, "ProjectileCount"))
+	}
+	if splitCount := outNum(output, "SplitCount"); splitCount > 0 {
+		skillModList.AddMod(newMod("DPS", "MORE", splitCount*100, "Split Return", int64(0),
+			modparser.Tag{"type": "Condition", "var": "ReturningProjectile"}))
+	}
 }

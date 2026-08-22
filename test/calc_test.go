@@ -242,6 +242,9 @@ func decodeCalcNode(n map[string]any) *calc.NodeInput {
 		ConqueredBy:  optCalcBool(n, "conqueredBy"),
 		ModList:      decodeCalcModList(n["modList"]),
 	}
+	if v, ok := n["distanceToClassStart"].(float64); ok {
+		node.DistanceToClassStart = &v
+	}
 	if kv, ok := n["keystoneMod"]; ok {
 		node.KeystoneMod = decodeCanonMod(kv.(map[string]any))
 	}
@@ -651,6 +654,9 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		"bfbb.treeonly":       "calc_bfbb.jsonl",
 		"bfbb.noskills":       "calc_bfbb.jsonl",
 		"bfbb.full":           "calc_bfbb.jsonl",
+		"ballista.treeonly":   "calc_ballista.jsonl",
+		"ballista.noskills":   "calc_ballista.jsonl",
+		"ballista.full":       "calc_ballista.jsonl",
 	}
 	checked := 0
 	for variant, file := range variants {
