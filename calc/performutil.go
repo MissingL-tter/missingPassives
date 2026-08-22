@@ -42,14 +42,19 @@ type performActor struct {
 	damageOverTimeShiftTable map[string]map[string]float64
 }
 
+// roundDec is Common.lua's round(val, dec).
 func roundDec(v float64, dec int) float64 {
 	p := math.Pow(10, float64(dec))
 	return math.Floor(v*p+0.5) / p
 }
 
+// floorDec is Common.lua's floor(val, dec) — note the 0.0001 it adds before
+// flooring, which is there to stop float error from dropping a value a whole
+// unit at the requested precision (a More() product of 1.331 can land at
+// 1.3309999999999997, which would floor to 1.3309 without it).
 func floorDec(v float64, dec int) float64 {
 	p := math.Pow(10, float64(dec))
-	return math.Floor(v*p) / p
+	return math.Floor(v*p+0.0001) / p
 }
 
 func outNum(m map[string]any, k string) float64 {
