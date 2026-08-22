@@ -132,14 +132,14 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	// over-stacking bleed stacks increases the chance a critical bleed is present
 	ailmentCritChance := 100 * (1 - math.Pow(1-outNum(output, "CritChance")/100, math.Max(outNum(globalOutput, "BleedStackPotential"), 1)))
 
-	baseMinVal := calcAilmentDamage("Bleed", ailmentCritChance, sourceMinHitDmg, 0) * basePercent / 100
-	baseMaxVal := calcAilmentDamage("Bleed", 100, sourceMaxHitDmg, sourceMaxCritDmg) * basePercent / 100 *
-		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
+	// The reference's baseMinVal/baseMaxVal only reach its breakdown, but the
+	// calls still matter: each one rewrites output.BleedChance, and the last
+	// one wins.
+	calcAilmentDamage("Bleed", ailmentCritChance, sourceMinHitDmg, 0)
+	calcAilmentDamage("Bleed", 100, sourceMaxHitDmg, sourceMaxCritDmg)
 	averageBaseBleedDps := calcAilmentDamage("Bleed", ailmentCritChance, avgHitBleedDmg, avgCritBleedDmg)
 	baseBleedDps := averageBaseBleedDps * basePercent / 100 *
 		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
-	_ = baseMinVal
-	_ = baseMaxVal
 	if baseBleedDps > 0 {
 		skillFlags["bleed"] = true
 		skillFlags["duration"] = true
@@ -290,8 +290,8 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 			sourceMaxHitDmg = totalMax * outNum(output, "PoisonDotMulti")
 		}
 	}
-	_ = sourceMinHitDmg
-	_ = sourceMaxHitDmg
+	// Breakdown-only in the reference, but each call rewrites
+	// output.PoisonChance and the last one wins.
 	calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceMinHitDmg, 0)
 	calcAilmentDamage("Poison", 100, sourceMaxHitDmg, sourceMaxCritDmg)
 	baseVal := calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceHitDmg, sourceCritDmg) * d.Misc.PoisonPercentBase *
@@ -450,6 +450,8 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	}
 	// over-stacking ignite stacks increases the chance a critical ignite is present
 	ailmentCritChance := 100 * (1 - math.Pow(1-outNum(output, "CritChance")/100, math.Max(1, igniteStacks)))
+	// Breakdown-only in the reference, but each call rewrites
+	// output.IgniteChance and the last one wins.
 	calcAilmentDamage("Ignite", ailmentCritChance, sourceMinHitDmg, 0)
 	calcAilmentDamage("Ignite", 100, sourceMaxHitDmg, sourceMaxCritDmg)
 	baseVal := calcAilmentDamage("Ignite", ailmentCritChance, sourceHitDmg, sourceCritDmg) * d.Misc.IgnitePercentBase *

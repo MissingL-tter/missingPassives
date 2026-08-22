@@ -7,7 +7,6 @@ import (
 	"math"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
@@ -35,10 +34,7 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 	skillFlags, output, activeSkill := c.skillFlags, c.output, c.activeSkill
 	d := env.Data
 
-	if activeSkill.SkillTypes[modparser.SkillType.Brand] {
-		// infoMessage is UI-only; the value it formats is already in output.
-		_ = skillData["countsAttachedBrandsInDamage"]
-	}
+	// (The reference's Brand block here only builds activeSkill.infoMessage.)
 
 	// Handle corpse and enemy explosions
 	monsterLife := 100.0
@@ -205,9 +201,8 @@ func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
 		}
 	case mode == "CHANCE_AILMENT":
 		if truthy(main[stat]) && truthy(off[stat]) {
-			mainChance := anyNum(main[extra]) * anyNum(main["HitChance"])
-			offChance := anyNum(off[extra]) * anyNum(off["HitChance"])
-			_, _ = mainChance, offChance
+			// The reference computes mainPortion/offPortion here and then
+			// never uses them; only the stack split below matters.
 			maxInstance := math.Max(anyNum(main[stat]), anyNum(off[stat]))
 			minInstance := math.Min(anyNum(main[stat]), anyNum(off[stat]))
 			stackName := strings.Replace(stat, "DPS", "", -1) + "Stacks"

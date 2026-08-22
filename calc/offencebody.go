@@ -24,10 +24,6 @@ type offenceCtx struct {
 	skillFlags   map[string]bool
 	skillCfg     *modstore.Cfg
 
-	// weapon type info for the wielded weapons, nil when the slot holds
-	// nothing the table knows (the reference's weapon1info/weapon2info)
-	weapon1info, weapon2info *data.WeaponTypeInfo
-
 	// the offence-local state later sections read back
 	isAttack         bool
 	canDeal          map[string]bool
@@ -39,10 +35,7 @@ type offenceCtx struct {
 
 	monsterLife        float64
 	quantityMultiplier float64
-	hitRate            float64
 	totalHitAvg        float64
-	totalCritMin       float64
-	totalCritMax       float64
 	totalCritAvg       float64
 	costs              map[string]*costEntry
 }

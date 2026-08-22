@@ -306,7 +306,10 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 	}
 	output["TotalMin"] = totalHitMin
 	output["TotalMax"] = totalHitMax
-	c.totalCritMin, c.totalCritMax, c.totalCritAvg = totalCritMin, totalCritMax, totalCritAvg
+	// totalCritMin/Max feed only the reference breakdown; totalCritAvg is
+	// what the average-hit maths needs.
+	_, _ = totalCritMin, totalCritMax
+	c.totalCritAvg = totalCritAvg
 	c.totalHitAvg = totalHitAvg
 
 	if skillModList.Flag(skillCfg, "ElementalEquilibrium") && !truthy(env.ConfigInput["EEIgnoreHitDamage"]) &&
@@ -339,7 +342,6 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 		speed = outNum(globalOutput, "HitSpeed")
 	}
 	hitRate := outNum(output, "HitChance") / 100 * speed * anyNum(skillData["dpsMultiplier"])
-	c.hitRate = hitRate
 
 	// Calculate leech
 	getLeechInstances := func(amount, total float64) (float64, float64) {

@@ -329,6 +329,9 @@ func (env *Env) offenceRuthless(c *offenceCtx, pass *damagePass) {
 			output["RuthlessBlowChance"] = roundDec(100/maxCount, 0)
 		case "MAX":
 			output["RuthlessBlowChance"] = 100.0
+			// `dpsMultiplier / (output.RuthlessBlowMaxCount or 1)`: the `or 1`
+			// is unreachable (maxCount > 0 gates this branch and the value is
+			// a number, so it is never nil), and so is this guard.
 			denom := maxCount
 			if denom == 0 {
 				denom = 1

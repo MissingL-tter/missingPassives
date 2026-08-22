@@ -112,14 +112,10 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 			skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Max")*multiplier), "Battlemage", modparser.ModFlag.Spell))
 		}
 	}
-	if wi, ok := d.WeaponTypeInfo[str(actor.ms.WeaponData1["type"])]; ok {
-		c.weapon1info = &wi
-	}
-	if wi, ok := d.WeaponTypeInfo[str(actor.ms.WeaponData2["type"])]; ok {
-		c.weapon2info = &wi
-	}
-	weapon1info, hasWeapon1info := c.weapon1info, c.weapon1info != nil
-	hasWeapon2info := c.weapon2info != nil
+	// weapon1info/weapon2info are locals in the reference too, and used only
+	// by the Spellblade block just below.
+	weapon1info, hasWeapon1info := d.WeaponTypeInfo[str(actor.ms.WeaponData1["type"])]
+	_, hasWeapon2info := d.WeaponTypeInfo[str(actor.ms.WeaponData2["type"])]
 
 	// account for Spellblade
 	if spellbladeMulti, ok := skillModList.Max(skillCfg, "OneHandWeaponDamageAppliesToSpells"); ok {
