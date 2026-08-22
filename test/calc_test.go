@@ -309,10 +309,10 @@ func decodeCalcFixture(c map[string]any) *calc.BuildInput {
 	return &calc.BuildInput{
 		CharacterLevel:   c["characterLevel"].(float64),
 		ConfigEnemyLevel: configEnemyLevel,
-		ClassID:         c["classId"].(float64),
-		CurClassName:    c["curClassName"].(string),
-		TreeVersion:     c["treeVersion"].(string),
-		MainSocketGroup: c["mainSocketGroup"].(float64),
+		ClassID:          c["classId"].(float64),
+		CurClassName:     c["curClassName"].(string),
+		TreeVersion:      c["treeVersion"].(string),
+		MainSocketGroup:  c["mainSocketGroup"].(float64),
 		ClassStats: calc.ClassStats{
 			BaseStr: stats["base_str"].(float64),
 			BaseDex: stats["base_dex"].(float64),
@@ -539,6 +539,48 @@ func decodeEnergyBladeItems(c string) map[string]*calc.ItemInput {
 	return out
 }
 
+func decodeGlobalCache(c string) map[string]*calc.CachedSkill {
+	var m map[string]map[string]any
+	if err := json.Unmarshal([]byte(c), &m); err != nil {
+		panic(err)
+	}
+	numPtr := func(v any) *float64 {
+		n, ok := v.(float64)
+		if !ok {
+			return nil
+		}
+		return &n
+	}
+	tbl := func(v any) map[string]any {
+		t, _ := v.(map[string]any)
+		return t
+	}
+	out := map[string]*calc.CachedSkill{}
+	for uuid, e := range m {
+		name, _ := e["Name"].(string)
+		out[uuid] = &calc.CachedSkill{
+			Name:                   name,
+			Speed:                  numPtr(e["Speed"]),
+			HitSpeed:               numPtr(e["HitSpeed"]),
+			ManaCost:               numPtr(e["ManaCost"]),
+			LifeCost:               numPtr(e["LifeCost"]),
+			ESCost:                 numPtr(e["ESCost"]),
+			RageCost:               numPtr(e["RageCost"]),
+			HitChance:              numPtr(e["HitChance"]),
+			AccuracyHitChance:      numPtr(e["AccuracyHitChance"]),
+			PreEffectiveCritChance: numPtr(e["PreEffectiveCritChance"]),
+			CritChance:             numPtr(e["CritChance"]),
+			TotalDPS:               numPtr(e["TotalDPS"]),
+			Output:                 tbl(e["output"]),
+			OutputMainHand:         tbl(e["outputMainHand"]),
+			OutputOffHand:          tbl(e["outputOffHand"]),
+			MainSkillData:          tbl(e["mainSkillData"]),
+			ActiveSkillData:        tbl(e["activeSkillData"]),
+		}
+	}
+	return out
+}
+
 func decodeAllocOrders(c string) [][]int {
 	var m map[string]map[string]any
 	if err := json.Unmarshal([]byte(c), &m); err != nil {
@@ -575,25 +617,25 @@ func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 func TestCalcInitEnvAgainstReference(t *testing.T) {
 	d := loadGameData(t)
 	variants := map[string]string{ // variant -> dump file
-		"empty":            "calc_empty.jsonl",
-		"coc.treeonly":     "calc_coc.jsonl",
-		"coc.noskills":     "calc_coc.jsonl",
-		"coc.full":         "calc_coc.jsonl",
-		"zombies.treeonly": "calc_zombies.jsonl",
-		"zombies.noskills": "calc_zombies.jsonl",
-		"zombies.full":     "calc_zombies.jsonl",
-		"lowlife.treeonly": "calc_lowlife.jsonl",
-		"lowlife.noskills": "calc_lowlife.jsonl",
-		"lowlife.full":     "calc_lowlife.jsonl",
-		"spectre.treeonly": "calc_spectre.jsonl",
-		"spectre.noskills": "calc_spectre.jsonl",
-		"spectre.full":     "calc_spectre.jsonl",
-		"cyclone.treeonly": "calc_cyclone.jsonl",
-		"cyclone.noskills": "calc_cyclone.jsonl",
-		"cyclone.full":     "calc_cyclone.jsonl",
-		"rf.treeonly":      "calc_rf.jsonl",
-		"rf.noskills":      "calc_rf.jsonl",
-		"rf.full":          "calc_rf.jsonl",
+		"empty":              "calc_empty.jsonl",
+		"coc.treeonly":       "calc_coc.jsonl",
+		"coc.noskills":       "calc_coc.jsonl",
+		"coc.full":           "calc_coc.jsonl",
+		"zombies.treeonly":   "calc_zombies.jsonl",
+		"zombies.noskills":   "calc_zombies.jsonl",
+		"zombies.full":       "calc_zombies.jsonl",
+		"lowlife.treeonly":   "calc_lowlife.jsonl",
+		"lowlife.noskills":   "calc_lowlife.jsonl",
+		"lowlife.full":       "calc_lowlife.jsonl",
+		"spectre.treeonly":   "calc_spectre.jsonl",
+		"spectre.noskills":   "calc_spectre.jsonl",
+		"spectre.full":       "calc_spectre.jsonl",
+		"cyclone.treeonly":   "calc_cyclone.jsonl",
+		"cyclone.noskills":   "calc_cyclone.jsonl",
+		"cyclone.full":       "calc_cyclone.jsonl",
+		"rf.treeonly":        "calc_rf.jsonl",
+		"rf.noskills":        "calc_rf.jsonl",
+		"rf.full":            "calc_rf.jsonl",
 		"holyrelic.treeonly": "calc_holyrelic.jsonl",
 		"holyrelic.noskills": "calc_holyrelic.jsonl",
 		"holyrelic.full":     "calc_holyrelic.jsonl",
@@ -611,6 +653,9 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		var performDbs, performOutput, performMinionDb, performMinionOutput string
 		var defenceDbs, defenceOutput, defenceMinionDb, defenceMinionOutput string
 		var ehpDbs, ehpOutput, ehpMinionDb, ehpMinionOutput string
+		var offenceDbs, offenceOutput, offenceSkillOutput, offenceMinionDb, offenceMinionOutput string
+		var globalCache, triggersDbs, triggersOutput, triggersSkillData string
+		var triggersMinionOutput, triggersMinionSkillData string
 		forEachCalcRecord(t, path, func(k, c string) {
 			switch k {
 			case variant + ".fixture":
@@ -655,6 +700,28 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 				ehpMinionDb = c
 			case variant + ".ehpMinionOutput":
 				ehpMinionOutput = c
+			case variant + ".offenceDbs":
+				offenceDbs = c
+			case variant + ".offenceOutput":
+				offenceOutput = c
+			case variant + ".offenceSkillOutput":
+				offenceSkillOutput = c
+			case variant + ".offenceMinionDb":
+				offenceMinionDb = c
+			case variant + ".offenceMinionOutput":
+				offenceMinionOutput = c
+			case variant + ".globalCache":
+				globalCache = c
+			case variant + ".triggersDbs":
+				triggersDbs = c
+			case variant + ".triggersOutput":
+				triggersOutput = c
+			case variant + ".triggersSkillData":
+				triggersSkillData = c
+			case variant + ".triggersMinionOutput":
+				triggersMinionOutput = c
+			case variant + ".triggersMinionSkillData":
+				triggersMinionSkillData = c
 			}
 		})
 		if fixture == "" || allocOrders == "" || nodeOrders == "" || grantedNodes == "" || grantedAsc == "" || ebItems == "" || dbs == "" || skills == "" || skillLists == "" {
@@ -669,6 +736,12 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		if ehpDbs == "" || ehpOutput == "" {
 			t.Fatalf("%s: missing ehp records for %s", file, variant)
 		}
+		if offenceDbs == "" || offenceOutput == "" {
+			t.Fatalf("%s: missing offence records for %s", file, variant)
+		}
+		if globalCache == "" || triggersDbs == "" || triggersOutput == "" {
+			t.Fatalf("%s: missing trigger records for %s", file, variant)
+		}
 		var m map[string]any
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
 			t.Fatal(err)
@@ -679,6 +752,7 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
 			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
 			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
+			GlobalCache:            decodeGlobalCache(globalCache),
 		}
 		in := decodeCalcFixture(m)
 		env := calc.InitEnv(d, in, "MAIN", replay)
@@ -791,6 +865,55 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			}
 			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != ehpMinionOutput {
 				t.Errorf("%s ehpMinionOutput diverged:\n%s", variant, diffWindow(got, ehpMinionOutput))
+			}
+		}
+		// Trigger stage, then the mirage gate and offence — the same
+		// sequence and the same interleaving of checkpoints the dump uses
+		// (CalcPerform L3726-3729).
+		env.RunTriggersPlayer()
+		gotTrig := luacanon.Encode(dbsShadow{
+			Mod:   shadowOf(env.ModDB),
+			Enemy: shadowOf(env.EnemyDB),
+			Item:  shadowOf(env.ItemModDB),
+		})
+		if gotTrig != triggersDbs {
+			t.Errorf("%s triggersDbs diverged:\n%s", variant, diffWindow(gotTrig, triggersDbs))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != triggersOutput {
+			t.Errorf("%s triggersOutput diverged:\n%s", variant, diffWindow(got, triggersOutput))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.PlayerMainSkill.SkillData)); got != triggersSkillData {
+			t.Errorf("%s triggersSkillData diverged:\n%s", variant, diffWindow(got, triggersSkillData))
+		}
+		env.RunOffencePlayer()
+		gotOffence := luacanon.Encode(dbsShadow{
+			Mod:   shadowOf(env.ModDB),
+			Enemy: shadowOf(env.EnemyDB),
+			Item:  shadowOf(env.ItemModDB),
+		})
+		if gotOffence != offenceDbs {
+			t.Errorf("%s offenceDbs diverged:\n%s", variant, diffWindow(gotOffence, offenceDbs))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != offenceOutput {
+			t.Errorf("%s offenceOutput diverged:\n%s", variant, diffWindow(got, offenceOutput))
+		}
+		if got := luacanon.Encode(scalarsOnly(env.PlayerMainSkill.SkillData)); got != offenceSkillOutput {
+			t.Errorf("%s offenceSkillOutput diverged:\n%s", variant, diffWindow(got, offenceSkillOutput))
+		}
+		if env.Minion != nil {
+			env.RunTriggersMinion()
+			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != triggersMinionOutput {
+				t.Errorf("%s triggersMinionOutput diverged:\n%s", variant, diffWindow(got, triggersMinionOutput))
+			}
+			if got := luacanon.Encode(scalarsOnly(env.Minion.MainSkill.SkillData)); got != triggersMinionSkillData {
+				t.Errorf("%s triggersMinionSkillData diverged:\n%s", variant, diffWindow(got, triggersMinionSkillData))
+			}
+			env.RunOffenceMinion()
+			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != offenceMinionDb {
+				t.Errorf("%s offenceMinionDb diverged:\n%s", variant, diffWindow(got, offenceMinionDb))
+			}
+			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != offenceMinionOutput {
+				t.Errorf("%s offenceMinionOutput diverged:\n%s", variant, diffWindow(got, offenceMinionOutput))
 			}
 		}
 		scrubWarcryResidue(env)
