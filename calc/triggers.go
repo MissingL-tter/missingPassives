@@ -19,12 +19,14 @@ import (
 
 // triggerConfig is the config table defaultTriggerHandler consumes.
 type triggerConfig struct {
-	actor         *performActor
-	source        *ActiveSkill
-	triggerName   string
-	sourceName    string
-	trigRate      *float64
-	triggerChance *float64
+	actor       *performActor
+	source      *ActiveSkill
+	triggerName string
+	sourceName  string
+	// customTriggerName replaces the whole infoMessage prefix.
+	customTriggerName string
+	trigRate          *float64
+	triggerChance     *float64
 
 	triggeredSkills []*simSkill
 

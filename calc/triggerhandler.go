@@ -183,12 +183,33 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		output["TriggerRateCap"] = 1 / actionCooldownTickRounded
 	}
 	if config.triggerName == "Doom Blast" {
-		panic("triggers: Doom Blast source paths unported")
-	}
-	if env.PlayerMainSkill.ActiveEffect.GrantedEffect.Name == "Doom Blast" {
-		panic("triggers: Doom Blast / Vixen's Entrapment path unported")
+		switch str(env.ConfigInput["doomBlastSource"]) {
+		case "expiration":
+			panic("triggers: Doom Blast expiration source unported (no corpus build sets it)")
+		case "hexblast":
+			panic("triggers: Doom Blast hexblast source unported (no corpus build sets it)")
+		}
 	}
 	switch {
+	case env.PlayerMainSkill.ActiveEffect.GrantedEffect.Name == "Doom Blast" && str(env.ConfigInput["doomBlastSource"]) == "vixen":
+		// A curse socketed in Vixen's Entrapment is triggered on its own
+		// cooldown, so the effective rate is that rotation, not the cast
+		// rate of the curse.
+		gloves, _ := env.Player.ItemList["Gloves"].(*Item)
+		if gloves == nil || gloves.In.Title == nil || !strings.Contains(*gloves.In.Title, "Vixen's Entrapment") {
+			output["VixenModeNoVixenGlovesWarn"] = true
+		}
+		env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+		var vixensCD *float64
+		if vixens := env.Data.Skills["SupportUniqueCastCurseOnCurse"]; vixens != nil {
+			cd := anyNum(vixens.Levels[1].Extra["cooldown"]) / icdr
+			vixensCD = &cd
+		}
+		rate := env.calcMultiSpellRotationImpact(
+			[]*simSkill{{uuid: env.cacheSkillUUID(env.PlayerMainSkill), icdr: &icdr}},
+			num(trigRate), vixensCD, 100, actor)
+		output["EffectiveSourceRate"] = rate
+		output["VixensTooMuchCastSpeedWarn"] = vixensCD != nil && *vixensCD > (1/num(trigRate))
 	case trigRate != nil && !main.SkillFlags["globalTrigger"] && !config.ignoreSourceRate:
 		output["EffectiveSourceRate"] = *trigRate
 	default:

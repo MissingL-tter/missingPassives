@@ -4,7 +4,11 @@
 // behaving like "no trigger config at all".
 package calc
 
-import "github.com/MissingL-tter/missingPassives/modparser"
+import (
+	"math"
+
+	"github.com/MissingL-tter/missingPassives/modparser"
+)
 
 // triggerConfigBuilder returns nil when the entry inspects the env and
 // decides it does not apply (several reference entries do).
@@ -52,7 +56,7 @@ var triggerConfigTable = map[string]triggerConfigBuilder{
 	"cast on critical strike":            castOnCriticalStrikeConfig,
 	"cast on melee kill":                 nil,
 	"nova":                               novaConfig,
-	"cast when damage taken":             nil,
+	"cast when damage taken":             castWhenDamageTakenConfig,
 	"cast when stunned":                  nil,
 	"cast on ward break":                 nil,
 	"spellslinger":                       nil,
@@ -64,20 +68,20 @@ var triggerConfigTable = map[string]triggerConfigBuilder{
 	"mark on hit":                        nil,
 	"hextouch":                           nil,
 	"oskarm":                             nil,
-	"tempest shield":                     nil,
+	"tempest shield":                     tempestShieldConfig,
 	"shattershard":                       nil,
 	"battlemage's cry":                   nil,
 	"arcanist brand":                     nil,
 	"cast on death":                      nil,
 	"combust":                            nil,
 	"prismatic burst":                    nil,
-	"voidstorm":                          nil,
-	"shockwave":                          nil,
+	"voidstorm":                          voidstormConfig,
+	"shockwave":                          shockwaveConfig,
 	"void shockwave":                     nil,
 	"falling crystal":                    nil,
-	"call the pyre":                      nil,
+	"call the pyre":                      callThePyreConfig,
 	"manaforged arrows":                  nil,
-	"doom blast":                         nil,
+	"doom blast":                         doomBlastConfig,
 	"cast while channelling":             nil,
 	"focus":                              nil,
 	"snipe":                              nil,
@@ -88,8 +92,8 @@ var triggerConfigTable = map[string]triggerConfigBuilder{
 	"supporttriggerfirespellonhit":       nil,
 	"ghostly artillery":                  nil,
 	"replica gifts from above":           nil,
-	"bursting toad":                      nil,
-	"TriggeredMoltenStrike":              nil,
+	"bursting toad":                      burstingToadConfig,
+	"TriggeredMoltenStrike":              triggeredMoltenStrikeConfig,
 	"FieryImpactHeistMaceImplicit":       nil,
 }
 
@@ -124,4 +128,111 @@ func novaConfig(env *Env, actor *performActor) *triggerConfig {
 			return skill.SkillTypes[modparser.SkillType.Attack]
 		},
 	}
+}
+
+// castWhenDamageTakenConfig ports the "cast when damage taken" entry
+// (L1186): the skill triggers off damage rather than off another skill, so
+// it is its own source and the rate comes from the trigger cap.
+func castWhenDamageTakenConfig(env *Env, actor *performActor) *triggerConfig {
+	main := env.PlayerMainSkill
+	if !truthy(main.SkillData["triggeredByDamageTaken"]) {
+		return nil
+	}
+	thresholdMod := Mod(main.SkillModList, nil, "CWDTThreshold")
+	env.Player.Output["CWDTThreshold"] = anyNum(main.SkillData["triggeredByDamageTaken"]) * thresholdMod
+	main.SkillFlags["globalTrigger"] = true
+	return &triggerConfig{source: main}
+}
+
+// triggeredMoltenStrikeConfig ports the "TriggeredMoltenStrike" entry
+// (L1577): any melee or attack skill sets it off.
+func triggeredMoltenStrikeConfig(env *Env, actor *performActor) *triggerConfig {
+	return &triggerConfig{triggerSkillCond: meleeOrAttack}
+}
+
+// meleeOrAttack is the trigger condition several unique-item entries share.
+func meleeOrAttack(env *Env, skill *ActiveSkill) bool {
+	return skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]
+}
+
+// doomBlastConfig ports the "doom blast" entry (L1394): the hexes that are
+// removed drive the blast, so the source is the curse cast rate and each
+// overlapping curse is another blast.
+func doomBlastConfig(env *Env, actor *performActor) *triggerConfig {
+	if str(env.ConfigInput["doomBlastSource"]) == "replacement" {
+		env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+	}
+	env.PlayerMainSkill.SkillData["ignoresTickRate"] = true
+	cfg := &triggerConfig{
+		useCastRate:       true,
+		customTriggerName: "Doom Blast triggering Hex: ",
+		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
+			return skill.SkillTypes[modparser.SkillType.Hex] && env.slotMatch(skill)
+		},
+	}
+	// `#Tabulate(...) > 0 and m_max(Sum(...), 1)`: false, not nil, when no
+	// mod grants overlaps.
+	if len(env.ModDB.Tabulate("BASE", nil, "Multiplier:CurseOverlaps")) > 0 {
+		n := math.Max(env.ModDB.Sum("BASE", nil, "Multiplier:CurseOverlaps"), 1)
+		cfg.overlaps = &n
+	}
+	return cfg
+}
+
+// voidstormConfig ports the "voidstorm" entry (L1369).
+func voidstormConfig(env *Env, actor *performActor) *triggerConfig {
+	return &triggerConfig{
+		triggerOnUse: true,
+		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
+			return skill.SkillTypes[modparser.SkillType.Attack] &&
+				skill.SkillTypes[modparser.SkillType.Rain] && env.slotMatch(skill)
+		},
+	}
+}
+
+// shockwaveConfig ports the "shockwave" entry (L1372); "void shockwave" and
+// "falling crystal" are the same condition.
+func shockwaveConfig(env *Env, actor *performActor) *triggerConfig {
+	return &triggerConfig{triggerSkillCond: meleeAndSlot}
+}
+
+func meleeAndSlot(env *Env, skill *ActiveSkill) bool {
+	return skill.SkillTypes[modparser.SkillType.Melee] && env.slotMatch(skill)
+}
+
+// tempestShieldConfig ports the "tempest shield" entry (L1301): it triggers
+// off being hit, so it is its own source.
+func tempestShieldConfig(env *Env, actor *performActor) *triggerConfig {
+	env.PlayerMainSkill.SkillFlags["globalTrigger"] = true
+	return &triggerConfig{source: env.PlayerMainSkill}
+}
+
+// callThePyreConfig ports the "call the pyre" entry (L1381).
+func callThePyreConfig(env *Env, actor *performActor) *triggerConfig {
+	if !env.EnemyDB.Flag(nil, "Condition:Ignited") {
+		env.PlayerMainSkill.InfoMessage = "Call the Pyre requires Ignited enemies"
+		return nil
+	}
+	// too much of a pain to pull this from the triggering skill
+	chance := 50.0
+	return &triggerConfig{triggerChance: &chance, triggerSkillCond: meleeAndSlot}
+}
+
+// burstingToadConfig ports the "bursting toad" entry (L1557): the toad bursts
+// on its own interval, so the rate cap is that interval.
+func burstingToadConfig(env *Env, actor *performActor) *triggerConfig {
+	triggerInterval := math.Inf(1)
+	// All gems in the socket group should return the same HexToadCooldown
+	// even when there are multiple hextoad support gems slotted
+	for _, skill := range env.PlayerActiveSkills {
+		if truthy(skill.SkillData["hextoadTriggerInterval"]) {
+			triggerInterval = math.Min(triggerInterval, anyNum(skill.SkillData["hextoadTriggerInterval"]))
+		}
+	}
+	if math.IsInf(triggerInterval, 1) {
+		return nil
+	}
+	env.PlayerMainSkill.SkillFlags["globalTrigger"] = true
+	env.PlayerMainSkill.SkillData["triggerRateCapOverride"] = 1 / triggerInterval
+	return &triggerConfig{source: env.PlayerMainSkill}
 }
