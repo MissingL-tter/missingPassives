@@ -4,14 +4,52 @@ Every unit of Path of Building, as it exists complete in `.archive/` (this
 branch's frozen Lua application). Modules are independently claimable; anything
 with its dependencies met can be picked up at any time.
 
-**Checking a module off.** `[ ]` not started · `[~]` in progress / partial ·
-`[x]` done. Done means: ported to Go, with a differential test against the
-`.archive` implementation that **fails on any disagreement** and passes at
-100% — the modparser standard (its archive dumps: 13,173/13,173 corpus lines,
-8,800/8,800 table entries). A module without a runnable Lua archive dump (pure
-view code) instead states in its row what "verified" meant. Update the row's status,
-add the verifying test's name, and keep the reference files/lines column
-untouched — it describes the reference, not the port.
+**Two axes, tracked separately.** Full parity means both are `[x]`:
+
+- **code** — is the module *written*? Every branch of the reference exists in
+  Go. **The reference is the scope, not the corpus**: if it is in `.archive`
+  it belongs here, including its bugs (reproduced faithfully and tagged
+  `#EVAL`). `[x]` means nothing is left behind a "not ported" guard.
+- **archive** — does it *behave* like `.archive`? A differential test that
+  **fails on any disagreement** and passes at 100% over everything the test
+  corpus reaches — the modparser standard (13,173/13,173 corpus lines,
+  8,800/8,800 table entries). `[x]` means the verified surface is the whole
+  module; `[~]` means verified wherever exercised, with the covered fraction
+  stated in the row.
+
+`[ ]` not started · `[~]` partial · `[x]` complete.
+
+Two rules that follow from the split:
+
+- **Coverage is a property of the test corpus, not of the port.** A branch
+  that is written but no corpus build exercises is `code [x] / archive [~]`.
+  That is the normal state, not a defect — and it is not a reason to leave
+  the branch unwritten.
+- **Panics are not all equal.** A panic that mirrors an error in the
+  reference ("the Lua errors here too") is parity and counts as written. A
+  panic standing in for behaviour nobody has ported yet is a code gap and
+  must be listed in the row.
+
+Reference branches that are *unreachable in the reference itself* (no caller,
+a dead `or` arm) count as written when the row says so — they cannot affect
+behaviour either way.
+
+**Closing a gap moves both axes at once.** The working method for a guarded
+branch is not "port it blind and hope a build turns up later":
+
+1. Get an env that reaches it — `mb search` for a real ladder character with
+   the mod/skill, or hand-author a throwaway build in `.archive/src/Builds/`
+   with just enough on it to trip the guard. It does not need to be a good
+   build, only a reaching one.
+2. Dump it (`tools/dump_calc.lua <key> <xml>`), add it to the variant map.
+3. Write the branch, delete the guard, and confirm byte-identical.
+
+That is how the corpus grew from 9 builds to 12; it is cheap per gap and it
+means `code [x]` and `archive [x]` land together instead of drifting apart.
+
+A module without a runnable Lua archive dump (pure view code) states in its
+row what "verified" meant. Keep the reference files/lines columns untouched —
+they describe the reference, not the port.
 
 **Kind** — how the module divides, the axis decoupling runs along:
 
@@ -39,25 +77,40 @@ proper before the archive can go:
 
 ## Progress
 
-| | count |
+Counted on both axes; full parity needs both.
+
+| | code written | archive-verified |
+|---|---|---|
+| complete | 4 — `mod-parser`, `mod-store`, `game-data`, `export-tooling` | 4 — same |
+| partial | 3 — `calc-core`, `calc-offence`, `calc-defence` | 3 — same |
+| not started | 24 | 24 |
+
+(31 modules; the 7 asset families are tracked separately below.)
+
+The three partial rows are where the two axes come apart: their archive
+coverage is high (34 variants, byte-identical on every checkpoint) while
+their code still has guarded branches. Open code gaps, largest first:
+
+| gap | count |
 |---|---|
-| done | 4 (`mod-parser`, `export-tooling`, `mod-store`, `game-data`) |
-| in progress | 0 |
-| not started | 36 |
+| skill callbacks (`UnportedFn` → `calc/skillfuncs.go`) | 127 of 135 |
+| trigger configs (`CalcTriggers.lua` configTable) | 78 of 80 |
+| map-mod `apply` closures (`Data/ModMap.lua`) | 42 |
+| guard panics across `calc/` | 54 |
 
 ---
 
 ## Logic — calculation
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[ ]` | `calc-core` | `Modules/Calcs.lua` `CalcSetup.lua` `CalcPerform.lua` `CalcTools.lua` `CalcFormat.lua` | 7,048 | |
-| `[x]` | `calc-offence` | `Modules/CalcOffence.lua` `CalcActiveSkill.lua` `CalcMirages.lua` `CalcTriggers.lua` | 9,145 | `test/calc_test.go` — **25 of 25 variants** across 9 corpus builds byte-identical on every stage checkpoint, no slice skipped: `.triggersDbs`/`.triggersOutput`/`.triggersSkillData`, `.triggersMinion*`, `.offenceDbs`/`.offenceOutput`/`.offenceSkillOutput`, `.offenceMinion*`. `CalcOffence.lua` is ported end to end (all 6,168 lines of `calcs.offence`); `CalcActiveSkill.lua` landed with calc-core; `CalcTriggers.lua` has its spine ported (the cache comparer, `findTriggerSkill`, the 1000-attack `calcMultiSpellRotationImpact` rotation sim, `defaultTriggerHandler`, the full 80-key configTable dispatch); `CalcMirages.lua` has its dispatch ported and proven a no-op here. Negative controls: +1e-7 on `AverageHit` fails all 25, and +1e-9 on the simulated trigger rate fails exactly the 7 checkpoints of the two trigger-driven skills (coc.full's Cast on Critical Strike, holyrelic.full's Holy Relic nova), including their downstream offence output. **Guarded, not ported** (loud panic on reach, no corpus build gets there): 78 of the 80 trigger configs, `helmetFocusHandler` and `CWCHandler`, the Arcanist Brand / Kitava / Battlemage / Infernal Cry / Manaforged / Doom Blast / stagesAreOverlaps branches of `defaultTriggerHandler`, all 5 mirage paths, PvP scaling, Explosive Arrow, `radiusTertiaryBaseMargin`. `GlobalCache` is a dump fixture (`.globalCache`) — it is produced by Calcs.lua's `buildOutput` driver, which belongs to calc-core |
-| `[x]` | `calc-defence` | `Modules/CalcDefence.lua` | 3,828 | `test/calc_test.go` — 25 variants across 9 corpus builds byte-identical on the `.defence*` and `.ehp*` checkpoints (mod/enemy/item DBs plus the player and minion output, 506 output keys incl. `TotalEHP` to 13 significant digits). Covers `resistances`, `defence` and `buildDefenceEstimations`: resistance conversion/caps, block, primary defences, evade, suppression, dodge, regen, recharge, recoup, damage reduction, avoidance, self-ailment duration, then the EHP half — pool drains, `numberOfHitsToDie`, max hit taken, EHP vs dots, degens. Negative controls: a 1e-7 perturbation inside `reducePoolsByDamage` and a one-value change in the defence tail each fail all 25. Party-tab and PvP branches panic (no corpus build reaches them) |
-| `[ ]` | `calc-breakdown` | `Modules/CalcBreakdown.lua` | 251 | |
-| `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/parse_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map |
-| `[x]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `test/modstore_test.go` 18,525 checks, 0 disagreements: the parsed corpus distributed over a store tree with fixture actors/configs, every aggregation (Sum/More/Flag/Override/List/Tabulate/HasMod/Max/Min/GetMultiplier/GetCondition), construction behaviours (ScaleAdd/Merge/Replace/Convert), `mergeKeystones`, plus 59 synthetic mods covering the tag branches the corpus never produces. Reference crashes are part of the contract (recorded as error sentinels, the port fails identically) |
-| `[ ]` | `stat-describer` | `Modules/StatDescriber.lua` | 292 | |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[~]` | `[~]` | `calc-core` | `Modules/Calcs.lua` `CalcSetup.lua` `CalcPerform.lua` `CalcTools.lua` `CalcFormat.lua` | 7,048 | **code**: `CalcTools.lua`, `CalcSetup.lua` (initEnv: tree merge, items, skills/supports, buildActiveSkillModList, radius/threshold/transform jewels, granted-skill and Explode groups, Energy Blade re-entry) and the whole `CalcPerform.lua` body are written. Unwritten: `Calcs.lua`'s `buildOutput` driver + `cacheData` (so `GlobalCache` is still a dump fixture), `CalcFormat.lua`, CALCS/CALCULATOR modes, and 23 guarded branches at the initEnv stage — `jewelIncEffectFromClassStart`, `ProcessSocketGroup` nameSpec migration, `ExtraJewelFunc` re-entry, minion damage fixup — plus 5 in perform (`getCachedOutputValue` stage caches, `calcs.resistances` Choir path, non-empty `AffectedByAuraMod`). **archive**: `test/calc_test.go` — 34 variants across 12 corpus builds byte-identical post-initEnv (`.dbs`, `.skills`, `.skillLists`) and post-perform (`.performDbs`/`.performOutput`/`.performMinion*`), plus a fixture round-trip (`TestCalcFixtureEcho`) with corruption negatives |
+| `[~]` | `[~]` | `calc-offence` | `Modules/CalcOffence.lua` `CalcActiveSkill.lua` `CalcMirages.lua` `CalcTriggers.lua` | 9,145 | **code**: `CalcOffence.lua` written end to end (all 6,168 lines of `calcs.offence`); `CalcActiveSkill.lua` landed with calc-core. `CalcTriggers.lua` has only its spine — the cache comparer, `findTriggerSkill`, the 1000-attack `calcMultiSpellRotationImpact` sim, `defaultTriggerHandler`, the 80-key dispatch — with **78 of the 80 trigger configs unwritten**, plus `helmetFocusHandler`, `CWCHandler` and 6 `defaultTriggerHandler` branches (Arcanist Brand, Kitava, Battlemage, Infernal Cry, Manaforged, Doom Blast, stagesAreOverlaps). `CalcMirages.lua` is dispatch only: all 5 mirage paths unwritten. 26 guard panics in total. Also unwritten: PvP scaling, Explosive Arrow's `explosiveArrowFunc`, `radiusTertiaryBaseMargin`. Skill callbacks: 8 of 135 `UnportedFn` markers ported (`calc/skillfuncs.go`). **archive**: `test/calc_test.go` — 34 of 34 variants byte-identical on every stage checkpoint, no slice skipped (`.triggers*`, `.triggersMinion*`, `.offence*`, `.offenceMinion*`). Negative controls: +1e-7 on `AverageHit` fails all 34; +1e-9 on the simulated trigger rate fails exactly the 7 checkpoints of the two trigger-driven skills. Corpus exercises: dual wield (both passes + all 6 `combineStat` modes), Unleash seals, bifurcated crit, returning projectiles, bleed/poison/ignite/impale, brand, chaining, projectiles, pierce, generic DoT. Written but unexercised: totem, ballista, trap, mine, corpse, decay, fork, split, trauma, warcry cast time, self-hit damage |
+| `[~]` | `[~]` | `calc-defence` | `Modules/CalcDefence.lua` | 3,828 | **code**: `resistances`, `defence` and `buildDefenceEstimations` written in full — resistance conversion/caps, block, primary defences, evade, suppression, dodge, regen, recharge, recoup, damage reduction, avoidance, self-ailment duration, then the EHP half (pool drains, `numberOfHitsToDie`, max hit taken, EHP vs dots, degens). Unwritten: 4 party-tab branches (block/max-block/max-life-leech equal-to-party, `MovementSpeedEqualHighestLinkedPlayers`), `TakenFromPartyMemberESBeforeYou`, and PvP scaling. **archive**: `test/calc_test.go` — 34 variants byte-identical on `.defence*` and `.ehp*` (mod/enemy/item DBs plus player and minion output, 506 output keys incl. `TotalEHP` to 13 significant digits). Negative controls: a 1e-7 perturbation inside `reducePoolsByDamage` and a one-value change in the defence tail each fail every variant |
+| `[ ]` | `[ ]` | `calc-breakdown` | `Modules/CalcBreakdown.lua` | 251 | |
+| `[x]` | `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/parse_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map. **code** `[x]`: its 3 panics are all error parity (the reference errors on the same input) |
+| `[x]` | `[x]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `test/modstore_test.go` 18,525 checks, 0 disagreements: the parsed corpus distributed over a store tree with fixture actors/configs, every aggregation (Sum/More/Flag/Override/List/Tabulate/HasMod/Max/Min/GetMultiplier/GetCondition), construction behaviours (ScaleAdd/Merge/Replace/Convert), `mergeKeystones`, plus 59 synthetic mods covering the tag branches the corpus never produces. Reference crashes are part of the contract (recorded as error sentinels, the port fails identically). **code** `[x]`: all 9 panics are error parity — every one is a shape the reference itself errors on |
+| `[ ]` | `[ ]` | `stat-describer` | `Modules/StatDescriber.lua` | 292 | |
 
 `mod-parser` converts the game's English mod text into structured modifiers:
 ~4,200 patterns composed by form / name / flag / tag scanners, plus ~3,900
@@ -69,13 +122,13 @@ area, effMult, dot, critDot, leech, multiChain) consumed by `calcs-view`.
 
 ## Logic — game data
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[x]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | `/data` package + `test/gamedata_test.go`: 136 subtrees of the loaded `data` table compared canonically against the booted archive (tools/dump_gamedata.lua), 0 disagreements — the full load surface: all inline tables, mod pools, enchantments, item bases+lists, uniques (incl. the generated ones), skills (1,535 granted effects with structured mods, statMaps, template fragments), skillStatMap, gems + lookups, minions/spectres, cluster jewels, bosses+bossSkills, mapMods, timeless tables. Residuals owned by other modules: `UnportedFn` bodies (139 skill funcs, 41 mapMods applies → calc/config), 4 tree-built generated uniques (→ tree-data), describeStats (→ stat-describer), LUT readers (→ timeless-jewel-data), vocab.go regeneration (small follow-up) |
-| `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
-| `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
-| `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |
-| `[ ]` | `pantheon` | `Modules/PantheonTools.lua` | 18 | |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[x]` | `[x]` | `game-data` | `Modules/Data.lua` + `Data/` (134 files) | 798,584 | `/data` package + `test/gamedata_test.go`: 136 subtrees of the loaded `data` table compared canonically against the booted archive (tools/dump_gamedata.lua), 0 disagreements — the full load surface: all inline tables, mod pools, enchantments, item bases+lists, uniques (incl. the generated ones), skills (1,535 granted effects with structured mods, statMaps, template fragments), skillStatMap, gems + lookups, minions/spectres, cluster jewels, bosses+bossSkills, mapMods, timeless tables. Residuals owned by other modules: `UnportedFn` bodies (139 skill funcs, 41 mapMods applies → calc/config), 4 tree-built generated uniques (→ tree-data), describeStats (→ stat-describer), LUT readers (→ timeless-jewel-data), vocab.go regeneration (small follow-up). **code** `[x]` for the tables. It also carries 177 Lua closures as `UnportedFn` markers (135 skill callbacks in `skills_custom_gen.go`, 42 map-mod `apply` closures in `mapmods_gen.go`); those bodies belong to the consuming module, not here — 8 of the skill callbacks now live in `calc/skillfuncs.go` |
+| `[ ]` | `[ ]` | `tree-data` | `Classes/PassiveTree.lua` + `TreeData/` (61 files) | 4,113,782 | |
+| `[ ]` | `[ ]` | `timeless-jewel-data` | `Modules/DataAbyssJewelLookUpTableHelper.lua` `DataLegionLookUpTableHelper.lua` `DataJewelFileLoader.lua` | 632 | |
+| `[ ]` | `[ ]` | `item-model` | `Classes/Item.lua` `Modules/ItemTools.lua` | 3,093 | |
+| `[ ]` | `[ ]` | `pantheon` | `Modules/PantheonTools.lua` | 18 | |
 
 `Data/` is mostly declarative — `mod(...)` constructor calls, only 210
 `function` occurrences across 798k lines. `tree-data` also owns sprite sheets,
@@ -83,14 +136,14 @@ orbit geometry, connector construction and cluster-jewel subgraph building.
 
 ## Logic — build state
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[ ]` | `build-core` | `Modules/Build.lua` | 2,091 | |
-| `[ ]` | `passive-spec` | `Classes/PassiveSpec.lua` | 2,407 | |
-| `[ ]` | `undo` | `Classes/UndoHandler.lua` | 51 | |
-| `[ ]` | `display-stats` | `Modules/BuildDisplayStats.lua` | 250 | output byte-locked (memory `statbox-byte-lock`) — the archive comparison should be byte-level |
-| `[ ]` | `common` | `Modules/Common.lua` `Utils.lua` | 1,209 | port pieces on demand; note what landed here |
-| `[ ]` | `headless-adapter` | `HeadlessWrapper.lua` | 227 | the host-environment contract; its Go analogue emerges from whatever the ported modules need |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[ ]` | `[ ]` | `build-core` | `Modules/Build.lua` | 2,091 | |
+| `[ ]` | `[ ]` | `passive-spec` | `Classes/PassiveSpec.lua` | 2,407 | |
+| `[ ]` | `[ ]` | `undo` | `Classes/UndoHandler.lua` | 51 | |
+| `[ ]` | `[ ]` | `display-stats` | `Modules/BuildDisplayStats.lua` | 250 | output byte-locked (memory `statbox-byte-lock`) — the archive comparison should be byte-level |
+| `[ ]` | `[ ]` | `common` | `Modules/Common.lua` `Utils.lua` | 1,209 | port pieces on demand; note what landed here |
+| `[ ]` | `[ ]` | `headless-adapter` | `HeadlessWrapper.lua` | 227 | the host-environment contract; its Go analogue emerges from whatever the ported modules need |
 
 `undo` is a snapshot stack; `AddUndoState` also sets `modFlag` on its owner.
 Granularity is decided per interaction, not per state change — a same-class
@@ -104,12 +157,12 @@ incremented per rebuild.
 
 ## Logic — networking
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[ ]` | `poe-api` | `Classes/PoEAPI.lua` `LaunchServer.lua` | 447 | |
-| `[ ]` | `build-sites` | `Modules/BuildSiteTools.lua` | 129 | |
-| `[ ]` | `launcher` | `Launch.lua` `LaunchInstall.lua` `GameVersions.lua` | 719 | |
-| `[ ]` | `updater` | `UpdateCheck.lua` `UpdateApply.lua` | 387 | |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[ ]` | `[ ]` | `poe-api` | `Classes/PoEAPI.lua` `LaunchServer.lua` | 447 | |
+| `[ ]` | `[ ]` | `build-sites` | `Modules/BuildSiteTools.lua` | 129 | |
+| `[ ]` | `[ ]` | `launcher` | `Launch.lua` `LaunchInstall.lua` `GameVersions.lua` | 719 | |
+| `[ ]` | `[ ]` | `updater` | `UpdateCheck.lua` `UpdateApply.lua` | 387 | |
 
 `launcher` owns subscript management and `DownloadPage` (a curl subscript);
 every other module's network access goes through it. `poe-api` covers OAuth
@@ -122,16 +175,16 @@ No domain knowledge; presentation and input only. No Lua archive dump is possibl
 each row must state its own verification when checked off (golden screenshots,
 DOM/state assertions, or manual sign-off noted here).
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[ ]` | `control-kit` | `Control` `ControlHost` `Button` `CheckBox` `DropDown` `Edit` `Label` `Path` `PopupDialog` `ResizableEdit` `ScrollBar` `Section` `Slider` `TextList` `TooltipHost` `RectangleOutline` `Dragger` `SearchHost` `ListControl` | 3,498 | |
-| `[ ]` | `tree-view` | `Classes/PassiveTreeView.lua` `PassiveMasteryControl.lua` `PassiveSpecListControl.lua` `PowerReportListControl.lua` | 2,153 | |
-| `[ ]` | `items-view` | `ItemDBControl` `ItemListControl` `ItemSetListControl` `ItemSlotControl` `NotableDBControl` `SharedItemListControl` `SharedItemSetListControl` | 1,543 | |
-| `[ ]` | `skills-view` | `SkillListControl` `SkillSetListControl` `GemSelectControl` | 1,223 | |
-| `[ ]` | `calcs-view` | `CalcSectionControl` `CalcBreakdownControl` | 1,295 | |
-| `[ ]` | `timeless-jewel-view` | `TimelessJewelListControl` `TimelessJewelSocketControl` | 359 | |
-| `[ ]` | `minion-library` | `MinionListControl` `MinionSearchListControl` | 170 | |
-| `[ ]` | `toast` | `Modules/ToastNotification.lua` | 257 | |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[ ]` | `[ ]` | `control-kit` | `Control` `ControlHost` `Button` `CheckBox` `DropDown` `Edit` `Label` `Path` `PopupDialog` `ResizableEdit` `ScrollBar` `Section` `Slider` `TextList` `TooltipHost` `RectangleOutline` `Dragger` `SearchHost` `ListControl` | 3,498 | |
+| `[ ]` | `[ ]` | `tree-view` | `Classes/PassiveTreeView.lua` `PassiveMasteryControl.lua` `PassiveSpecListControl.lua` `PowerReportListControl.lua` | 2,153 | |
+| `[ ]` | `[ ]` | `items-view` | `ItemDBControl` `ItemListControl` `ItemSetListControl` `ItemSlotControl` `NotableDBControl` `SharedItemListControl` `SharedItemSetListControl` | 1,543 | |
+| `[ ]` | `[ ]` | `skills-view` | `SkillListControl` `SkillSetListControl` `GemSelectControl` | 1,223 | |
+| `[ ]` | `[ ]` | `calcs-view` | `CalcSectionControl` `CalcBreakdownControl` | 1,295 | |
+| `[ ]` | `[ ]` | `timeless-jewel-view` | `TimelessJewelListControl` `TimelessJewelSocketControl` | 359 | |
+| `[ ]` | `[ ]` | `minion-library` | `MinionListControl` `MinionSearchListControl` | 170 | |
+| `[ ]` | `[ ]` | `toast` | `Modules/ToastNotification.lua` | 257 | |
 
 `ScrollBar`, `Dragger`, `Path`, `ResizableEdit` and `TextList` exist because
 SimpleGraphic provides no widget toolkit; their line counts describe what they
@@ -151,8 +204,8 @@ Domain logic and presentation interleaved. The seam column names where they
 separate; check the halves off independently (`logic:[ ] view:[ ]` in the
 status cell).
 
-| status | module | files | lines | seam |
-|---|---|---|---|---|
+| code | archive | module | files | lines | seam |
+|---|---|---|---|---|---|
 | `logic:[ ] view:[ ]` | `tree` | `Classes/TreeTab.lua` | 2,873 | spec management, mastery eligibility, tattoos, power calc and timeless search are logic; the popup constructors are view |
 | `logic:[ ] view:[ ]` | `items` | `Classes/ItemsTab.lua` `Modules/ItemSlotHelper.lua` | 5,243 | each crafting popup fuses an option-list builder, a DPS-sorted ranking and an apply step — those three are logic, the dialog is view |
 | `logic:[ ] view:[ ]` | `skills` | `Classes/SkillsTab.lua` | 1,475 | socket-group processing, gem matching and `OptimiseSockets` are logic; gem slot rows are view |
@@ -188,9 +241,9 @@ mastery, frame, group and connector images, `jewel-radius.png`).
 
 ## Tooling
 
-| status | module | files | lines | verified by |
-|---|---|---|---|---|
-| `[x]` | `export-tooling` | `src/Export/` (65 files) | 51,545 | `test/export_test.go` 123/123 files byte-identical |
+| code | archive | module | files | lines | evidence & gaps |
+|---|---|---|---|---|---|
+| `[x]` | `[x]` | `export-tooling` | `src/Export/` (65 files) | 51,545 | `test/export_test.go` 123/123 files byte-identical. **code** `[x]`: two reference branches are deliberately absent because they are unreachable in the reference — enchant.lua's "Craft" generation arm (no caller passes a Craft key) and skillgemlist.lua's `grantedEffectString` side (its `export` flag is false, and its `ipairs` over a single-Key cell yields nothing under LuaJIT anyway) |
 
 Reads the GGPK's dat files and produces the game data the application
 consumes — as **structured JSON documents** typed by `/gamedata` (one per
