@@ -44,6 +44,14 @@ type ActiveSkill struct {
 	MinionList        []string
 	Minion            *Minion
 
+	// offence-stage ailment / damage-over-time configurations
+	BleedCfg, OHBleedCfg   *modstore.Cfg
+	PoisonCfg, OHPoisonCfg *modstore.Cfg
+	IgniteCfg, OHIgniteCfg *modstore.Cfg
+	DecayCfg               *modstore.Cfg
+	DotCfg                 *modstore.Cfg
+	DotTypeCfg             map[string]*modstore.Cfg
+
 	// perform-stage marks
 	BuffSkill       bool
 	MinionBuffSkill bool

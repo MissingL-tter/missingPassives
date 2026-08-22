@@ -225,6 +225,10 @@ type Env struct {
 	MinionBuffsOut              map[string]*modstore.List
 	Debuffs                     map[string]*modstore.List
 	CurseSlots                  []any
+
+	// GlobalCache is GlobalCache.cachedData[mode] as the trigger stage
+	// finds it, supplied by the replay (see calc/globalcache.go).
+	GlobalCache map[string]*CachedSkill
 }
 
 // statMapLookup is grantedEffect.statMap[key] including the metatable's
@@ -553,6 +557,10 @@ type ReplayInput struct {
 	// EnergyBladeItems: the synthesized Energy Blade weapons by slot name
 	// (the reference constructs them via the Item machinery on re-entry).
 	EnergyBladeItems map[string]*ItemInput
+	// GlobalCache: GlobalCache.cachedData[mode] as the trigger stage finds
+	// it. Filled by Calcs.lua's buildOutput driver, which is not one of the
+	// stages ported here (see calc/globalcache.go).
+	GlobalCache map[string]*CachedSkill
 }
 
 // InitEnv ports calcs.initEnv for the one-shot MAIN mode over a fixture
@@ -597,6 +605,7 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 		AllocOrders:         replay.AllocOrders,
 		allocOrderIdx:       orderStart,
 		Replay:              replay,
+		GlobalCache:         replay.GlobalCache,
 		ExtraRadiusNodeList: map[int]*NodeInput{},
 	}
 	for i, seq := range replay.NodeOrders {

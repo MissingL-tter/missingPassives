@@ -23,14 +23,58 @@ type offenceCtx struct {
 	skillData    map[string]any
 	skillFlags   map[string]bool
 	skillCfg     *modstore.Cfg
+
+	// weapon type info for the wielded weapons, nil when the slot holds
+	// nothing the table knows (the reference's weapon1info/weapon2info)
+	weapon1info, weapon2info *data.WeaponTypeInfo
+
+	// the offence-local state later sections read back
+	isAttack         bool
+	canDeal          map[string]bool
+	conversionTbl    conversionTable
+	conversionTables map[*modstore.Cfg]conversionTable
+	passList         []*damagePass
+	mainHandStats    map[string]any
+	offHandStats     map[string]any
+
+	monsterLife        float64
+	quantityMultiplier float64
+	hitRate            float64
+	totalHitAvg        float64
+	totalCritMin       float64
+	totalCritMax       float64
+	totalCritAvg       float64
+	costs              map[string]*costEntry
 }
 
-// RunOffence runs the offence stage as the reference reaches it: the
-// player's main skill, then the minion's.
+// The trigger/mirage/offence handoff, split so a caller can interleave the
+// archive checkpoints exactly where the reference emits them
+// (CalcPerform L3726-3729).
+
+// RunTriggersPlayer runs calcs.triggers for the player actor.
+func (env *Env) RunTriggersPlayer() { env.RunTriggers(env.playerPA) }
+
+// RunOffencePlayer runs calcs.offence for the player's main skill, unless
+// calcs.mirages took the calculation over.
+func (env *Env) RunOffencePlayer() {
+	if !env.RunMirages() {
+		env.offence(env.playerPA, env.PlayerMainSkill)
+	}
+}
+
+// RunTriggersMinion runs calcs.triggers for the minion actor.
+func (env *Env) RunTriggersMinion() { env.RunTriggers(env.minionPA) }
+
+// RunOffenceMinion runs calcs.offence for the minion's main skill.
+func (env *Env) RunOffenceMinion() { env.offence(env.minionPA, env.Minion.MainSkill) }
+
+// RunOffence runs the whole handoff in the reference's order.
 func (env *Env) RunOffence() {
-	env.offence(env.playerPA, env.PlayerMainSkill)
+	env.RunTriggersPlayer()
+	env.RunOffencePlayer()
 	if env.Minion != nil {
-		env.offence(env.minionPA, env.Minion.MainSkill)
+		env.RunTriggersMinion()
+		env.RunOffenceMinion()
 	}
 }
 
@@ -150,9 +194,13 @@ func (env *Env) runSkillFunc(c *offenceCtx, name string) {
 	if !ok || fn == nil {
 		return
 	}
+	id := c.activeSkill.ActiveEffect.GrantedEffect.Id
+	if ported, ok := skillFuncs[id+":"+name]; ok {
+		ported(env, c)
+		return
+	}
 	if _, unported := fn.(data.UnportedFn); unported {
-		panic("offence: granted effect " + c.activeSkill.ActiveEffect.GrantedEffect.Id +
-			" has an unported " + name + " callback")
+		panic("offence: granted effect " + id + " has an unported " + name + " callback")
 	}
 	panic("offence: unexpected " + name + " callback shape")
 }
@@ -215,5 +263,11 @@ func (env *Env) offencePrologue(c *offenceCtx) {
 			"Transfiguration of Soul", modparser.ModFlag.Spell))
 	}
 
-	panic("offence: body beyond L560 not yet ported")
+	env.offenceSkillData(c)
+
+	c.isAttack = c.skillFlags["attack"]
+
+	env.runSkillFunc(c, "preSkillTypeFunc")
+
+	env.offenceSkillTypeStats(c)
 }
