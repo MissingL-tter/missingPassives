@@ -783,7 +783,30 @@ local function dumpVariant(name, build)
 	})
 	emit(name .. ".triggersOutput", scalars(env.player.output or {}))
 	emit(name .. ".triggersSkillData", scalars(env.player.mainSkill.skillData or {}))
-	if not realMirages(env) then
+	-- The mirage paths build a whole second environment (copyActiveSkill's
+	-- calcs.initEnv + a nested calcs.perform), so the node orders that
+	-- second initEnv consumes have to be recorded too -- and the nested
+	-- perform sees the same stubbed handoff as the outer one, so its output
+	-- is the body-only state the Go replay produces.
+	recordedOrders = {}
+	recordedNodeSeqs = {}
+	local mirageHandled = realMirages(env)
+	emit(name .. ".mirageAllocOrders", recordedOrders)
+	emit(name .. ".mirageNodeOrders", recordedNodeSeqs)
+	recordedOrders = nil
+	recordedNodeSeqs = nil
+	local mirage = env.player.mainSkill.mirage
+	if mirage then
+		emit(name .. ".mirage", {
+			name = mirage.name,
+			count = mirage.count,
+			skillPart = mirage.skillPart,
+			skillPartName = mirage.skillPartName,
+			handled = mirageHandled,
+		})
+		emit(name .. ".mirageOutput", scalars(mirage.output or {}))
+	end
+	if not mirageHandled then
 		realOffence(env, env.player, env.player.mainSkill)
 	end
 	emit(name .. ".offenceDbs", {

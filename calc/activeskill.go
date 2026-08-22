@@ -52,6 +52,12 @@ type ActiveSkill struct {
 	DotCfg                 *modstore.Cfg
 	DotTypeCfg             map[string]*modstore.Cfg
 
+	// Mirage is what CalcMirages hangs off the main skill: the sub-skill it
+	// built, how many of it, and the sub-environment's output.
+	Mirage       *MirageResult
+	InfoMessage  string
+	InfoMessage2 string
+
 	// perform-stage marks
 	BuffSkill       bool
 	MinionBuffSkill bool

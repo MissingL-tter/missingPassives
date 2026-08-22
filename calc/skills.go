@@ -697,7 +697,9 @@ func (env *Env) buildSkillsStage() bool {
 					cur = 1
 				}
 				activeSkillIndex := int(math.Min(float64(len(socketGroupSkillList)), cur))
-				group.KV["mainActiveSkill"] = float64(activeSkillIndex)
+				if env.Mode == "MAIN" {
+					group.KV["mainActiveSkill"] = float64(activeSkillIndex)
+				}
 				env.PlayerMainSkill = socketGroupSkillList[activeSkillIndex-1]
 			}
 		}

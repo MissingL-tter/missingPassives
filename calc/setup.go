@@ -178,6 +178,10 @@ type Env struct {
 	InitialNodeModDB *modstore.List
 	Keystone         modstore.KeystoneEnv
 
+	// OverrideConditions is the reference's `override.conditions`, carried
+	// so a copied env starts where this one ended up.
+	OverrideConditions []string
+
 	RadiusJewelList     []*RadiusJewel
 	ExtraRadiusNodeList map[int]*NodeInput
 
@@ -204,6 +208,12 @@ type Env struct {
 	CrossLinkedSupportGroups map[string][]string
 	PlayerActiveSkills       []*ActiveSkill // env.player.activeSkillList
 	PlayerMainSkill          *ActiveSkill   // env.player.mainSkill
+	// LimitedSkills marks skill uuids the mirage machinery has taken over,
+	// so the stage-cache paths skip them (CalcMirages L43).
+	LimitedSkills            map[string]bool
+	// MirageHandled is calcs.mirages' return: true when the mirage
+	// machinery took over and calcs.offence is skipped.
+	MirageHandled bool
 	AuxSkillList             []*ActiveSkill
 	RequirementsTableGems    []GemRequirement
 	geFromItemMark           map[*data.GrantedEffect]bool
@@ -561,6 +571,11 @@ type ReplayInput struct {
 	// it. Filled by Calcs.lua's buildOutput driver, which is not one of the
 	// stages ported here (see calc/globalcache.go).
 	GlobalCache map[string]*CachedSkill
+	// MirageAllocOrders / MirageNodeOrders: the same two sequences for the
+	// second initEnv copyActiveSkill runs (CALCULATOR mode) when a mirage
+	// path takes over. Empty for a build with no mirages.
+	MirageAllocOrders [][]int
+	MirageNodeOrders  [][]int
 }
 
 // InitEnv ports calcs.initEnv for the one-shot MAIN mode over a fixture
@@ -568,7 +583,14 @@ type ReplayInput struct {
 // initEnv with override.conditions when an enabled Energy Blade gem is
 // found).
 func InitEnv(d *data.Data, in *BuildInput, mode string, replay *ReplayInput) *Env {
-	var overrideConditions []string
+	return initEnvOverride(d, in, mode, replay, nil)
+}
+
+// initEnvOverride is initEnv with the reference's `override` argument, which
+// copyActiveSkill passes on from the env it copies (`calcs.initEnv(env.build,
+// mode, env.override)`) so a sub-environment inherits an Energy Blade
+// re-entry instead of rediscovering it.
+func initEnvOverride(d *data.Data, in *BuildInput, mode string, replay *ReplayInput, overrideConditions []string) *Env {
 	orderStart := 0
 	for {
 		env, restart := initEnvPass(d, in, mode, replay, orderStart, overrideConditions)
@@ -581,8 +603,14 @@ func InitEnv(d *data.Data, in *BuildInput, mode string, replay *ReplayInput) *En
 }
 
 func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
-	if mode != "MAIN" {
-		panic("calc: only MAIN mode is ported")
+	// CALCULATOR is what copyActiveSkill's second initEnv uses. It differs
+	// from MAIN only in skipping the write-backs onto the build objects
+	// that exist for the UI (node.finalModList, gemInstance.displayEffect,
+	// group.displayLabel, item.jewelRadiusData, superseded flags,
+	// group.mainActiveSkill) -- of which this port keeps only the ones a
+	// later stage reads.
+	if mode != "MAIN" && mode != "CALCULATOR" {
+		panic("calc: only MAIN and CALCULATOR modes are ported")
 	}
 	// Wire the calcLib externals mod evaluation reaches into.
 	modstore.Externals.GemIsType = func(gem any, keyword string) bool {
@@ -607,6 +635,7 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 		Replay:              replay,
 		GlobalCache:         replay.GlobalCache,
 		ExtraRadiusNodeList: map[int]*NodeInput{},
+		OverrideConditions:  overrideConditions,
 	}
 	for i, seq := range replay.NodeOrders {
 		if i < len(replay.AllocOrders) {

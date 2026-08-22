@@ -50,7 +50,8 @@ func (env *Env) RunTriggersPlayer() { env.RunTriggers(env.playerPA) }
 // RunOffencePlayer runs calcs.offence for the player's main skill, unless
 // calcs.mirages took the calculation over.
 func (env *Env) RunOffencePlayer() {
-	if !env.RunMirages() {
+	env.MirageHandled = env.RunMirages()
+	if !env.MirageHandled {
 		env.offence(env.playerPA, env.PlayerMainSkill)
 	}
 }

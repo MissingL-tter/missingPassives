@@ -113,7 +113,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 
 	// Sustainable-stage skills need cached output values
 	for _, activeSkill := range env.PlayerActiveSkills {
-		if !activeSkill.SkillFlags["disable"] {
+		if !activeSkill.SkillFlags["disable"] && !env.LimitedSkills[env.cacheSkillUUID(activeSkill)] {
 			geName := activeSkill.ActiveEffect.GrantedEffect.Name
 			part2 := anyNum(activeSkill.SkillPart) == 2
 			if (geName == "Blight" || geName == "Blight of Contagion" || geName == "Blight of Atrophy") && part2 {
