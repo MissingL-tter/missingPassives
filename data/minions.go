@@ -174,6 +174,15 @@ func ModCanon(m *modparser.Mod) map[string]any {
 	if m.SourceSlot != "" {
 		out["sourceSlot"] = m.SourceSlot
 	}
+	// ReplaceMod/ConvertMod stamp these on the mod table, so the archive
+	// canon carries them; without them the calc differential is blind to
+	// that bookkeeping. Matches modparser's writeCanonMod.
+	if m.Replaced {
+		out["replaced"] = true
+	}
+	if m.Converted {
+		out["converted"] = true
+	}
 	for i, tag := range m.Tags {
 		if tag != nil {
 			out[strconv.Itoa(i+1)] = tag
