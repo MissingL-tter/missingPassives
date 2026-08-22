@@ -33,6 +33,10 @@ type performActor struct {
 	strDmgBonus                           float64
 	appliedEnemyModifiers                 map[*modparser.Mod]bool
 
+	// offence-stage weapon reach (actor.weaponRange1/2, set in the
+	// skill-type-stats section)
+	weaponRange1, weaponRange2 float64
+
 	// EHP-stage shift tables (actor.damageShiftTable in the reference)
 	damageShiftTable         map[string]map[string]float64
 	damageOverTimeShiftTable map[string]map[string]float64
