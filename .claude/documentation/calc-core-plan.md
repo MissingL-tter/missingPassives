@@ -451,6 +451,16 @@ THREE HARNESS BUGS FOUND, each hidden behind a formatting or folding step:
    forces the typed-constant rounding. Swept the rest of data/tables.go --
    no other constant expression differs from its runtime form.
 
+OPEN, POST-PARITY: the compared canons are `%.14g` on both sides, so the
+differential is blind below the 15th significant digit -- exactly the band
+harness bug 2 lived in. A green run does not rule out sub-ulp drift that a
+later comparison bound amplifies. The review is: re-run the corpus with the
+canons at `%.17g` on both sides. Until then treat every `archive [x]` as
+"agrees to 14 digits". Two loose ends feed it: `coc`/`cocuser`/`dualstrike`/
+`bfbb`/`empty` still carry `%.14g` FIXTURES (their XML is outside
+test/corpus; the other 33 were re-dumped exact and no compared canon moved),
+and the constant-folding sweep was a regex over data/ and calc/, not a proof.
+
 Test-isolation note: processMod sets `ge.HasGlobalEffect` on the granted
 effect it is passed, so a calc run mutates the SHARED data set (faithfully
 -- the reference mutates its own global tables the same way, and

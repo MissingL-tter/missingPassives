@@ -51,6 +51,36 @@ A module without a runnable Lua archive dump (pure view code) states in its
 row what "verified" meant. Keep the reference files/lines columns untouched —
 they describe the reference, not the port.
 
+**`archive [x]` has a precision floor, and it is not yet reviewed.** Both
+sides serialise compared numbers at `%.14g`, so the differential cannot see a
+disagreement below the 14th significant digit. That is not a rounding
+nicety: such a difference is invisible until some later comparison bound
+flips on it, and then it appears as a whole-percent output error. One already
+did — a 15th-digit difference in a cached source rate ran the trigger
+simulation 1001 times instead of 1000 (`calc-core-plan.md`, harness bug 2) —
+and it was only caught because the amplified result diverged, not because the
+input comparison failed.
+
+So every `archive [x]` below currently means **"agrees to 14 significant
+digits at each checkpoint"**, not "is the same double". Nothing about a green
+run today rules out sub-ulp drift that a future branch amplifies. Three
+things are outstanding, and they are a POST-PARITY REVIEW item — do them once
+the modules are written, not per-gap:
+
+1. Re-run the whole corpus with the compared canons at `%.17g` on BOTH sides
+   and see what survives. This is the actual review; everything else here is
+   a symptom of not having done it.
+2. Five dumps (`coc`, `cocuser`, `dualstrike`, `bfbb`, `empty`) are built
+   from XML outside `test/corpus` and still carry `%.14g` *fixtures* —
+   replay input, where lost digits are a real divergence rather than a
+   display artifact. The other 33 were re-dumped exact; none of their
+   compared canons moved.
+3. The sweep for Go's arbitrary-precision constant folding (`1 / 0.033` as a
+   constant is one ulp off the reference's runtime division) was a regex over
+   `data/` and `calc/` that checked seven candidates. It is not a proof: a
+   constant expression with non-representable operands can hide in any
+   `const` block or literal table entry.
+
 **Kind** — how the module divides, the axis decoupling runs along:
 
 - `logic` — calculation, parsing, game data, persistent state. No presentation.
