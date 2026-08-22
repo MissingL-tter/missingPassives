@@ -254,6 +254,46 @@ local function scalars(t)
 	return o
 end
 
+-- GlobalCache snapshot for the trigger stage. Per uuid: the entry's own
+-- scalar fields plus the scalar slices of the cached env that CalcTriggers
+-- reaches into (player output incl. the MainHand/OffHand sub-tables, the
+-- cached main skill's skillData, and the cached ActiveSkill's skillData).
+local function cacheState(env)
+	local o = {}
+	for uuid, entry in pairs(GlobalCache.cachedData[env.mode] or {}) do
+		local e = {
+			Name = entry.Name,
+			Speed = entry.Speed,
+			HitSpeed = entry.HitSpeed,
+			ManaCost = entry.ManaCost,
+			LifeCost = entry.LifeCost,
+			ESCost = entry.ESCost,
+			RageCost = entry.RageCost,
+			HitChance = entry.HitChance,
+			AccuracyHitChance = entry.AccuracyHitChance,
+			PreEffectiveCritChance = entry.PreEffectiveCritChance,
+			CritChance = entry.CritChance,
+			TotalDPS = entry.TotalDPS,
+		}
+		local cachedEnv = entry.Env
+		if cachedEnv and cachedEnv.player then
+			local po = cachedEnv.player.output or {}
+			e.output = scalars(po)
+			e.outputMainHand = scalars(po.MainHand or {})
+			e.outputOffHand = scalars(po.OffHand or {})
+			if cachedEnv.player.mainSkill then
+				e.mainSkillData = scalars(cachedEnv.player.mainSkill.skillData or {})
+			end
+		end
+		if entry.ActiveSkill then
+			e.activeSkillData = scalars(entry.ActiveSkill.skillData or {})
+		end
+		o[uuid] = e
+	end
+	return o
+end
+
+
 local function nodeFixture(node)
 	return {
 		id = node.id,
@@ -690,6 +730,16 @@ local function dumpVariant(name, build)
 		emit(name .. ".ehpMinionOutput", scalars(env.minion.output or {}))
 	end
 
+	-- GlobalCache snapshot, taken immediately before calcs.triggers reads
+	-- it. The cache is filled by the app's own buildOutput during OnFrame
+	-- (one entry per skill), then the dump's calcs.perform overwrites the
+	-- main skill's entry with a pre-offence one. Triggers is the only stage
+	-- that reads it, and it reads a bounded set of fields; the replay
+	-- consumes this as a fixture rather than re-deriving it, exactly like
+	-- allocOrders/energyBladeItems. Enumerated from:
+	--   grep -oE "GlobalCache\.cachedData\[env\.mode\]\[[a-zA-Z]+\]\.[A-Za-z.]+" CalcTriggers.lua
+	emit(name .. ".globalCache", cacheState(env))
+
 	-- Offence stage (CalcPerform L3726-3729), run explicitly on the
 	-- post-EHP state. calcs.triggers runs first because offence reads the
 	-- trigger rate it writes; mirages decides whether offence runs at all.
@@ -719,6 +769,8 @@ local function dumpVariant(name, build)
 	emit(name .. ".offenceSkillOutput", scalars(env.player.mainSkill.skillData or {}))
 	if env.minion then
 		realTriggers(env, env.minion)
+		emit(name .. ".triggersMinionOutput", scalars(env.minion.output or {}))
+		emit(name .. ".triggersMinionSkillData", scalars(env.minion.mainSkill.skillData or {}))
 		realOffence(env, env.minion, env.minion.mainSkill)
 		emit(name .. ".offenceMinionDb", dbState(env.minion.modDB))
 		emit(name .. ".offenceMinionOutput", scalars(env.minion.output or {}))
