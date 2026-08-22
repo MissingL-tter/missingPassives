@@ -1252,12 +1252,16 @@ func (env *Env) performTail() {
 				for _, entry := range modDB.Tabulate("BASE", nil, "ExtraExposure", "Extra"+element+"Exposure") {
 					min += anyNum(entry.Value)
 				}
-				exposureMin := modDB.Override(nil, "ExposureMin")
-				if exposureMin == nil {
-					panic("perform: ExposureMin override missing (reference would error in m_min)")
+				// `m_min(min, modDB:Override(nil, "ExposureMin"))`: Override
+				// returns NO VALUES when nothing matches (ModDB.lua:219 falls
+				// off the end), not nil — so the call collapses to the
+				// one-argument m_min(min), which is just min.
+				resist := min
+				if exposureMin := modDB.Override(nil, "ExposureMin"); exposureMin != nil {
+					resist = math.Min(min, anyNum(exposureMin))
 				}
 				enemyDB.AddMod(newMod("Condition:Has"+element+"Exposure", "FLAG", true, ""))
-				enemyDB.AddMod(newMod(element+"Resist", "BASE", math.Min(min, anyNum(exposureMin)), source))
+				enemyDB.AddMod(newMod(element+"Resist", "BASE", resist, source))
 				modDB.AddMod(newMod("Condition:AppliedExposureRecently", "FLAG", true, ""))
 			}
 		}

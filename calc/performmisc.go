@@ -275,10 +275,15 @@ func (env *Env) doActorMisc(actor *performActor) {
 		}
 		if modDB.Flag(nil, "Chill") {
 			ail := d.NonDamagingAilment["Chill"]
-			// Lua: m_max(Sum, Override) — errors when the override is nil,
-			// so the config always supplies ChillVal alongside the flag;
-			// nil-as-0 here (the `or default` after m_max is dead code)
-			chillValue := math.Max(modDB.Sum("BASE", nil, "SelfChillOverride"), anyNum(modDB.Override(nil, "ChillVal")))
+			// `m_max(Sum(SelfChillOverride), Override(ChillVal)) or default`.
+			// Override returns NO VALUES when unset (ModDB.lua:219 falls off
+			// the end), so that collapses to the one-argument m_max — i.e.
+			// just the Sum — and the `or ailmentData.Chill.default` tail is
+			// dead, because a number (even 0) is truthy. #EVAL
+			chillValue := modDB.Sum("BASE", nil, "SelfChillOverride")
+			if ov := modDB.Override(nil, "ChillVal"); ov != nil {
+				chillValue = math.Max(chillValue, anyNum(ov))
+			}
 			totalChillSelfEffect := Mod(modDB, nil, "SelfChillEffect")
 			avoidChill := 0.0
 			if modDB.Flag(nil, "ChillImmune", "ElementalAilmentImmune") {
@@ -316,7 +321,12 @@ func (env *Env) doActorMisc(actor *performActor) {
 		}
 		if modDB.Flag(nil, "Shock") {
 			ail := d.NonDamagingAilment["Shock"]
-			shockValue := math.Max(modDB.Sum("BASE", nil, "SelfShockOverride"), anyNum(modDB.Override(nil, "ShockVal")))
+			// Same shape as chill above: the Override contributes only when
+			// it exists, and the `or default` tail is dead. #EVAL
+			shockValue := modDB.Sum("BASE", nil, "SelfShockOverride")
+			if ov := modDB.Override(nil, "ShockVal"); ov != nil {
+				shockValue = math.Max(shockValue, anyNum(ov))
+			}
 			totalShockSelfEffect := Mod(modDB, nil, "SelfShockEffect")
 			avoidShock := 0.0
 			if modDB.Flag(nil, "ShockImmune", "ElementalAilmentImmune") {
