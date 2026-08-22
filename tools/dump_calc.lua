@@ -815,7 +815,6 @@ local function dumpVariant(name, build)
 		item = dbState(env.itemModDB),
 	})
 	emit(name .. ".offenceOutput", scalars(env.player.output or {}))
-	emitFixture(name .. ".TMPexact", scalars(env.player.output or {}))
 	-- The main skill's own output bag is where offence puts most of its
 	-- product (damage, speed, DPS); the player output only carries the
 	-- summary.
