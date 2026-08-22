@@ -119,7 +119,7 @@ type Cfg struct {
 	BaseFlags          map[string]bool
 	Item               Item
 	Actor              string
-	SkillStats         map[string]float64
+	SkillStats         map[string]any // aliases the pass output table (MainHand/OffHand)
 }
 
 func pow10(n int) float64      { return math.Pow(10, float64(n)) }
@@ -204,12 +204,14 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 			return outNum(actor.Output["Mana"]) * (math.Ceil(reservedPercentBeforeEfficiency) / 100)
 		}
 	}
-	if v, present := actor.Output[stat]; present {
+	// `actor.output[stat] or (cfg and cfg.skillStats[stat]) or 0`: a stored
+	// false falls through to the skill stats, a stored 0 does not.
+	if v, present := actor.Output[stat]; present && truthy(v) {
 		return outNum(v)
 	}
 	if cfg != nil && cfg.SkillStats != nil {
-		if v, present := cfg.SkillStats[stat]; present {
-			return v
+		if v, present := cfg.SkillStats[stat]; present && truthy(v) {
+			return outNum(v)
 		}
 	}
 	return 0

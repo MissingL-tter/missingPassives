@@ -219,7 +219,12 @@ func TestModStoreAgainstReference(t *testing.T) {
 			Actor:            rec.Actor,
 			SkillCond:        rec.SkillCond,
 			BaseFlags:        rec.BaseFlags,
-			SkillStats:       rec.SkillStats,
+		}
+		if rec.SkillStats != nil {
+			cfg.SkillStats = map[string]any{}
+			for k, v := range rec.SkillStats {
+				cfg.SkillStats[k] = v
+			}
 		}
 		if rec.SkillPartNum != nil {
 			cfg.SkillPart = *rec.SkillPartNum
