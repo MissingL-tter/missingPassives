@@ -21,6 +21,11 @@ local function quote(s)
 end
 canon.quote = quote
 
+-- Fixture emission needs every bit of a double back (a trigger simulation
+-- can turn a 15th-digit difference into a visible one), while compared
+-- canons stay at 14 digits on both sides.
+local floatFormat = "%.14g"
+
 local function num(v)
 	if v ~= v or v == math.huge or v == -math.huge then
 		return quote(tostring(v))
@@ -28,7 +33,7 @@ local function num(v)
 	if v == math.floor(v) and v < 1e15 and v > -1e15 then
 		return string.format("%d", v)
 	end
-	return string.format("%.14g", v)
+	return string.format(floatFormat, v)
 end
 
 function canon.encode(v)
@@ -62,6 +67,18 @@ function canon.encode(v)
 		parts[#parts + 1] = quote(k) .. ":" .. canon.encode(val)
 	end
 	return "{" .. table.concat(parts, ",") .. "}"
+end
+
+-- encodeExact is canon.encode with round-trippable floats, for dump values
+-- the replay consumes as input rather than compares.
+function canon.encodeExact(v)
+	floatFormat = "%.17g"
+	local ok, res = pcall(canon.encode, v)
+	floatFormat = "%.14g"
+	if not ok then
+		error(res)
+	end
+	return res
 end
 
 return canon

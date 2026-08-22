@@ -62,7 +62,19 @@ var (
 	gameDataSet  *data.Data
 	gameDataSkip string
 	gameDataFail string
+	// gameDataGlobalEffect is each skill's hasGlobalEffect as data.Load left
+	// it; see restoreGameDataLoadState.
+	gameDataGlobalEffect map[string]bool
 )
+
+// restoreGameDataLoadState undoes the granted-effect mutation a calc run
+// leaves on the shared data set, so the game-data comparison sees the
+// post-load state whatever ran before it.
+func restoreGameDataLoadState(d *data.Data) {
+	for id, ge := range d.Skills {
+		ge.HasGlobalEffect = gameDataGlobalEffect[id]
+	}
+}
 
 // loadGameData assembles the runtime data set once per test binary: the
 // gamedata documents built over the extracted GGPK, loaded via data.Load.
@@ -132,6 +144,15 @@ func loadGameData(t *testing.T) *data.Data {
 			StatMapCopies:    readStatMapCopiesHelper(dumpPath),
 			FoulbornMapJSONC: foulborn,
 		})
+		// A calc run stamps hasGlobalEffect onto granted effects through
+		// the lazy statMap copies, faithfully -- the reference mutates its
+		// own global skill tables the same way. The game-data canon is the
+		// post-load state, and this binary shares one data set across
+		// tests, so record what to put back before comparing.
+		gameDataGlobalEffect = map[string]bool{}
+		for id, ge := range gameDataSet.Skills {
+			gameDataGlobalEffect[id] = ge.HasGlobalEffect
+		}
 	})
 	if gameDataSkip != "" {
 		t.Skip(gameDataSkip)

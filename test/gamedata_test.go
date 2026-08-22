@@ -81,6 +81,7 @@ var _ = func() bool {
 func TestGameDataAgainstReference(t *testing.T) {
 	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
 	d := loadGameData(t)
+	restoreGameDataLoadState(d)
 
 	checks := map[string]func() any{
 		"monsterEvasionTable":             func() any { return d.MonsterEvasionTable },

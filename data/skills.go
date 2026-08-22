@@ -94,7 +94,13 @@ type GrantedEffect struct {
 	HasLevels     bool
 	Levels        map[float64]*SkillLevel
 
-	StatMap         map[string]*StatMapEntry
+	StatMap map[string]*StatMapEntry
+	// StatMapOwner is the reference's `statMap._grantedEffect` backref
+	// (Data.lua:1039). When two skills share one statMap table the
+	// backref is last-writer-wins under pairs(), so the reference picks
+	// a different owner per process; both sides settle it in sorted id
+	// order instead. nil means the skill owns its own statMap.
+	StatMapOwner    *GrantedEffect
 	HasGlobalEffect bool
 
 	// Custom carries the hand-written template keys (parts, minionList,
@@ -156,7 +162,9 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 		d.Skills[id] = ge
 	}
 	// Resolve cross-skill table aliases so mutation is shared, as in the
-	// reference.
+	// reference. statMapGroups collects the skills sharing each target's
+	// statMap table so the backref owner can be settled deterministically.
+	statMapGroups := map[string][]string{}
 	for id, ge := range d.Skills {
 		if custom := skillCustom[id]; custom != nil && custom.StatMapAlias != "" {
 			target := d.Skills[custom.StatMapAlias]
@@ -164,12 +172,20 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 				target.StatMap = map[string]*StatMapEntry{}
 			}
 			ge.StatMap = target.StatMap
+			statMapGroups[custom.StatMapAlias] = append(statMapGroups[custom.StatMapAlias], id)
 		}
 		for k, v := range ge.Custom {
 			if alias, ok := v.(SkillAlias); ok {
 				target := d.Skills[alias.Skill]
 				if alias.Key == "baseMods" && target.BaseMods != nil {
 					ge.Custom[k] = target.BaseMods
+					// The Lua shares the table outright
+					// (`baseMods = skills.X.baseMods`), so the runtime field
+					// has to alias it too — filling only Custom leaves the
+					// typed list empty and the skill silently loses its
+					// base mods. The canon merges Custom, so this was
+					// invisible to the game-data comparison.
+					ge.BaseMods = target.BaseMods
 				} else {
 					ge.Custom[k] = target.Custom[alias.Key]
 				}
@@ -185,6 +201,19 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 		ids = append(ids, id)
 	}
 	sortStrings(ids)
+	// Settle the shared-statMap backref: the reference's last pairs() writer
+	// owns it, which in sorted order is the greatest member id.
+	for target, members := range statMapGroups {
+		owner := target
+		for _, m := range members {
+			if m > owner {
+				owner = m
+			}
+		}
+		for _, m := range append(members, target) {
+			d.Skills[m].StatMapOwner = d.Skills[owner]
+		}
+	}
 	for _, id := range ids {
 		ge := d.Skills[id]
 		ge.Name = sanitiseText(ge.Name)
@@ -421,9 +450,16 @@ func LazyStatMapCopy(ge *GrantedEffect, key string) *StatMapEntry {
 	if base == nil {
 		return nil
 	}
+	// The metatable passes `t._grantedEffect`, the skill that owns the
+	// statMap table — not necessarily the skill being looked up, since a
+	// shared table has one backref for both.
+	owner := ge
+	if ge.StatMapOwner != nil {
+		owner = ge.StatMapOwner
+	}
 	entry := copyStatMapEntry(base)
 	for i, m := range entry.Mods {
-		entry.Mods[i] = processModBlind(ge, m, key)
+		entry.Mods[i] = processModBlind(owner, m, key)
 	}
 	return entry
 }

@@ -103,6 +103,28 @@ local function sortedPairs(t)
 	end
 end
 pairs = sortedPairs
+
+-- Data.lua:1039 sets `grantedEffect.statMap._grantedEffect = grantedEffect`
+-- inside a pairs(data.skills) loop. Two skills can share one statMap table
+-- (ExplosiveTrapAltX aliases ExplosiveTrap's), so the backref is
+-- last-writer-wins over an order that varies per process -- and the lazy
+-- statMap copies then stamp whichever skill won as the mod source, even for
+-- the other skill. Settle it in sorted id order, matching the same
+-- re-assignment dump_gamedata makes.
+do
+	local ids = {}
+	for id in rawPairs(data.skills) do
+		ids[#ids + 1] = id
+	end
+	table.sort(ids)
+	for _, id in ipairs(ids) do
+		local ge = data.skills[id]
+		if ge.statMap then
+			ge.statMap._grantedEffect = ge
+		end
+	end
+end
+
 local calcs = LoadModule("Modules/Calcs")
 pairs = rawPairs
 
@@ -231,6 +253,12 @@ end
 local out = assert(io.open("../../test/testdata/calc_" .. key .. ".jsonl", "w"))
 local function emit(name, value)
 	out:write('{"k":', canon.quote(name), ',"c":', canon.quote(canon.encode(value)), "}\n")
+end
+
+-- Fixtures are replay input, not compared canon: emit them round-trippably
+-- so the Go side starts from the same doubles the reference had.
+local function emitFixture(name, value)
+	out:write('{"k":', canon.quote(name), ',"c":', canon.quote(canon.encodeExact(value)), "}\n")
 end
 
 -- ModList objects carry actor/parent backrefs; canon their array part only.
@@ -739,7 +767,7 @@ local function dumpVariant(name, build)
 	-- consumes this as a fixture rather than re-deriving it, exactly like
 	-- allocOrders/energyBladeItems. Enumerated from:
 	--   grep -oE "GlobalCache\.cachedData\[env\.mode\]\[[a-zA-Z]+\]\.[A-Za-z.]+" CalcTriggers.lua
-	emit(name .. ".globalCache", cacheState(env))
+	emitFixture(name .. ".globalCache", cacheState(env))
 
 	-- Offence stage (CalcPerform L3726-3729), run explicitly on the
 	-- post-EHP state. calcs.triggers runs first because offence reads the
@@ -764,6 +792,7 @@ local function dumpVariant(name, build)
 		item = dbState(env.itemModDB),
 	})
 	emit(name .. ".offenceOutput", scalars(env.player.output or {}))
+	emitFixture(name .. ".TMPexact", scalars(env.player.output or {}))
 	-- The main skill's own output bag is where offence puts most of its
 	-- product (damage, speed, DPS); the player output only carries the
 	-- summary.

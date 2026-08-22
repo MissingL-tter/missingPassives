@@ -80,7 +80,11 @@ type Misc struct {
 func miscTable(characterConstants, monsterConstants map[string]float64) Misc {
 	return Misc{
 		ServerTickTime:                  0.033,
-		ServerTickRate:                  1 / 0.033,
+		// float64(...) forces the division to round through the double, as
+		// the reference's runtime `1 / 0.033` does: Go would otherwise fold
+		// the untyped constant expression at arbitrary precision and land
+		// one ulp away, which a tick-rounding ceil can amplify.
+		ServerTickRate:                  1 / float64(0.033),
 		AccuracyPerDexBase:              2,
 		LowPoolThreshold:                0.5,
 		TemporalChainsEffectCap:         75,
