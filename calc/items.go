@@ -287,7 +287,11 @@ func (env *Env) buildItems() {
 			}
 		}
 		if slot.NodeID != nil && item != nil && item.In.Type == "Jewel" && item.In.JewelData != nil && truthy(item.In.JewelData["jewelIncEffectFromClassStart"]) {
-			panic("calc: jewelIncEffectFromClassStart unported (needs spec node distances)")
+			// Split Personality: the socket's effect scales with how far the
+			// socket sits from the class start.
+			if node := env.AllocNodes[int(*slot.NodeID)]; node != nil && node.DistanceToClassStart != nil {
+				scale = scale + *node.DistanceToClassStart*(anyNum(item.In.JewelData["jewelIncEffectFromClassStart"])/100)
+			}
 		}
 		if item == nil {
 			continue

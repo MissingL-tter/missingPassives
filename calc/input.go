@@ -120,42 +120,42 @@ type FlaskBaseInput struct {
 // The map-typed fields are scalar bags dumped as-is (flaskData, jewelData,
 // weaponData sides, ...).
 type ItemInput struct {
-	Name                        string                    `lua:"name"`
-	ModSource                   *string                   `lua:"modSource"`
-	Title                       *string                   `lua:"title"`
-	BaseName                    *string                   `lua:"baseName"`
-	Type                        string                    `lua:"type"`
-	Rarity                      string                    `lua:"rarity"`
-	Corrupted                   *bool                     `lua:"corrupted"`
-	Shaper                      *bool                     `lua:"shaper"`
-	Elder                       *bool                     `lua:"elder"`
-	Adjudicator                 *bool                     `lua:"adjudicator"`
-	Basilisk                    *bool                     `lua:"basilisk"`
-	Crusader                    *bool                     `lua:"crusader"`
-	Eyrie                       *bool                     `lua:"eyrie"`
-	Foulborn                    *bool                     `lua:"foulborn"`
-	ClassRestriction            *string                   `lua:"classRestriction"`
-	Limit                       *float64                  `lua:"limit"`
-	Quality                     *float64                  `lua:"quality"`
-	Base                        *ItemBaseInput            `lua:"base"`
-	ModList                     []*modparser.Mod          `lua:"modList"`
-	SlotModList                 map[int][]*modparser.Mod  `lua:"slotModList"`
-	BaseModList                 []*modparser.Mod          `lua:"baseModList"`
-	BuffModList                 []*modparser.Mod          `lua:"buffModList"`
-	GrantedSkills               []map[string]any          `lua:"grantedSkills"`
-	Requirements                map[string]float64        `lua:"requirements"`
-	Sockets                     []map[string]any          `lua:"sockets"`
-	AbyssalSocketCount          *float64                  `lua:"abyssalSocketCount"`
-	SocketedJewelEffectModifier *float64                  `lua:"socketedJewelEffectModifier"`
-	JewelRadiusIndex            *float64                  `lua:"jewelRadiusIndex"`
-	FuncTypes                   []string                  `lua:"funcTypes"`
-	JewelData                   map[string]any            `lua:"jewelData"`
-	FlaskData                   map[string]any            `lua:"flaskData"`
-	TinctureData                map[string]any            `lua:"tinctureData"`
-	ArmourData                  map[string]any            `lua:"armourData"`
-	WeaponData                  map[int]map[string]any    `lua:"weaponData"`
-	ExplicitLines               []string                  `lua:"explicitLines"`
-	OtherLines                  []string                  `lua:"otherLines"`
+	Name                        string                   `lua:"name"`
+	ModSource                   *string                  `lua:"modSource"`
+	Title                       *string                  `lua:"title"`
+	BaseName                    *string                  `lua:"baseName"`
+	Type                        string                   `lua:"type"`
+	Rarity                      string                   `lua:"rarity"`
+	Corrupted                   *bool                    `lua:"corrupted"`
+	Shaper                      *bool                    `lua:"shaper"`
+	Elder                       *bool                    `lua:"elder"`
+	Adjudicator                 *bool                    `lua:"adjudicator"`
+	Basilisk                    *bool                    `lua:"basilisk"`
+	Crusader                    *bool                    `lua:"crusader"`
+	Eyrie                       *bool                    `lua:"eyrie"`
+	Foulborn                    *bool                    `lua:"foulborn"`
+	ClassRestriction            *string                  `lua:"classRestriction"`
+	Limit                       *float64                 `lua:"limit"`
+	Quality                     *float64                 `lua:"quality"`
+	Base                        *ItemBaseInput           `lua:"base"`
+	ModList                     []*modparser.Mod         `lua:"modList"`
+	SlotModList                 map[int][]*modparser.Mod `lua:"slotModList"`
+	BaseModList                 []*modparser.Mod         `lua:"baseModList"`
+	BuffModList                 []*modparser.Mod         `lua:"buffModList"`
+	GrantedSkills               []map[string]any         `lua:"grantedSkills"`
+	Requirements                map[string]float64       `lua:"requirements"`
+	Sockets                     []map[string]any         `lua:"sockets"`
+	AbyssalSocketCount          *float64                 `lua:"abyssalSocketCount"`
+	SocketedJewelEffectModifier *float64                 `lua:"socketedJewelEffectModifier"`
+	JewelRadiusIndex            *float64                 `lua:"jewelRadiusIndex"`
+	FuncTypes                   []string                 `lua:"funcTypes"`
+	JewelData                   map[string]any           `lua:"jewelData"`
+	FlaskData                   map[string]any           `lua:"flaskData"`
+	TinctureData                map[string]any           `lua:"tinctureData"`
+	ArmourData                  map[string]any           `lua:"armourData"`
+	WeaponData                  map[int]map[string]any   `lua:"weaponData"`
+	ExplicitLines               []string                 `lua:"explicitLines"`
+	OtherLines                  []string                 `lua:"otherLines"`
 }
 
 type ClassStats struct {
@@ -179,15 +179,19 @@ type SpecInput struct {
 // NodeInput carries the allocated-node fields buildModListForNodeList
 // consumes. Pointer fields are keys the dump only sets sometimes.
 type NodeInput struct {
-	ID           float64          `lua:"id"`
-	Type         string           `lua:"type"`
-	Name         *string          `lua:"name"`
-	DN           *string          `lua:"dn"`
-	IsTattoo     *bool            `lua:"isTattoo"`
-	OverrideType *string          `lua:"overrideType"`
-	ConqueredBy  *bool            `lua:"conqueredBy"`
-	ModList      []*modparser.Mod `lua:"modList"`
-	KeystoneMod  *modparser.Mod   `lua:"keystoneMod"`
+	ID           float64 `lua:"id"`
+	Type         string  `lua:"type"`
+	Name         *string `lua:"name"`
+	DN           *string `lua:"dn"`
+	IsTattoo     *bool   `lua:"isTattoo"`
+	OverrideType *string `lua:"overrideType"`
+	ConqueredBy  *bool   `lua:"conqueredBy"`
+	// DistanceToClassStart is spec-computed
+	// (PassiveSpec:SetNodeDistanceToClassStart); Split Personality sockets
+	// scale their effect by it.
+	DistanceToClassStart *float64         `lua:"distanceToClassStart"`
+	ModList              []*modparser.Mod `lua:"modList"`
+	KeystoneMod          *modparser.Mod   `lua:"keystoneMod"`
 
 	// GrantedSkills is runtime state buildModListForNode writes onto the
 	// node (untagged: not part of the fixture echo).

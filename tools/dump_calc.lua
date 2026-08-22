@@ -303,6 +303,9 @@ local function nodeFixture(node)
 		isTattoo = node.isTattoo,
 		overrideType = node.overrideType,
 		conqueredBy = node.conqueredBy and true or nil,
+		-- Spec-computed (PassiveSpec:SetNodeDistanceToClassStart); CalcSetup
+		-- L959 scales a Split Personality socket's effect by it.
+		distanceToClassStart = node.distanceToClassStart,
 		modList = modArray(node.modList),
 		keystoneMod = node.keystoneMod,
 	}
@@ -328,8 +331,6 @@ local function modLinesActive(item)
 end
 
 local function itemFixture(item)
-	assert(not (item.jewelData and item.jewelData.jewelIncEffectFromClassStart),
-		"dump_calc: jewelIncEffectFromClassStart unported: " .. item.name)
 	-- funcList functions are re-derived by the replay from the item's mod
 	-- lines (modparser jewels.go); emit the types for the assertion.
 	local funcTypes
