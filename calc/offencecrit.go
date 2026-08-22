@@ -44,7 +44,7 @@ func (env *Env) offenceCrit(c *offenceCtx, pass *damagePass) {
 	// Calculate maximum sustainable fuses and explosion rate for Explosive
 	// Arrow. Does not take into account mines or traps.
 	if activeSkill.ActiveEffect.GrantedEffect.Name == "Explosive Arrow" {
-		panic("offence: Explosive Arrow's explosiveArrowFunc callback is unported")
+		env.explosiveArrowFunc(c, output)
 	}
 
 	// Calculate crit chance, crit multiplier, and their combined effect

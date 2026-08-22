@@ -985,15 +985,16 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 				}
 				if mod.Source == activeGrantedEffect.ModSource {
 					// Inherit buff configuration from the active skill
+					// These are plain assignments in the reference, so a nil
+					// on the right removes whatever the effect tag put
+					// there -- notably allowTotemBuff, which a GlobalEffect
+					// tag can set and a skill without skillData.
+					// allowTotemBuff then clears again.
 					buff.KV["activeSkillBuff"] = true
-					if !truthy(buff.KV["applyNotPlayer"]) {
-						setKV(buff.KV, "applyNotPlayer", activeSkill.SkillData["buffNotPlayer"])
-					}
-					if !truthy(buff.KV["applyMinions"]) {
-						setKV(buff.KV, "applyMinions", activeSkill.SkillData["buffMinions"])
-					}
-					setKV(buff.KV, "applyAllies", activeSkill.SkillData["buffAllies"])
-					setKV(buff.KV, "allowTotemBuff", activeSkill.SkillData["allowTotemBuff"])
+					assignKV(buff.KV, "applyNotPlayer", luaOr(buff.KV["applyNotPlayer"], activeSkill.SkillData["buffNotPlayer"]))
+					assignKV(buff.KV, "applyMinions", luaOr(buff.KV["applyMinions"], activeSkill.SkillData["buffMinions"]))
+					assignKV(buff.KV, "applyAllies", activeSkill.SkillData["buffAllies"])
+					assignKV(buff.KV, "allowTotemBuff", activeSkill.SkillData["allowTotemBuff"])
 				}
 				activeSkill.BuffListTyped = append(activeSkill.BuffListTyped, buff)
 			}
@@ -1042,6 +1043,23 @@ func setKV(kv map[string]any, k string, v any) {
 	if v != nil {
 		kv[k] = v
 	}
+}
+
+// assignKV is a plain Lua field assignment: storing nil removes the key.
+func assignKV(kv map[string]any, k string, v any) {
+	if v == nil {
+		delete(kv, k)
+		return
+	}
+	kv[k] = v
+}
+
+// luaOr is `a or b`: b whenever a is nil or false.
+func luaOr(a, b any) any {
+	if truthy(a) {
+		return a
+	}
+	return b
 }
 
 // keywordFlagByName is KeywordFlag[name] for dynamic lookups.

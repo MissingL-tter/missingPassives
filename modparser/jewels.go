@@ -438,6 +438,12 @@ var jewelSelfUnallocFuncs = map[string]any{
 // grants-all-bonuses functions build up.
 type modListCollector struct{ mods []*Mod }
 
+// ModListSource is what such a collector looks like to AddList, which the
+// reference calls with a whole ModList (`out:AddList(data.modList)`).
+type ModListSource interface{ Mods() []*Mod }
+
+func (c *modListCollector) Mods() []*Mod { return c.mods }
+
 func grantsUnallocated(nodeType string) jewelNodeFunc {
 	return func(node any, out modStoreWriter, data Tag) {
 		if n, ok := asJewelNode(node); ok {

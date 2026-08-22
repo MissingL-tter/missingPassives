@@ -59,6 +59,10 @@ func (w listWriter) AddList(list any) {
 				w.l.AddMod(m)
 			}
 		}
+	case modparser.ModListSource:
+		// A jewel func that built its own ModList (the two
+		// grants-all-bonuses-of-unallocated funcs).
+		w.l.AddList(t.Mods())
 	default:
 		panic("calc: unsupported AddList argument in jewel func")
 	}

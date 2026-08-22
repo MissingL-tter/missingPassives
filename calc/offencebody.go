@@ -141,7 +141,31 @@ func (env *Env) calcAreaOfEffect(c *offenceCtx) {
 				output["AreaOfEffectRadiusTertiary"] = calcMoltenStrikeTertiaryRadius(baseRadius,
 					anyNum(c.skillData["radiusSecondary"]), outNum(output, "AreaOfEffectModTertiary"), outNum(output, "SpeedModTertiary"))
 			} else if truthy(c.skillData["radiusTertiaryBaseMargin"]) {
-				panic("offence: radiusTertiaryBaseMargin (Explosive Trap random radius) unported")
+				// "Smaller explosions have between 30% reduced and 30%
+				// increased base radius at random" (Explosive Trap only).
+				// Each 1% step of the deviation is one equally likely
+				// outcome, so the reported radius is their mean -- but note
+				// the loop runs one step past marginWidth outcomes, which
+				// the divisor does not account for.
+				margin := anyNum(c.skillData["radiusTertiaryBaseMargin"]) / 100
+				marginWidth := anyNum(c.skillData["radiusTertiaryBaseMargin"])*2 + 1
+				baseRadiiOccurrences := map[float64]float64{}
+				// Accumulating the step, as the Lua numeric for does.
+				for deviation := 1 - margin; deviation <= 1+margin+0.01; deviation += 0.01 {
+					baseRadiiOccurrences[math.Floor(baseRadius*deviation)]++
+				}
+				sumOfRandomRadii := 0.0
+				radiiOccurrences := map[float64]float64{}
+				for _, adjustedBaseRadius := range sortedNumKeys(baseRadiiOccurrences) {
+					occurrenceCount := baseRadiiOccurrences[adjustedBaseRadius]
+					radiusForDeviation := calcRadius(adjustedBaseRadius, outNum(output, "AreaOfEffectModTertiary"))
+					sumOfRandomRadii += radiusForDeviation * occurrenceCount
+					radiiOccurrences[radiusForDeviation] += occurrenceCount
+				}
+				output["AreaOfEffectRadiusTertiary"] = sumOfRandomRadii / marginWidth
+				// Read back by Explosive Trap's preDamageFunc; scalarsOnly
+				// keeps it out of the output canon, as in the reference dump.
+				output["AreaOfEffectRadiusTertiaryOccurrences"] = radiiOccurrences
 			} else {
 				output["AreaOfEffectRadiusTertiary"] = calcRadius(baseRadius, outNum(output, "AreaOfEffectModTertiary"))
 			}

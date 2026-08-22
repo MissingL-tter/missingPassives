@@ -396,3 +396,15 @@ func copyTagValue(v any) any {
 		return v
 	}
 }
+
+// sortedNumKeys is the key order dump_calc's sortedPairs gives a table with
+// only numeric keys: ascending. Float sums over such a table are not
+// associative, so the replay has to walk them the same way.
+func sortedNumKeys(m map[float64]float64) []float64 {
+	keys := make([]float64, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Float64s(keys)
+	return keys
+}
