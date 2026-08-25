@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Templar" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="5" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemHeavyStrike" variantId="HeavyStrike" enableGlobal1="true" level="20" nameSpec="Heavy Strike" skillId="HeavyStrike" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemArc" variantId="Arc" enableGlobal1="true" level="20" nameSpec="Arc" skillId="Arc" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemFireball" variantId="Fireball" enableGlobal1="true" level="20" nameSpec="Fireball" skillId="Fireball" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: UNIQUE
+Mjölner
+Gavel
+Implicits: 1
+15% reduced Enemy Stun Threshold
+Trigger a Socketed Lightning Spell on Hit, with a 0.25 second Cooldown
+Socketed Lightning Spells have no Cost if Triggered
++300 Intelligence Requirement
++200 Strength Requirement
+</Item>
+		<Item id="2">Rarity: UNIQUE
+Oskarm
+Nubuck Gloves
+Implicits: 0
++12% chance to Suppress Spell Damage
+Trigger Level 10 Assassin's Mark when you Hit a Rare or Unique Enemy and have no Mark
+35% increased Global Accuracy Rating
++45 to maximum Life
+</Item>
+		<Item id="3">Rarity: UNIQUE
+Kitava's Thirst
+Zealot Helmet
+Implicits: 0
+50% chance to Trigger Socketed Spells when you Spend at least 100 Mana on an Upfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown
+15% reduced Cast Speed
+75% increased Armour and Energy Shield
++40 to maximum Mana
+</Item>
+		<Item id="4">Rarity: UNIQUE
+Mark of the Elder
+Steel Ring
+Elder Item
+Implicits: 1
+Adds 3 to 10 Physical Damage to Attacks
+20% chance to Trigger Level 20 Tentacle Whip on Kill
+Adds 28 to 45 Cold Damage to Attacks
+8% increased maximum Energy Shield
+8% increased maximum Life
+</Item>
+		<Item id="5">Rarity: UNIQUE
+Mark of the Shaper
+Opal Ring
+Shaper Item
+Implicits: 1
+20% increased Elemental Damage
+20% chance to Trigger Level 20 Summon Volatile Anomaly on Kill
+Adds 15 to 52 Lightning Damage to Spells
+8% increased maximum Energy Shield
+8% increased maximum Life
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Weapon 1" itemPbURL="" itemId="1"/>
+			<Slot name="Gloves" itemPbURL="" itemId="2"/>
+			<Slot name="Helmet" itemPbURL="" itemId="3"/>
+			<Slot name="Ring 1" itemPbURL="" itemId="4"/>
+			<Slot name="Ring 2" itemPbURL="" itemId="5"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+			<Input name="conditionKilledRecently" boolean="true"/>
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

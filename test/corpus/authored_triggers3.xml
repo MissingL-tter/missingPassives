@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Ranger" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="2" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemFrenzy" variantId="Frenzy" enableGlobal1="true" level="20" nameSpec="Frenzy" skillId="Frenzy" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemFireball" variantId="Fireball" enableGlobal1="true" level="20" nameSpec="Fireball" skillId="Fireball" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 2" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemBurningArrow" variantId="BurningArrow" enableGlobal1="true" level="20" nameSpec="Burning Arrow" skillId="BurningArrow" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: NORMAL
+Short Bow
+</Item>
+		<Item id="2">Rarity: UNIQUE
+Maloney's Mechanism
+Ornate Quiver
+Implicits: 1
+Has 1 Socket
+Trigger a Socketed Bow Skill when you Attack with a Bow, with a 1 second Cooldown
+10% increased Attack Speed
++60 to maximum Life
+5% chance to Blind Enemies on Hit with Attacks
+</Item>
+		<Item id="3">Rarity: UNIQUE
+Asenath's Chant
+Iron Circlet
+Implicits: 0
+Trigger a Socketed Spell when you Attack with a Bow, with a 0.3 second Cooldown
+12% increased Attack Speed
+12% increased Cast Speed
++110 to maximum Energy Shield
+30% increased Mana Regeneration Rate
+5% increased Movement Speed
+35% increased Stun and Block Recovery
+</Item>
+		<Item id="4">Rarity: UNIQUE
+Lioneye's Paws
+Bronzescale Boots
+Implicits: 0
+Trigger Level 5 Rain of Arrows when you Attack with a Bow
++50 to Strength
++50 to Dexterity
+Adds 12 to 24 Fire Damage to Attacks
+20% increased Movement Speed
+40% reduced Movement Speed when on Low Life
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Weapon 1" itemPbURL="" itemId="1"/>
+			<Slot name="Weapon 2" itemPbURL="" itemId="2"/>
+			<Slot name="Helmet" itemPbURL="" itemId="3"/>
+			<Slot name="Boots" itemPbURL="" itemId="4"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

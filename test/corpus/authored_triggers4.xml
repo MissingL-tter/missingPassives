@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Duelist" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="4" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemCleave" variantId="Cleave" enableGlobal1="true" level="20" nameSpec="Cleave" skillId="Cleave" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: UNIQUE
+Ngamahu's Flame
+Abyssal Axe
+Implicits: 0
+20% chance to Trigger Level 16 Molten Burst on Melee Hit
+180% increased Physical Damage
+10% increased Attack Speed
+60% of Physical Damage Converted to Fire Damage
+Damage Penetrates 20% Fire Resistance
+</Item>
+		<Item id="2">Rarity: UNIQUE
+Shroud of the Lightless
+Carnal Armour
+Implicits: 1
++22 to maximum Mana
+Has 1 Abyssal Socket
+20% chance to Trigger Level 20 Shade Form when you Use a Socketed Skill
+170% increased Evasion and Energy Shield
+8% increased maximum Life
+12% increased maximum Mana
+3% increased Maximum Life per Abyss Jewel affecting you
+3% increased Maximum Mana per Abyss Jewel affecting you
+</Item>
+		<Item id="3">Rarity: UNIQUE
+Sporeguard
+Saint's Hauberk
+Implicits: 0
+Trigger Level 10 Contaminate when you Kill an Enemy
+220% increased Armour and Energy Shield
+8% increased maximum Life
++35% to Chaos Resistance
+Enemies on Fungal Ground you Kill Explode, dealing 10% of their Life as Chaos Damage
+You have Fungal Ground around you while stationary
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Weapon 1" itemPbURL="" itemId="1"/>
+			<Slot name="Body Armour" itemPbURL="" itemId="2"/>
+		</ItemSet>
+		<ItemSet useSecondWeaponSet="nil" id="2">
+			<Slot name="Weapon 1" itemPbURL="" itemId="1"/>
+			<Slot name="Body Armour" itemPbURL="" itemId="3"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+			<Input name="conditionKilledRecently" boolean="true"/>
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

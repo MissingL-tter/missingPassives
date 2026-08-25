@@ -40,3 +40,6 @@ tempest	../../test/corpus/Leap_and_burn.xml
 voidstorm	../../test/corpus/w_nd.xml
 shockwave	../../test/corpus/Mou_.xml
 toad	../../test/corpus/SkymindAllflame.xml
+trig1	../../test/corpus/authored_triggers1.xml
+trig2	../../test/corpus/authored_triggers2.xml
+trig3	../../test/corpus/authored_triggers3.xml

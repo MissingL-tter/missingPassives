@@ -705,6 +705,15 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		"toad.treeonly":         "calc_toad.jsonl",
 		"toad.noskills":         "calc_toad.jsonl",
 		"toad.full":             "calc_toad.jsonl",
+		"trig1.treeonly":        "calc_trig1.jsonl",
+		"trig1.noskills":        "calc_trig1.jsonl",
+		"trig1.full":            "calc_trig1.jsonl",
+		"trig2.treeonly":        "calc_trig2.jsonl",
+		"trig2.noskills":        "calc_trig2.jsonl",
+		"trig2.full":            "calc_trig2.jsonl",
+		"trig3.treeonly":        "calc_trig3.jsonl",
+		"trig3.noskills":        "calc_trig3.jsonl",
+		"trig3.full":            "calc_trig3.jsonl",
 	}
 	checked := 0
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
