@@ -31,6 +31,13 @@ func (t tplFS) Read(rel string) (string, error) {
 // Requires the extracted GGPK at .archive/src/Export/ggpk (see that
 // directory's README for bun_extract_file usage); skips when absent.
 func TestExportAgainstReference(t *testing.T) {
+	// The export differential re-verifies the generator against the GGPK —
+	// ~97s, and only meaningful when the exporter or the game files change.
+	// Everything else runs from the committed data/raw, so this stays off
+	// unless asked for: MP_EXPORT=1 go test ./test/ -run TestExportAgainstReference
+	if os.Getenv("MP_EXPORT") == "" {
+		t.Skip("export differential skipped by default; set MP_EXPORT=1 to run")
+	}
 	srcDir := filepath.Join("..", ".archive", "src", "Export", "ggpk")
 	refDir := filepath.Join("..", ".archive", "src")
 	if _, err := os.Stat(filepath.Join(srcDir, "Data", "stats.datc64")); err != nil {
