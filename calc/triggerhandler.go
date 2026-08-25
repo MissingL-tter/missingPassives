@@ -109,8 +109,12 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		trigRate = &scaled
 	}
 
-	if truthy(main.SkillData["triggeredByManaSpent"]) {
-		panic("triggers: Kitava's Thirst mana-spent path unported")
+	// Special handling for Kitava's Thirst: repeated hits do not consume
+	// mana and do not trigger it.
+	if truthy(main.SkillData["triggeredByManaSpent"]) && source != nil && trigRate != nil {
+		repeats := 1 + source.SkillModList.Sum("BASE", nil, "RepeatCount")
+		scaled := *trigRate / repeats
+		trigRate = &scaled
 	}
 	// Battlemage's Cry uptime
 	if truthy(main.SkillData["triggeredByBattleMageCry"]) && cached != nil && source != nil &&
@@ -481,4 +485,41 @@ func (env *Env) cwcHandler() {
 		main.SkillData["triggerSourceUUID"] = env.cacheSkillUUID(source)
 		main.InfoMessage = triggerName + "'s Trigger: " + source.ActiveEffect.GrantedEffect.Name
 	}
+}
+
+// helmetFocusHandler ports the local of the same name (CalcTriggers L135):
+// "trigger when you Focus" helmet enchants. Skills trigger only on
+// activation, so the effective rate is one per focus duration + cooldown.
+func (env *Env) helmetFocusHandler() {
+	main := env.PlayerMainSkill
+	if main.SkillFlags["minion"] || main.SkillFlags["disable"] || main.TriggeredBy == nil {
+		return
+	}
+	output := env.Player.Output
+	main.SkillData["triggered"] = true
+	triggerCD := triggeredByCooldown(main.TriggeredBy)
+	icdrFocus := Mod(main.SkillModList, main.SkillCfg, "FocusCooldownRecovery")
+	icdrSkill := Mod(main.SkillModList, main.SkillCfg, "CooldownRecovery")
+
+	// Next possible activation is duration + cooldown.
+	skillFocus := env.Data.Skills["Focus"]
+	focusDuration := anyNum(skillFocus.ConstantStats[0][1]) / 1000
+	focusCD := skillFocus.Levels[1].Extra["cooldown"] / icdrFocus
+	focusTotalCD := focusDuration + focusCD
+
+	// The skill's own cooldown still applies to focus triggers.
+	modActionCooldown := math.Max(anyNum(main.SkillData["cooldown"]), num64(triggerCD)/icdrSkill)
+	rateCapAdjusted := math.Ceil(modActionCooldown*env.Data.Misc.ServerTickRate) / env.Data.Misc.ServerTickRate
+	triggerRate := math.Inf(1)
+	if rateCapAdjusted != 0 {
+		triggerRate = 1 / rateCapAdjusted
+	}
+	output["TriggerRateCap"] = triggerRate
+	output["SkillTriggerRate"] = 1 / focusTotalCD
+
+	// Account for Trigger-related INC/MORE modifiers
+	addTriggerIncMoreMods(main, main)
+	main.InfoMessage = "Assuming perfect focus Re-Use"
+	main.SkillData["triggerRate"] = output["SkillTriggerRate"]
+	main.SkillFlags["globalTrigger"] = true
 }
