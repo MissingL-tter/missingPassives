@@ -1,12 +1,9 @@
 // GlobalCache: the per-skill output cache Data/Global.lua declares and
-// Common.lua's cacheData fills. It is produced by Calcs.lua's buildOutput
-// driver (which runs a whole perform per skill), not by any of the stages
-// ported here, so the replay consumes it as a fixture — the same boundary
-// the tree alloc orders and the Energy Blade weapons already use.
+// Common.lua's cacheData fills, at the end of every calcs.perform. Calcs.lua's
+// buildOutput driver is what populates it for skills other than the main one,
+// by running a whole perform per skill (calcs.buildActiveSkill).
 //
-// calcs.triggers is its only reader, and it reads a bounded set of fields;
-// tools/dump_calc.lua captures exactly those, snapshotted at the moment the
-// reference reaches the trigger stage.
+// calcs.triggers is its only reader, and it reads a bounded set of fields.
 package calc
 
 import (
@@ -29,20 +26,53 @@ type CachedSkill struct {
 	CritChance             *float64 `lua:"CritChance"`
 	TotalDPS               *float64 `lua:"TotalDPS"`
 
-	// Scalar slices of the cached env that CalcTriggers reaches into.
-	Output          map[string]any `lua:"output"`
-	OutputMainHand  map[string]any `lua:"outputMainHand"`
-	OutputOffHand   map[string]any `lua:"outputOffHand"`
-	MainSkillData   map[string]any `lua:"mainSkillData"`
-	ActiveSkillData map[string]any `lua:"activeSkillData"`
+	// The reference stores the env and the skill themselves, so every read
+	// through them is LIVE: a stage that runs after the entry was cached
+	// changes what the entry appears to hold. The accessors below preserve
+	// that -- do not snapshot these.
+	ActiveSkill *ActiveSkill
+	Env         *Env
 }
 
-// out reads a cached Env.player.output value.
+// out reads a cached Env.player.output value, live.
 func (c *CachedSkill) out(key string) any {
-	if c == nil {
+	if c == nil || c.Env == nil || c.Env.Player == nil {
 		return nil
 	}
-	return c.Output[key]
+	return c.Env.Player.Output[key]
+}
+
+// outputMainHand / outputOffHand are output.MainHand and output.OffHand of
+// the cached env -- the per-weapon passes a dual-wielding source leaves
+// behind.
+func (c *CachedSkill) outputMainHand(key string) any { return c.outputSub("MainHand", key) }
+func (c *CachedSkill) outputOffHand(key string) any  { return c.outputSub("OffHand", key) }
+
+func (c *CachedSkill) outputSub(table, key string) any {
+	if c == nil || c.Env == nil || c.Env.Player == nil {
+		return nil
+	}
+	sub, _ := c.Env.Player.Output[table].(map[string]any)
+	return sub[key]
+}
+
+// mainSkillData is the cached env's CURRENT main skill's data; activeSkillData
+// is that of the skill the entry was cached for. They are the same table
+// unless the env was re-performed for another skill.
+func (c *CachedSkill) mainSkillData(key string) (any, bool) {
+	if c == nil || c.Env == nil || c.Env.PlayerMainSkill == nil {
+		return nil, false
+	}
+	v, ok := c.Env.PlayerMainSkill.SkillData[key]
+	return v, ok
+}
+
+func (c *CachedSkill) activeSkillData(key string) (any, bool) {
+	if c == nil || c.ActiveSkill == nil {
+		return nil, false
+	}
+	v, ok := c.ActiveSkill.SkillData[key]
+	return v, ok
 }
 
 // speedOrHitSpeed is `cached.HitSpeed or cached.Speed`.
@@ -95,4 +125,40 @@ func (env *Env) cacheSkillUUID(skill *ActiveSkill) string {
 // replay cannot, so callers that would need one panic instead of guessing.
 func (env *Env) cached(skill *ActiveSkill) *CachedSkill {
 	return env.GlobalCache[env.cacheSkillUUID(skill)]
+}
+
+// cacheData ports Common.lua's cacheData (L862), the last statement of
+// calcs.perform: the main skill's headline numbers plus back-references to
+// the env and skill that produced them.
+func (env *Env) cacheData() {
+	main := env.PlayerMainSkill
+	output := env.Player.Output
+	num := func(key string) *float64 {
+		v, ok := output[key]
+		if !ok || v == nil {
+			return nil
+		}
+		n := anyNum(v)
+		return &n
+	}
+	entry := &CachedSkill{
+		Name:                   main.ActiveEffect.GrantedEffect.Name,
+		Speed:                  num("Speed"),
+		HitSpeed:               num("HitSpeed"),
+		ManaCost:               num("ManaCost"),
+		LifeCost:               num("LifeCost"),
+		ESCost:                 num("ESCost"),
+		RageCost:               num("RageCost"),
+		HitChance:              num("HitChance"),
+		AccuracyHitChance:      num("AccuracyHitChance"),
+		PreEffectiveCritChance: num("PreEffectiveCritChance"),
+		CritChance:             num("CritChance"),
+		TotalDPS:               num("TotalDPS"),
+		ActiveSkill:            main,
+		Env:                    env,
+	}
+	if env.GlobalCache == nil {
+		env.GlobalCache = map[string]*CachedSkill{}
+	}
+	env.GlobalCache[env.cacheSkillUUID(main)] = entry
 }

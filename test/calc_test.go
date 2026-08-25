@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
+	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -396,7 +397,9 @@ func TestCalcFixtureEcho(t *testing.T) {
 				t.Fatalf("%s %s: %v", name, k, err)
 			}
 			in := decodeCalcFixture(m)
-			if got := luacanon.Encode(in); got != c {
+			// Fixtures are emitted round-trippably (%.17g), so the echo
+			// re-encodes at the same precision.
+			if got := luacanon.EncodeExact(in); got != c {
 				t.Errorf("%s %s: echo diverged\n%s", name, k, diffWindow(got, c))
 			}
 		})
@@ -545,48 +548,6 @@ func decodeEnergyBladeItems(c string) map[string]*calc.ItemInput {
 	out := map[string]*calc.ItemInput{}
 	for slot, it := range m {
 		out[slot] = decodeCalcItem(it)
-	}
-	return out
-}
-
-func decodeGlobalCache(c string) map[string]*calc.CachedSkill {
-	var m map[string]map[string]any
-	if err := json.Unmarshal([]byte(c), &m); err != nil {
-		panic(err)
-	}
-	numPtr := func(v any) *float64 {
-		n, ok := v.(float64)
-		if !ok {
-			return nil
-		}
-		return &n
-	}
-	tbl := func(v any) map[string]any {
-		t, _ := v.(map[string]any)
-		return t
-	}
-	out := map[string]*calc.CachedSkill{}
-	for uuid, e := range m {
-		name, _ := e["Name"].(string)
-		out[uuid] = &calc.CachedSkill{
-			Name:                   name,
-			Speed:                  numPtr(e["Speed"]),
-			HitSpeed:               numPtr(e["HitSpeed"]),
-			ManaCost:               numPtr(e["ManaCost"]),
-			LifeCost:               numPtr(e["LifeCost"]),
-			ESCost:                 numPtr(e["ESCost"]),
-			RageCost:               numPtr(e["RageCost"]),
-			HitChance:              numPtr(e["HitChance"]),
-			AccuracyHitChance:      numPtr(e["AccuracyHitChance"]),
-			PreEffectiveCritChance: numPtr(e["PreEffectiveCritChance"]),
-			CritChance:             numPtr(e["CritChance"]),
-			TotalDPS:               numPtr(e["TotalDPS"]),
-			Output:                 tbl(e["output"]),
-			OutputMainHand:         tbl(e["outputMainHand"]),
-			OutputOffHand:          tbl(e["outputOffHand"]),
-			MainSkillData:          tbl(e["mainSkillData"]),
-			ActiveSkillData:        tbl(e["activeSkillData"]),
-		}
 	}
 	return out
 }
@@ -749,10 +710,35 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
 	// divergence, so an unrelated variant's guard panic cannot pre-empt it.
 	only := os.Getenv("MP_ONLY")
+	// MP_GUARDS=1 turns an unported-branch panic into a reported failure and
+	// carries on to the next variant, so one run enumerates the whole guard
+	// surface instead of stopping at the first one.
+	collectGuards := os.Getenv("MP_GUARDS") != ""
 	for variant, file := range variants {
 		if only != "" && !strings.HasPrefix(variant, only) {
 			continue
 		}
+		func() {
+			if collectGuards {
+				defer func() {
+					if r := recover(); r != nil {
+						t.Errorf("%s GUARD: %v", variant, r)
+					}
+				}()
+			}
+			checkCalcVariant(t, d, variant, file, &checked)
+		}()
+	}
+	if checked < 25 && only == "" {
+		t.Fatalf("expected 25 variants checked, got %d", checked)
+	}
+	t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
+}
+
+func checkCalcVariant(t *testing.T, d *data.Data, variant, file string, checkedTotal *int) {
+	{
+		checked := 0
+		defer func() { *checkedTotal += checked }()
 		path := filepath.Join("testdata", file)
 		if _, err := os.Stat(path); err != nil {
 			t.Skipf("archive dump not present: %v", err)
@@ -869,12 +855,23 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
 			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
 			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
-			GlobalCache:            decodeGlobalCache(globalCache),
 			MirageAllocOrders:      decodeAllocOrders(mirageAllocOrders),
 			MirageNodeOrders:       decodeAllocOrders(mirageNodeOrders),
 		}
 		in := decodeCalcFixture(m)
+		// GlobalCache is computed, not fed: calcs.buildOutput runs a whole
+		// perform per active skill, and the reference's own snapshot is the
+		// state that leaves behind. The staged replay below then overwrites
+		// the main skill's entry with a pre-offence one, exactly as the
+		// dump's manual perform does.
+		if os.Getenv("MP_NODRIVER") == "" {
+			replay.GlobalCache = calc.BuildOutput(d, in, "MAIN", replay).GlobalCache
+		}
 		env := calc.InitEnv(d, in, "MAIN", replay)
+		// The checkpoint phase mirrors the dump's stubbed defence/offence
+		// handoff, so nested performs (mirage sub-environments) stay
+		// body-only exactly as the dump's did.
+		env.StubHandoff = true
 		got := luacanon.Encode(dbsShadow{
 			Mod:   shadowOf(env.ModDB),
 			Enemy: shadowOf(env.EnemyDB),
@@ -986,6 +983,14 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 				t.Errorf("%s ehpMinionOutput diverged:\n%s", variant, diffWindow(got, ehpMinionOutput))
 			}
 		}
+		// The cache the driver built, at the point the dump snapshots it.
+		if out := os.Getenv("MP_DUMPGC"); out != "" {
+			os.WriteFile(out, []byte(luacanon.Encode(cacheShadowOf(env.GlobalCache))), 0644)
+			os.WriteFile(out+".want", []byte(globalCache), 0644)
+		}
+		if got := luacanon.Encode(cacheShadowOf(env.GlobalCache)); got != globalCache {
+			t.Errorf("%s globalCache diverged:\n%s", variant, diffWindow(got, globalCache))
+		}
 		// Trigger stage, then the mirage gate and offence — the same
 		// sequence and the same interleaving of checkpoints the dump uses
 		// (CalcPerform L3726-3729).
@@ -1084,10 +1089,6 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 			t.Errorf("%s: corrupted input still matched the archive dbs", variant)
 		}
 	}
-	if checked < 25 && only == "" {
-		t.Fatalf("expected 25 variants checked, got %d", checked)
-	}
-	t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
 }
 
 // scrubWarcryResidue mirrors dump_calc.lua's scrubPerformResidue: perform
@@ -1147,8 +1148,64 @@ func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
 	for name, mutate := range corrupt {
 		in := decodeCalcFixture(m)
 		mutate(in)
-		if luacanon.Encode(in) == fixture {
+		if luacanon.EncodeExact(in) == fixture {
 			t.Errorf("%s corruption not detected by the echo", name)
 		}
 	}
+}
+
+// cacheShadow mirrors dump_calc.lua's cacheState: the scalar headline fields
+// cacheData stored, plus scalar slices taken THROUGH the entry's live env at
+// snapshot time -- which is why they show stages that ran after the entry was
+// cached.
+type cacheShadow struct {
+	Name                   string         `lua:"Name"`
+	Speed                  *float64       `lua:"Speed"`
+	HitSpeed               *float64       `lua:"HitSpeed"`
+	ManaCost               *float64       `lua:"ManaCost"`
+	LifeCost               *float64       `lua:"LifeCost"`
+	ESCost                 *float64       `lua:"ESCost"`
+	RageCost               *float64       `lua:"RageCost"`
+	HitChance              *float64       `lua:"HitChance"`
+	AccuracyHitChance      *float64       `lua:"AccuracyHitChance"`
+	PreEffectiveCritChance *float64       `lua:"PreEffectiveCritChance"`
+	CritChance             *float64       `lua:"CritChance"`
+	TotalDPS               *float64       `lua:"TotalDPS"`
+	Output                 map[string]any `lua:"output"`
+	OutputMainHand         map[string]any `lua:"outputMainHand"`
+	OutputOffHand          map[string]any `lua:"outputOffHand"`
+	MainSkillData          map[string]any `lua:"mainSkillData"`
+	ActiveSkillData        map[string]any `lua:"activeSkillData"`
+}
+
+func cacheShadowOf(cache map[string]*calc.CachedSkill) map[string]*cacheShadow {
+	out := map[string]*cacheShadow{}
+	for uuid, e := range cache {
+		sh := &cacheShadow{
+			Name: e.Name, Speed: e.Speed, HitSpeed: e.HitSpeed,
+			ManaCost: e.ManaCost, LifeCost: e.LifeCost, ESCost: e.ESCost,
+			RageCost: e.RageCost, HitChance: e.HitChance,
+			AccuracyHitChance:      e.AccuracyHitChance,
+			PreEffectiveCritChance: e.PreEffectiveCritChance,
+			CritChance:             e.CritChance, TotalDPS: e.TotalDPS,
+		}
+		if env := e.Env; env != nil && env.Player != nil {
+			po := env.Player.Output
+			sub := func(k string) map[string]any {
+				t, _ := po[k].(map[string]any)
+				return scalarsOnly(t)
+			}
+			sh.Output = scalarsOnly(po)
+			sh.OutputMainHand = sub("MainHand")
+			sh.OutputOffHand = sub("OffHand")
+			if env.PlayerMainSkill != nil {
+				sh.MainSkillData = scalarsOnly(env.PlayerMainSkill.SkillData)
+			}
+		}
+		if e.ActiveSkill != nil {
+			sh.ActiveSkillData = scalarsOnly(e.ActiveSkill.SkillData)
+		}
+		out[uuid] = sh
+	}
+	return out
 }

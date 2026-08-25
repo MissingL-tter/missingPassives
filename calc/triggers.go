@@ -26,12 +26,18 @@ type triggerConfig struct {
 	// customTriggerName replaces the whole infoMessage prefix.
 	customTriggerName string
 	trigRate          *float64
-	triggerChance     *float64
+	// uuid pre-resolved by a config that ran findTriggerSkill itself.
+	uuid          string
+	triggerChance *float64
 
 	triggeredSkills []*simSkill
 
 	triggerSkillCond   func(env *Env, skill *ActiveSkill) bool
 	triggeredSkillCond func(env *Env, skill *ActiveSkill) bool
+	// comparer overrides how findTriggerSkill picks between candidates.
+	comparer func(env *Env, uuid string, source *ActiveSkill, triggerRate *float64) bool
+	// customHandler replaces defaultTriggerHandler outright (CWC, Focus).
+	customHandler func(env *Env)
 
 	useCastRate           bool
 	triggerOnUse          bool
@@ -165,15 +171,15 @@ func (env *Env) findTriggerSkill(skill, source *ActiveSkill, triggerRate *float6
 		comparer = defaultComparer
 	}
 	uuid := env.cacheSkillUUID(skill)
-	cached := env.GlobalCache[uuid]
-	if cached == nil {
-		// The reference fills the miss with calcs.buildActiveSkill (a whole
-		// nested perform). The replay's cache is a dump fixture, so a miss
-		// means the fixture is incomplete rather than something to invent.
-		panic("triggers: no GlobalCache entry for " + uuid)
+	// A miss is filled on the spot with a whole nested perform, and a
+	// CALCULATOR env rebuilds even on a hit -- its cache bucket belongs to
+	// the sub-environment, not to the build.
+	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+		env.BuildActiveSkill(env.Mode, skill, uuid)
 	}
+	cached := env.GlobalCache[uuid]
 	usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
-	if comparer(env, uuid, source, triggerRate) && !skill.SkillFlags["disable"] && skill.SkillCfg != nil &&
+	if cached != nil && comparer(env, uuid, source, triggerRate) && !skill.SkillFlags["disable"] && skill.SkillCfg != nil &&
 		!usedByMirage && !skill.SkillTypes[modparser.SkillType.OtherThingUsesSkill] {
 		speed, _ := cached.speedOrHitSpeed()
 		return skill, &speed, uuid
@@ -254,6 +260,14 @@ func (env *Env) RunTriggers(actor *performActor) {
 	if actor == nil || actor.mainSkill == nil || actor.mainSkill.SkillFlags["disable"] {
 		return
 	}
+	// The limitedSkills check is the RECURSION BREAKER for the cache
+	// driver: Manaforged Arrows builds its own skill to learn its mana
+	// cost, marking that uuid limited, so the nested perform's trigger
+	// stage must skip itself (L1604). Without this the build recurses
+	// unboundedly, allocating a full environment per level.
+	if env.LimitedSkills[env.cacheSkillUUID(actor.mainSkill)] {
+		return
+	}
 	main := actor.mainSkill
 	skillName := main.ActiveEffect.GrantedEffect.Name
 	triggerName := ""
@@ -307,6 +321,10 @@ func (env *Env) RunTriggers(actor *performActor) {
 			n := anyNum(v)
 			config.triggerChance = &n
 		}
+	}
+	if config.customHandler != nil {
+		config.customHandler(env)
+		return
 	}
 	env.defaultTriggerHandler(config)
 }

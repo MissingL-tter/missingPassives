@@ -37,6 +37,19 @@ func Encode(v any) string {
 	return b.String()
 }
 
+// EncodeExact is Encode with round-trippable floats (%.17g), matching
+// canon.lua's encodeExact -- for fixture records, which are replay input
+// rather than compared canon. Not safe concurrently with Encode.
+func EncodeExact(v any) string {
+	floatDigits = 17
+	defer func() { floatDigits = 14 }()
+	return Encode(v)
+}
+
+// floatDigits is the significand precision numStr formats non-integral
+// floats at; EncodeExact widens it for one encode.
+var floatDigits = 14
+
 func enc(b *strings.Builder, rv reflect.Value) {
 	if !rv.IsValid() {
 		b.WriteString("null")
@@ -193,7 +206,7 @@ func numStr(v float64) string {
 	if v == math.Trunc(v) && v < 1e15 && v > -1e15 {
 		return fmt.Sprintf("%d", int64(v))
 	}
-	return strconv.FormatFloat(v, 'g', 14, 64)
+	return strconv.FormatFloat(v, 'g', floatDigits, 64)
 }
 
 // numKey is Lua tostring() for a number key (%.14g).

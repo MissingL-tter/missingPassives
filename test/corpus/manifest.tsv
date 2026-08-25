@@ -1,0 +1,42 @@
+# dump key -> build XML, for tools/dump_calc.lua. Paths are relative to
+# .archive/src, which is the cwd the dump runs from. Re-dump everything:
+#   cd .archive/src && while IFS=$'\t' read -r k f; do case $k in \#*|"") continue;; esac; \
+#     luajit ../../tools/dump_calc.lua "$k" "$f"; done < ../../test/corpus/manifest.tsv
+empty	
+coc	Builds/3.29 CoC Blazing Salvo Assassin CI.xml
+cocuser	Builds/3.29 CoC Blazing Salvo Assassin CI - User Edit.xml
+dualstrike	Builds/Dual Strike.xml
+bfbb	Builds/bfbb totem.xml
+ballista	../../test/corpus/bara_bow_bara.xml
+cyclone	../../test/corpus/COTA_Halbae.xml
+eblade	../../test/corpus/DEE_FOUR_LOH_BAD.xml
+holyrelic	../../test/corpus/Waffle_Idol.xml
+lowlife	../../test/corpus/Higger_Bebrafication.xml
+rf	../../test/corpus/TwoGuysOneMirror.xml
+spectre	../../test/corpus/gktiiS.xml
+zombies	../../test/corpus/EssohNecro.xml
+trap	../../test/corpus/VODOLAZ_KB.xml
+mirage	../../test/corpus/ChillOfTheDeep.xml
+exparrow	../../test/corpus/NezukoEATT.xml
+blight	../../test/corpus/_zed.xml
+cwc	../../test/corpus/HUGE_DUMB_BUILD.xml
+poetpen	../../test/corpus/qqwprqwrkldgpks.xml
+cospri	../../test/corpus/OldGameIsDed.xml
+saviour	../../test/corpus/CoA_SaviourFlicker.xml
+slinger	../../test/corpus/MEK_Str.xml
+mine	../../test/corpus/_______________.xml
+brand	../../test/corpus/Kolyanio_Margheriti.xml
+absolution	../../test/corpus/Antonio_Margareiti.xml
+corrupting	../../test/corpus/TheGreatestReapist.xml
+fissure	../../test/corpus/Ugninga.xml
+tornado	../../test/corpus/kuykyuk.xml
+toxicrain	../../test/corpus/AllFlame_Wybro.xml
+moltenstrike	../../test/corpus/Diving_With_Str_Of_Zen.xml
+earthquake	../../test/corpus/WizjaGlad.xml
+arctotem	../../test/corpus/KoAunOfToTeM.xml
+doomblast	../../test/corpus/_____________.xml
+callpyre	../../test/corpus/Montblanc_Allflame.xml
+tempest	../../test/corpus/Leap_and_burn.xml
+voidstorm	../../test/corpus/w_nd.xml
+shockwave	../../test/corpus/Mou_.xml
+toad	../../test/corpus/SkymindAllflame.xml

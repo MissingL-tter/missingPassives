@@ -6,6 +6,7 @@
 package calc
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -47,13 +48,13 @@ func (env *Env) RunMirages() bool {
 	case truthy(main.SkillData["triggeredByMirageArcher"]):
 		config = env.mirageArcherConfig()
 	case main.ActiveEffect.GrantedEffect.Name == "Reflection":
-		panic("mirages: The Saviour / Reflection unported (no corpus build reaches it)")
+		config = env.saviourConfig()
 	case main.ActiveEffect.GrantedEffect.Name == "Tawhoa's Chosen":
 		panic("mirages: Tawhoa's Chosen unported (no corpus build reaches it)")
 	case truthy(main.SkillData["triggeredBySacredWisps"]):
 		config = env.sacredWispsConfig()
 	case truthy(main.SkillData["triggeredByGeneralsCry"]):
-		panic("mirages: General's Cry unported (no corpus build reaches it)")
+		env.generalsCryMirage()
 	}
 	return env.calculateMirage(config)
 }
@@ -91,7 +92,14 @@ func (env *Env) calculateMirage(config *mirageConfig) bool {
 		config.preCalcFunc(newSkill, newEnv)
 
 		newEnv.PlayerMainSkill = newSkill
-		newEnv.Perform()
+		// `calcs.perform(newEnv)` inherits whatever calcs.defence/offence
+		// currently are: stubbed no-ops during the dump's checkpoint phase,
+		// the real stages inside the cache driver.
+		if env.StubHandoff {
+			newEnv.Perform()
+		} else {
+			newEnv.PerformFull(false)
+		}
 		config.postCalcFunc(newSkill, newEnv)
 	} else {
 		config.mirageSkillNotFoundFunc()
@@ -130,11 +138,17 @@ func (env *Env) copyActiveSkill(mode string, skill *ActiveSkill) (*ActiveSkill, 
 }
 
 // mirageReplay is the fixture the sub-environment's initEnv replays: the same
-// build, but the node orders the dump recorded for that second initEnv.
+// build, but the node orders the dump recorded for that second initEnv. A
+// mirage that only runs inside a cache-driver build (the Saviour skill is
+// never the build's own main skill) has no recorded mirage orders; every
+// initEnv of one build yields identical orders (dump-verified), so the
+// env's own orders stand in.
 func (env *Env) mirageReplay() *ReplayInput {
 	sub := *env.Replay
-	sub.AllocOrders = env.Replay.MirageAllocOrders
-	sub.NodeOrders = env.Replay.MirageNodeOrders
+	if len(env.Replay.MirageAllocOrders) > 0 {
+		sub.AllocOrders = env.Replay.MirageAllocOrders
+		sub.NodeOrders = env.Replay.MirageNodeOrders
+	}
 	return &sub
 }
 
@@ -253,5 +267,152 @@ func (env *Env) sacredWispsConfig() *mirageConfig {
 				main.InfoMessage2 = "No active skill for Sacred Wisps found"
 			}
 		},
+	}
+}
+
+// saviourConfig ports the Reflection (The Saviour) branch (CalcMirages
+// L118): the mirage warriors copy the best one-hand-sword attack, and the
+// mirage REPLACES the main skill's calculation outright.
+func (env *Env) saviourConfig() *mirageConfig {
+	main := env.PlayerMainSkill
+	var usedSkillBestDps float64
+	maxMirageWarriors := main.SkillModList.Sum("BASE", main.SkillCfg, "SaviourMirageWarriorMaxCount")
+	return &mirageConfig{
+		compareFunc: func(skill *ActiveSkill, mirageSkill *ActiveSkill) *ActiveSkill {
+			swordOneHand := modparser.ModFlag.Sword | modparser.ModFlag.Weapon1H
+			usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
+			// #EVAL: the reference also checks `SkillType.Totem`, which
+			// Global.lua never defines -- the nil index always reads nil, so
+			// that arm is dead.
+			if skill != main && skill.SkillTypes[modparser.SkillType.Attack] &&
+				!skill.SkillTypes[modparser.SkillType.SummonsTotem] &&
+				skill.SkillCfg != nil && skill.SkillCfg.Flags != nil && *skill.SkillCfg.Flags&swordOneHand == swordOneHand &&
+				!usedByMirage {
+				uuid := env.cacheSkillUUID(skill)
+				if env.GlobalCache[uuid] == nil {
+					env.BuildActiveSkill(env.Mode, skill, uuid)
+				}
+				if c := env.GlobalCache[uuid]; c != nil && c.CritChance != nil && *c.CritChance > 0 {
+					if mirageSkill == nil || (c.TotalDPS != nil && *c.TotalDPS > usedSkillBestDps) {
+						if c.TotalDPS != nil {
+							usedSkillBestDps = *c.TotalDPS
+						}
+						return c.ActiveSkill
+					}
+				}
+			}
+			return mirageSkill
+		},
+		preCalcFunc: func(newSkill *ActiveSkill, newEnv *Env) {
+			moreDamage := main.SkillModList.Sum("BASE", main.SkillCfg, "SaviourMirageWarriorLessDamage")
+			// Add new modifiers to new skill (which already has all the old
+			// skill's modifiers)
+			newSkill.SkillModList.AddMod(newMod("Damage", "MORE", moreDamage, "The Saviour", nil, nil))
+			w1, _ := env.Player.ItemList["Weapon 1"].(*Item)
+			w2, _ := env.Player.ItemList["Weapon 2"].(*Item)
+			if w1 != nil && w2 != nil && w1.In.Name == w2.In.Name {
+				maxMirageWarriors = maxMirageWarriors / 2
+			}
+			newSkill.SkillModList.AddMod(newMod("QuantityMultiplier", "BASE", maxMirageWarriors, "The Saviour Mirage Warriors", nil, nil))
+			// Does not use player resources
+			newSkill.SkillModList.AddMod(newMod("HasNoCost", "FLAG", true, "Used by mirage"))
+		},
+		postCalcFunc: func(newSkill *ActiveSkill, newEnv *Env) {
+			// The mirage REPLACES the main skill and its output.
+			env.PlayerMainSkill = newSkill
+			env.PlayerMainSkill.InfoMessage = luaNumStr(maxMirageWarriors) + " Mirage Warriors using " + newSkill.ActiveEffect.GrantedEffect.Name
+			env.Player.Output = newEnv.Player.Output
+			if env.playerPA != nil {
+				env.playerPA.output = newEnv.Player.Output
+				env.playerPA.mainSkill = newSkill
+			}
+		},
+		mirageSkillNotFoundFunc: func() {
+			main.DisableReason = "No Saviour active skill found"
+			main.SkillFlags["disable"] = true
+		},
+	}
+}
+
+// generalsCryMirage ports the triggeredByGeneralsCry branch (CalcMirages
+// L344): unlike the other paths it builds no config -- it rewrites the main
+// skill in place (offence still runs on it) using the cached output of the
+// skill's own solo build.
+func (env *Env) generalsCryMirage() {
+	main := env.PlayerMainSkill
+	maxMirageWarriors := 0.0
+	cooldown := 1.0
+	var generalsCryActiveSkill *ActiveSkill
+	uuid := env.cacheSkillUUID(main)
+
+	// Prevent infinite recursion
+	if env.LimitedSkills[uuid] {
+		return
+	}
+
+	main.SkillTypes[modparser.SkillType.Triggered] = true
+	if main.SkillCfg.SkillCond == nil {
+		main.SkillCfg.SkillCond = map[string]bool{}
+	}
+	main.SkillCfg.SkillCond["usedByMirage"] = true
+	main.SkillTypes[modparser.SkillType.OtherThingUsesSkill] = true
+
+	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+		env.BuildActiveSkill(env.Mode, main, uuid, uuid)
+	}
+	mainSkillOutputCache := env.GlobalCache[uuid]
+
+	// Find the active General's Cry gem to get active properties
+	for _, skill := range env.PlayerActiveSkills {
+		if skill.ActiveEffect.GrantedEffect.Name == "General's Cry" && sameSocketSlot(skill, main) {
+			cooldown, _ = env.calcSkillCooldown(skill.SkillModList, skill.SkillCfg, skill.SkillData)
+			generalsCryActiveSkill = skill
+			break
+		}
+	}
+
+	// Scale dps with mirage quantity
+	for _, value := range generalsCryActiveSkill.SkillModList.Tabulate("BASE", generalsCryActiveSkill.SkillCfg, "GeneralsCryDoubleMaxCount") {
+		m := value.Mod
+		main.SkillModList.AddMod(newMod("QuantityMultiplier", m.Type, m.Value, m.Source, m.Flags, m.KeywordFlags))
+		maxMirageWarriors += anyNum(m.Value)
+	}
+
+	// Scale cooldown to have maximum number of Mirages at once: 0.3s for the
+	// first mirage then 0.2s for each extra
+	mirageSpawnTime := 0.3 + 0.2*maxMirageWarriors
+	if main.SkillTypes[modparser.SkillType.Channel] {
+		mirageSpawnTime = mirageSpawnTime + 1
+	} else {
+		main.SkillData["hitTimeOverride"] = 1.0
+	}
+	// Consistent with the info message; removing this could make the numbers
+	// more accurate
+	mirageSpawnTime = roundDec(mirageSpawnTime, 2)
+	_ = mirageSpawnTime // info message only
+
+	// Scale dps with GC's cooldown / attack time
+	hitOrTime := anyNum(mainSkillOutputCache.out("Time"))
+	if v := mainSkillOutputCache.out("HitTime"); truthy(v) {
+		hitOrTime = anyNum(v)
+	}
+	cooldown = math.Max(cooldown, hitOrTime)
+	main.SkillModList.AddMod(newMod("DPS", "MORE", (1/cooldown-1)*100, "General's Cry Cooldown"))
+
+	// Does not use player resources
+	main.SkillModList.AddMod(newMod("HasNoCost", "FLAG", true, "Used by mirage"))
+
+	// Supported Attacks Count as Exerted
+	for _, spec := range []struct{ typ, name, out string }{
+		{"INC", "ExertIncrease", "Damage"},
+		{"MORE", "ExertIncrease", "Damage"},
+		{"MORE", "ExertAttackIncrease", "Damage"},
+		{"MORE", "OverexertionExertAverageIncrease", "Damage"},
+		{"BASE", "ExertDoubleDamageChance", "DoubleDamageChance"},
+	} {
+		for _, value := range main.SkillModList.Tabulate(spec.typ, main.SkillCfg, spec.name) {
+			m := value.Mod
+			main.SkillModList.AddMod(newMod(spec.out, m.Type, m.Value, m.Source, m.Flags, m.KeywordFlags))
+		}
 	}
 }

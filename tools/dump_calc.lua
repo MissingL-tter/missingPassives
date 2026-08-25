@@ -83,6 +83,32 @@ local function sortedPairs(t)
 	end
 	if allHaveId then
 		table.sort(otherKeys, function(a, b) return a.id < b.id end)
+	elseif #otherKeys > 1 and dumpBuild and dumpBuild.skillsTab then
+		-- Socket-group-keyed sets (supportLists[slotName]): the granted-skill
+		-- support gather pairs() over them, so their order reaches
+		-- appliedSupportList and from there the compared mod lists. Order by
+		-- the group's position in socketGroupList -- the order the Go replay
+		-- iterates naturally. Groups created mid-initEnv are t_insert'ed into
+		-- the same list, so the scan finds every key or leaves raw order.
+		local pos = {}
+		local all = true
+		for _, k in ipairs(otherKeys) do
+			local found
+			for i, g in ipairs(dumpBuild.skillsTab.socketGroupList) do
+				if g == k then
+					found = i
+					break
+				end
+			end
+			if not found then
+				all = false
+				break
+			end
+			pos[k] = found
+		end
+		if all then
+			table.sort(otherKeys, function(a, b) return pos[a] < pos[b] end)
+		end
 	end
 	local keys = {}
 	for _, k in ipairs(numKeys) do
@@ -117,10 +143,44 @@ do
 		ids[#ids + 1] = id
 	end
 	table.sort(ids)
+	-- The mod SOURCES on shared tables are last-writer-wins under the same
+	-- pairs(data.skills) loop, so re-stamp them in sorted id order too --
+	-- the exact reassign dump_gamedata makes. Without this a shared statMap
+	-- entry's source (ExplosiveTrap vs ExplosiveTrapAltX) flips per process.
+	local function reassign(el, modSource, id)
+		if type(el) ~= "table" then
+			return
+		end
+		if rawget(el, "source") ~= nil then
+			el.source = modSource
+		end
+		local v = rawget(el, "value")
+		if type(v) == "table" and type(rawget(v, "mod")) == "table" and rawget(rawget(v, "mod"), "source") ~= nil then
+			rawget(v, "mod").source = "Skill:" .. id
+		end
+		for _, inner in ipairs(el) do
+			reassign(inner, modSource, id)
+		end
+	end
 	for _, id in ipairs(ids) do
 		local ge = data.skills[id]
+		local modSource = "Skill:" .. id
+		for _, list in ipairs({ ge.baseMods, ge.qualityMods, ge.levelMods }) do
+			if type(list) == "table" then
+				for _, el in ipairs(list) do
+					reassign(el, modSource, id)
+				end
+			end
+		end
 		if ge.statMap then
 			ge.statMap._grantedEffect = ge
+			for sk, entry in rawPairs(ge.statMap) do
+				if sk ~= "_grantedEffect" then
+					for _, el in ipairs(entry) do
+						reassign(el, modSource, id)
+					end
+				end
+			end
 		end
 	end
 end
@@ -571,6 +631,25 @@ local function dumpVariant(name, build)
 	-- Each variant's own perform run re-creates the shared-table residue;
 	-- scrub before capturing this variant's post-initEnv state.
 	scrubPerformResidue(data.skills, {})
+	-- GlobalCache is a global, and the progressive strip below mutates one
+	-- loaded build in place, so without this a reduced variant would inherit
+	-- the full build's cache. wipeGlobalCache immediately before
+	-- calcs.buildOutput is exactly what Build.lua:675 does; the real
+	-- defence/offence functions have to be back for it, since the app's fill
+	-- runs them.
+	calcs.defence = realDefence
+	calcs.buildDefenceEstimations = realBuildDefenceEstimations
+	calcs.triggers = realTriggers
+	calcs.mirages = realMirages
+	calcs.offence = realOffence
+	wipeGlobalCache()
+	calcs.buildOutput(build, "MAIN")
+	calcs.defence = function() end
+	calcs.buildDefenceEstimations = function() end
+	calcs.triggers = function() end
+	calcs.mirages = function() return true end
+	calcs.offence = function() end
+	scrubPerformResidue(data.skills, {})
 	local classStats = build.spec.tree.characterData and build.spec.tree.characterData[build.spec.curClassId]
 		or build.spec.tree.classes[build.spec.curClassId]
 	local allocNodes = {}
@@ -611,7 +690,7 @@ local function dumpVariant(name, build)
 			allocatedTattooTypes = build.spec.allocatedTattooTypes,
 		},
 	}
-	emit(name .. ".fixture", fixture)
+	emitFixture(name .. ".fixture", fixture)
 
 	recordedOrders = {}
 	recordedNodeSeqs = {}
@@ -631,7 +710,7 @@ local function dumpVariant(name, build)
 			grantedPassiveNodes[passive] = nodeFixture(specNode or node)
 		end
 	end
-	emit(name .. ".grantedPassiveNodes", grantedPassiveNodes)
+	emitFixture(name .. ".grantedPassiveNodes", grantedPassiveNodes)
 	-- Granted ascendancy nodes (Forbidden Flame/Flesh) resolve through the
 	-- ascendancy maps; emit the resolved nodes for the replay.
 	local grantedAscendancyNodes = {}
@@ -641,7 +720,7 @@ local function dumpVariant(name, build)
 			grantedAscendancyNodes[ascTbl.name] = nodeFixture(node)
 		end
 	end
-	emit(name .. ".grantedAscendancyNodes", grantedAscendancyNodes)
+	emitFixture(name .. ".grantedAscendancyNodes", grantedAscendancyNodes)
 	-- Energy Blade replaces weapons with synthesized items (initEnv
 	-- re-entry); emit the constructed items so the replay can substitute
 	-- them instead of porting Item construction.
@@ -652,7 +731,7 @@ local function dumpVariant(name, build)
 			energyBladeItems[ebSlot] = itemFixture(ebItem)
 		end
 	end
-	emit(name .. ".energyBladeItems", energyBladeItems)
+	emitFixture(name .. ".energyBladeItems", energyBladeItems)
 	emit(name .. ".dbs", {
 		mod = dbState(env.modDB),
 		enemy = dbState(env.enemyDB),
@@ -767,7 +846,7 @@ local function dumpVariant(name, build)
 	-- consumes this as a fixture rather than re-deriving it, exactly like
 	-- allocOrders/energyBladeItems. Enumerated from:
 	--   grep -oE "GlobalCache\.cachedData\[env\.mode\]\[[a-zA-Z]+\]\.[A-Za-z.]+" CalcTriggers.lua
-	emitFixture(name .. ".globalCache", cacheState(env))
+	emit(name .. ".globalCache", cacheState(env))
 
 	-- Offence stage (CalcPerform L3726-3729), run explicitly on the
 	-- post-EHP state. calcs.triggers runs first because offence reads the
@@ -831,6 +910,7 @@ end
 
 if key == "empty" then
 	newBuild()
+	dumpBuild = build
 	runCallback("OnFrame")
 	dumpVariant("empty", build)
 else
@@ -839,6 +919,7 @@ else
 	local xml = f:read("*a")
 	f:close()
 	loadBuildFromXML(xml, key)
+	dumpBuild = build
 	runCallback("OnFrame")
 
 	dumpVariant(key .. ".full", build)

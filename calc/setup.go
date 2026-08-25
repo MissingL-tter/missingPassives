@@ -167,13 +167,20 @@ type Env struct {
 	// for each buildModListForNodeList call, captured by the dump (LuaJIT
 	// hash order is deterministic per table state but not derivable here,
 	// and the table grows mid-initEnv when passives are granted).
-	AllocOrders      [][]int
+	AllocOrders [][]int
 	// ExtraOrders holds, per buildModListForNodeList call, the captured
 	// pairs() order over env.extraRadiusNodeList (the node-call sequence
 	// tail beyond the allocated nodes).
-	ExtraOrders      [][]int
-	Replay           *ReplayInput
-	allocOrderIdx    int
+	ExtraOrders   [][]int
+	Replay        *ReplayInput
+	allocOrderIdx int
+	// buildDepth counts nested BuildActiveSkill environments (defensive).
+	buildDepth int
+	// StubHandoff makes nested performs body-only, mirroring the archive
+	// dump's checkpoint phase where calcs.defence/offence are stubbed out;
+	// the reference's nested calls inherit whatever those functions
+	// currently are. Driver environments leave it false (full perform).
+	StubHandoff      bool
 	AllocNodes       map[int]*NodeInput
 	InitialNodeModDB *modstore.List
 	Keystone         modstore.KeystoneEnv
@@ -210,14 +217,14 @@ type Env struct {
 	PlayerMainSkill          *ActiveSkill   // env.player.mainSkill
 	// LimitedSkills marks skill uuids the mirage machinery has taken over,
 	// so the stage-cache paths skip them (CalcMirages L43).
-	LimitedSkills            map[string]bool
+	LimitedSkills map[string]bool
 	// MirageHandled is calcs.mirages' return: true when the mirage
 	// machinery took over and calcs.offence is skipped.
-	MirageHandled bool
-	AuxSkillList             []*ActiveSkill
-	RequirementsTableGems    []GemRequirement
-	geFromItemMark           map[*data.GrantedEffect]bool
-	slotsByName              map[string]*SlotInput
+	MirageHandled         bool
+	AuxSkillList          []*ActiveSkill
+	RequirementsTableGems []GemRequirement
+	geFromItemMark        map[*data.GrantedEffect]bool
+	slotsByName           map[string]*SlotInput
 	// statMapOverlay memoizes lazy skillStatMap copies per granted effect
 	// (the reference memoizes into the shared skill tables; per-env keeps
 	// the game-data canon pristine, same values).
@@ -491,7 +498,7 @@ func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, any) {
 // buildModListForNodeList call.
 func (env *Env) nextAllocOrder() []int {
 	if env.allocOrderIdx >= len(env.AllocOrders) {
-		panic("calc: more buildModListForNodeList calls than captured allocOrders")
+		panic(fmt.Sprintf("calc: more buildModListForNodeList calls than captured allocOrders (have %d, depth %d, mode %s)", len(env.AllocOrders), env.buildDepth, env.Mode))
 	}
 	order := env.AllocOrders[env.allocOrderIdx]
 	env.allocOrderIdx++
@@ -636,6 +643,16 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 		GlobalCache:         replay.GlobalCache,
 		ExtraRadiusNodeList: map[int]*NodeInput{},
 		OverrideConditions:  overrideConditions,
+	}
+	// GlobalCache is cachedData[mode][uuid] in the reference. This port
+	// keeps only the MAIN bucket -- the one every ported reader looks in --
+	// and gives any other mode its own, so a CALCULATOR sub-environment's
+	// own cacheData cannot land where a MAIN reader would find it. The
+	// collapse holds as long as no ported code reads across modes; the
+	// "shattershard" trigger config, which branches on env.mode, is the one
+	// place that would break it, and it is still guarded.
+	if mode != "MAIN" {
+		env.GlobalCache = map[string]*CachedSkill{}
 	}
 	for i, seq := range replay.NodeOrders {
 		if i < len(replay.AllocOrders) {

@@ -1282,9 +1282,13 @@ func (env *Env) performTail() {
 	if modDB.Sum("BASE", nil, allyLifeRedirects...) != 0 {
 		env.performAllyLife()
 	}
+}
 
-	// Gem level/quality of the main skill (CalcPerform.lua L3862-3916;
-	// runs after the defence/offence handoff the dump stubs out)
+// performGemLevel ports the main skill's gem level/quality block
+// (CalcPerform.lua L3862-3916). It sits AFTER the defence/offence handoff
+// in the reference, which is invisible while the dump stubs that handoff
+// out but matters to PerformFull, so it is its own step.
+func (env *Env) performGemLevel() {
 	output := env.playerPA.output
 	mainSkill := env.PlayerMainSkill
 	if mainSkill != nil && mainSkill.ActiveEffect != nil && mainSkill.ActiveEffect.SrcInstance != nil {

@@ -428,8 +428,47 @@ func (env *Env) offenceCombinedDPS(c *offenceCtx) {
 	output["CombinedAvg"] = combinedAvg
 
 	bestCull := 1.0
-	// activeSkill.mirage is only populated by calcs.mirages, which this port
-	// does not reach yet.
+	if m := c.activeSkill.Mirage; m != nil && m.Output != nil && truthy(m.Output["TotalDPS"]) {
+		mo := m.Output
+		mirageCount := m.Count
+		output["MirageDPS"] = anyNum(mo["TotalDPS"]) * mirageCount
+		output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(mo["TotalDPS"])*mirageCount
+		// Plain assignments: absent on the mirage side stays absent here.
+		assignKV(output, "MirageBurningGroundDPS", mo["BurningGroundDPS"])
+		assignKV(output, "MirageCausticGroundDPS", mo["CausticGroundDPS"])
+
+		if truthy(mo["IgniteDPS"]) && anyNum(mo["IgniteDPS"]) > outNum(output, "IgniteDPS") {
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["IgniteDPS"])
+			output["IgniteDPS"] = 0.0
+		}
+		if truthy(mo["BleedDPS"]) && anyNum(mo["BleedDPS"]) > outNum(output, "BleedDPS") {
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["BleedDPS"])
+			output["BleedDPS"] = 0.0
+		}
+		if v, ok := mo["PoisonDPS"]; ok {
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)*mirageCount
+			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)*mirageCount
+		}
+		if v, ok := mo["ImpaleDPS"]; ok {
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)*mirageCount
+			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)*mirageCount
+		}
+		if v, ok := mo["DecayDPS"]; ok {
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)
+			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)
+		}
+		if truthy(mo["TotalDot"]) && (skillFlags["DotCanStack"] || !truthy(output["TotalDot"])) {
+			n := 1.0
+			if skillFlags["DotCanStack"] {
+				n = mirageCount
+			}
+			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["TotalDot"])*n
+			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(mo["TotalDot"])*n
+		}
+		if anyNum(mo["CullMultiplier"]) > 1 {
+			bestCull = anyNum(mo["CullMultiplier"])
+		}
+	}
 
 	totalDotDPS := outNum(output, "TotalDot") + outNum(output, "TotalPoisonDPS") +
 		math.Max(outNum(output, "CausticGroundDPS"), outNum(output, "MirageCausticGroundDPS"))

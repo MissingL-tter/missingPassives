@@ -26,8 +26,44 @@ func sortedListKeysOf(m map[string]*modstore.List) []string {
 	return keys
 }
 
-// Perform ports calcs.perform's body (defence/offence handoff excluded).
+// Perform ports calcs.perform with the defence/offence handoff excluded --
+// the shape the archive dump stubs out and every staged checkpoint compares
+// against. PerformFull is the one that runs the handoff for real.
 func (env *Env) Perform() {
+	env.performBody()
+	env.performGemLevel()
+	env.cacheData()
+}
+
+// PerformFull is calcs.perform end to end, in the reference's own order:
+// body, then the handoff per actor, then the gem level/quality block, then
+// cacheData. skipEHP is the reference's second argument, which
+// buildActiveSkill passes true for.
+func (env *Env) PerformFull(skipEHP bool) {
+	env.performBody()
+
+	// Defence/offence calculations
+	env.defence(env.playerPA)
+	if !skipEHP {
+		env.buildDefenceEstimations(env.playerPA)
+	}
+	env.RunTriggersPlayer()
+	env.RunOffencePlayer()
+
+	if env.Minion != nil {
+		env.defence(env.minionPA)
+		if !skipEHP {
+			env.buildDefenceEstimations(env.minionPA)
+		}
+		env.RunTriggersMinion()
+		env.RunOffenceMinion()
+	}
+
+	env.performGemLevel()
+	env.cacheData()
+}
+
+func (env *Env) performBody() {
 	modDB := env.ModDB
 	enemyDB := env.EnemyDB
 	d := env.Data
@@ -143,7 +179,10 @@ func (env *Env) Perform() {
 		applyEnemyModifiers(env.minionPA, true)
 	}
 	applyEnemyModifiers(env.enemyPA, true)
-	minionCounts := map[string]*struct{ total, nonVaal, permanent float64; hasNonVaal, hasPermanent bool }{}
+	minionCounts := map[string]*struct {
+		total, nonVaal, permanent float64
+		hasNonVaal, hasPermanent  bool
+	}{}
 
 	for _, activeSkill := range env.PlayerActiveSkills {
 		if activeSkill.SkillTypes[modparser.SkillType.Brand] {
@@ -250,7 +289,10 @@ func (env *Env) Perform() {
 					}
 					counts := minionCounts[key]
 					if counts == nil {
-						counts = &struct{ total, nonVaal, permanent float64; hasNonVaal, hasPermanent bool }{}
+						counts = &struct {
+							total, nonVaal, permanent float64
+							hasNonVaal, hasPermanent  bool
+						}{}
 						minionCounts[key] = counts
 					}
 					counts.total = math.Max(count, counts.total)
@@ -483,17 +525,17 @@ func (env *Env) Perform() {
 			type poolVals struct {
 				baseFlat, basePercent float64
 			}
-	// skillDataOr mirrors Lua's `skillData.key or fallback`: a PRESENT
-	// zero is used (0 is truthy in Lua); only nil/false fall through.
-	skillDataOr := func(sd map[string]any, key string, gel *data.SkillLevel) float64 {
-		if v, ok := sd[key]; ok && v != nil && v != false {
-			return anyNum(v)
-		}
-		if v, ok := lvlExtra(gel, key); ok {
-			return v
-		}
-		return 0
-	}
+			// skillDataOr mirrors Lua's `skillData.key or fallback`: a PRESENT
+			// zero is used (0 is truthy in Lua); only nil/false fall through.
+			skillDataOr := func(sd map[string]any, key string, gel *data.SkillLevel) float64 {
+				if v, ok := sd[key]; ok && v != nil && v != false {
+					return anyNum(v)
+				}
+				if v, ok := lvlExtra(gel, key); ok {
+					return v
+				}
+				return 0
+			}
 			pool := map[string]*poolVals{"Mana": {}, "Life": {}}
 			pool["Mana"].baseFlat = skillDataOr(activeSkill.SkillData, "manaReservationFlat", gel)
 			if skillModList.Flag(skillCfg, "ManaCostGainAsReservation") && gel != nil && gel.Cost != nil {

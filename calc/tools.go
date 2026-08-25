@@ -58,6 +58,15 @@ type ActiveEffect struct {
 	Req *float64
 	// Extra catches applyGemMods keys beyond level/quality/req.
 	Extra map[string]float64
+	// Arcanist Brand back-fields: its trigger config stashes the brand's
+	// activation numbers on the triggeredBy effect for the handler to read
+	// (CalcTriggers.lua L1337-1348).
+	MainSkill          *ActiveSkill
+	ActivationFreqInc  float64
+	ActivationFreqMore float64
+	AttachedBrandCount float64
+	IgnoresTickRate    bool
+
 	// GemPropertyInfo collects the matched GemProperty entries (tooltip
 	// source in the reference, feeds GemItem* mods).
 	GemPropertyInfo []modstore.TabEntry
