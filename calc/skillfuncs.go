@@ -40,6 +40,19 @@ var skillFuncs = map[string]skillFunc{
 	"MoltenStrikeAltX:preDamageFunc":      moltenStrikePreDamageFunc(true),
 	"LightningTendrilsAltX:preDamageFunc": lightningTendrilsAltXPreDamageFunc,
 	"LightningTendrilsAltX:postCritFunc":  lightningTendrilsAltXPostCritFunc,
+	"MoltenShell:preDamageFunc":           moltenShellPreDamageFunc("MoltenShellDamageMitigated"),
+	"VaalMoltenShell:preDamageFunc":       moltenShellPreDamageFunc("VaalMoltenShellDamageMitigated"),
+	"HeraldOfAsh:preDamageFunc":           heraldOfAshPreDamageFunc,
+	"HeraldOfThunder:preDamageFunc":       repeatFrequencyOverride("HeraldStormFrequency"),
+	"VoidSphere:preDamageFunc":            repeatFrequencyOverride("VoidSphereFrequency"),
+	"Barrage:preDamageFunc":               barragePreDamageFunc,
+	"Tornado:preDamageFunc":               tornadoPreDamageFunc,
+	"LancingSteelAltX:preDamageFunc":      lancingSteelAltXPreDamageFunc,
+	"RighteousFireAltX:preDamageFunc":     righteousFireAltXPreDamageFunc,
+	"BrandSupport:preDamageFunc":          brandHitTimeOverride,
+	"ToxicRainAltY:preDamageFunc":         toxicRainPreDamageFunc,
+	"BladefallAltZ:preDamageFunc":         bladefallAltZPreDamageFunc,
+	"ForbiddenRite:preDamageFunc":         forbiddenRitePreDamageFunc,
 }
 
 // cycloneInitialFunc ports the Cyclone family's initialFunc: the melee range
@@ -543,4 +556,115 @@ func moltenStrikePreDamageFunc(zenith bool) skillFunc {
 			output["SkillDPSMultiplier"] = outMult * dpsMult
 		}
 	}
+}
+
+// moltenShellPreDamageFunc ports the Molten Shell pair's preDamageFunc: the
+// burst reflects a share of what the shell absorbed. The two copies differ
+// only in the config key holding the mitigated total.
+func moltenShellPreDamageFunc(mitigatedKey string) skillFunc {
+	return func(env *Env, c *offenceCtx) {
+		skillData := c.activeSkill.SkillData
+		add := anyNum(skillData[mitigatedKey]) * anyNum(skillData["moltenShellReflect"]) / 100
+		skillData["FireMin"] = add
+		skillData["FireMax"] = add
+	}
+}
+
+// heraldOfAshPreDamageFunc ports Herald of Ash's preDamageFunc: the burn is
+// a share of the overkill damage.
+func heraldOfAshPreDamageFunc(env *Env, c *offenceCtx) {
+	skillData := c.activeSkill.SkillData
+	skillData["FireDot"] = anyNum(skillData["hoaOverkill"]) *
+		(1 + anyNum(skillData["hoaMoreBurn"])/100) * anyNum(skillData["hoaOverkillPercent"])
+}
+
+// repeatFrequencyOverride is the shared shape of Herald of Thunder's and
+// Void Sphere's preDamageFunc: the skill pulses on its own interval, sped up
+// by one INC stat.
+func repeatFrequencyOverride(incName string) skillFunc {
+	return func(env *Env, c *offenceCtx) {
+		activeSkill := c.activeSkill
+		activeSkill.SkillData["hitTimeOverride"] = anyNum(activeSkill.SkillData["repeatFrequency"]) /
+			(1 + activeSkill.SkillModList.Sum("INC", activeSkill.SkillCfg, incName)/100)
+	}
+}
+
+// barragePreDamageFunc ports Barrage's preDamageFunc: the "all projectiles"
+// part hits once per projectile.
+func barragePreDamageFunc(env *Env, c *offenceCtx) {
+	if anyNum(c.activeSkill.SkillPart) == 2 {
+		c.activeSkill.SkillData["dpsMultiplier"] = outNum(c.output, "ProjectileCount")
+	}
+}
+
+// tornadoPreDamageFunc ports Tornado's preDamageFunc: it deals damage on its
+// own interval while it lasts.
+func tornadoPreDamageFunc(env *Env, c *offenceCtx) {
+	c.activeSkill.SkillData["hitTimeOverride"] = c.activeSkill.SkillData["damageInterval"]
+}
+
+// lancingSteelAltXPreDamageFunc ports Lancing Steel of Spraying's
+// preDamageFunc: every projectile past the first deals less damage, folded
+// into one average multiplier over the count.
+func lancingSteelAltXPreDamageFunc(env *Env, c *offenceCtx) {
+	activeSkill, output := c.activeSkill, c.output
+	if anyNum(activeSkill.SkillPart) != 2 {
+		return
+	}
+	percentReducedProjectiles := (outNum(output, "ProjectileCount") - 1) / outNum(output, "ProjectileCount")
+	mult := (activeSkill.SkillModList.More(activeSkill.SkillCfg, "LancingSteelSubsequentDamage") - 1) * 100 * percentReducedProjectiles
+	activeSkill.SkillData["dpsMultiplier"] = outNum(output, "ProjectileCount")
+	activeSkill.SkillModList.AddMod(newMod("Damage", "MORE", mult, "Skill:LancingSteelAltX"))
+}
+
+// righteousFireAltXPreDamageFunc ports Righteous Fire of Arcane Devotion's
+// preDamageFunc: the burn scales off mana instead of life.
+func righteousFireAltXPreDamageFunc(env *Env, c *offenceCtx) {
+	activeSkill, output := c.activeSkill, c.output
+	if outNum(output, "LifeUnreserved") > 1 {
+		activeSkill.SkillData["FireDot"] = outNum(output, "Mana") * anyNum(activeSkill.SkillData["RFManaMultiplier"])
+	}
+}
+
+// bladefallAltZPreDamageFunc ports Bladefall of Volleys' preDamageFunc: the
+// volleys land on their own interval.
+func bladefallAltZPreDamageFunc(env *Env, c *offenceCtx) {
+	skillData := c.activeSkill.SkillData
+	skillData["hitTimeOverride"] = anyNum(skillData["hitFrequency"]) / (1 + anyNum(skillData["incVolleyFrequency"])/100)
+}
+
+// forbiddenRitePreDamageFunc ports Forbidden Rite's preDamageFunc: the hit
+// scales with the caster's life and energy shield, and the cast costs a
+// chaos self-hit computed from the same pools.
+func forbiddenRitePreDamageFunc(env *Env, c *offenceCtx) {
+	activeSkill, output := c.activeSkill, c.output
+	skillModList, skillData := activeSkill.SkillModList, activeSkill.SkillData
+	basetakenFlat := skillModList.Sum("BASE", nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
+	baseTakenInc := skillModList.Sum("INC", nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
+	baseTakenMore := skillModList.More(nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
+	chaosDamageTaken := math.Max((1+baseTakenInc/100)*baseTakenMore, 0)
+	chaosFlat := floorDec(math.Floor(basetakenFlat*chaosDamageTaken+0.5), 0)
+	var life, energyShield, chaosResistance float64
+	if activeSkill.SkillFlags["totem"] {
+		life = outNum(output, "TotemLife")
+		energyShield = outNum(output, "TotemEnergyShield")
+		chaosResistance = outNum(output, "TotemChaosResist")
+	} else {
+		life = outNum(output, "Life")
+		energyShield = outNum(output, "EnergyShield")
+		chaosResistance = outNum(output, "ChaosResist")
+	}
+	add := life*anyNum(skillData["lifeDealtAsChaos"]) + energyShield*anyNum(skillData["energyShieldDealtAsChaos"])
+	selfDamageTakenLife := math.Floor(math.Floor(life*anyNum(skillData["SelfDamageTakenLife"])+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
+	selfDamageTakenES := math.Floor(math.Floor(energyShield*anyNum(skillData["SelfDamageTakenES"])+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
+	skillData["ChaosMin"] = anyNum(skillData["ChaosMin"]) + add
+	skillData["ChaosMax"] = anyNum(skillData["ChaosMax"]) + add
+	if anyNum(activeSkill.SkillPart) == 2 {
+		mult := 1.0
+		if truthy(skillData["dpsMultiplier"]) {
+			mult = anyNum(skillData["dpsMultiplier"])
+		}
+		skillData["dpsMultiplier"] = mult * (outNum(output, "ProjectileCount") + 1)
+	}
+	output["FRDamageTaken"] = selfDamageTakenLife + selfDamageTakenES + chaosFlat
 }
