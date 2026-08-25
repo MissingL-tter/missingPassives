@@ -513,6 +513,31 @@ authored build loads by checking the dump's .skills list before porting
 against it. Roughly half the config table is exercised by the corpus now;
 the rest is code[x]/archive-unverified awaiting more shells.
 
+DONE (2026-08-26): data/raw + package-level data — the PoB-shaped boot.
+- `data` is PACKAGE-LEVEL now: `type Data` is gone, the 90 fields are vars,
+  Load fills them in place, call sites read `data.Skills` /
+  `data.Misc.ServerTickRate`. All `env.Data` / `d :=` plumbing deleted; ten
+  signatures dropped their data param. Prerequisite: data is IMMUTABLE after
+  Load — the two remaining calc-time writers relocated per-env
+  (hasGlobalEffect -> env.globalEffectOverlay via LazyStatMapCopy's second
+  return; warcryPowerBonus -> copy-on-write into the env-owned buff list),
+  which deleted the test restore dance and the warcry scrub.
+- The seven var/type name collisions all resolved to internal lowercase
+  types; the last exported shape (WeaponTypeDef) vanished by reshaping
+  getWeaponFlags to return (flags, melee, known) — its callers only ever
+  consumed info.Melee and nil-ness. Zero exported shape names.
+- `data/raw/` holds pobexport's complete output (21 documents + the
+  hand-maintained ModFoulbornMap.jsonc, ~42MB), COMMITTED and EMBEDDED
+  (//go:embed raw in data/raw.go; RawSources() builds Load's input). A built
+  binary is self-contained. Regeneration is explicit, part of the
+  GGPK-update workflow: `pobexport -src <ggpk>` (default -out data/raw).
+  The GGPK is needed ONLY for regeneration and for the export differential;
+  every other test runs from the embedded raw. The fingerprint doc-cache
+  (test/.cache) is deleted.
+- Timing: calc differential 5.7s cold for all 129 variants (was ~140s);
+  full suite ~110s, dominated by the export differential (97s, the one
+  GGPK-dependent test).
+
 OPEN, POST-PARITY: the compared canons are `%.14g` on both sides, so the
 differential is blind below the 15th significant digit -- exactly the band
 harness bug 2 lived in. A green run does not rule out sub-ulp drift that a
