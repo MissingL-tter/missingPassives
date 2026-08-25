@@ -451,6 +451,51 @@ THREE HARNESS BUGS FOUND, each hidden behind a formatting or folding step:
    forces the typed-constant rounding. Swept the rest of data/tables.go --
    no other constant expression differs from its runtime form.
 
+DONE (2026-08-25): Calcs.lua's cache half -- cacheData, buildActiveSkill,
+the buildOutput cache fill (calc/buildoutput.go), PerformFull with the real
+per-actor handoff. **GlobalCache is COMPUTED now, not a fixture**: the test
+builds it with the driver and compares it against the archive's `.globalCache`
+snapshot (dumpVariant runs wipeGlobalCache + calcs.buildOutput with the real
+stage functions restored, exactly as Build.lua:675 does). 114/114 variants
+across 38 builds byte-identical, zero guards reachable from the corpus.
+
+What the driver forced out (each verified by the cache canon):
+- The recursion breaker at the TOP of calcs.triggers (L1604): skip the stage
+  when env.limitedSkills[mainSkill uuid]. It is what stops Manaforged Arrows
+  (which builds its own skill to learn its mana cost) from recursing. Its
+  absence in the port recursed unboundedly -- a full Env per level, ~100GB
+  commit before it was killed. BuildActiveSkill now also carries a
+  DEFENSIVE depth-20 panic with no reference counterpart.
+- CachedSkill accessors are LIVE through the stored Env/ActiveSkill, as in
+  the reference: a stage that runs after cacheData changes what the entry
+  appears to hold. The first port snapshotted them and diverged.
+- Nested performs inherit the handoff state: `calcs.perform(newEnv)` inside
+  a mirage runs whatever calcs.defence/offence currently are -- stubbed
+  no-ops during the dump's checkpoint phase, the real stages inside the
+  driver. Env.StubHandoff models that; the test sets it on checkpoint envs.
+  Missing it cost voidstorm's Sacred-Wisps mirage its TotalDPS (and the
+  cache canon caught the missing MirageDPS -- the offence mirage-DPS tail
+  is ported now too).
+- A THIRD pairs() nondeterminism, same shape as the flasks and the statMap
+  backref: the granted-skill support gather iterates supportLists[slotName]
+  keyed by GROUP TABLES; and the shared-statMap mod SOURCES are stamped
+  last-writer-wins under pairs(data.skills). Both settled: the sortedPairs
+  shim orders group keys by socketGroupList position (dumpBuild global), and
+  dump_calc re-stamps shared mod sources in sorted id order, mirroring
+  dump_gamedata's reassign. ALWAYS cmp a re-dump twice.
+- Every initEnv of one build yields identical alloc orders (dump-verified),
+  so sub-environments replay the top env's orders, and mirageReplay falls
+  back to them when the mirage only runs inside a driver build.
+- test/corpus/manifest.tsv maps every dump key to its build XML (the five
+  archive-Builds/ ones included); MP_ONLY narrows the test, MP_GUARDS turns
+  guard panics into collected failures, MP_DUMPGC dumps the cache canons.
+- Fixtures are exact end to end now: luacanon.EncodeExact mirrors
+  canon.encodeExact and the fixture echo round-trips at %.17g.
+
+Now unblocked: getCachedOutputValue (Blight part 2 guard), CALCS mode,
+buildOutput's display half (FullDPS roll-up, cost warnings, config
+discovery).
+
 OPEN, POST-PARITY: the compared canons are `%.14g` on both sides, so the
 differential is blind below the 15th significant digit -- exactly the band
 harness bug 2 lived in. A green run does not rule out sub-ulp drift that a
