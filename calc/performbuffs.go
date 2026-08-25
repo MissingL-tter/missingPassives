@@ -5,6 +5,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"regexp"
 	"sort"
@@ -90,7 +91,6 @@ func bstr(b *Buff, k string) string { return str(b.KV[k]) }
 func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyToMinion bool) {
 	modDB := env.ModDB
 	enemyDB := env.EnemyDB
-	d := env.Data
 	output := env.playerPA.output
 
 	// Combine buffs/debuffs
@@ -215,14 +215,22 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 						} else {
 							warcryPower = math.Max(modDB.Sum("BASE", nil, "WarcryPower")*(1+modDB.Sum("INC", nil, "WarcryPower")/100), modDB.Sum("BASE", nil, "MinimumWarcryPower"))
 						}
-						for _, warcryBuff := range buff.ModList {
+						for i, warcryBuff := range buff.ModList {
 							if len(warcryBuff.Tags) > 0 {
 								if tag, ok := warcryBuff.Tags[0].(modparser.Tag); ok && tag["effectType"] == "Warcry" && truthy(tag["div"]) {
 									power := warcryPower
 									if truthy(tag["limit"]) {
 										power = math.Min(warcryPower, anyNum(tag["limit"]))
 									}
-									tag["warcryPowerBonus"] = math.Floor(power / anyNum(tag["div"]))
+									// The reference writes this straight into the
+									// shared mod's tag (and the dump scrubs it off
+									// between variants). Copy-on-write keeps the
+									// loaded data immutable: the buff list is
+									// env-owned, so the copy is visible everywhere
+									// the reference's in-place write would be.
+									cow := copyModForTagWrite(warcryBuff)
+									cow.Tags[0].(modparser.Tag)["warcryPowerBonus"] = math.Floor(power / anyNum(tag["div"]))
+									buff.ModList[i] = cow
 								}
 							}
 						}
@@ -747,7 +755,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 		curseDB := ecd.db
 		for _, v := range curseDB.List(nil, "ExtraCurse") {
 			tag, _ := v.(modparser.Tag)
-			grantedEffect := d.Skills[str(tag["skillId"])]
+			grantedEffect := data.Skills[str(tag["skillId"])]
 			if grantedEffect == nil {
 				continue
 			}
@@ -1045,7 +1053,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 
 	// Special handling for Dancing Dervish
 	if modDB.Flag(nil, "DisableWeapons") {
-		uw := d.UnarmedWeaponData[int(env.Build.ClassID)]
+		uw := data.UnarmedWeaponData[int(env.Build.ClassID)]
 		env.Player.WeaponData1 = map[string]any{
 			"type": uw.Type, "AttackRate": uw.AttackRate, "CritChance": uw.CritChance,
 			"PhysicalMin": uw.PhysicalMin, "PhysicalMax": uw.PhysicalMax,
@@ -1085,7 +1093,6 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 func (env *Env) performAilments(hasGuaranteedBonechill bool) {
 	modDB := env.ModDB
 	enemyDB := env.EnemyDB
-	d := env.Data
 	output := env.playerPA.output
 
 	type ailmentDef struct {
@@ -1193,14 +1200,14 @@ func (env *Env) performAilments(hasGuaranteedBonechill bool) {
 				maxAilment = anyNum(ov)
 			} else {
 				for _, skill := range env.PlayerActiveSkills {
-					skillMax := d.NonDamagingAilment[ailment].Max + skill.BaseSkillModList.Sum("BASE", nil, ailment+"Max")
+					skillMax := data.NonDamagingAilment[ailment].Max + skill.BaseSkillModList.Sum("BASE", nil, ailment+"Max")
 					if skillMax > maxAilment {
 						maxAilment = skillMax
 					}
 				}
 			}
 			output["Maximum"+ailment] = maxAilment
-			prec := math.Pow(10, d.NonDamagingAilment[ailment].Precision)
+			prec := math.Pow(10, data.NonDamagingAilment[ailment].Precision)
 			output["Current"+ailment] = math.Floor(math.Min(math.Max(override, enemyDB.Sum("BASE", nil, ailment+"Val")), maxAilment)*prec) / prec
 			for _, mod := range val.mods(outNum(output, "Current"+ailment)) {
 				enemyDB.AddMod(mod)
@@ -1482,8 +1489,8 @@ type allyTotem struct {
 func (env *Env) calcTotemLife(activeSkill *ActiveSkill) (life, lifeMod float64) {
 	lifeMod = Mod(activeSkill.SkillModList, activeSkill.SkillCfg, "TotemLife")
 	totemLevel := int(anyNum(activeSkill.SkillData["totemLevel"]))
-	mult := env.Data.TotemLifeMult[int64(*activeSkill.SkillTotemId)]
-	life = roundDec(math.Floor(env.Data.MonsterAllyLifeTable[totemLevel-1]*mult)*lifeMod, 0)
+	mult := data.TotemLifeMult[int64(*activeSkill.SkillTotemId)]
+	life = roundDec(math.Floor(data.MonsterAllyLifeTable[totemLevel-1]*mult)*lifeMod, 0)
 	return life, lifeMod
 }
 
@@ -1496,4 +1503,20 @@ func atoiSafe(s string) int {
 		n = n*10 + int(c-'0')
 	}
 	return n
+}
+
+// copyModForTagWrite shallow-copies a mod with a fresh Tags slice and a
+// fresh first tag map, so a tag write cannot reach the loaded data the mod
+// came from. Everything else stays shared — the write is the only mutation.
+func copyModForTagWrite(m *modparser.Mod) *modparser.Mod {
+	c := *m
+	c.Tags = append([]any(nil), m.Tags...)
+	if t, ok := c.Tags[0].(modparser.Tag); ok {
+		nt := modparser.Tag{}
+		for k, v := range t {
+			nt[k] = v
+		}
+		c.Tags[0] = nt
+	}
+	return &c
 }

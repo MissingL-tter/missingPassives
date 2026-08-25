@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 )
 
@@ -50,7 +51,6 @@ func (env *Env) defence(actor *performActor) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	// Action Speed
 	output["ActionSpeedMod"] = env.actionSpeedMod(actor)
@@ -70,7 +70,7 @@ func (env *Env) defence(actor *performActor) {
 	}
 
 	// Block
-	output["BlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "BlockChanceMax"), d.Misc.BlockChanceCap)
+	output["BlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "BlockChanceMax"), data.Misc.BlockChanceCap)
 	if modDB.Flag(nil, "MaximumBlockAttackChanceIsEqualToParent") {
 		output["BlockChanceMax"] = outNum(actor.parent.output, "BlockChanceMax")
 	} else if modDB.Flag(nil, "MaximumBlockAttackChanceIsEqualToPartyMember") {
@@ -114,7 +114,7 @@ func (env *Env) defence(actor *performActor) {
 	if modDB.Flag(nil, "SpellBlockChanceMaxIsBlockChanceMax") {
 		output["SpellBlockChanceMax"] = outNum(output, "BlockChanceMax")
 	} else {
-		output["SpellBlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "SpellBlockChanceMax"), d.Misc.BlockChanceCap)
+		output["SpellBlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "SpellBlockChanceMax"), data.Misc.BlockChanceCap)
 	}
 	if modDB.Flag(nil, "MaxSpellBlockIfNotBlockedRecently") {
 		output["SpellBlockChance"] = outNum(output, "SpellBlockChanceMax")

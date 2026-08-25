@@ -3,7 +3,10 @@
 // iterative smoothing pass when conversion splits the hit).
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"math"
+)
 
 // takenHitFromDamage ports calcs.takenHitFromDamage.
 func (env *Env) takenHitFromDamage(rawDamage float64, damageType string, actor *performActor) (float64, map[string]float64) {
@@ -56,7 +59,6 @@ func (env *Env) takenHitFromDamage(rawDamage float64, damageType string, actor *
 func (env *Env) ehpMaxHit(actor *performActor) {
 	modDB := actor.db
 	output := actor.output
-	d := env.Data
 
 	// fix total pools, as they aren't used anymore
 	for _, damageType := range dmgTypeList {
@@ -186,7 +188,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 			passIncomingDamage := partMin
 			previousOverkill := 0.0
 			havePrevious := false
-			for n := 1; float64(n) <= d.Misc.MaxHitSmoothingPasses; n++ {
+			for n := 1; float64(n) <= data.Misc.MaxHitSmoothingPasses; n++ {
 				_, passDamages := env.takenHitFromDamage(passIncomingDamage, damageType, actor)
 				passPools := env.reducePoolsByDamage(nil, passDamages, actor)
 				passOverkill := passPools.OverkillDamage - passPools.hitPoolRemaining

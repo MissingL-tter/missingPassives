@@ -92,18 +92,18 @@ type baseOnlyEntry struct {
 	Base *ItemBase `lua:"base"`
 }
 
-func (d *Data) loadRareLikeUniques() {
-	if d.ItemBases["Ghostflame Blade"] == nil {
+func loadRareLikeUniques() {
+	if ItemBases["Ghostflame Blade"] == nil {
 		return // partial Sources (tests)
 	}
 	crimsonStormMods := map[string]ItemModData{}
-	for modId, mod := range d.VeiledMods {
+	for modId, mod := range VeiledMods {
 		if mod.Affix == "of the Order" {
 			crimsonStormMods[modId] = mod
 		}
 	}
 
-	ghost := *d.ItemBases["Ghostflame Blade"]
+	ghost := *ItemBases["Ghostflame Blade"]
 	tags := map[string]bool{}
 	for k, v := range ghost.Tags {
 		tags[k] = v
@@ -111,15 +111,15 @@ func (d *Data) loadRareLikeUniques() {
 	tags["deepwater_sword"] = true
 	ghost.Tags = tags
 
-	abyss := make([]any, 0, len(d.ItemBaseLists["Jewel: Abyss"]))
-	for i := range d.ItemBaseLists["Jewel: Abyss"] {
-		abyss = append(abyss, d.ItemBaseLists["Jewel: Abyss"][i])
+	abyss := make([]any, 0, len(ItemBaseLists["Jewel: Abyss"]))
+	for i := range ItemBaseLists["Jewel: Abyss"] {
+		abyss = append(abyss, ItemBaseLists["Jewel: Abyss"][i])
 	}
 
-	d.RareLikeUniques = map[string]RareLikeUnique{
+	RareLikeUniques = map[string]RareLikeUnique{
 		"subsume the source": {
 			ValidBases:           abyss,
-			Affixes:              d.ItemMods["JewelAbyss"],
+			Affixes:              ItemMods["JewelAbyss"],
 			PrefixLimit:          4,
 			SuffixLimit:          0,
 			IgnoreModType:        true,
@@ -132,7 +132,7 @@ func (d *Data) loadRareLikeUniques() {
 		},
 		"dread captain's cutlass": {
 			ValidBases:  []any{baseOnlyEntry{Base: &ghost}},
-			Affixes:     d.ItemMods["Explicit"],
+			Affixes:     ItemMods["Explicit"],
 			PrefixLimit: 3,
 			SuffixLimit: 3,
 			SupportsCustomModifiers: map[string]bool{
@@ -259,19 +259,19 @@ type ItemBaseEntry struct {
 	Base  *ItemBase `lua:"base"`
 }
 
-func (d *Data) loadBases(src gamedata.BasesData) {
-	d.ItemBases = map[string]*ItemBase{}
+func loadBases(src gamedata.BasesData) {
+	ItemBases = map[string]*ItemBase{}
 	for _, typ := range baseItemTypes {
 		for _, event := range src.Types[typ] {
 			for _, b := range event {
-				d.ItemBases[b.DisplayName] = loadItemBase(b)
+				ItemBases[b.DisplayName] = loadItemBase(b)
 			}
 		}
 	}
 
 	// Build lists of item bases, separated by type.
-	d.ItemBaseLists = map[string][]ItemBaseEntry{}
-	for name, base := range d.ItemBases {
+	ItemBaseLists = map[string][]ItemBaseEntry{}
+	for name, base := range ItemBases {
 		if base.Hidden {
 			continue
 		}
@@ -279,15 +279,15 @@ func (d *Data) loadBases(src gamedata.BasesData) {
 		if base.SubType != "" {
 			typ = typ + ": " + base.SubType
 		}
-		d.ItemBaseLists[typ] = append(d.ItemBaseLists[typ], ItemBaseEntry{
+		ItemBaseLists[typ] = append(ItemBaseLists[typ], ItemBaseEntry{
 			Label: reBaseLabel.ReplaceAllString(name, ""),
 			Name:  name,
 			Base:  base,
 		})
 	}
-	d.ItemBaseTypeList = nil
-	for typ, list := range d.ItemBaseLists {
-		d.ItemBaseTypeList = append(d.ItemBaseTypeList, typ)
+	ItemBaseTypeList = nil
+	for typ, list := range ItemBaseLists {
+		ItemBaseTypeList = append(ItemBaseTypeList, typ)
 		sort.Slice(list, func(a, b int) bool {
 			al, bl := list[a].Base.Req.Level, list[b].Base.Req.Level
 			if (al == nil && bl == nil) || (al != nil && bl != nil && *al == *bl) {
@@ -303,12 +303,12 @@ func (d *Data) loadBases(src gamedata.BasesData) {
 			return av > bv
 		})
 	}
-	sort.Strings(d.ItemBaseTypeList)
+	sort.Strings(ItemBaseTypeList)
 
 	// Rare templates: the generated and hand-written [[...]] blobs, in file
 	// order. Long-bracket strings are raw — no escape processing.
-	d.Rares = nil
+	Rares = nil
 	for _, lines := range src.RareBlobs {
-		d.Rares = append(d.Rares, strings.Join(lines, "\n")+"\n")
+		Rares = append(Rares, strings.Join(lines, "\n")+"\n")
 	}
 }

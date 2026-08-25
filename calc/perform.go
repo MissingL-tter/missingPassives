@@ -66,7 +66,6 @@ func (env *Env) PerformFull(skipEHP bool) {
 func (env *Env) performBody() {
 	modDB := env.ModDB
 	enemyDB := env.EnemyDB
-	d := env.Data
 
 	// Merge keystone modifiers
 	env.Keystone.KeystonesAdded = map[string]bool{}
@@ -229,7 +228,7 @@ func (env *Env) performBody() {
 			skitterbotAilmentEffect := activeSkill.SkillModList.Sum("INC", nil, "SkitterbotAilmentEffect")
 			skillSrcCfg := &modstore.Cfg{Source: "Skill"}
 			if !activeSkill.SkillModList.Flag(nil, "SkitterbotsCannotShock") {
-				effect := *d.NonDamagingAilment["Shock"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyShockEffect")+skitterbotAilmentEffect)/100)
+				effect := *data.NonDamagingAilment["Shock"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyShockEffect")+skitterbotAilmentEffect)/100)
 				modDB.AddMod(newMod("ShockOverride", "BASE", effect, geName))
 				enemyDB.AddMod(newMod("Condition:Shocked", "FLAG", true, geName))
 				if activeSkill.SkillModList.Flag(nil, "SkitterbotAffectPlayer") {
@@ -238,7 +237,7 @@ func (env *Env) performBody() {
 				}
 			}
 			if !activeSkill.SkillModList.Flag(nil, "SkitterbotsCannotChill") {
-				effect := *d.NonDamagingAilment["Chill"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyChillEffect")+skitterbotAilmentEffect)/100)
+				effect := *data.NonDamagingAilment["Chill"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyChillEffect")+skitterbotAilmentEffect)/100)
 				modDB.AddMod(newMod("ChillOverride", "BASE", effect, geName))
 				enemyDB.AddMod(newMod("Condition:Chilled", "FLAG", true, geName))
 				if activeSkill.SkillModList.Flag(nil, "SkitterbotAffectPlayer") {
@@ -251,7 +250,7 @@ func (env *Env) performBody() {
 				}
 			}
 			if activeSkill.SkillModList.Flag(nil, "ScorchingSkitterbot") {
-				effect := *d.NonDamagingAilment["Scorch"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyScorchEffect")+skitterbotAilmentEffect)/100)
+				effect := *data.NonDamagingAilment["Scorch"].Default * (1 + (activeSkill.SkillModList.Sum("INC", skillSrcCfg, "EnemyScorchEffect")+skitterbotAilmentEffect)/100)
 				modDB.AddMod(newMod("ScorchOverride", "BASE", effect, geName))
 				enemyDB.AddMod(newMod("Condition:Scorched", "FLAG", true, geName))
 				if activeSkill.SkillModList.Flag(nil, "SkitterbotAffectPlayer") {
@@ -261,7 +260,7 @@ func (env *Env) performBody() {
 			}
 		} else if activeSkill.SkillTypes[modparser.SkillType.ChillingArea] ||
 			(activeSkill.SkillTypes[modparser.SkillType.NonHitChill] && !activeSkill.SkillModList.Flag(nil, "CannotChill")) {
-			effect := *d.NonDamagingAilment["Chill"].Default * Mod(activeSkill.SkillModList, activeSkill.SkillCfg, "EnemyChillEffect")
+			effect := *data.NonDamagingAilment["Chill"].Default * Mod(activeSkill.SkillModList, activeSkill.SkillCfg, "EnemyChillEffect")
 			modDB.AddMod(newMod("ChillOverride", "BASE", effect, geName))
 			enemyDB.AddMod(newMod("Condition:Chilled", "FLAG", true, geName))
 			if truthy(activeSkill.SkillData["supportBonechill"]) {
@@ -272,7 +271,7 @@ func (env *Env) performBody() {
 		if !activeSkill.SkillFlags["disable"] && len(activeSkill.MinionList) > 0 {
 			ge := activeSkill.ActiveEffect.GrantedEffect
 			for _, minionType := range activeSkill.MinionList {
-				minionData := d.Minions[minionType]
+				minionData := data.Minions[minionType]
 				if minionData != nil && !truthy(minionData.Hostile) {
 					key := minionData.Limit
 					if key == "" {

@@ -1,6 +1,6 @@
 // Port of .archive/src/Modules/CalcTools.lua (calcLib). The functions keep
-// the reference's evaluation order and Lua-truthiness edge cases; only the
-// signatures are Go-shaped (explicit *data.Data instead of the Lua global).
+// the reference's evaluation order and Lua-truthiness edge cases, reading
+// the package-level game data the way the reference reads its data global.
 //
 // canGrantedEffectSupportActiveSkill is deferred to the skills stage - it
 // reads the full ActiveSkill shape, which is defined when
@@ -165,7 +165,7 @@ func DoesTypeExpressionMatch(checkTypes []any, skillTypes, minionTypes map[int64
 }
 
 // GemIsType ports calcLib.gemIsType ("all", "strength", "melee", ...).
-func GemIsType(d *data.Data, gem *data.Gem, typ string, includeTransfigured bool) bool {
+func GemIsType(gem *data.Gem, typ string, includeTransfigured bool) bool {
 	lowerName := luaLower(gem.Name)
 	return typ == "all" ||
 		(typ == "elemental" && (gem.Tags["fire"] || gem.Tags["cold"] || gem.Tags["lightning"])) ||
@@ -176,7 +176,7 @@ func GemIsType(d *data.Data, gem *data.Gem, typ string, includeTransfigured bool
 		(typ == "non-exceptional" && !gem.Tags["exceptional"]) ||
 		typ == lowerName ||
 		typ == stripVaalPrefix(lowerName) ||
-		(includeTransfigured && IsGemIdSame(d, gem.Name, typ, true)) ||
+		(includeTransfigured && IsGemIdSame(gem.Name, typ, true)) ||
 		(typ != "active skill" && typ != "grants_active_skill" && typ != "skill" && gem.Tags[typ])
 }
 
@@ -198,7 +198,7 @@ func GetGemStatRequirement(level float64, isSupport bool, multi float64) float64
 }
 
 // BuildSkillInstanceStats ports calcLib.buildSkillInstanceStats.
-func BuildSkillInstanceStats(d *data.Data, gi *ActiveEffect, grantedEffect *data.GrantedEffect) map[string]float64 {
+func BuildSkillInstanceStats(gi *ActiveEffect, grantedEffect *data.GrantedEffect) map[string]float64 {
 	stats := map[string]float64{}
 	if gi.Quality > 0 && grantedEffect.QualityStats != nil {
 		for _, stat := range grantedEffect.QualityStats {
@@ -237,8 +237,8 @@ func BuildSkillInstanceStats(d *data.Data, gi *ActiveEffect, grantedEffect *data
 				if grantedEffect.IncrementalEffectiveness != nil {
 					incr = *grantedEffect.IncrementalEffectiveness
 				}
-				e := (d.GameConstants["SkillDamageBaseEffectiveness"] +
-					d.GameConstants["SkillDamageIncrementalEffectiveness"]*(actorLevel-1)) *
+				e := (data.GameConstants["SkillDamageBaseEffectiveness"] +
+					data.GameConstants["SkillDamageIncrementalEffectiveness"]*(actorLevel-1)) *
 					base * math.Pow(1+incr, actorLevel-1)
 				availableEffectiveness = &e
 			}
@@ -307,21 +307,21 @@ func GetConvertedModTags(mod *modparser.Mod, multiplier float64, minionMods bool
 }
 
 // GetGameIdFromGemName ports calcLib.getGameIdFromGemName ("" = Lua nil).
-func GetGameIdFromGemName(d *data.Data, gemName string, dropVaal bool) string {
-	gemId, ok := d.GemForBaseName[luaLower(gemName)]
+func GetGameIdFromGemName(gemName string, dropVaal bool) string {
+	gemId, ok := data.GemForBaseName[luaLower(gemName)]
 	if !ok {
 		return ""
 	}
-	if dropVaal && d.Gems[gemId].VaalGem {
-		return d.Gems[d.GemVaalGemIdForBaseGemId[gemId]].GameId
+	if dropVaal && data.Gems[gemId].VaalGem {
+		return data.Gems[data.GemVaalGemIdForBaseGemId[gemId]].GameId
 	}
-	return d.Gems[gemId].GameId
+	return data.Gems[gemId].GameId
 }
 
 // IsGemIdSame ports calcLib.isGemIdSame.
-func IsGemIdSame(d *data.Data, gemName, typeName string, dropVaal bool) bool {
-	gemNameId := GetGameIdFromGemName(d, gemName, dropVaal)
-	typeId := GetGameIdFromGemName(d, typeName, dropVaal)
+func IsGemIdSame(gemName, typeName string, dropVaal bool) bool {
+	gemNameId := GetGameIdFromGemName(gemName, dropVaal)
+	typeId := GetGameIdFromGemName(typeName, dropVaal)
 	return gemNameId != "" && typeId != "" && gemNameId == typeId
 }
 

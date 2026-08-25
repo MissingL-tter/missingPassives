@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -83,11 +84,10 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, actor := c.activeSkill, c.actor
-	d := env.Data
 	globalOutput := c.output
 
-	ailmentData := d.NonDamagingAilment
-	for _, ailment := range d.AilmentTypeList {
+	ailmentData := data.NonDamagingAilment
+	for _, ailment := range data.AilmentTypeList {
 		skillFlags[strings.ToLower(ailment)] = false
 	}
 	skillFlags["igniteCanStack"] = skillModList.Flag(skillCfg, "IgniteCanStack")
@@ -96,7 +96,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 
 	debuffDurationMult := 1.0
 	if env.ModeEffective {
-		debuffDurationMult = 1 / math.Max(d.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
+		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 
 	// Calculate ailments and debuffs (poison, bleed, ignite, impale, exposure, etc)
@@ -180,7 +180,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			output["ChaosPoisonChance"] = math.Min(100, skillModList.Sum("BASE", cfg, "ChaosPoisonChance"))
 		}
 		// Elemental Ailment Affliction Chance | Elemental Ailment Additionals
-		for _, ailment := range d.ElementalAilmentTypeList {
+		for _, ailment := range data.ElementalAilmentTypeList {
 			chance := skillModList.Sum("BASE", cfg, "Enemy"+ailment+"Chance") + enemyDB.Sum("BASE", nil, "Self"+ailment+"Chance")
 			// #EVAL: `(Flag and 100 or 0) + Sum(...)` parses as
 			// `Flag and 100 or (0 + Sum(...))`, so an immune enemy yields
@@ -246,7 +246,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			skillFlags["applyLightningExposure"] = true
 		}
 		if env.ModeEffective {
-			for _, ailment := range d.AilmentTypeList {
+			for _, ailment := range data.AilmentTypeList {
 				mult := 1 - enemyDB.Sum("BASE", nil, "Avoid"+ailment)/100
 				if enemyDB.Flag(nil, ailment+"Immune") {
 					mult = 0
@@ -264,7 +264,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			ailmentMode = v
 		}
 		if ailmentMode == "CRIT" || modDB.Flag(nil, "AilmentsOnlyFromCrit") {
-			for _, ailment := range d.AilmentTypeList {
+			for _, ailment := range data.AilmentTypeList {
 				output[ailment+"ChanceOnHit"] = 0.0
 			}
 		}
@@ -272,7 +272,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 		// Perfect Agony + Elemental Overload completely disables ailment
 		// application
 		if modDB.Flag(nil, "AilmentsAreNeverFromCrit") {
-			for _, ailment := range d.AilmentTypeList {
+			for _, ailment := range data.AilmentTypeList {
 				if modDB.Flag(nil, "AilmentsOnlyFromCrit") {
 					output[ailment+"ChanceOnCrit"] = 0.0
 				} else {
@@ -426,7 +426,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			configStacks := enemyDB.Sum("BASE", cfg, "Multiplier:ImpaleStacks")
 			impaleStacks := math.Min(maxStacks, configStacks)
 
-			baseStoredDamage := d.Misc.ImpaleStoredDamageBase
+			baseStoredDamage := data.Misc.ImpaleStoredDamageBase
 			storedExpectedDamageIncOnBleed := skillModList.Sum("INC", cfg, "ImpaleEffectOnBleed") *
 				math.Min(skillModList.Sum("BASE", cfg, "BleedChance")/100, 1)
 			storedExpectedDamageInc := (skillModList.Sum("INC", cfg, "ImpaleEffect") + storedExpectedDamageIncOnBleed) / 100
@@ -438,7 +438,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			enemyArmour := math.Max(Val(enemyDB, "Armour", nil), 0)
 			impaleArmourReduction := armourReductionF(enemyArmour, impaleHitDamageMod*outNum(output, "impaleStoredHitAvg"))
 			impaleResist := math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")+
-				skillModList.Sum("BASE", cfg, "EnemyImpalePhysicalDamageReduction")+impaleArmourReduction), d.Misc.EnemyPhysicalDamageReductionCap)
+				skillModList.Sum("BASE", cfg, "EnemyImpalePhysicalDamageReduction")+impaleArmourReduction), data.Misc.EnemyPhysicalDamageReductionCap)
 			if skillModList.Flag(cfg, "IgnoreEnemyImpalePhysicalDamageReduction") {
 				impaleResist = 0
 			}

@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -30,11 +31,10 @@ func (env *Env) offenceDot(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, output := c.activeSkill, c.output
-	d := env.Data
 
 	debuffDurationMult := 1.0
 	if env.ModeEffective {
-		debuffDurationMult = 1 / math.Max(d.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
+		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 
 	if skillFlags["hit"] && truthy(skillData["decay"]) && c.canDeal["Chaos"] {
@@ -154,7 +154,7 @@ func (env *Env) offenceDot(c *offenceCtx) {
 					takenMore *= enemyDB.More(dotTakenCfg, "ElementalDamageTaken")
 				}
 				if damageType == "Physical" {
-					resist = math.Max(0, math.Min(enemyDB.Sum("BASE", nil, "PhysicalDamageReduction"), d.Misc.EnemyPhysicalDamageReductionCap))
+					resist = math.Max(0, math.Min(enemyDB.Sum("BASE", nil, "PhysicalDamageReduction"), data.Misc.EnemyPhysicalDamageReductionCap))
 				} else {
 					resist = env.calcResistForType(c, damageType, dotTypeCfg)
 				}
@@ -176,9 +176,9 @@ func (env *Env) offenceDot(c *offenceCtx) {
 			total := baseVal * (1 + inc/100) * more * (1 + mult/100) * aura * effMult
 			if !truthy(output[damageType+"Dot"]) || outNum(output, damageType+"Dot") == 0 {
 				output[damageType+"Dot"] = total
-				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total, d.Misc.DotDpsCap)
+				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total, data.Misc.DotDpsCap)
 			} else {
-				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total+outNum(output, damageType+"Dot"), d.Misc.DotDpsCap)
+				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total+outNum(output, damageType+"Dot"), data.Misc.DotDpsCap)
 			}
 		}
 	}
@@ -194,7 +194,7 @@ func (env *Env) offenceDot(c *offenceCtx) {
 			speed = outNum(output, "TrapThrowingSpeed")
 		}
 		output["TotalDot"] = math.Min(outNum(output, "TotalDotInstance")*speed*outNum(output, "Duration")*
-			anyNum(skillData["dpsMultiplier"])*c.quantityMultiplier, d.Misc.DotDpsCap)
+			anyNum(skillData["dpsMultiplier"])*c.quantityMultiplier, data.Misc.DotDpsCap)
 		output["TotalDotCalcSection"] = output["TotalDot"]
 	case skillModList.Flag(nil, "dotIsBurningGround"):
 		output["TotalDot"] = 0.0
@@ -226,7 +226,7 @@ func (env *Env) offenceDot(c *offenceCtx) {
 			attachedBrandCount = outNum(output, "AttachedBrandCount")
 		}
 		if attachedBrandCount > 1 {
-			output["TotalDot"] = math.Min(outNum(output, "TotalDotInstance")*attachedBrandCount, d.Misc.DotDpsCap)
+			output["TotalDot"] = math.Min(outNum(output, "TotalDotInstance")*attachedBrandCount, data.Misc.DotDpsCap)
 		} else {
 			output["TotalDot"] = output["TotalDotInstance"]
 		}
@@ -331,7 +331,6 @@ func (env *Env) offenceCostPerSecond(c *offenceCtx) {
 // offenceCombinedDPS ports L5984-6168.
 func (env *Env) offenceCombinedDPS(c *offenceCtx) {
 	skillData, skillFlags, output := c.skillData, c.skillFlags, c.output
-	d := env.Data
 
 	baseKey := "TotalDPS"
 	if truthy(skillData["showAverage"]) {
@@ -344,7 +343,7 @@ func (env *Env) offenceCombinedDPS(c *offenceCtx) {
 		output["WithDotDPS"] = baseDPS + outNum(output, "TotalDot")
 	}
 	if c.quantityMultiplier > 1 && truthy(output["TotalPoisonDPS"]) {
-		output["TotalPoisonDPS"] = math.Min(outNum(output, "TotalPoisonDPS")*c.quantityMultiplier, d.Misc.DotDpsCap)
+		output["TotalPoisonDPS"] = math.Min(outNum(output, "TotalPoisonDPS")*c.quantityMultiplier, data.Misc.DotDpsCap)
 	}
 	if truthy(skillData["showAverage"]) {
 		combinedAvg += outNum(output, "TotalPoisonAverageDamage")
@@ -479,7 +478,7 @@ func (env *Env) offenceCombinedDPS(c *offenceCtx) {
 	}
 	totalDotDPS += math.Max(outNum(output, "BurningGroundDPS"), outNum(output, "MirageBurningGroundDPS")) +
 		outNum(output, "BleedDPS") + outNum(output, "CorruptingBloodDPS") + outNum(output, "DecayDPS")
-	output["TotalDotDPS"] = math.Min(totalDotDPS, d.Misc.DotDpsCap)
+	output["TotalDotDPS"] = math.Min(totalDotDPS, data.Misc.DotDpsCap)
 	if outNum(output, "TotalDotDPS") != totalDotDPS {
 		output["showTotalDotDPS"] = true
 	}

@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -18,7 +19,6 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
-	d := env.Data
 
 	if !c.canDeal["Physical"] || (outNum(output, "BleedChanceOnHit")+outNum(output, "BleedChanceOnCrit")) <= 0 {
 		return
@@ -42,7 +42,7 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 		overrideStackPotential, hasOverrideStackPotential = anyNum(ov)/maxStacks, true
 	}
 	globalOutput["BleedStacksMax"] = maxStacks
-	durationBase := d.Misc.BleedDurationBase
+	durationBase := data.Misc.BleedDurationBase
 	if ov := skillModList.Override(dotCfg, "BleedDurationBase"); truthy(ov) {
 		durationBase = anyNum(ov)
 	} else if truthy(skillData["bleedDurationIsSkillDuration"]) && truthy(skillData["duration"]) {
@@ -125,7 +125,7 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 		}
 	}
 
-	basePercent := d.Misc.BleedPercentBase
+	basePercent := data.Misc.BleedPercentBase
 	if truthy(skillData["bleedBasePercent"]) {
 		basePercent = anyNum(skillData["bleedBasePercent"])
 	}
@@ -145,7 +145,7 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 		skillFlags["duration"] = true
 		effMult := 1.0
 		if env.ModeEffective {
-			resist := math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")), d.Misc.EnemyPhysicalDamageReductionCap)
+			resist := math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")), data.Misc.EnemyPhysicalDamageReductionCap)
 			takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "PhysicalDamageTaken", "PhysicalDamageTakenOverTime")
 			takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "PhysicalDamageTaken", "PhysicalDamageTakenOverTime")
 			effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
@@ -154,7 +154,7 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
 		activeBleeds := math.Min(bleedStacks, maxStacks)
 		output["BaseBleedDPS"] = baseBleedDps * effectMod * rateMod * activeBleeds * effMult
-		output["BleedDPS"] = math.Min(outNum(output, "BaseBleedDPS"), d.Misc.DotDpsCap)
+		output["BleedDPS"] = math.Min(outNum(output, "BaseBleedDPS"), data.Misc.DotDpsCap)
 		globalOutput["BleedStacks"] = bleedStacks
 		globalOutput["BleedDamage"] = outNum(output, "BaseBleedDPS") * outNum(globalOutput, "BleedDuration")
 	}
@@ -166,7 +166,6 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
-	d := env.Data
 
 	if !c.canDeal["Chaos"] ||
 		(outNum(output, "PoisonChanceOnHit")+outNum(output, "PoisonChanceOnCrit")+outNum(output, "ChaosPoisonChance")) <= 0 {
@@ -181,7 +180,7 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	checkWeapon1HFlags(dotCfg, cfg)
 
 	rateMod := Mod(skillModList, cfg, "PoisonFaster") + enemyDB.Sum("INC", nil, "SelfPoisonFaster")/100
-	durationBase := d.Misc.PoisonDurationBase
+	durationBase := data.Misc.PoisonDurationBase
 	if ov := skillModList.Override(dotCfg, "PoisonDurationBase"); truthy(ov) {
 		durationBase = anyNum(ov)
 	} else if truthy(skillData["poisonDurationIsSkillDuration"]) && truthy(skillData["duration"]) {
@@ -294,7 +293,7 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	// output.PoisonChance and the last one wins.
 	calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceMinHitDmg, 0)
 	calcAilmentDamage("Poison", 100, sourceMaxHitDmg, sourceMaxCritDmg)
-	baseVal := calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceHitDmg, sourceCritDmg) * d.Misc.PoisonPercentBase *
+	baseVal := calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceHitDmg, sourceCritDmg) * data.Misc.PoisonPercentBase *
 		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
 	if baseVal > 0 {
 		skillFlags["poison"] = true
@@ -312,19 +311,19 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 		}
 		globalOutput["PoisonStacks"] = poisonStacks
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
-		singlePoisonDPSCapped := math.Min(math.Min(baseVal*effectMod*rateMod*effMult, d.Misc.DotDpsCap), d.Misc.DotDpsCap)
+		singlePoisonDPSCapped := math.Min(math.Min(baseVal*effectMod*rateMod*effMult, data.Misc.DotDpsCap), data.Misc.DotDpsCap)
 		output["PoisonDPS"] = singlePoisonDPSCapped
 		output["PoisonDamage"] = singlePoisonDPSCapped * outNum(globalOutput, "PoisonDuration")
 		groundMult := math.Max(maxOr(skillModList, nil, 0, "PoisonDpsAsCausticGround"), dbMaxOr(enemyDB, nil, 0, "PoisonDpsAsCausticGround"))
 		if groundMult > 0 {
-			output["CausticGroundDPS"] = math.Min(baseVal*effectMod*rateMod*effMult*groundMult/100, d.Misc.DotDpsCap)
+			output["CausticGroundDPS"] = math.Min(baseVal*effectMod*rateMod*effMult*groundMult/100, data.Misc.DotDpsCap)
 			globalOutput["CausticGroundFromPoison"] = true
 		}
 		if truthy(skillData["showAverage"]) {
 			output["TotalPoisonAverageDamage"] = output["PoisonDamage"]
 			output["TotalPoisonDPS"] = output["PoisonDPS"]
 		} else {
-			output["TotalPoisonDPS"] = math.Min(singlePoisonDPSCapped*poisonStacks, d.Misc.DotDpsCap)
+			output["TotalPoisonDPS"] = math.Min(singlePoisonDPSCapped*poisonStacks, data.Misc.DotDpsCap)
 		}
 	}
 }
@@ -335,7 +334,6 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
-	d := env.Data
 
 	if !c.canDeal["Fire"] || (outNum(output, "IgniteChanceOnHit")+outNum(output, "IgniteChanceOnCrit")) <= 0 {
 		return
@@ -368,7 +366,7 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 
 	rateMod := (Mod(skillModList, cfg, "IgniteBurnFaster") + enemyDB.Sum("INC", nil, "SelfIgniteBurnFaster")/100) /
 		Mod(skillModList, cfg, "IgniteBurnSlower")
-	durationBase := d.Misc.IgniteDurationBase
+	durationBase := data.Misc.IgniteDurationBase
 	if ov := skillModList.Override(dotCfg, "IgniteDurationBase"); truthy(ov) {
 		durationBase = anyNum(ov)
 	}
@@ -454,7 +452,7 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	// output.IgniteChance and the last one wins.
 	calcAilmentDamage("Ignite", ailmentCritChance, sourceMinHitDmg, 0)
 	calcAilmentDamage("Ignite", 100, sourceMaxHitDmg, sourceMaxCritDmg)
-	baseVal := calcAilmentDamage("Ignite", ailmentCritChance, sourceHitDmg, sourceCritDmg) * d.Misc.IgnitePercentBase *
+	baseVal := calcAilmentDamage("Ignite", ailmentCritChance, sourceHitDmg, sourceCritDmg) * data.Misc.IgnitePercentBase *
 		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
 	if baseVal > 0 {
 		skillFlags["ignite"] = true
@@ -475,7 +473,7 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 		}
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
 		activeIgnites := math.Min(igniteStacks, maxStacks)
-		output["IgniteDPS"] = math.Min(baseVal*effectMod*rateMod*activeIgnites*effMult, d.Misc.DotDpsCap)
+		output["IgniteDPS"] = math.Min(baseVal*effectMod*rateMod*activeIgnites*effMult, data.Misc.DotDpsCap)
 		groundMult := math.Max(maxOr(skillModList, nil, 0, "IgniteDpsAsBurningGround"), dbMaxOr(enemyDB, nil, 0, "IgniteDpsAsBurningGround"))
 		if groundMult > 0 {
 			// Always use fire eff multi
@@ -483,7 +481,7 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 			takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			fireEffMult := (1 - resist/100) * (1 + takenInc/100) * takenMore
-			globalOutput["BurningGroundDPS"] = math.Min(baseVal*effectMod*rateMod*fireEffMult*groundMult/100, d.Misc.DotDpsCap)
+			globalOutput["BurningGroundDPS"] = math.Min(baseVal*effectMod*rateMod*fireEffMult*groundMult/100, data.Misc.DotDpsCap)
 			globalOutput["BurningGroundFromIgnite"] = true
 		}
 		globalOutput["IgniteDamage"] = outNum(output, "IgniteDPS") * outNum(globalOutput, "IgniteDuration")

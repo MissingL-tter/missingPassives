@@ -14,11 +14,11 @@ type chargeModTier map[string]string
 
 var enduranceChargeMods = []chargeModTier{
 	{
-		"Gain every second":  "Gain an Endurance Charge every second if you've been Hit Recently",
-		"+1 Maximum":         "+1 to Maximum Endurance Charges",
-		"Cannot be Stunned":  "You cannot be Stunned while at maximum Endurance Charges",
-		"Vaal Pact":          "You have Vaal Pact while at maximum Endurance Charges",
-		"Intimidate":         "Intimidate Enemies for 4 seconds on Hit with Attacks while at maximum Endurance Charges",
+		"Gain every second": "Gain an Endurance Charge every second if you've been Hit Recently",
+		"+1 Maximum":        "+1 to Maximum Endurance Charges",
+		"Cannot be Stunned": "You cannot be Stunned while at maximum Endurance Charges",
+		"Vaal Pact":         "You have Vaal Pact while at maximum Endurance Charges",
+		"Intimidate":        "Intimidate Enemies for 4 seconds on Hit with Attacks while at maximum Endurance Charges",
 	},
 	{
 		"Block Attacks":               "1% Chance to Block Attack Damage per Endurance Charge",
@@ -105,7 +105,7 @@ func sortedTierKeys(m chargeModTier) []string {
 	return keys
 }
 
-func (d *Data) buildPrecursorsEmblem() []string {
+func buildPrecursorsEmblem() []string {
 	out := []string{
 		`Precursor's Emblem
 {variant:1}Topaz Ring
@@ -254,32 +254,32 @@ type watchersLegacy struct {
 }
 
 var watchersEyeLegacyMods = map[string]watchersLegacy{
-	"ClarityManaAddedAsEnergyShield":              {Version: "3.12.0", LegacyRange: "(12-18)"},
-	"ClarityReducedManaCost":                      {Version: "3.8.0"},
-	"ClarityManaRecoveryRate":                     {Version: "3.12.0", LegacyRange: "(20-30)"},
-	"DisciplineEnergyShieldRecoveryRate":          {Version: "3.12.0", LegacyRange: "(20-30)"},
-	"MalevolenceDamageOverTimeMultiplier":         {Version: "3.8.0", LegacyRange: "(36-44)"},
-	"MalevolenceLifeAndEnergyShieldRecoveryRate":  {Version: "3.12.0", LegacyRange: "(15-20)"},
-	"PrecisionIncreasedCriticalStrikeMultiplier":  {Version: "3.12.0", LegacyRange: "(30-50)"},
-	"VitalityDamageLifeLeech":                     {Version: "3.12.0", LegacyRange: "(1-1.5)"},
-	"VitalityFlatLifeRegen":                       {Version: "3.12.0"},
-	"VitalityLifeRecoveryRate":                    {Version: "3.12.0", LegacyRange: "(20-30)"},
-	"WrathLightningDamageManaLeech":               {Version: "3.8.0"},
-	"GraceChanceToDodge":                          {Rename: "Grace: Chance to Suppress Spells"},
-	"HasteChanceToDodgeSpells":                    {Rename: "Haste: Chance to Suppress Spells"},
-	"PurityOfFireTakePhysicalAsFire":              {Version: "3.25.0"},
-	"PurityOfIceTakePhysicalAsIce":                {Version: "3.25.0"},
-	"PurityOfLightningTakePhysicalAsLightning":    {Version: "3.25.0"},
-	"PurityOfElementsTakePhysicalAsFire_":         {Version: "3.25.0"},
-	"PurityOfElementsTakePhysicalAsCold":          {Version: "3.25.0"},
-	"PurityOfElementsTakePhysicalAsLightning":     {Version: "3.25.0"},
-	"PurityOfFireReducedReflectedFireDamage":      {},
-	"PurityOfIceReducedReflectedColdDamage":       {},
-	"PurityOfLightningReducedReflectedLightningDamage":                {},
-	"MalevolenceSkillEffectDuration":                                  {},
+	"ClarityManaAddedAsEnergyShield":                                     {Version: "3.12.0", LegacyRange: "(12-18)"},
+	"ClarityReducedManaCost":                                             {Version: "3.8.0"},
+	"ClarityManaRecoveryRate":                                            {Version: "3.12.0", LegacyRange: "(20-30)"},
+	"DisciplineEnergyShieldRecoveryRate":                                 {Version: "3.12.0", LegacyRange: "(20-30)"},
+	"MalevolenceDamageOverTimeMultiplier":                                {Version: "3.8.0", LegacyRange: "(36-44)"},
+	"MalevolenceLifeAndEnergyShieldRecoveryRate":                         {Version: "3.12.0", LegacyRange: "(15-20)"},
+	"PrecisionIncreasedCriticalStrikeMultiplier":                         {Version: "3.12.0", LegacyRange: "(30-50)"},
+	"VitalityDamageLifeLeech":                                            {Version: "3.12.0", LegacyRange: "(1-1.5)"},
+	"VitalityFlatLifeRegen":                                              {Version: "3.12.0"},
+	"VitalityLifeRecoveryRate":                                           {Version: "3.12.0", LegacyRange: "(20-30)"},
+	"WrathLightningDamageManaLeech":                                      {Version: "3.8.0"},
+	"GraceChanceToDodge":                                                 {Rename: "Grace: Chance to Suppress Spells"},
+	"HasteChanceToDodgeSpells":                                           {Rename: "Haste: Chance to Suppress Spells"},
+	"PurityOfFireTakePhysicalAsFire":                                     {Version: "3.25.0"},
+	"PurityOfIceTakePhysicalAsIce":                                       {Version: "3.25.0"},
+	"PurityOfLightningTakePhysicalAsLightning":                           {Version: "3.25.0"},
+	"PurityOfElementsTakePhysicalAsFire_":                                {Version: "3.25.0"},
+	"PurityOfElementsTakePhysicalAsCold":                                 {Version: "3.25.0"},
+	"PurityOfElementsTakePhysicalAsLightning":                            {Version: "3.25.0"},
+	"PurityOfFireReducedReflectedFireDamage":                             {},
+	"PurityOfIceReducedReflectedColdDamage":                              {},
+	"PurityOfLightningReducedReflectedLightningDamage":                   {},
+	"MalevolenceSkillEffectDuration":                                     {},
 	"ZealotryMaximumEnergyShieldPerSecondToMaximumEnergyShieldLeechRate": {},
-	"MalevolenceColdDamageOverTimeMultiplier":                         {},
-	"MalevolenceChaosNonAilmentDamageOverTimeMultiplier":              {},
+	"MalevolenceColdDamageOverTimeMultiplier":                            {},
+	"MalevolenceChaosNonAilmentDamageOverTimeMultiplier":                 {},
 }
 
 var (
@@ -298,7 +298,7 @@ func watchersVariantName(id string) string {
 	return v
 }
 
-func (d *Data) buildEyeFamily() (watchersEye, sublimeVision, voranasMarch, boundByDestiny []string) {
+func buildEyeFamily() (watchersEye, sublimeVision, voranasMarch, boundByDestiny []string) {
 	watchersEye = []string{`
 Watcher's Eye
 Prismatic Jewel
@@ -344,7 +344,7 @@ Selected Alt Variant Two: 37
 	voranasMarch = append(voranasMarch, "Variant: None")
 	watchersEye = append(watchersEye, "Variant: None")
 
-	for _, mod := range d.UniqueMods["Watcher's Eye"] {
+	for _, mod := range UniqueMods["Watcher's Eye"] {
 		if !reSublime.MatchString(mod.Id) && !reArbalist.MatchString(mod.Id) {
 			variantName := watchersVariantName(mod.Id)
 			if legacy, ok := watchersEyeLegacyMods[mod.Id]; ok {
@@ -379,7 +379,7 @@ Selected Alt Variant Two: 37
 	}
 
 	// Bound by Destiny, from its own pool sorted by (type, id).
-	bbdPool := d.bbdPool
+	bbdPool := bbdPool
 	type bbdEntry struct {
 		id  string
 		mod ItemModData
@@ -428,7 +428,7 @@ Triggers Level 20 Summon Arbalists when Equipped
 25% increased Movement Speed`)
 
 	iWE, iSV, iVM := 2, 1, 2
-	for _, mod := range d.UniqueMods["Watcher's Eye"] {
+	for _, mod := range UniqueMods["Watcher's Eye"] {
 		switch {
 		case !reSublime.MatchString(mod.Id) && !reArbalist.MatchString(mod.Id):
 			if legacy, ok := watchersEyeLegacyMods[mod.Id]; ok {

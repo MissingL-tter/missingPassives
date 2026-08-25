@@ -40,7 +40,10 @@ type Sources struct {
 }
 
 // Data mirrors the Lua `data` table (the logic-bearing parts).
-type Data struct {
+// The loaded game data, package-level: the port of the reference's
+// global `data` table. Load populates it exactly once at boot;
+// everything after Load treats it as read-only.
+var (
 	// Data/Misc.lua tables.
 	MonsterEvasionTable             []float64
 	MonsterAccuracyTable            []float64
@@ -63,7 +66,7 @@ type Data struct {
 	MapLevelBossAilmentMult         map[int64]float64
 	GoldRespecPrices                []int64
 
-	Misc                      Misc
+	Misc                      misc
 	PowerStatList             []PowerStat
 	SkillColorMap             []string
 	MonsterExperienceLevelMap map[int]float64
@@ -80,18 +83,16 @@ type Data struct {
 	HighPrecisionMods    map[string]map[string]int
 	ModScalability       map[string][]Scalability
 
-	WeaponTypeInfo    map[string]WeaponTypeInfo
+	WeaponTypeInfo    map[string]weaponTypeDef
 	UnarmedWeaponData map[int]UnarmedWeapon
 
-	JewelRadii map[string][]*JewelRadius
+	JewelRadii map[string][]*jewelRadius
 	// JewelRadius is the selected version's table. Data.lua nils it at its
 	// own load (it assigns setJewelRadiiGlobally's nil return), but the tree
 	// load calls setJewelRadiiGlobally again during boot, so the running
 	// application always has it set; the port sets it directly.
-	JewelRadius    []*JewelRadius
+	JewelRadius    []*jewelRadius
 	MaxJewelRadius float64
-
-	EnchantmentSource []EnchantmentSource
 
 	TimelessJewelTypes     map[int]string
 	TimelessJewelSeedMin   map[int]float64
@@ -126,7 +127,7 @@ type Data struct {
 	Pantheons    map[string]Pantheon
 	Crucible     map[string]CrucibleNode
 	MasterMods   []MasterCraft
-	FlavourText  []FlavourText
+	FlavourText  []flavourText
 	Enchantments map[string]map[string][]string
 	// HelmetEnchants is data.enchantments["Helmet"] (skill -> source -> mods).
 	HelmetEnchants map[string]map[string][]string
@@ -138,11 +139,11 @@ type Data struct {
 	ItemBaseTypeList []string
 	Rares            []string
 
-	ClusterJewels             ClusterJewels
+	ClusterJewels              clusterJewels
 	ClusterJewelInfoForNotable map[string]*ClusterJewelInfo
 
 	Bosses             map[string]Boss
-	BossStats          BossStats
+	BossStats          bossStats
 	EnemyIsBossTooltip string
 	BossSkills         map[string]BossSkillData
 	BossSkillsList     []ValLabel
@@ -166,7 +167,7 @@ type Data struct {
 	// "new". The "generated" list (Uniques/Special/Generated.lua, real code)
 	// is not ported yet.
 	Uniques map[string][]string
-}
+)
 
 // Scalability is one data.modScalability value entry.
 type Scalability struct {
@@ -187,7 +188,7 @@ type Boss struct {
 	IsUber      bool    `lua:"isUber"`
 }
 
-type BossStats struct {
+type bossStats struct {
 	PinnacleArmourMean  float64 `lua:"PinnacleArmourMean"`
 	PinnacleEvasionMean float64 `lua:"PinnacleEvasionMean"`
 	UberArmourMean      float64 `lua:"UberArmourMean"`
@@ -195,23 +196,22 @@ type BossStats struct {
 }
 
 // Load assembles the runtime data set.
-func Load(src Sources) *Data {
-	d := &Data{}
-	d.loadMisc(src.Misc)
-	d.Misc = miscTable(d.CharacterConstants, d.MonsterConstants)
-	d.PowerStatList = buildPowerStatList()
-	d.SkillColorMap = []string{colorStrength, colorDexterity, colorIntelligence, colorNormal}
-	d.MonsterExperienceLevelMap = buildMonsterExperienceLevelMap(d.Misc)
-	d.CursePriority = cursePriority
-	d.Keystones = keystones
-	d.AilmentTypeList = ailmentTypeList
-	d.ElementalAilmentTypeList = elementalAilmentTypeList
-	d.NonDamagingAilmentTypeList = nonDamagingAilmentTypeList
-	d.NonElementalAilmentTypeList = nonElementalAilmentTypeList
-	d.NonDamagingAilment = nonDamagingAilment
-	d.DefaultHighPrecision = 1
-	d.HighPrecisionMods = highPrecisionMods
-	d.ModScalability = map[string][]Scalability{}
+func Load(src Sources) {
+	loadMisc(src.Misc)
+	Misc = miscTable(CharacterConstants, MonsterConstants)
+	PowerStatList = buildPowerStatList()
+	SkillColorMap = []string{colorStrength, colorDexterity, colorIntelligence, colorNormal}
+	MonsterExperienceLevelMap = buildMonsterExperienceLevelMap(Misc)
+	CursePriority = cursePriority
+	Keystones = keystones
+	AilmentTypeList = ailmentTypeList
+	ElementalAilmentTypeList = elementalAilmentTypeList
+	NonDamagingAilmentTypeList = nonDamagingAilmentTypeList
+	NonElementalAilmentTypeList = nonElementalAilmentTypeList
+	NonDamagingAilment = nonDamagingAilment
+	DefaultHighPrecision = 1
+	HighPrecisionMods = highPrecisionMods
+	ModScalability = map[string][]Scalability{}
 	for line, vals := range src.ModScalability {
 		list := make([]Scalability, len(vals))
 		for i, v := range vals {
@@ -219,56 +219,55 @@ func Load(src Sources) *Data {
 		}
 		// The reference loads these keys from a Lua string literal, so \n
 		// sequences in the described text become real newlines.
-		d.ModScalability[luaUnescape(line)] = list
+		ModScalability[luaUnescape(line)] = list
 	}
-	d.WeaponTypeInfo = weaponTypeInfo
-	d.UnarmedWeaponData = unarmedWeaponData
-	d.JewelRadii, d.MaxJewelRadius = buildJewelRadii()
-	d.JewelRadius = d.JewelRadii["3_16"]
-	d.EnchantmentSource = enchantmentSource
-	d.TimelessJewelTypes = timelessJewelTypes
-	d.TimelessJewelSeedMin = timelessJewelSeedMin
-	d.TimelessJewelSeedMax = timelessJewelSeedMax
-	d.TimelessJewelAdditions = 337 // #legionAdditions
-	d.NodeIDList = nodeIDListTable
-	d.AbyssNotableNames = abyssNotableNamesTable
-	d.TimelessJewelTradeIDs = timelessJewelTradeIDsTable
-	d.TimelessJewelLUTs = map[string]any{}
-	d.MapMods = mapModsTable
-	d.ItemTagSpecial = itemTagSpecial
-	d.ItemTagSpecialExclusionPattern = itemTagSpecialExclusionPattern
-	d.CasterTagCrucibleUniques = casterTagCrucibleUniques
-	d.MinionTagCrucibleUniques = minionTagCrucibleUniques
+	WeaponTypeInfo = weaponTypeInfo
+	UnarmedWeaponData = unarmedWeaponData
+	JewelRadii, MaxJewelRadius = buildJewelRadii()
+	JewelRadius = JewelRadii["3_16"]
+	TimelessJewelTypes = timelessJewelTypes
+	TimelessJewelSeedMin = timelessJewelSeedMin
+	TimelessJewelSeedMax = timelessJewelSeedMax
+	TimelessJewelAdditions = 337 // #legionAdditions
+	NodeIDList = nodeIDListTable
+	AbyssNotableNames = abyssNotableNamesTable
+	TimelessJewelTradeIDs = timelessJewelTradeIDsTable
+	TimelessJewelLUTs = map[string]any{}
+	MapMods = mapModsTable
+	ItemTagSpecial = itemTagSpecial
+	ItemTagSpecialExclusionPattern = itemTagSpecialExclusionPattern
+	CasterTagCrucibleUniques = casterTagCrucibleUniques
+	MinionTagCrucibleUniques = minionTagCrucibleUniques
 
 	for _, c := range src.Costs {
 		cost := Cost{Resource: c.Resource, ResourceString: c.ResourceString, Divisor: float64(c.Divisor)}
 		cost.Stat = c.Stat
-		d.Costs = append(d.Costs, cost)
+		Costs = append(Costs, cost)
 	}
 
-	d.loadItemMods(src.Mods)
-	d.Essences = loadEssences(src.Essences)
-	d.Pantheons = loadPantheons(src.Pantheons)
-	d.Crucible = loadCrucible(src.Crucible)
-	d.MasterMods = loadMasterMods(src.Masters)
-	d.FlavourText = loadFlavourText(src.FlavourText)
-	d.Enchantments = loadEnchantments(src.Enchants)
-	d.HelmetEnchants = loadHelmetEnchants(src.Enchants)
+	loadItemMods(src.Mods)
+	Essences = loadEssences(src.Essences)
+	Pantheons = loadPantheons(src.Pantheons)
+	Crucible = loadCrucible(src.Crucible)
+	MasterMods = loadMasterMods(src.Masters)
+	FlavourText = loadFlavourText(src.FlavourText)
+	Enchantments = loadEnchantments(src.Enchants)
+	HelmetEnchants = loadHelmetEnchants(src.Enchants)
 
-	d.loadBases(src.Bases)
-	d.loadRareLikeUniques()
-	d.ClusterJewels = loadClusterJewels(src.Cluster)
-	d.ClusterJewelInfoForNotable = computeClusterJewelInfo(d.ItemMods["JewelCluster"], d.ClusterJewels)
+	loadBases(src.Bases)
+	loadRareLikeUniques()
+	ClusterJewels = loadClusterJewels(src.Cluster)
+	ClusterJewelInfoForNotable = computeClusterJewelInfo(ItemMods["JewelCluster"], ClusterJewels)
 
-	d.loadBosses(src.Boss)
-	d.BossSkills, d.BossSkillsList = loadBossSkills(src.Boss)
+	loadBosses(src.Boss)
+	BossSkills, BossSkillsList = loadBossSkills(src.Boss)
 
-	d.SkillStatMap = skillStatMap
-	d.loadSkills(src.Skills, src.StatMapCopies)
-	d.loadGems(src.Skills)
-	d.loadMinions(src.MinionsDoc)
+	SkillStatMap = skillStatMap
+	loadSkills(src.Skills, src.StatMapCopies)
+	loadGems(src.Skills)
+	loadMinions(src.MinionsDoc)
 
-	d.Uniques = map[string][]string{}
+	Uniques = map[string][]string{}
 	for typ, f := range src.Uniques {
 		var blobs []string
 		for _, sec := range f.Sections {
@@ -276,22 +275,21 @@ func Load(src Sources) *Data {
 				blobs = append(blobs, strings.Join(item, "\n")+"\n")
 			}
 		}
-		d.Uniques[typ] = blobs
+		Uniques[typ] = blobs
 	}
-	d.Uniques["race"] = uniquesRace
-	d.Uniques["new"] = []string{}
+	Uniques["race"] = uniquesRace
+	Uniques["new"] = []string{}
 	// Data/Uniques/graft.lua is a hand-maintained empty placeholder (the
 	// exporter doesn't generate graft uniques yet).
-	d.Uniques["graft"] = []string{}
-	d.buildGeneratedUniques()
+	Uniques["graft"] = []string{}
+	buildGeneratedUniques()
 
 	if len(src.FoulbornMapJSONC) > 0 {
-		d.FoulbornMap = map[string]any{}
-		if err := json.Unmarshal(stripJSONCComments(src.FoulbornMapJSONC), &d.FoulbornMap); err != nil {
+		FoulbornMap = map[string]any{}
+		if err := json.Unmarshal(stripJSONCComments(src.FoulbornMapJSONC), &FoulbornMap); err != nil {
 			panic("data: foulborn map: " + err.Error())
 		}
 	}
-	return d
 }
 
 // stripJSONCComments removes full-line // comments (the only kind the file
@@ -309,31 +307,31 @@ func stripJSONCComments(b []byte) []byte {
 }
 
 // loadMisc unpacks the Data/Misc.lua document.
-func (d *Data) loadMisc(m gamedata.MiscData) {
-	d.MonsterEvasionTable = m.Misc.MonsterEvasion
-	d.MonsterAccuracyTable = m.Misc.MonsterAccuracy
-	d.MonsterLifeTable = m.Misc.MonsterLife
-	d.MonsterLifeTable2 = m.Misc.MonsterLife2
-	d.MonsterLifeTable3 = m.Misc.MonsterLife3
-	d.MonsterAllyLifeTable = m.Misc.MonsterAllyLife
-	d.MonsterDamageTable = m.Misc.MonsterDamage
-	d.MonsterAllyDamageTable = m.Misc.MonsterAllyDamage
-	d.MonsterArmourTable = m.Misc.MonsterArmour
-	d.MonsterAilmentThresholdTable = m.Misc.MonsterAilmentThreshold
-	d.MonsterPhysConversionMultiTable = m.Misc.MonsterPhysConversionMulti
-	d.GameConstants = map[string]float64{}
+func loadMisc(m gamedata.MiscData) {
+	MonsterEvasionTable = m.Misc.MonsterEvasion
+	MonsterAccuracyTable = m.Misc.MonsterAccuracy
+	MonsterLifeTable = m.Misc.MonsterLife
+	MonsterLifeTable2 = m.Misc.MonsterLife2
+	MonsterLifeTable3 = m.Misc.MonsterLife3
+	MonsterAllyLifeTable = m.Misc.MonsterAllyLife
+	MonsterDamageTable = m.Misc.MonsterDamage
+	MonsterAllyDamageTable = m.Misc.MonsterAllyDamage
+	MonsterArmourTable = m.Misc.MonsterArmour
+	MonsterAilmentThresholdTable = m.Misc.MonsterAilmentThreshold
+	MonsterPhysConversionMultiTable = m.Misc.MonsterPhysConversionMulti
+	GameConstants = map[string]float64{}
 	for _, c := range m.Misc.GameConstants {
-		d.GameConstants[c.Id] = c.Value
+		GameConstants[c.Id] = c.Value
 	}
-	d.CharacterConstants = otConstantMap(m.Misc.CharacterConstants)
-	d.MonsterConstants = otConstantMap(m.Misc.MonsterConstants)
-	d.TotemLifeMult = map[int64]float64{}
+	CharacterConstants = otConstantMap(m.Misc.CharacterConstants)
+	MonsterConstants = otConstantMap(m.Misc.MonsterConstants)
+	TotemLifeMult = map[int64]float64{}
 	for _, t := range m.Misc.TotemLifeMult {
-		d.TotemLifeMult[t.Id] = t.Mult
+		TotemLifeMult[t.Id] = t.Mult
 	}
-	d.MonsterVarietyLifeMult = map[string]float64{}
+	MonsterVarietyLifeMult = map[string]float64{}
 	for _, v := range m.Misc.MonsterVarietyLifeMult {
-		d.MonsterVarietyLifeMult[v.Name] = v.Mult
+		MonsterVarietyLifeMult[v.Name] = v.Mult
 	}
 	levelMap := func(list []gamedata.LevelMult) map[int64]float64 {
 		out := map[int64]float64{}
@@ -342,10 +340,10 @@ func (d *Data) loadMisc(m gamedata.MiscData) {
 		}
 		return out
 	}
-	d.MapLevelLifeMult = levelMap(m.Misc.MapLevelLifeMult)
-	d.MapLevelBossLifeMult = levelMap(m.Misc.MapLevelBossLifeMult)
-	d.MapLevelBossAilmentMult = levelMap(m.Misc.MapLevelBossAilmentMult)
-	d.GoldRespecPrices = m.Misc.GoldRespecPrices
+	MapLevelLifeMult = levelMap(m.Misc.MapLevelLifeMult)
+	MapLevelBossLifeMult = levelMap(m.Misc.MapLevelBossLifeMult)
+	MapLevelBossAilmentMult = levelMap(m.Misc.MapLevelBossAilmentMult)
+	GoldRespecPrices = m.Misc.GoldRespecPrices
 }
 
 // otConstantMap evaluates the .ot constants' raw value text as Lua numbers.
@@ -365,7 +363,7 @@ func luaTonumber(s string) float64 {
 	panic("data: non-numeric .ot constant " + s)
 }
 
-func buildMonsterExperienceLevelMap(misc Misc) map[int]float64 {
+func buildMonsterExperienceLevelMap(misc misc) map[int]float64 {
 	effective := func(areaLevel float64) float64 {
 		if areaLevel <= misc.MaxExperiencePenaltyFreeAreaLevel {
 			return areaLevel
@@ -380,8 +378,8 @@ func buildMonsterExperienceLevelMap(misc Misc) map[int]float64 {
 	return out
 }
 
-func (d *Data) loadBosses(b gamedata.BossData) {
-	d.Bosses = map[string]Boss{}
+func loadBosses(b gamedata.BossData) {
+	Bosses = map[string]Boss{}
 	var count, uberCount float64
 	var armourTotal, evasionTotal float64
 	var uberArmourTotal, uberEvasionTotal float64
@@ -389,7 +387,7 @@ func (d *Data) loadBosses(b gamedata.BossData) {
 		if bm == nil {
 			continue
 		}
-		d.Bosses[bm.DisplayName] = Boss{
+		Bosses[bm.DisplayName] = Boss{
 			ArmourMult:  float64(bm.ArmourMult),
 			EvasionMult: float64(bm.EvasionMult),
 			IsUber:      bm.IsUber,
@@ -403,16 +401,16 @@ func (d *Data) loadBosses(b gamedata.BossData) {
 		armourTotal += float64(bm.ArmourMult)
 		evasionTotal += float64(bm.EvasionMult)
 	}
-	d.BossStats = BossStats{
+	BossStats = bossStats{
 		PinnacleArmourMean:  100 + armourTotal/count,
 		PinnacleEvasionMean: 100 + evasionTotal/count,
 		UberArmourMean:      100 + uberArmourTotal/uberCount,
 		UberEvasionMean:     100 + uberEvasionTotal/uberCount,
 	}
-	d.EnemyIsBossTooltip = bossTooltip(d.Misc, d.BossStats)
+	EnemyIsBossTooltip = bossTooltip(Misc, BossStats)
 }
 
-func bossTooltip(misc Misc, stats BossStats) string {
+func bossTooltip(misc misc, stats bossStats) string {
 	fs := func(v float64) string { return luaIntString(math.Floor(v)) }
 	return "Bosses' damage is monster damage scaled to an average damage of their attacks\n" +
 		"This is divided by 4.40 to represent 4 damage types + some (40% as much) ^xD02090chaos\n" +

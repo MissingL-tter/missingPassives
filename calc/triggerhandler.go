@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -17,7 +18,6 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	triggeredSkills := config.triggeredSkills
 	trigRate := config.trigRate
 	uuid := config.uuid
-	d := env.Data
 	main := actor.mainSkill
 
 	// Only attacks using the granting weapon can activate source-weapon triggers
@@ -120,7 +120,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	if truthy(main.SkillData["triggeredByBattleMageCry"]) && cached != nil && source != nil &&
 		source.SkillTypes[modparser.SkillType.Melee] && trigRate != nil {
 		ceilB := func(x float64) float64 {
-			return env.Data.Misc.ServerTickTime * math.Ceil(x/env.Data.Misc.ServerTickTime)
+			return data.Misc.ServerTickTime * math.Ceil(x/data.Misc.ServerTickTime)
 		}
 		battleMageExertsCount := anyNum(cached.out("BattleCryExertsCount"))
 		battleMageDuration := ceilB(anyNum(cached.out("BattleMageCryDuration")))
@@ -136,7 +136,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	if main.ActiveEffect.GrantedEffect.Name == "Combust" && cached != nil && source != nil &&
 		source.SkillTypes[modparser.SkillType.Melee] && trigRate != nil {
 		ceilB := func(x float64) float64 {
-			return env.Data.Misc.ServerTickTime * math.Ceil(x/env.Data.Misc.ServerTickTime)
+			return data.Misc.ServerTickTime * math.Ceil(x/data.Misc.ServerTickTime)
 		}
 		infernalCryExertsCount := anyNum(cached.out("InfernalExertsCount"))
 		infernalCryDuration := ceilB(anyNum(cached.out("InfernalCryDuration")))
@@ -216,20 +216,20 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 
 	triggeredCDAdjusted := (num(triggeredCD) + num(addedCooldown)) / icdr
 	triggerCDAdjusted := (num(triggerCD) + addsCastTime) / icdr
-	triggeredCDTickRounded := math.Ceil(triggeredCDAdjusted*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+	triggeredCDTickRounded := math.Ceil(triggeredCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	if truthy(main.SkillData["ignoresTickRate"]) {
 		triggeredCDTickRounded = triggeredCDAdjusted
 	}
 	// triggeredBy.ignoresTickRate has exactly one writer: the Arcanist
 	// Brand config (L1347). (An earlier #EVAL note claimed the field was
 	// dead; that held only for the paths ported at the time.)
-	triggerCDTickRounded := math.Ceil(triggerCDAdjusted*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+	triggerCDTickRounded := math.Ceil(triggerCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	if main.TriggeredBy != nil && main.TriggeredBy.IgnoresTickRate {
 		triggerCDTickRounded = triggerCDAdjusted
 	}
 	actionCooldownTickRounded := math.Max(triggerCDTickRounded, triggeredCDTickRounded)
 	if cooldownOverride != nil {
-		actionCooldownTickRounded = math.Ceil(*cooldownOverride*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		actionCooldownTickRounded = math.Ceil(*cooldownOverride*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 
 	// `source == mainSkill and triggerRateCapOverride or m_huge`
@@ -259,7 +259,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		}
 		env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
 		var vixensCD *float64
-		if vixens := env.Data.Skills["SupportUniqueCastCurseOnCurse"]; vixens != nil {
+		if vixens := data.Skills["SupportUniqueCastCurseOnCurse"]; vixens != nil {
 			cd := anyNum(vixens.Levels[1].Extra["cooldown"]) / icdr
 			vixensCD = &cd
 		}
@@ -465,7 +465,7 @@ func (env *Env) cwcHandler() {
 		if truthy(cooldownOverride) {
 			triggeredTotalCooldown = anyNum(cooldownOverride)
 		}
-		triggeredCDAdjusted := math.Ceil(triggeredTotalCooldown*env.Data.Misc.ServerTickRate) / env.Data.Misc.ServerTickRate
+		triggeredCDAdjusted := math.Ceil(triggeredTotalCooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 		effCDTriggeredSkill := math.Ceil(triggeredCDAdjusted*triggerRateOfTrigger) / triggerRateOfTrigger
 
 		output["TriggerRateCap"] = math.Min(1/effCDTriggeredSkill, triggerRateOfTrigger)
@@ -502,14 +502,14 @@ func (env *Env) helmetFocusHandler() {
 	icdrSkill := Mod(main.SkillModList, main.SkillCfg, "CooldownRecovery")
 
 	// Next possible activation is duration + cooldown.
-	skillFocus := env.Data.Skills["Focus"]
+	skillFocus := data.Skills["Focus"]
 	focusDuration := anyNum(skillFocus.ConstantStats[0][1]) / 1000
 	focusCD := skillFocus.Levels[1].Extra["cooldown"] / icdrFocus
 	focusTotalCD := focusDuration + focusCD
 
 	// The skill's own cooldown still applies to focus triggers.
 	modActionCooldown := math.Max(anyNum(main.SkillData["cooldown"]), num64(triggerCD)/icdrSkill)
-	rateCapAdjusted := math.Ceil(modActionCooldown*env.Data.Misc.ServerTickRate) / env.Data.Misc.ServerTickRate
+	rateCapAdjusted := math.Ceil(modActionCooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	triggerRate := math.Inf(1)
 	if rateCapAdjusted != 0 {
 		triggerRate = 1 / rateCapAdjusted

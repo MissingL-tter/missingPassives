@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 )
@@ -15,7 +16,6 @@ func (env *Env) defenceRecovery(actor *performActor) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	spellSuppressionChance := modDB.Sum("BASE", nil, "SpellSuppressionChance")
 	totalSpellSuppressionChance := spellSuppressionChance
@@ -28,8 +28,8 @@ func (env *Env) defenceRecovery(actor *performActor) {
 		modDB.AddMod(newMod("SpellDodgeChance", "BASE", spellSuppressionChance/2, "Acrobatics"))
 	}
 
-	output["SpellSuppressionChance"] = math.Min(totalSpellSuppressionChance, d.Misc.SuppressionChanceCap)
-	output["SpellSuppressionEffect"] = math.Max(d.Misc.SuppressionEffect+modDB.Sum("BASE", nil, "SpellSuppressionEffect"), 0)
+	output["SpellSuppressionChance"] = math.Min(totalSpellSuppressionChance, data.Misc.SuppressionChanceCap)
+	output["SpellSuppressionEffect"] = math.Max(data.Misc.SuppressionEffect+modDB.Sum("BASE", nil, "SpellSuppressionEffect"), 0)
 
 	if enemyDB.Flag(nil, "CannotBeSuppressed") {
 		output["EffectiveSpellSuppressionChance"] = 0.0
@@ -62,12 +62,12 @@ func (env *Env) defenceRecovery(actor *performActor) {
 			output["EffectiveSpellSuppressionChance"] = math.Pow(suppressChance, math.Abs(suppressRolls)) * outNum(output, "EffectiveSpellSuppressionChance")
 		}
 	}
-	output["SpellSuppressionChanceOverCap"] = math.Max(0, totalSpellSuppressionChance-d.Misc.SuppressionChanceCap)
+	output["SpellSuppressionChanceOverCap"] = math.Max(0, totalSpellSuppressionChance-data.Misc.SuppressionChanceCap)
 
 	// Dodge
 	totalAttackDodgeChance := modDB.Sum("BASE", nil, "AttackDodgeChance")
 	totalSpellDodgeChance := modDB.Sum("BASE", nil, "SpellDodgeChance")
-	attackDodgeChanceMax := d.Misc.DodgeChanceCap
+	attackDodgeChanceMax := data.Misc.DodgeChanceCap
 	spellDodgeChanceMax := modDB.Sum("BASE", nil, "SpellDodgeChanceMax")
 	if ov := modDB.Override(nil, "SpellDodgeChanceMax"); truthy(ov) {
 		spellDodgeChanceMax = anyNum(ov)
@@ -205,7 +205,7 @@ func (env *Env) defenceRecovery(actor *performActor) {
 	if truthy(output["EnergyShieldRechargeAppliesToLife"]) || truthy(output["EnergyShieldRechargeAppliesToEnergyShield"]) {
 		inc := modDB.Sum("INC", nil, "EnergyShieldRecharge")
 		more := modDB.More(nil, "EnergyShieldRecharge")
-		base := d.Misc.EnergyShieldRechargeBase
+		base := data.Misc.EnergyShieldRechargeBase
 		if ov := modDB.Override(nil, "EnergyShieldRecharge"); truthy(ov) {
 			base = anyNum(ov)
 		}
@@ -216,7 +216,7 @@ func (env *Env) defenceRecovery(actor *performActor) {
 			recharge := outNum(output, "EnergyShield") * base * (1 + inc/100) * more
 			output["EnergyShieldRecharge"] = roundDec(recharge*outNum(output, "EnergyShieldRecoveryRateMod"), 0)
 		}
-		output["EnergyShieldRechargeDelay"] = d.Misc.EnergyShieldRechargeDelay / (1 + modDB.Sum("INC", nil, "EnergyShieldRechargeFaster")/100)
+		output["EnergyShieldRechargeDelay"] = data.Misc.EnergyShieldRechargeDelay / (1 + modDB.Sum("INC", nil, "EnergyShieldRechargeFaster")/100)
 	} else {
 		output["EnergyShieldRecharge"] = 0.0
 	}

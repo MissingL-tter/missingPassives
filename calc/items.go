@@ -6,6 +6,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"sort"
 	"strings"
@@ -72,7 +73,6 @@ func tagsDisableSlot(mod *modparser.Mod, items map[string]*Item) string {
 
 func (env *Env) buildItems() {
 	in := env.Build
-	d := env.Data
 	cfg := env.ConfigInput
 	useSecond := in.ItemsTab.UseSecondWeaponSet != nil && *in.ItemsTab.UseSecondWeaponSet
 	activeSet := 1.0
@@ -82,7 +82,7 @@ func (env *Env) buildItems() {
 
 	pool := map[int]*Item{}
 	for id, ii := range in.ItemsTab.Items {
-		pool[id] = &Item{In: ii, D: env.Data}
+		pool[id] = &Item{In: ii}
 	}
 	env.ItemPool = pool
 
@@ -115,7 +115,7 @@ func (env *Env) buildItems() {
 					SlotName:   slotName,
 					Raw:        skill,
 				}
-				if ge := d.Skills[granted.SkillID]; ge != nil {
+				if ge := data.Skills[granted.SkillID]; ge != nil {
 					granted.NameSpec = ge.Name
 				}
 				env.GrantedSkillsItems = append(env.GrantedSkillsItems, granted)
@@ -355,7 +355,7 @@ func (env *Env) buildItems() {
 			// the Item machinery; the dump captured the result. No fixture
 			// entry means the info-nil/Bow fallthrough (mods merge normally).
 			if ebIn := env.Replay.EnergyBladeItems[slotName]; ebIn != nil {
-				env.Player.ItemList[slotName] = &Item{In: ebIn, D: env.Data}
+				env.Player.ItemList[slotName] = &Item{In: ebIn}
 			} else {
 				env.ItemModDB.ScaleAddList(srcList, scale, false)
 			}

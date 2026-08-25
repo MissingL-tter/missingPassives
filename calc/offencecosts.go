@@ -63,11 +63,11 @@ func newCostTable() map[string]*costEntry {
 // metatable Data.lua installs on the array.
 var costDivisors map[string]float64
 
-func costDivisor(d *data.Data, resource string) float64 {
+func costDivisor(resource string) float64 {
 	if costDivisors == nil {
 		costDivisors = map[string]float64{}
-		for i := range d.Costs {
-			costDivisors[d.Costs[i].Resource] = d.Costs[i].Divisor
+		for i := range data.Costs {
+			costDivisors[data.Costs[i].Resource] = data.Costs[i].Divisor
 		}
 	}
 	v, ok := costDivisors[resource]
@@ -81,7 +81,6 @@ func costDivisor(d *data.Data, resource string) float64 {
 func (env *Env) offenceCosts(c *offenceCtx) {
 	skillModList, skillCfg, output := c.skillModList, c.skillCfg, c.output
 	activeSkill := c.activeSkill
-	d := env.Data
 
 	costs := newCostTable()
 	c.costs = costs
@@ -112,7 +111,7 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 			}
 			baseCost := 0.0
 			if hasSkillCost {
-				baseCost = roundDec(skillCost/costDivisor(d, resource), 2)
+				baseCost = roundDec(skillCost/costDivisor(resource), 2)
 			}
 			// Flat cost from gem e.g. Divine Blessing
 			baseCostNoMult := skillModList.Sum("BASE", skillCfg, resource+"CostNoMult")

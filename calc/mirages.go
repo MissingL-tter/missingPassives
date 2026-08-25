@@ -124,7 +124,7 @@ func (env *Env) copyActiveSkill(mode string, skill *ActiveSkill) (*ActiveSkill, 
 	}
 
 	newSkill := env.createActiveSkill(activeEffect, skill.SupportList, skill.Actor, skill.SocketGroup, skill.SummonSkill)
-	newEnv := initEnvOverride(env.Data, env.Build, mode, env.mirageReplay(), env.OverrideConditions)
+	newEnv := initEnvOverride(env.Build, mode, env.mirageReplay(), env.OverrideConditions)
 	newEnv.buildActiveSkillModList(newSkill)
 	newSkill.SkillModList = modstore.NewList(newSkill.BaseSkillModList)
 	if newSkill.Minion != nil {

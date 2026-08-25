@@ -10,7 +10,7 @@ import (
 	"github.com/MissingL-tter/missingPassives/gamedata"
 )
 
-type ClusterJewels struct {
+type clusterJewels struct {
 	Jewels           map[string]ClusterJewelSize `lua:"jewels"`
 	NotableSortOrder map[string]float64          `lua:"notableSortOrder"`
 	Keystones        []string                    `lua:"keystones"`
@@ -38,8 +38,8 @@ type ClusterSkillData struct {
 	Enchant     []string `lua:"enchant"`
 }
 
-func loadClusterJewels(src gamedata.ClusterJewels) ClusterJewels {
-	out := ClusterJewels{
+func loadClusterJewels(src gamedata.ClusterJewels) clusterJewels {
+	out := clusterJewels{
 		Jewels:           map[string]ClusterJewelSize{},
 		NotableSortOrder: map[string]float64{},
 		Keystones:        src.Keystones,
@@ -104,7 +104,7 @@ type ClusterJewelInfo struct {
 	Size       map[string]bool `lua:"size"`
 }
 
-func computeClusterJewelInfo(jewelClusterMods map[string]ItemModData, jewels ClusterJewels) map[string]*ClusterJewelInfo {
+func computeClusterJewelInfo(jewelClusterMods map[string]ItemModData, jewels clusterJewels) map[string]*ClusterJewelInfo {
 	// cluster jewel skill -> the notables which use that skill
 	clusterSkillToNotables := map[string][]string{}
 	for _, notableInfo := range jewelClusterMods {

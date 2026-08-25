@@ -1,0 +1,2144 @@
+{
+	"jewels": [
+		{
+			"name": "Small Cluster Jewel",
+			"size": "Small",
+			"sizeIndex": 0,
+			"minNodes": 2,
+			"maxNodes": 3,
+			"smallIndicies": [
+				0,
+				4,
+				2
+			],
+			"notableIndicies": [
+				4
+			],
+			"socketIndicies": [
+				4
+			],
+			"totalIndicies": 6,
+			"skills": [
+				{
+					"id": "affliction_maximum_life",
+					"name": "Life",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedMaximumLifeNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_maximum_life",
+					"stats": [
+						"4% increased maximum Life"
+					]
+				},
+				{
+					"id": "affliction_maximum_energy_shield",
+					"name": "Energy Shield",
+					"icon": "Art/2DArt/SkillIcons/passives/EnergyShieldNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_maximum_energy_shield",
+					"stats": [
+						"6% increased maximum Energy Shield"
+					]
+				},
+				{
+					"id": "affliction_maximum_mana",
+					"name": "Mana",
+					"icon": "Art/2DArt/SkillIcons/passives/MaxManaNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_maximum_mana",
+					"stats": [
+						"6% increased maximum Mana"
+					]
+				},
+				{
+					"id": "affliction_armour",
+					"name": "Armour",
+					"icon": "Art/2DArt/SkillIcons/passives/ArmourNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_armour",
+					"stats": [
+						"15% increased Armour"
+					]
+				},
+				{
+					"id": "affliction_evasion",
+					"name": "Evasion",
+					"icon": "Art/2DArt/SkillIcons/passives/EvasionNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_evasion",
+					"stats": [
+						"15% increased Evasion Rating"
+					]
+				},
+				{
+					"id": "affliction_chance_to_block_attack_damage",
+					"name": "Chance to Block Attack Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/BlockAttackDmgNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_chance_to_block",
+					"stats": [
+						"+2% Chance to Block Attack Damage"
+					]
+				},
+				{
+					"id": "affliction_chance_to_block_spell_damage",
+					"name": "Chance to Block Spell Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/BlockSpellDmgNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_chance_to_block",
+					"stats": [
+						"2% Chance to Block Spell Damage"
+					]
+				},
+				{
+					"id": "affliction_fire_resistance",
+					"name": "Fire Resistance",
+					"icon": "Art/2DArt/SkillIcons/passives/FireResistNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_fire_resistance",
+					"stats": [
+						"+15% to Fire Resistance"
+					]
+				},
+				{
+					"id": "affliction_cold_resistance",
+					"name": "Cold Resistance",
+					"icon": "Art/2DArt/SkillIcons/passives/ColdResistNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_cold_resistance",
+					"stats": [
+						"+15% to Cold Resistance"
+					]
+				},
+				{
+					"id": "affliction_lightning_resistance",
+					"name": "Lightning Resistance",
+					"icon": "Art/2DArt/SkillIcons/passives/LightningResistNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_lightning_resistance",
+					"stats": [
+						"+15% to Lightning Resistance"
+					]
+				},
+				{
+					"id": "affliction_chaos_resistance",
+					"name": "Chaos Resistance",
+					"icon": "Art/2DArt/SkillIcons/passives/ChaosResistNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_chaos_resistance",
+					"stats": [
+						"+12% to Chaos Resistance"
+					]
+				},
+				{
+					"id": "affliction_chance_to_dodge_attacks",
+					"name": "Chance to Suppress Spell Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/DodgeAtksNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_chance_to_dodge_attacks",
+					"stats": [
+						"+4% chance to Suppress Spell Damage"
+					]
+				},
+				{
+					"id": "affliction_strength",
+					"name": "Strength",
+					"icon": "Art/2DArt/SkillIcons/passives/plusstrength.png",
+					"masteryIcon": null,
+					"tag": "affliction_strength",
+					"stats": [
+						"+10 to Strength"
+					]
+				},
+				{
+					"id": "affliction_dexterity",
+					"name": "Dexterity",
+					"icon": "Art/2DArt/SkillIcons/passives/plusdexterity.png",
+					"masteryIcon": null,
+					"tag": "affliction_dexterity",
+					"stats": [
+						"+10 to Dexterity"
+					]
+				},
+				{
+					"id": "affliction_intelligence",
+					"name": "Intelligence",
+					"icon": "Art/2DArt/SkillIcons/passives/plusintelligence.png",
+					"masteryIcon": null,
+					"tag": "affliction_intelligence",
+					"stats": [
+						"+10 to Intelligence"
+					]
+				},
+				{
+					"id": "affliction_reservation_efficiency_small",
+					"name": "Reservation Efficiency",
+					"icon": "Art/2DArt/SkillIcons/passives/AuraEffectNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_reservation_efficiency_small",
+					"stats": [
+						"6% increased Mana Reservation Efficiency of Skills"
+					]
+				},
+				{
+					"id": "affliction_curse_effect_small",
+					"name": "Curse Effect",
+					"icon": "Art/2DArt/SkillIcons/passives/CurseEffectNode.png",
+					"masteryIcon": null,
+					"tag": "affliction_curse_effect_small",
+					"stats": [
+						"2% increased Effect of your Curses"
+					]
+				}
+			]
+		},
+		{
+			"name": "Medium Cluster Jewel",
+			"size": "Medium",
+			"sizeIndex": 1,
+			"minNodes": 4,
+			"maxNodes": 6,
+			"smallIndicies": [
+				0,
+				6,
+				8,
+				4,
+				10,
+				2
+			],
+			"notableIndicies": [
+				6,
+				10,
+				2,
+				0
+			],
+			"socketIndicies": [
+				6
+			],
+			"totalIndicies": 12,
+			"skills": [
+				{
+					"id": "affliction_fire_damage_over_time_multiplier",
+					"name": "Fire Damage over Time",
+					"icon": "Art/2DArt/SkillIcons/passives/FireDamageOverTimeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltFireDamageMastery.png",
+					"tag": "affliction_fire_damage_over_time_multiplier",
+					"stats": [
+						"12% increased Burning Damage"
+					]
+				},
+				{
+					"id": "affliction_chaos_damage_over_time_multiplier",
+					"name": "Chaos Damage over Time",
+					"icon": "Art/2DArt/SkillIcons/passives/ChaosDamageOverTimeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltChaosDamageMastery.png",
+					"tag": "affliction_chaos_damage_over_time_multiplier",
+					"stats": [
+						"12% increased Chaos Damage over Time"
+					]
+				},
+				{
+					"id": "affliction_physical_damage_over_time_multiplier",
+					"name": "Physical Damage over Time",
+					"icon": "Art/2DArt/SkillIcons/passives/PhysicalDamageOverTimeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltBloodMastery.png",
+					"tag": "affliction_physical_damage_over_time_multiplier",
+					"stats": [
+						"12% increased Physical Damage over Time"
+					]
+				},
+				{
+					"id": "affliction_cold_damage_over_time_multiplier",
+					"name": "Cold Damage over Time",
+					"icon": "Art/2DArt/SkillIcons/passives/ColdDamageOverTimeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltColdDamageMastery.png",
+					"tag": "affliction_cold_damage_over_time_multiplier",
+					"stats": [
+						"12% increased Cold Damage over Time"
+					]
+				},
+				{
+					"id": "affliction_damage_over_time_multiplier",
+					"name": "Damage over Time",
+					"icon": "Art/2DArt/SkillIcons/passives/DamageOverTimeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltDamageOverTimeMultiplierMastery.png",
+					"tag": "affliction_damage_over_time_multiplier",
+					"stats": [
+						"10% increased Damage over Time"
+					]
+				},
+				{
+					"id": "affliction_effect_of_non-damaging_ailments",
+					"name": "Effect of Non-Damaging Ailments",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedNonDamageAilmentNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltNonDamagingAilmentsMastery.png",
+					"tag": "affliction_effect_of_non-damaging_ailments",
+					"stats": [
+						"10% increased Effect of Non-Damaging Ailments"
+					]
+				},
+				{
+					"id": "affliction_aura_effect",
+					"name": "Aura Effect (Legacy)",
+					"icon": "Art/2DArt/SkillIcons/passives/AuraEffectNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryAuras.png",
+					"tag": "old_do_not_use_affliction_aura_effect",
+					"stats": [
+						"3% increased effect of Non-Curse Auras from your Skills"
+					]
+				},
+				{
+					"id": "affliction_curse_effect",
+					"name": "Curse Effect (Legacy)",
+					"icon": "Art/2DArt/SkillIcons/passives/CurseEffectNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryCurse.png",
+					"tag": "old_do_not_use_affliction_curse_effect",
+					"stats": [
+						"2% increased Effect of your Curses"
+					]
+				},
+				{
+					"id": "affliction_damage_while_you_have_a_herald",
+					"name": "Damage while you have a Herald",
+					"icon": "Art/2DArt/SkillIcons/passives/DmgHeraldSkillsNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltDamageWithHeraldMastery.png",
+					"tag": "affliction_damage_while_you_have_a_herald",
+					"stats": [
+						"10% increased Damage while affected by a Herald"
+					]
+				},
+				{
+					"id": "affliction_minion_damage_while_you_have_a_herald",
+					"name": "Minion Damage while you have a Herald",
+					"icon": "Art/2DArt/SkillIcons/passives/MinionDmgHeraldSkillsNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMinionDamageHeraldMastery.png",
+					"tag": "affliction_minion_damage_while_you_have_a_herald",
+					"stats": [
+						"Minions deal 10% increased Damage while you are affected by a Herald"
+					]
+				},
+				{
+					"id": "affliction_warcry_buff_effect",
+					"name": "Exerted Attack Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedWarcryNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltWarcryMastery.png",
+					"tag": "affliction_warcry_buff_effect",
+					"stats": [
+						"Exerted Attacks deal 20% increased Damage"
+					]
+				},
+				{
+					"id": "affliction_critical_chance",
+					"name": "Critical Chance",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreaseCritChanceNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupCrit.png",
+					"tag": "affliction_critical_chance",
+					"stats": [
+						"15% increased Critical Strike Chance"
+					]
+				},
+				{
+					"id": "affliction_minion_life",
+					"name": "Minion Life",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreaseMinionLifeNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupMinions.png",
+					"tag": "affliction_minion_life",
+					"stats": [
+						"Minions have 12% increased maximum Life"
+					]
+				},
+				{
+					"id": "affliction_area_damage",
+					"name": "Area Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/AreaDmgNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltAreaDamageMastery.png",
+					"tag": "affliction_area_damage",
+					"stats": [
+						"10% increased Area Damage"
+					]
+				},
+				{
+					"id": "affliction_projectile_damage",
+					"name": "Projectile Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/ProjectileDmgNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryProjectiles.png",
+					"tag": "affliction_projectile_damage",
+					"stats": [
+						"10% increased Projectile Damage"
+					]
+				},
+				{
+					"id": "affliction_trap_and_mine_damage",
+					"name": "Trap and Mine Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/TrapAndMineDmgNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryTraps.png",
+					"tag": "affliction_trap_and_mine_damage",
+					"stats": [
+						"12% increased Trap Damage",
+						"12% increased Mine Damage"
+					]
+				},
+				{
+					"id": "affliction_totem_damage",
+					"name": "Totem Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/TotemDmgNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryTotem.png",
+					"tag": "affliction_totem_damage",
+					"stats": [
+						"12% increased Totem Damage"
+					]
+				},
+				{
+					"id": "affliction_brand_damage",
+					"name": "Brand Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/BrandDmgNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryBrand.png",
+					"tag": "affliction_brand_damage",
+					"stats": [
+						"12% increased Brand Damage"
+					]
+				},
+				{
+					"id": "affliction_channelling_skill_damage",
+					"name": "Channelling Skill Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/DmgWhenChannelSkillsNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryChannelling.png",
+					"tag": "affliction_channelling_skill_damage",
+					"stats": [
+						"Channelling Skills deal 12% increased Damage"
+					]
+				},
+				{
+					"id": "affliction_flask_duration",
+					"name": "Flask Duration",
+					"icon": "Art/2DArt/SkillIcons/passives/FlaskDurationnode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryFlasks.png",
+					"tag": "affliction_flask_duration",
+					"stats": [
+						"6% increased Flask Effect Duration"
+					]
+				},
+				{
+					"id": "affliction_life_and_mana_recovery_from_flasks",
+					"name": "Life and Mana recovery from Flasks",
+					"icon": "Art/2DArt/SkillIcons/passives/LifeManaFlasksrecoverynode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryFlasks.png",
+					"tag": "affliction_life_and_mana_recovery_from_flasks",
+					"stats": [
+						"10% increased Life Recovery from Flasks",
+						"10% increased Mana Recovery from Flasks"
+					]
+				}
+			]
+		},
+		{
+			"name": "Large Cluster Jewel",
+			"size": "Large",
+			"sizeIndex": 2,
+			"minNodes": 8,
+			"maxNodes": 12,
+			"smallIndicies": [
+				0,
+				4,
+				6,
+				8,
+				10,
+				2,
+				7,
+				5,
+				9,
+				3,
+				11,
+				1
+			],
+			"notableIndicies": [
+				6,
+				4,
+				8,
+				10,
+				2
+			],
+			"socketIndicies": [
+				4,
+				8,
+				6
+			],
+			"totalIndicies": 12,
+			"skills": [
+				{
+					"id": "affliction_axe_and_sword_damage",
+					"name": "Axe and Sword Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeAxeandSwordDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupSwordAndAxe.png",
+					"tag": "affliction_axe_and_sword_damage",
+					"stats": [
+						"Axe Attacks deal 12% increased Damage with Hits and Ailments",
+						"Sword Attacks deal 12% increased Damage with Hits and Ailments"
+					]
+				},
+				{
+					"id": "affliction_mace_and_staff_damage",
+					"name": "Mace and Staff Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeMaceandStaffDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupMaceAndStaff.png",
+					"tag": "affliction_mace_and_staff_damage",
+					"stats": [
+						"Staff Attacks deal 12% increased Damage with Hits and Ailments",
+						"Mace or Sceptre Attacks deal 12% increased Damage with Hits and Ailments"
+					]
+				},
+				{
+					"id": "affliction_dagger_and_claw_damage",
+					"name": "Dagger and Claw Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeDaggerandClawDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltDaggerClawDamageMastery.png",
+					"tag": "affliction_dagger_and_claw_damage",
+					"stats": [
+						"Claw Attacks deal 12% increased Damage with Hits and Ailments",
+						"Dagger Attacks deal 12% increased Damage with Hits and Ailments"
+					]
+				},
+				{
+					"id": "affliction_bow_damage",
+					"name": "Bow Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeBowDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupBow.png",
+					"tag": "affliction_bow_damage",
+					"stats": [
+						"12% increased Damage with Bows",
+						"12% increased Damage Over Time with Bow Skills"
+					]
+				},
+				{
+					"id": "affliction_wand_damage",
+					"name": "Wand Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeWandDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupWand.png",
+					"tag": "affliction_wand_damage",
+					"stats": [
+						"Wand Attacks deal 12% increased Damage with Hits and Ailments"
+					]
+				},
+				{
+					"id": "affliction_damage_with_two_handed_melee_weapons",
+					"name": "Damage with Two Handed Weapons",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeTwoHandedMeleeDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupTwoHands.png",
+					"tag": "affliction_damage_with_two_handed_melee_weapons",
+					"stats": [
+						"12% increased Damage with Two Handed Weapons"
+					]
+				},
+				{
+					"id": "affliction_attack_damage_while_dual_wielding_",
+					"name": "Attack Damage while Dual Wielding",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeDualWieldingDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupDualWield.png",
+					"tag": "affliction_attack_damage_while_dual_wielding_",
+					"stats": [
+						"12% increased Attack Damage while Dual Wielding"
+					]
+				},
+				{
+					"id": "affliction_attack_damage_while_holding_a_shield",
+					"name": "Attack Damage while holding a Shield",
+					"icon": "Art/2DArt/SkillIcons/passives/NodeHoldingShieldDamage.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupShield.png",
+					"tag": "affliction_attack_damage_while_holding_a_shield",
+					"stats": [
+						"12% increased Attack Damage while holding a Shield"
+					]
+				},
+				{
+					"id": "affliction_attack_damage_",
+					"name": "Attack Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedAttackDamageNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltAttackDamageMastery.png",
+					"tag": "affliction_attack_damage_",
+					"stats": [
+						"10% increased Attack Damage"
+					]
+				},
+				{
+					"id": "affliction_spell_damage",
+					"name": "Spell Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedSpellDamageNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupCast.png",
+					"tag": "affliction_spell_damage",
+					"stats": [
+						"10% increased Spell Damage"
+					]
+				},
+				{
+					"id": "affliction_elemental_damage",
+					"name": "Elemental Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/ElementalDamagenode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryElementalDamage.png",
+					"tag": "affliction_elemental_damage",
+					"stats": [
+						"10% increased Elemental Damage"
+					]
+				},
+				{
+					"id": "affliction_physical_damage",
+					"name": "Physical Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/PhysicalDamagenode2.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryPhysicalDamage.png",
+					"tag": "affliction_physical_damage",
+					"stats": [
+						"12% increased Physical Damage"
+					]
+				},
+				{
+					"id": "affliction_fire_damage",
+					"name": "Fire Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/FireDamagenode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupFire.png",
+					"tag": "affliction_fire_damage",
+					"stats": [
+						"12% increased Fire Damage"
+					]
+				},
+				{
+					"id": "affliction_lightning_damage",
+					"name": "Lightning Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/LightningDamagenode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupLightning.png",
+					"tag": "affliction_lightning_damage",
+					"stats": [
+						"12% increased Lightning Damage"
+					]
+				},
+				{
+					"id": "affliction_cold_damage",
+					"name": "Cold Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/ColdDamagenode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupCold.png",
+					"tag": "affliction_cold_damage",
+					"stats": [
+						"12% increased Cold Damage"
+					]
+				},
+				{
+					"id": "affliction_chaos_damage",
+					"name": "Chaos Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/ChaosDamagenode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryChaos.png",
+					"tag": "affliction_chaos_damage",
+					"stats": [
+						"12% increased Chaos Damage"
+					]
+				},
+				{
+					"id": "affliction_minion_damage",
+					"name": "Minion Damage",
+					"icon": "Art/2DArt/SkillIcons/passives/IncreasedMinionDamageNode.png",
+					"masteryIcon": "Art/2DArt/SkillIcons/passives/AltMasteryGroupMinions.png",
+					"tag": "affliction_minion_damage",
+					"stats": [
+						"Minions deal 10% increased Damage"
+					]
+				}
+			]
+		}
+	],
+	"notableSortOrder": [
+		{
+			"name": "Prodigious Defence",
+			"order": 11282
+		},
+		{
+			"name": "Advance Guard",
+			"order": 11283
+		},
+		{
+			"name": "Gladiatorial Combat",
+			"order": 11284
+		},
+		{
+			"name": "Strike Leader",
+			"order": 11285
+		},
+		{
+			"name": "Powerful Ward",
+			"order": 11286
+		},
+		{
+			"name": "Enduring Ward",
+			"order": 11287
+		},
+		{
+			"name": "Gladiator's Fortitude",
+			"order": 11288
+		},
+		{
+			"name": "Precise Retaliation",
+			"order": 11289
+		},
+		{
+			"name": "Veteran Defender",
+			"order": 11290
+		},
+		{
+			"name": "Iron Breaker",
+			"order": 11291
+		},
+		{
+			"name": "Deep Cuts",
+			"order": 11292
+		},
+		{
+			"name": "Master the Fundamentals",
+			"order": 11293
+		},
+		{
+			"name": "Force Multiplier",
+			"order": 11294
+		},
+		{
+			"name": "Furious Assault",
+			"order": 11295
+		},
+		{
+			"name": "Vicious Skewering",
+			"order": 11296
+		},
+		{
+			"name": "Grim Oath",
+			"order": 11297
+		},
+		{
+			"name": "Battle-Hardened",
+			"order": 11298
+		},
+		{
+			"name": "Replenishing Presence",
+			"order": 11299
+		},
+		{
+			"name": "Master of Command",
+			"order": 11300
+		},
+		{
+			"name": "Spiteful Presence",
+			"order": 11301
+		},
+		{
+			"name": "Purposeful Harbinger",
+			"order": 11302
+		},
+		{
+			"name": "Destructive Aspect",
+			"order": 11303
+		},
+		{
+			"name": "Electric Presence",
+			"order": 11304
+		},
+		{
+			"name": "Volatile Presence",
+			"order": 11305
+		},
+		{
+			"name": "Righteous Path",
+			"order": 11306
+		},
+		{
+			"name": "Skullbreaker",
+			"order": 11307
+		},
+		{
+			"name": "Pressure Points",
+			"order": 11308
+		},
+		{
+			"name": "Overwhelming Malice",
+			"order": 11309
+		},
+		{
+			"name": "Magnifier",
+			"order": 11310
+		},
+		{
+			"name": "Savage Response",
+			"order": 11311
+		},
+		{
+			"name": "Eye of the Storm",
+			"order": 11312
+		},
+		{
+			"name": "Basics of Pain",
+			"order": 11313
+		},
+		{
+			"name": "Quick Getaway",
+			"order": 11314
+		},
+		{
+			"name": "Assert Dominance",
+			"order": 11315
+		},
+		{
+			"name": "Vast Power",
+			"order": 11316
+		},
+		{
+			"name": "Powerful Assault",
+			"order": 11317
+		},
+		{
+			"name": "Intensity",
+			"order": 11318
+		},
+		{
+			"name": "Titanic Swings",
+			"order": 11319
+		},
+		{
+			"name": "Towering Threat",
+			"order": 11320
+		},
+		{
+			"name": "Ancestral Echo",
+			"order": 11321
+		},
+		{
+			"name": "Ancestral Reach",
+			"order": 11322
+		},
+		{
+			"name": "Ancestral Might",
+			"order": 11323
+		},
+		{
+			"name": "Ancestral Preservation",
+			"order": 11324
+		},
+		{
+			"name": "Snaring Spirits",
+			"order": 11325
+		},
+		{
+			"name": "Sleepless Sentries",
+			"order": 11326
+		},
+		{
+			"name": "Ancestral Guidance",
+			"order": 11327
+		},
+		{
+			"name": "Ancestral Inspiration",
+			"order": 11328
+		},
+		{
+			"name": "Vital Focus",
+			"order": 11329
+		},
+		{
+			"name": "Unrestrained Focus",
+			"order": 11330
+		},
+		{
+			"name": "Unwavering Focus",
+			"order": 11331
+		},
+		{
+			"name": "Enduring Focus",
+			"order": 11332
+		},
+		{
+			"name": "Precise Focus",
+			"order": 11333
+		},
+		{
+			"name": "Stoic Focus",
+			"order": 11334
+		},
+		{
+			"name": "Hex Breaker",
+			"order": 11335
+		},
+		{
+			"name": "Arcane Adept",
+			"order": 11336
+		},
+		{
+			"name": "Distilled Perfection",
+			"order": 11337
+		},
+		{
+			"name": "Spiked Concoction",
+			"order": 11338
+		},
+		{
+			"name": "Fasting",
+			"order": 11339
+		},
+		{
+			"name": "Mender's Wellspring",
+			"order": 11340
+		},
+		{
+			"name": "Special Reserve",
+			"order": 11341
+		},
+		{
+			"name": "Numbing Elixir",
+			"order": 11342
+		},
+		{
+			"name": "Mob Mentality",
+			"order": 11343
+		},
+		{
+			"name": "Cry Wolf",
+			"order": 11344
+		},
+		{
+			"name": "Haunting Shout",
+			"order": 11345
+		},
+		{
+			"name": "Lead By Example",
+			"order": 11346
+		},
+		{
+			"name": "Provocateur",
+			"order": 11347
+		},
+		{
+			"name": "Warning Call",
+			"order": 11348
+		},
+		{
+			"name": "Rattling Bellow",
+			"order": 11349
+		},
+		{
+			"name": "Bloodscent",
+			"order": 11350
+		},
+		{
+			"name": "Run Through",
+			"order": 11351
+		},
+		{
+			"name": "Wound Aggravation",
+			"order": 11352
+		},
+		{
+			"name": "Overlord",
+			"order": 11353
+		},
+		{
+			"name": "Expansive Might",
+			"order": 11354
+		},
+		{
+			"name": "Weight Advantage",
+			"order": 11355
+		},
+		{
+			"name": "Wind-up",
+			"order": 11356
+		},
+		{
+			"name": "Fan of Blades",
+			"order": 11357
+		},
+		{
+			"name": "Disease Vector",
+			"order": 11358
+		},
+		{
+			"name": "Arcing Shot",
+			"order": 11359
+		},
+		{
+			"name": "Tempered Arrowheads",
+			"order": 11360
+		},
+		{
+			"name": "Broadside",
+			"order": 11361
+		},
+		{
+			"name": "Explosive Force",
+			"order": 11362
+		},
+		{
+			"name": "Opportunistic Fusilade",
+			"order": 11363
+		},
+		{
+			"name": "Storm's Hand",
+			"order": 11364
+		},
+		{
+			"name": "Battlefield Dominator",
+			"order": 11365
+		},
+		{
+			"name": "Martial Mastery",
+			"order": 11366
+		},
+		{
+			"name": "Surefooted Striker",
+			"order": 11367
+		},
+		{
+			"name": "Graceful Execution",
+			"order": 11368
+		},
+		{
+			"name": "Brutal Infamy",
+			"order": 11369
+		},
+		{
+			"name": "Fearsome Warrior",
+			"order": 11370
+		},
+		{
+			"name": "Combat Rhythm",
+			"order": 11371
+		},
+		{
+			"name": "Hit and Run",
+			"order": 11372
+		},
+		{
+			"name": "Insatiable Killer",
+			"order": 11373
+		},
+		{
+			"name": "Mage Bane",
+			"order": 11374
+		},
+		{
+			"name": "Martial Momentum",
+			"order": 11375
+		},
+		{
+			"name": "Deadly Repartee",
+			"order": 11376
+		},
+		{
+			"name": "Quick and Deadly",
+			"order": 11377
+		},
+		{
+			"name": "Smite the Weak",
+			"order": 11378
+		},
+		{
+			"name": "Heavy Hitter",
+			"order": 11379
+		},
+		{
+			"name": "Martial Prowess",
+			"order": 11380
+		},
+		{
+			"name": "Calamitous",
+			"order": 11381
+		},
+		{
+			"name": "Devastator",
+			"order": 11382
+		},
+		{
+			"name": "Fuel the Fight",
+			"order": 11383
+		},
+		{
+			"name": "Drive the Destruction",
+			"order": 11384
+		},
+		{
+			"name": "Feed the Fury",
+			"order": 11385
+		},
+		{
+			"name": "Seal Mender",
+			"order": 11386
+		},
+		{
+			"name": "Conjured Wall",
+			"order": 11387
+		},
+		{
+			"name": "Arcane Heroism",
+			"order": 11388
+		},
+		{
+			"name": "Practiced Caster",
+			"order": 11389
+		},
+		{
+			"name": "Burden Projection",
+			"order": 11390
+		},
+		{
+			"name": "Thaumophage",
+			"order": 11391
+		},
+		{
+			"name": "Essence Rush",
+			"order": 11392
+		},
+		{
+			"name": "Sap Psyche",
+			"order": 11393
+		},
+		{
+			"name": "Sadist",
+			"order": 11394
+		},
+		{
+			"name": "Corrosive Elements",
+			"order": 11395
+		},
+		{
+			"name": "Doryani's Lesson",
+			"order": 11396
+		},
+		{
+			"name": "Disorienting Display",
+			"order": 11397
+		},
+		{
+			"name": "Prismatic Heart",
+			"order": 11398
+		},
+		{
+			"name": "Widespread Destruction",
+			"order": 11399
+		},
+		{
+			"name": "Master of Fire",
+			"order": 11400
+		},
+		{
+			"name": "Smoking Remains",
+			"order": 11401
+		},
+		{
+			"name": "Cremator",
+			"order": 11402
+		},
+		{
+			"name": "Snowstorm",
+			"order": 11403
+		},
+		{
+			"name": "Storm Drinker",
+			"order": 11404
+		},
+		{
+			"name": "Paralysis",
+			"order": 11405
+		},
+		{
+			"name": "Supercharge",
+			"order": 11406
+		},
+		{
+			"name": "Blanketed Snow",
+			"order": 11407
+		},
+		{
+			"name": "Cold to the Core",
+			"order": 11408
+		},
+		{
+			"name": "Cold-Blooded Killer",
+			"order": 11409
+		},
+		{
+			"name": "Touch of Cruelty",
+			"order": 11410
+		},
+		{
+			"name": "Unwaveringly Evil",
+			"order": 11411
+		},
+		{
+			"name": "Unspeakable Gifts",
+			"order": 11412
+		},
+		{
+			"name": "Dark Ideation",
+			"order": 11413
+		},
+		{
+			"name": "Unholy Grace",
+			"order": 11414
+		},
+		{
+			"name": "Wicked Pall",
+			"order": 11415
+		},
+		{
+			"name": "Renewal",
+			"order": 11416
+		},
+		{
+			"name": "Raze and Pillage",
+			"order": 11417
+		},
+		{
+			"name": "Rotten Claws",
+			"order": 11418
+		},
+		{
+			"name": "Call to the Slaughter",
+			"order": 11419
+		},
+		{
+			"name": "Skeletal Atrophy",
+			"order": 11712
+		},
+		{
+			"name": "Hulking Corpses",
+			"order": 11420
+		},
+		{
+			"name": "Vicious Bite",
+			"order": 11421
+		},
+		{
+			"name": "Primordial Bond",
+			"order": 11422
+		},
+		{
+			"name": "Blowback",
+			"order": 11423
+		},
+		{
+			"name": "Fan the Flames",
+			"order": 11424
+		},
+		{
+			"name": "Cooked Alive",
+			"order": 11425
+		},
+		{
+			"name": "Burning Bright",
+			"order": 11426
+		},
+		{
+			"name": "Wrapped in Flame",
+			"order": 11427
+		},
+		{
+			"name": "Vivid Hues",
+			"order": 11428
+		},
+		{
+			"name": "Rend",
+			"order": 11429
+		},
+		{
+			"name": "Disorienting Wounds",
+			"order": 11430
+		},
+		{
+			"name": "Compound Injury",
+			"order": 11431
+		},
+		{
+			"name": "Blood Artist",
+			"order": 14137
+		},
+		{
+			"name": "Phlebotomist",
+			"order": 14138
+		},
+		{
+			"name": "Septic Spells",
+			"order": 11432
+		},
+		{
+			"name": "Low Tolerance",
+			"order": 11433
+		},
+		{
+			"name": "Steady Torment",
+			"order": 11434
+		},
+		{
+			"name": "Eternal Suffering",
+			"order": 11435
+		},
+		{
+			"name": "Eldritch Inspiration",
+			"order": 11436
+		},
+		{
+			"name": "Wasting Affliction",
+			"order": 11437
+		},
+		{
+			"name": "Haemorrhage",
+			"order": 11438
+		},
+		{
+			"name": "Flow of Life",
+			"order": 11439
+		},
+		{
+			"name": "Exposure Therapy",
+			"order": 11440
+		},
+		{
+			"name": "Brush with Death",
+			"order": 11441
+		},
+		{
+			"name": "Vile Reinvigoration",
+			"order": 11442
+		},
+		{
+			"name": "Circling Oblivion",
+			"order": 11443
+		},
+		{
+			"name": "Brewed for Potency",
+			"order": 11444
+		},
+		{
+			"name": "Astonishing Affliction",
+			"order": 11445
+		},
+		{
+			"name": "Cold Conduction",
+			"order": 11446
+		},
+		{
+			"name": "Inspired Oppression",
+			"order": 11447
+		},
+		{
+			"name": "Chilling Presence",
+			"order": 11448
+		},
+		{
+			"name": "Deep Chill",
+			"order": 11449
+		},
+		{
+			"name": "Blast-Freeze",
+			"order": 11450
+		},
+		{
+			"name": "Thunderstruck",
+			"order": 11451
+		},
+		{
+			"name": "Stormrider",
+			"order": 11452
+		},
+		{
+			"name": "Overshock",
+			"order": 11453
+		},
+		{
+			"name": "Evil Eye",
+			"order": 11454
+		},
+		{
+			"name": "Evil Eye",
+			"order": 11455
+		},
+		{
+			"name": "Forbidden Words",
+			"order": 11456
+		},
+		{
+			"name": "Doedre's Spite",
+			"order": 11457
+		},
+		{
+			"name": "Victim Maker",
+			"order": 11458
+		},
+		{
+			"name": "Master of Fear",
+			"order": 11459
+		},
+		{
+			"name": "Wish for Death",
+			"order": 11460
+		},
+		{
+			"name": "Heraldry",
+			"order": 11461
+		},
+		{
+			"name": "Endbringer",
+			"order": 11462
+		},
+		{
+			"name": "Cult-Leader",
+			"order": 11463
+		},
+		{
+			"name": "Empowered Envoy",
+			"order": 11464
+		},
+		{
+			"name": "Dark Messenger",
+			"order": 11465
+		},
+		{
+			"name": "Agent of Destruction",
+			"order": 11466
+		},
+		{
+			"name": "Lasting Impression",
+			"order": 11467
+		},
+		{
+			"name": "Self-Fulfilling Prophecy",
+			"order": 11468
+		},
+		{
+			"name": "Invigorating Portents",
+			"order": 11469
+		},
+		{
+			"name": "Pure Agony",
+			"order": 11470
+		},
+		{
+			"name": "Disciples",
+			"order": 11471
+		},
+		{
+			"name": "Dread March",
+			"order": 11472
+		},
+		{
+			"name": "Blessed Rebirth",
+			"order": 11473
+		},
+		{
+			"name": "Life from Death",
+			"order": 11474
+		},
+		{
+			"name": "Feasting Fiends",
+			"order": 11475
+		},
+		{
+			"name": "Bodyguards",
+			"order": 11476
+		},
+		{
+			"name": "Follow-Through",
+			"order": 11477
+		},
+		{
+			"name": "Streamlined",
+			"order": 11478
+		},
+		{
+			"name": "Shrieking Bolts",
+			"order": 11479
+		},
+		{
+			"name": "Eye to Eye",
+			"order": 11480
+		},
+		{
+			"name": "Repeater",
+			"order": 11481
+		},
+		{
+			"name": "Aerodynamics",
+			"order": 11482
+		},
+		{
+			"name": "Chip Away",
+			"order": 11483
+		},
+		{
+			"name": "Seeker Runes",
+			"order": 11484
+		},
+		{
+			"name": "Remarkable",
+			"order": 11485
+		},
+		{
+			"name": "Brand Loyalty",
+			"order": 11486
+		},
+		{
+			"name": "Holy Conquest",
+			"order": 11487
+		},
+		{
+			"name": "Grand Design",
+			"order": 11488
+		},
+		{
+			"name": "Set and Forget",
+			"order": 11489
+		},
+		{
+			"name": "Expert Sabotage",
+			"order": 11490
+		},
+		{
+			"name": "Guerilla Tactics",
+			"order": 11491
+		},
+		{
+			"name": "Expendability",
+			"order": 11492
+		},
+		{
+			"name": "Arcane Pyrotechnics",
+			"order": 11493
+		},
+		{
+			"name": "Surprise Sabotage",
+			"order": 11494
+		},
+		{
+			"name": "Careful Handling",
+			"order": 11495
+		},
+		{
+			"name": "Peak Vigour",
+			"order": 11496
+		},
+		{
+			"name": "Fettle",
+			"order": 11497
+		},
+		{
+			"name": "Feast of Flesh",
+			"order": 11498
+		},
+		{
+			"name": "Sublime Sensation",
+			"order": 11499
+		},
+		{
+			"name": "Surging Vitality",
+			"order": 11500
+		},
+		{
+			"name": "Peace Amidst Chaos",
+			"order": 11501
+		},
+		{
+			"name": "Adrenaline",
+			"order": 11502
+		},
+		{
+			"name": "Wall of Muscle",
+			"order": 11503
+		},
+		{
+			"name": "Mindfulness",
+			"order": 11504
+		},
+		{
+			"name": "Liquid Inspiration",
+			"order": 11505
+		},
+		{
+			"name": "Openness",
+			"order": 11506
+		},
+		{
+			"name": "Daring Ideas",
+			"order": 11507
+		},
+		{
+			"name": "Clarity of Purpose",
+			"order": 11508
+		},
+		{
+			"name": "Scintillating Idea",
+			"order": 11509
+		},
+		{
+			"name": "Holistic Health",
+			"order": 11510
+		},
+		{
+			"name": "Genius",
+			"order": 11511
+		},
+		{
+			"name": "Improvisor",
+			"order": 11512
+		},
+		{
+			"name": "Stubborn Student",
+			"order": 11513
+		},
+		{
+			"name": "Savour the Moment",
+			"order": 11514
+		},
+		{
+			"name": "Energy From Naught",
+			"order": 11515
+		},
+		{
+			"name": "Will Shaper",
+			"order": 11516
+		},
+		{
+			"name": "Spring Back",
+			"order": 11517
+		},
+		{
+			"name": "Conservation of Energy",
+			"order": 11518
+		},
+		{
+			"name": "Heart of Iron",
+			"order": 11519
+		},
+		{
+			"name": "Prismatic Carapace",
+			"order": 11520
+		},
+		{
+			"name": "Militarism",
+			"order": 11521
+		},
+		{
+			"name": "Second Skin",
+			"order": 11522
+		},
+		{
+			"name": "Dragon Hunter",
+			"order": 11523
+		},
+		{
+			"name": "Enduring Composure",
+			"order": 11524
+		},
+		{
+			"name": "Prismatic Dance",
+			"order": 11525
+		},
+		{
+			"name": "Natural Vigour",
+			"order": 11526
+		},
+		{
+			"name": "Untouchable",
+			"order": 11527
+		},
+		{
+			"name": "Shifting Shadow",
+			"order": 11528
+		},
+		{
+			"name": "Readiness",
+			"order": 11529
+		},
+		{
+			"name": "Confident Combatant",
+			"order": 11530
+		},
+		{
+			"name": "Flexible Sentry",
+			"order": 11531
+		},
+		{
+			"name": "Vicious Guard",
+			"order": 11532
+		},
+		{
+			"name": "Mystical Ward",
+			"order": 11533
+		},
+		{
+			"name": "Rote Reinforcement",
+			"order": 11534
+		},
+		{
+			"name": "Mage Hunter",
+			"order": 11535
+		},
+		{
+			"name": "Riot Queller",
+			"order": 11536
+		},
+		{
+			"name": "One with the Shield",
+			"order": 11537
+		},
+		{
+			"name": "Aerialist",
+			"order": 11538
+		},
+		{
+			"name": "Elegant Form",
+			"order": 11539
+		},
+		{
+			"name": "Darting Movements",
+			"order": 11540
+		},
+		{
+			"name": "No Witnesses",
+			"order": 11541
+		},
+		{
+			"name": "Molten One's Mark",
+			"order": 11542
+		},
+		{
+			"name": "Fire Attunement",
+			"order": 11543
+		},
+		{
+			"name": "Pure Might",
+			"order": 11544
+		},
+		{
+			"name": "Blacksmith",
+			"order": 11545
+		},
+		{
+			"name": "Non-Flammable",
+			"order": 11546
+		},
+		{
+			"name": "Winter Prowler",
+			"order": 11547
+		},
+		{
+			"name": "Hibernator",
+			"order": 11548
+		},
+		{
+			"name": "Pure Guile",
+			"order": 11549
+		},
+		{
+			"name": "Alchemist",
+			"order": 11550
+		},
+		{
+			"name": "Antifreeze",
+			"order": 11551
+		},
+		{
+			"name": "Wizardry",
+			"order": 11552
+		},
+		{
+			"name": "Capacitor",
+			"order": 11553
+		},
+		{
+			"name": "Pure Aptitude",
+			"order": 11554
+		},
+		{
+			"name": "Sage",
+			"order": 11555
+		},
+		{
+			"name": "Insulated",
+			"order": 11556
+		},
+		{
+			"name": "Born of Chaos",
+			"order": 11557
+		},
+		{
+			"name": "Antivenom",
+			"order": 11558
+		},
+		{
+			"name": "Rot-Resistant",
+			"order": 11559
+		},
+		{
+			"name": "Blessed",
+			"order": 11560
+		},
+		{
+			"name": "Student of Decay",
+			"order": 11561
+		},
+		{
+			"name": "Lord of Drought",
+			"order": 12411
+		},
+		{
+			"name": "Blizzard Caller",
+			"order": 12412
+		},
+		{
+			"name": "Tempt the Storm",
+			"order": 12413
+		},
+		{
+			"name": "Misery Everlasting",
+			"order": 12414
+		},
+		{
+			"name": "Exploit Weakness",
+			"order": 12415
+		},
+		{
+			"name": "Self-Control",
+			"order": 12420
+		},
+		{
+			"name": "Uncompromising",
+			"order": 12421
+		},
+		{
+			"name": "Sublime Form",
+			"order": 12422
+		},
+		{
+			"name": "Mortifying Aspect",
+			"order": 12478
+		},
+		{
+			"name": "Frantic Aspect",
+			"order": 12479
+		},
+		{
+			"name": "Introspection",
+			"order": 12480
+		},
+		{
+			"name": "Hound's Mark",
+			"order": 12416
+		},
+		{
+			"name": "Doedre's Gluttony",
+			"order": 12417
+		},
+		{
+			"name": "Doedre's Apathy",
+			"order": 12418
+		},
+		{
+			"name": "Master of the Maelstrom",
+			"order": 12419
+		},
+		{
+			"name": "Aggressive Defence",
+			"order": 15607
+		},
+		{
+			"name": "Holy Word",
+			"order": 22728
+		},
+		{
+			"name": "Fiery Aegis",
+			"order": 22729
+		}
+	],
+	"keystones": [
+		"Disciple of Kitava",
+		"Lone Messenger",
+		"Nature's Patience",
+		"Secrets of Suffering",
+		"Kineticism",
+		"Veteran's Awareness",
+		"Hollow Palm Technique",
+		"Pitfighter"
+	],
+	"orbitOffsets": [
+		{
+			"nodeId": 43989,
+			"starts": [
+				3,
+				5,
+				5
+			]
+		},
+		{
+			"nodeId": 25134,
+			"starts": [
+				0,
+				11,
+				11
+			]
+		},
+		{
+			"nodeId": 30275,
+			"starts": [
+				2,
+				3,
+				3
+			]
+		},
+		{
+			"nodeId": 28650,
+			"starts": [
+				1,
+				1,
+				1
+			]
+		},
+		{
+			"nodeId": 48132,
+			"starts": [
+				5,
+				9,
+				9
+			]
+		},
+		{
+			"nodeId": 18756,
+			"starts": [
+				4,
+				7,
+				7
+			]
+		},
+		{
+			"nodeId": 55706,
+			"starts": [
+				2,
+				3
+			]
+		},
+		{
+			"nodeId": 26661,
+			"starts": [
+				3,
+				5
+			]
+		},
+		{
+			"nodeId": 13201,
+			"starts": [
+				3,
+				7
+			]
+		},
+		{
+			"nodeId": 40114,
+			"starts": [
+				1
+			]
+		},
+		{
+			"nodeId": 18361,
+			"starts": [
+				2
+			]
+		},
+		{
+			"nodeId": 7956,
+			"starts": [
+				3
+			]
+		},
+		{
+			"nodeId": 51233,
+			"starts": [
+				5,
+				9
+			]
+		},
+		{
+			"nodeId": 57194,
+			"starts": [
+				5,
+				11
+			]
+		},
+		{
+			"nodeId": 35853,
+			"starts": [
+				0,
+				1
+			]
+		},
+		{
+			"nodeId": 35313,
+			"starts": [
+				4
+			]
+		},
+		{
+			"nodeId": 44470,
+			"starts": [
+				5
+			]
+		},
+		{
+			"nodeId": 37147,
+			"starts": [
+				0
+			]
+		},
+		{
+			"nodeId": 25441,
+			"starts": [
+				1,
+				1
+			]
+		},
+		{
+			"nodeId": 28018,
+			"starts": [
+				2,
+				3
+			]
+		},
+		{
+			"nodeId": 53203,
+			"starts": [
+				3,
+				5
+			]
+		},
+		{
+			"nodeId": 3854,
+			"starts": [
+				0
+			]
+		},
+		{
+			"nodeId": 49951,
+			"starts": [
+				1
+			]
+		},
+		{
+			"nodeId": 22046,
+			"starts": [
+				2
+			]
+		},
+		{
+			"nodeId": 37898,
+			"starts": [
+				5,
+				11
+			]
+		},
+		{
+			"nodeId": 64166,
+			"starts": [
+				1,
+				1
+			]
+		},
+		{
+			"nodeId": 58355,
+			"starts": [
+				2,
+				3
+			]
+		},
+		{
+			"nodeId": 48128,
+			"starts": [
+				5
+			]
+		},
+		{
+			"nodeId": 27475,
+			"starts": [
+				0
+			]
+		},
+		{
+			"nodeId": 35070,
+			"starts": [
+				1
+			]
+		},
+		{
+			"nodeId": 35926,
+			"starts": [
+				4,
+				7
+			]
+		},
+		{
+			"nodeId": 33833,
+			"starts": [
+				5,
+				9
+			]
+		},
+		{
+			"nodeId": 50179,
+			"starts": [
+				5,
+				11
+			]
+		},
+		{
+			"nodeId": 36414,
+			"starts": [
+				3
+			]
+		},
+		{
+			"nodeId": 10643,
+			"starts": [
+				4
+			]
+		},
+		{
+			"nodeId": 56439,
+			"starts": [
+				5
+			]
+		},
+		{
+			"nodeId": 58194,
+			"starts": [
+				3,
+				5
+			]
+		},
+		{
+			"nodeId": 34013,
+			"starts": [
+				4,
+				7
+			]
+		},
+		{
+			"nodeId": 24452,
+			"starts": [
+				5,
+				9
+			]
+		},
+		{
+			"nodeId": 63754,
+			"starts": [
+				2
+			]
+		},
+		{
+			"nodeId": 54600,
+			"starts": [
+				3
+			]
+		},
+		{
+			"nodeId": 27819,
+			"starts": [
+				4
+			]
+		}
+	]
+}

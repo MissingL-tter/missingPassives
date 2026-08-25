@@ -13,27 +13,27 @@ import (
 
 // Minion is one data.minions entry.
 type Minion struct {
-	Name                         string           `lua:"name"`
-	MonsterTags                  []string         `lua:"monsterTags"`
-	BaseDamageIgnoresAttackSpeed bool             `lua:"baseDamageIgnoresAttackSpeed,omitempty"`
-	Life                         float64          `lua:"life"`
-	LifeScaling                  string           `lua:"lifeScaling,omitempty"`
-	EnergyShield                 *float64         `lua:"energyShield"`
-	Armour                       *float64         `lua:"armour"`
-	Evasion                      *float64         `lua:"evasion"`
-	FireResist                   float64          `lua:"fireResist"`
-	ColdResist                   float64          `lua:"coldResist"`
-	LightningResist              float64          `lua:"lightningResist"`
-	ChaosResist                  float64          `lua:"chaosResist"`
-	Damage                       float64          `lua:"damage"`
-	DamageSpread                 float64          `lua:"damageSpread"`
-	AttackTime                   float64          `lua:"attackTime"`
-	AttackRange                  float64          `lua:"attackRange"`
-	Accuracy                     float64          `lua:"accuracy"`
-	DamageFixup                  *float64         `lua:"damageFixup"`
-	WeaponType1                  *string          `lua:"weaponType1"`
-	WeaponType2                  *string          `lua:"weaponType2"`
-	Limit                        string           `lua:"limit,omitempty"`
+	Name                         string   `lua:"name"`
+	MonsterTags                  []string `lua:"monsterTags"`
+	BaseDamageIgnoresAttackSpeed bool     `lua:"baseDamageIgnoresAttackSpeed,omitempty"`
+	Life                         float64  `lua:"life"`
+	LifeScaling                  string   `lua:"lifeScaling,omitempty"`
+	EnergyShield                 *float64 `lua:"energyShield"`
+	Armour                       *float64 `lua:"armour"`
+	Evasion                      *float64 `lua:"evasion"`
+	FireResist                   float64  `lua:"fireResist"`
+	ColdResist                   float64  `lua:"coldResist"`
+	LightningResist              float64  `lua:"lightningResist"`
+	ChaosResist                  float64  `lua:"chaosResist"`
+	Damage                       float64  `lua:"damage"`
+	DamageSpread                 float64  `lua:"damageSpread"`
+	AttackTime                   float64  `lua:"attackTime"`
+	AttackRange                  float64  `lua:"attackRange"`
+	Accuracy                     float64  `lua:"accuracy"`
+	DamageFixup                  *float64 `lua:"damageFixup"`
+	WeaponType1                  *string  `lua:"weaponType1"`
+	WeaponType2                  *string  `lua:"weaponType2"`
+	Limit                        string   `lua:"limit,omitempty"`
 	Hostile                      any      `lua:"hostile"`
 	SkillList                    []string `lua:"skillList"`
 	ModList                      []any    `lua:"modList"` // *modparser.Mod (or *D for flag-slot typos)
@@ -116,7 +116,7 @@ func handMinionsTable() map[string]*Minion {
 	}
 }
 
-func (d *Data) loadMinions(src gamedata.Minions) {
+func loadMinions(src gamedata.Minions) {
 	load := func(defs []gamedata.MinionDef) map[string]*Minion {
 		out := map[string]*Minion{}
 		for _, m := range defs {
@@ -130,16 +130,16 @@ func (d *Data) loadMinions(src gamedata.Minions) {
 	// Data.lua loads Data/Minions into data.minions and Data/Spectres into
 	// data.spectres, then merges spectres into minions with the spectre
 	// limit applied.
-	d.Minions = load(src.Minions)
+	Minions = load(src.Minions)
 	for name, m := range handMinionsTable() {
-		d.Minions[name] = m
+		Minions[name] = m
 	}
-	d.Spectres = load(src.Spectres)
-	for name, spectre := range d.Spectres {
+	Spectres = load(src.Spectres)
+	for name, spectre := range Spectres {
 		spectre.Limit = "ActiveSpectreLimit"
-		d.Minions[name] = spectre
+		Minions[name] = spectre
 	}
-	for _, minion := range d.Minions {
+	for _, minion := range Minions {
 		for _, m := range minion.ModList {
 			switch mod := m.(type) {
 			case *modparser.Mod:

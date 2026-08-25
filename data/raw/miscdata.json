@@ -1,0 +1,4378 @@
+{
+	"misc": {
+		"monsterEvasion": [
+			67,
+			86,
+			104,
+			124,
+			144,
+			166,
+			188,
+			211,
+			234,
+			259,
+			285,
+			311,
+			339,
+			368,
+			397,
+			428,
+			460,
+			493,
+			527,
+			563,
+			600,
+			638,
+			677,
+			718,
+			760,
+			804,
+			849,
+			896,
+			944,
+			994,
+			1046,
+			1100,
+			1155,
+			1212,
+			1271,
+			1332,
+			1395,
+			1460,
+			1528,
+			1597,
+			1669,
+			1743,
+			1819,
+			1898,
+			1979,
+			2063,
+			2150,
+			2239,
+			2331,
+			2426,
+			2524,
+			2626,
+			2730,
+			2837,
+			2948,
+			3063,
+			3180,
+			3302,
+			3427,
+			3556,
+			3689,
+			3826,
+			3967,
+			4112,
+			4262,
+			4416,
+			4575,
+			4739,
+			4907,
+			5081,
+			5260,
+			5444,
+			5633,
+			5828,
+			6029,
+			6235,
+			6448,
+			6667,
+			6892,
+			7124,
+			7362,
+			7608,
+			7860,
+			8120,
+			8388,
+			8663,
+			8946,
+			9237,
+			9536,
+			9844,
+			10160,
+			10486,
+			10821,
+			11165,
+			11519,
+			11883,
+			12258,
+			12643,
+			13038,
+			13445
+		],
+		"monsterAccuracy": [
+			14,
+			15,
+			15,
+			16,
+			17,
+			18,
+			19,
+			20,
+			21,
+			23,
+			24,
+			25,
+			26,
+			28,
+			29,
+			31,
+			32,
+			34,
+			35,
+			37,
+			39,
+			41,
+			43,
+			45,
+			47,
+			49,
+			52,
+			54,
+			57,
+			59,
+			62,
+			65,
+			68,
+			71,
+			74,
+			77,
+			81,
+			84,
+			88,
+			92,
+			96,
+			100,
+			105,
+			109,
+			114,
+			119,
+			124,
+			129,
+			135,
+			140,
+			146,
+			152,
+			159,
+			165,
+			172,
+			179,
+			187,
+			195,
+			203,
+			211,
+			220,
+			229,
+			238,
+			247,
+			257,
+			268,
+			279,
+			290,
+			301,
+			314,
+			326,
+			339,
+			352,
+			366,
+			381,
+			396,
+			412,
+			428,
+			444,
+			462,
+			480,
+			499,
+			518,
+			538,
+			559,
+			580,
+			603,
+			626,
+			650,
+			675,
+			701,
+			728,
+			755,
+			784,
+			814,
+			845,
+			877,
+			910,
+			945,
+			980
+		],
+		"monsterLife": [
+			22,
+			26,
+			31,
+			36,
+			42,
+			48,
+			55,
+			62,
+			70,
+			78,
+			87,
+			97,
+			107,
+			119,
+			131,
+			144,
+			158,
+			173,
+			190,
+			207,
+			226,
+			246,
+			267,
+			290,
+			315,
+			341,
+			370,
+			400,
+			432,
+			467,
+			504,
+			543,
+			585,
+			630,
+			678,
+			730,
+			785,
+			843,
+			905,
+			972,
+			1042,
+			1118,
+			1198,
+			1284,
+			1375,
+			1472,
+			1575,
+			1685,
+			1802,
+			1927,
+			2059,
+			2200,
+			2350,
+			2509,
+			2678,
+			2858,
+			3050,
+			3253,
+			3469,
+			3698,
+			3942,
+			4201,
+			4476,
+			4768,
+			5078,
+			5407,
+			5756,
+			6127,
+			6520,
+			6937,
+			7380,
+			7850,
+			8348,
+			8876,
+			9436,
+			10030,
+			10660,
+			11328,
+			12036,
+			12787,
+			13582,
+			14425,
+			15319,
+			16265,
+			17268,
+			18331,
+			19457,
+			20649,
+			21913,
+			23250,
+			24667,
+			26168,
+			27756,
+			29438,
+			31220,
+			33105,
+			35101,
+			37214,
+			39450,
+			41817
+		],
+		"monsterLife2": [
+			10,
+			12,
+			15,
+			18,
+			21,
+			25,
+			29,
+			34,
+			39,
+			44,
+			50,
+			56,
+			63,
+			70,
+			79,
+			87,
+			97,
+			107,
+			119,
+			131,
+			144,
+			158,
+			174,
+			191,
+			209,
+			228,
+			249,
+			272,
+			296,
+			323,
+			351,
+			382,
+			415,
+			450,
+			489,
+			530,
+			574,
+			621,
+			672,
+			727,
+			786,
+			850,
+			917,
+			990,
+			1069,
+			1153,
+			1243,
+			1339,
+			1443,
+			1554,
+			1673,
+			1800,
+			1937,
+			2083,
+			2240,
+			2408,
+			2587,
+			2780,
+			2986,
+			3206,
+			3442,
+			3694,
+			3963,
+			4252,
+			4560,
+			4890,
+			5243,
+			5620,
+			6022,
+			6453,
+			6913,
+			7404,
+			7929,
+			8490,
+			9089,
+			9729,
+			10412,
+			11141,
+			11920,
+			12751,
+			13638,
+			14585,
+			15596,
+			16675,
+			17825,
+			19053,
+			20363,
+			21760,
+			23250,
+			24840,
+			26535,
+			28343,
+			30270,
+			32326,
+			34517,
+			36853,
+			39343,
+			41997,
+			44826,
+			47841
+		],
+		"monsterLife3": [
+			13,
+			15,
+			18,
+			22,
+			25,
+			29,
+			34,
+			38,
+			44,
+			49,
+			55,
+			62,
+			69,
+			77,
+			86,
+			95,
+			106,
+			117,
+			128,
+			141,
+			155,
+			170,
+			187,
+			204,
+			223,
+			244,
+			266,
+			290,
+			316,
+			344,
+			373,
+			406,
+			440,
+			478,
+			518,
+			561,
+			608,
+			658,
+			712,
+			769,
+			831,
+			898,
+			970,
+			1046,
+			1129,
+			1217,
+			1312,
+			1414,
+			1523,
+			1640,
+			1766,
+			1900,
+			2044,
+			2199,
+			2364,
+			2541,
+			2731,
+			2934,
+			3151,
+			3384,
+			3633,
+			3900,
+			4185,
+			4490,
+			4816,
+			5165,
+			5539,
+			5938,
+			6364,
+			6820,
+			7308,
+			7829,
+			8386,
+			8980,
+			9616,
+			10295,
+			11020,
+			11795,
+			12622,
+			13506,
+			14449,
+			15456,
+			16531,
+			17679,
+			18904,
+			20211,
+			21607,
+			23096,
+			24684,
+			26380,
+			28188,
+			30117,
+			32175,
+			34370,
+			36711,
+			39207,
+			41870,
+			44708,
+			47735,
+			50962
+		],
+		"monsterAllyLife": [
+			15,
+			16,
+			18,
+			20,
+			22,
+			24,
+			27,
+			29,
+			32,
+			35,
+			38,
+			41,
+			44,
+			48,
+			52,
+			56,
+			60,
+			65,
+			70,
+			75,
+			81,
+			87,
+			93,
+			99,
+			106,
+			114,
+			121,
+			130,
+			138,
+			148,
+			158,
+			168,
+			179,
+			190,
+			203,
+			215,
+			229,
+			244,
+			259,
+			275,
+			292,
+			310,
+			328,
+			348,
+			369,
+			392,
+			415,
+			440,
+			465,
+			493,
+			522,
+			552,
+			584,
+			618,
+			653,
+			691,
+			730,
+			772,
+			816,
+			862,
+			910,
+			961,
+			1015,
+			1072,
+			1131,
+			1194,
+			1260,
+			1329,
+			1402,
+			1478,
+			1559,
+			1644,
+			1733,
+			1827,
+			1926,
+			2029,
+			2138,
+			2253,
+			2373,
+			2500,
+			2633,
+			2773,
+			2919,
+			3074,
+			3236,
+			3406,
+			3585,
+			3773,
+			3970,
+			4178,
+			4395,
+			4624,
+			4864,
+			5116,
+			5381,
+			5659,
+			5951,
+			6257,
+			6578,
+			6916
+		],
+		"monsterDamage": [
+			4.989999771118164,
+			5.559999942779541,
+			6.159999847412109,
+			6.809999942779541,
+			7.5,
+			8.229999542236328,
+			9,
+			9.819999694824219,
+			10.699999809265137,
+			11.619999885559082,
+			12.600000381469727,
+			13.640000343322754,
+			14.739999771118164,
+			15.90999984741211,
+			17.139999389648438,
+			18.450000762939453,
+			19.829999923706055,
+			21.290000915527344,
+			22.84000015258789,
+			24.469999313354492,
+			26.190000534057617,
+			28.010000228881836,
+			29.940000534057617,
+			31.959999084472656,
+			34.11000061035156,
+			36.36000061035156,
+			38.75,
+			41.2599983215332,
+			43.90999984741211,
+			46.70000076293945,
+			49.650001525878906,
+			52.75,
+			56.0099983215332,
+			59.45000076293945,
+			63.08000183105469,
+			66.88999938964844,
+			70.91000366210938,
+			75.12999725341797,
+			79.58000183105469,
+			84.26000213623047,
+			89.18000030517578,
+			94.3499984741211,
+			99.80000305175781,
+			105.5199966430664,
+			111.52999877929688,
+			117.86000061035156,
+			124.5,
+			131.49000549316406,
+			138.8300018310547,
+			146.52999877929688,
+			154.6300048828125,
+			163.13999938964844,
+			172.07000732421875,
+			181.4499969482422,
+			191.3000030517578,
+			201.6300048828125,
+			212.47999572753906,
+			223.8699951171875,
+			235.8300018310547,
+			248.3699951171875,
+			261.5299987792969,
+			275.3299865722656,
+			289.82000732421875,
+			305.010009765625,
+			320.94000244140625,
+			337.6499938964844,
+			355.17999267578125,
+			373.54998779296875,
+			392.80999755859375,
+			413.010009765625,
+			434.17999267578125,
+			456.3699951171875,
+			479.6199951171875,
+			504,
+			529.5399780273438,
+			556.2999877929688,
+			584.3499755859375,
+			613.72998046875,
+			644.5,
+			676.75,
+			710.52001953125,
+			745.8900146484375,
+			782.9400024414062,
+			821.72998046875,
+			862.3599853515625,
+			904.9000244140625,
+			949.4400024414062,
+			996.0700073242188,
+			1044.8900146484375,
+			1096,
+			1149.5,
+			1205.5,
+			1264.1099853515625,
+			1325.449951171875,
+			1389.6400146484375,
+			1456.8199462890625,
+			1527.1199951171875,
+			1600.6800537109375,
+			1677.6400146484375,
+			1758.1700439453125
+		],
+		"monsterAllyDamage": [
+			5.619999885559082,
+			6.03000020980835,
+			6.460000038146973,
+			6.920000076293945,
+			7.409999847412109,
+			7.929999828338623,
+			8.479999542236328,
+			9.0600004196167,
+			9.680000305175781,
+			10.329999923706055,
+			11.029999732971191,
+			11.760000228881836,
+			12.539999961853027,
+			13.369999885559082,
+			14.25,
+			15.170000076293945,
+			16.15999984741211,
+			17.200000762939453,
+			18.299999237060547,
+			19.459999084472656,
+			20.700000762939453,
+			22,
+			23.389999389648438,
+			24.850000381469727,
+			26.389999389648438,
+			28.030000686645508,
+			29.760000228881836,
+			31.579999923706055,
+			33.52000045776367,
+			35.560001373291016,
+			37.720001220703125,
+			40,
+			42.40999984741211,
+			44.959999084472656,
+			47.63999938964844,
+			50.4900016784668,
+			53.4900016784668,
+			56.65999984741211,
+			60,
+			63.529998779296875,
+			67.26000213623047,
+			71.19999694824219,
+			75.36000061035156,
+			79.73999786376953,
+			84.37000274658203,
+			89.25,
+			94.4000015258789,
+			99.83999633789062,
+			105.56999969482422,
+			111.62000274658203,
+			118,
+			124.7300033569336,
+			131.8300018310547,
+			139.30999755859375,
+			147.1999969482422,
+			155.52000427246094,
+			164.27999877929688,
+			173.52999877929688,
+			183.27000427246094,
+			193.5399932861328,
+			204.3699951171875,
+			215.77999877929688,
+			227.8000030517578,
+			240.4600067138672,
+			253.80999755859375,
+			267.8699951171875,
+			282.69000244140625,
+			298.2900085449219,
+			314.7300109863281,
+			332.04998779296875,
+			350.2900085449219,
+			369.5,
+			389.7300109863281,
+			411.0400085449219,
+			433.4700012207031,
+			457.0899963378906,
+			481.9700012207031,
+			508.1499938964844,
+			535.719970703125,
+			564.75,
+			595.2999877929688,
+			627.4600219726562,
+			661.3099975585938,
+			696.9500122070312,
+			734.4500122070312,
+			773.9099731445312,
+			815.4500122070312,
+			859.1599731445312,
+			905.1500244140625,
+			953.5399780273438,
+			1004.469970703125,
+			1058.0400390625,
+			1114.4100341796875,
+			1173.7099609375,
+			1236.0999755859375,
+			1301.72998046875,
+			1370.760009765625,
+			1443.3800048828125,
+			1519.760009765625,
+			1600.0899658203125
+		],
+		"monsterArmour": [
+			12,
+			15,
+			19,
+			23,
+			27,
+			32,
+			37,
+			43,
+			50,
+			57,
+			65,
+			74,
+			83,
+			94,
+			105,
+			118,
+			132,
+			147,
+			164,
+			182,
+			202,
+			224,
+			248,
+			275,
+			303,
+			334,
+			368,
+			405,
+			445,
+			489,
+			537,
+			589,
+			646,
+			707,
+			774,
+			846,
+			925,
+			1010,
+			1103,
+			1204,
+			1313,
+			1432,
+			1560,
+			1700,
+			1850,
+			2014,
+			2191,
+			2383,
+			2591,
+			2815,
+			3059,
+			3322,
+			3607,
+			3915,
+			4248,
+			4608,
+			4997,
+			5418,
+			5873,
+			6365,
+			6896,
+			7469,
+			8089,
+			8757,
+			9480,
+			10259,
+			11101,
+			12009,
+			12989,
+			14047,
+			15188,
+			16419,
+			17747,
+			19178,
+			20722,
+			22387,
+			24182,
+			26117,
+			28203,
+			30451,
+			32873,
+			35483,
+			38296,
+			41326,
+			44591,
+			48107,
+			51894,
+			55973,
+			60365,
+			65095,
+			70188,
+			75670,
+			81573,
+			87926,
+			94765,
+			102125,
+			110047,
+			118571,
+			127744,
+			137613
+		],
+		"monsterAilmentThreshold": [
+			22,
+			26,
+			31,
+			36,
+			42,
+			48,
+			55,
+			62,
+			70,
+			78,
+			87,
+			97,
+			107,
+			119,
+			131,
+			144,
+			158,
+			173,
+			190,
+			207,
+			226,
+			246,
+			267,
+			290,
+			315,
+			341,
+			370,
+			400,
+			432,
+			467,
+			504,
+			543,
+			585,
+			630,
+			678,
+			730,
+			785,
+			843,
+			905,
+			972,
+			1042,
+			1118,
+			1198,
+			1284,
+			1375,
+			1472,
+			1575,
+			1685,
+			1802,
+			1927,
+			2059,
+			2200,
+			2350,
+			2509,
+			2678,
+			2858,
+			3050,
+			3253,
+			3469,
+			3698,
+			3942,
+			4201,
+			4476,
+			4768,
+			5078,
+			5407,
+			5756,
+			6127,
+			6520,
+			6937,
+			7380,
+			7850,
+			8348,
+			8876,
+			9436,
+			10030,
+			10660,
+			11328,
+			12036,
+			12787,
+			13582,
+			14425,
+			15319,
+			16265,
+			17268,
+			18331,
+			19457,
+			20649,
+			21913,
+			23250,
+			24667,
+			26168,
+			27756,
+			29438,
+			31220,
+			33105,
+			35101,
+			37214,
+			39450,
+			41817
+		],
+		"monsterPhysConversionMulti": [
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			5,
+			10,
+			15,
+			20,
+			25,
+			30,
+			35,
+			40,
+			45,
+			50,
+			55,
+			60,
+			65,
+			70,
+			75,
+			80,
+			85,
+			90,
+			95,
+			100,
+			105,
+			110,
+			115,
+			120,
+			125,
+			130,
+			135,
+			140,
+			145,
+			150,
+			155,
+			160,
+			165,
+			170,
+			175,
+			180,
+			185,
+			190,
+			195,
+			200,
+			205,
+			210,
+			215,
+			220,
+			225,
+			230,
+			235,
+			240,
+			245,
+			250,
+			255,
+			260,
+			265,
+			270,
+			275,
+			280,
+			285,
+			290,
+			295,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300,
+			300
+		],
+		"gameConstants": [
+			{
+				"id": "MonsterDamageReductionImprovement",
+				"value": 6.7
+			},
+			{
+				"id": "MonsterAccuracyBase",
+				"value": 13
+			},
+			{
+				"id": "MonsterAccuracyIncremental",
+				"value": 38
+			},
+			{
+				"id": "MonsterAccuracyImprovement",
+				"value": 3
+			},
+			{
+				"id": "MonsterEvasionBase",
+				"value": 50
+			},
+			{
+				"id": "MonsterEvasionIncremental",
+				"value": 16
+			},
+			{
+				"id": "MonsterEvasionIncrementalDexterity",
+				"value": 16
+			},
+			{
+				"id": "MonsterEvasionImprovement",
+				"value": 2.12
+			},
+			{
+				"id": "EnergyShieldRatioOfLife",
+				"value": 40
+			},
+			{
+				"id": "OldLeechModsEffectiveness",
+				"value": 20
+			},
+			{
+				"id": "AscendancyRespecCost",
+				"value": 5
+			},
+			{
+				"id": "SkillDamageBaseEffectiveness",
+				"value": 3.885209
+			},
+			{
+				"id": "SkillDamageIncrementalEffectiveness",
+				"value": 0.360246
+			},
+			{
+				"id": "MaxHideoutDoodads",
+				"value": 750
+			},
+			{
+				"id": "PassiveTreeJewelDistanceMultiplier",
+				"value": 1.2
+			},
+			{
+				"id": "PartyQuantityBonusPerAdditionalPlayer",
+				"value": 0.23
+			},
+			{
+				"id": "PartyQuantityBonusPerAdditionalPlayerHardMode",
+				"value": 0.53
+			},
+			{
+				"id": "PartyRarityBonusPerAdditionalPlayer",
+				"value": 0
+			},
+			{
+				"id": "PartyRarityBonusPerAdditionalPlayerHardMode",
+				"value": 0
+			},
+			{
+				"id": "MercenaryPartyScalingValue",
+				"value": 50
+			},
+			{
+				"id": "SellPriceMultiplier",
+				"value": 0.11
+			},
+			{
+				"id": "UnidentifiedMagicMultiplier",
+				"value": 1.25
+			},
+			{
+				"id": "UnidentifiedRareMultiplier",
+				"value": 2.5
+			},
+			{
+				"id": "IdentifiedMagicMultiplier",
+				"value": 1
+			},
+			{
+				"id": "IdentifiedRareMultiplier",
+				"value": 1.5
+			},
+			{
+				"id": "PartyNormalMonsterLifePerAdditionalPlayer",
+				"value": 50
+			},
+			{
+				"id": "PartyMagicMonsterLifePerAdditionalPlayer",
+				"value": 60
+			},
+			{
+				"id": "PartyRareMonsterLifePerAdditionalPlayer",
+				"value": 80
+			},
+			{
+				"id": "PartyUniqueMonsterLifePerAdditionalPlayer",
+				"value": 100
+			},
+			{
+				"id": "AtlasPassiveRespecCost",
+				"value": 2000
+			},
+			{
+				"id": "GemGoldCostMultiplier",
+				"value": 200
+			},
+			{
+				"id": "ExceptionalGemGoldCostMultiplier",
+				"value": 300
+			},
+			{
+				"id": "AwakenedGemGoldCostMultiplier",
+				"value": 400
+			},
+			{
+				"id": "OverMaxLevelGemGoldCostMultiplier",
+				"value": 150
+			},
+			{
+				"id": "GoldPlusPercentPerInfluence",
+				"value": 50
+			},
+			{
+				"id": "GoldPlusPercentPerCorruption",
+				"value": 50
+			},
+			{
+				"id": "GoldPlusPercentPerQuality",
+				"value": 2
+			},
+			{
+				"id": "GoldPlusPercentPerAffix",
+				"value": 10
+			},
+			{
+				"id": "UniqueBaseGoldCost",
+				"value": 2000
+			},
+			{
+				"id": "NumAtlasPointsFromUniqueMaps",
+				"value": 10
+			},
+			{
+				"id": "PactEmpowermentsDefaultDurationMs",
+				"value": 15000
+			},
+			{
+				"id": "BaseMaximumActivePactAfflictions",
+				"value": 5
+			}
+		],
+		"characterConstants": [
+			{
+				"key": "level",
+				"value": "1"
+			},
+			{
+				"key": "is_player",
+				"value": "1"
+			},
+			{
+				"key": "energy_shield_recharge_rate_per_minute_%",
+				"value": "2000"
+			},
+			{
+				"key": "mana_regeneration_rate_per_minute_%",
+				"value": "105"
+			},
+			{
+				"key": "base_maximum_all_resistances_%",
+				"value": "75"
+			},
+			{
+				"key": "maximum_physical_damage_reduction_%",
+				"value": "90"
+			},
+			{
+				"key": "maximum_block_%",
+				"value": "75"
+			},
+			{
+				"key": "base_maximum_spell_block_%",
+				"value": "75"
+			},
+			{
+				"key": "base_attack_speed_+%_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "base_cast_speed_+%_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "object_inherent_damage_+%_final_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_reduction_%_per_endurance_charge",
+				"value": "4"
+			},
+			{
+				"key": "elemental_damage_reduction_%_per_endurance_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_%_to_add_as_cold_per_brine_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_%_to_add_as_lightning_per_brine_charge",
+				"value": "4"
+			},
+			{
+				"key": "critical_strike_chance_+%_per_power_charge",
+				"value": "50"
+			},
+			{
+				"key": "max_viper_strike_orbs",
+				"value": "4"
+			},
+			{
+				"key": "dual_wield_inherent_attack_speed_+%_final",
+				"value": "10"
+			},
+			{
+				"key": "max_fuse_arrow_orbs",
+				"value": "5"
+			},
+			{
+				"key": "max_fire_beam_stacks",
+				"value": "8"
+			},
+			{
+				"key": "base_evasion_rating",
+				"value": "15"
+			},
+			{
+				"key": "life_per_level",
+				"value": "12"
+			},
+			{
+				"key": "mana_per_level",
+				"value": "6"
+			},
+			{
+				"key": "accuracy_rating_per_level",
+				"value": "2"
+			},
+			{
+				"key": "inherent_block_while_dual_wielding_%",
+				"value": "20"
+			},
+			{
+				"key": "base_critical_strike_multiplier",
+				"value": "150"
+			},
+			{
+				"key": "critical_ailment_dot_multiplier_+",
+				"value": "50"
+			},
+			{
+				"key": "strength_per_level",
+				"value": "0"
+			},
+			{
+				"key": "dexterity_per_level",
+				"value": "0"
+			},
+			{
+				"key": "intelligence_per_level",
+				"value": "0"
+			},
+			{
+				"key": "max_endurance_charges",
+				"value": "3"
+			},
+			{
+				"key": "max_frenzy_charges",
+				"value": "3"
+			},
+			{
+				"key": "max_power_charges",
+				"value": "3"
+			},
+			{
+				"key": "maximum_righteous_charges",
+				"value": "5"
+			},
+			{
+				"key": "maximum_blood_scythe_charges",
+				"value": "5"
+			},
+			{
+				"key": "base_number_of_totems_allowed",
+				"value": "1"
+			},
+			{
+				"key": "base_number_of_traps_allowed",
+				"value": "15"
+			},
+			{
+				"key": "base_number_of_remote_mines_allowed",
+				"value": "15"
+			},
+			{
+				"key": "max_charged_attack_stacks",
+				"value": "6"
+			},
+			{
+				"key": "max_talisman_degen_stacks",
+				"value": "20"
+			},
+			{
+				"key": "max_frost_nova_stacks",
+				"value": "20"
+			},
+			{
+				"key": "max_rampage_stacks",
+				"value": "1000"
+			},
+			{
+				"key": "damage_+%_per_10_rampage_stacks",
+				"value": "2"
+			},
+			{
+				"key": "movement_velocity_+%_per_10_rampage_stacks",
+				"value": "1"
+			},
+			{
+				"key": "pvp_shield_damage_+%_final",
+				"value": "-15"
+			},
+			{
+				"key": "maximum_life_leech_rate_%_per_minute",
+				"value": "1200"
+			},
+			{
+				"key": "maximum_mana_leech_rate_%_per_minute",
+				"value": "1200"
+			},
+			{
+				"key": "maximum_energy_shield_leech_rate_%_per_minute",
+				"value": "600"
+			},
+			{
+				"key": "minions_have_labyrinth_trap_degen_effect_+%",
+				"value": "-90"
+			},
+			{
+				"key": "minions_are_immune_to_labyrinth_degen_effect",
+				"value": "0"
+			},
+			{
+				"key": "minion_damage_taken_+%_from_spike_traps_final",
+				"value": "-90"
+			},
+			{
+				"key": "minion_damage_taken_+%_from_arrow_traps_final",
+				"value": "0"
+			},
+			{
+				"key": "minion_damage_taken_+%_from_guillotine_traps_final",
+				"value": "-90"
+			},
+			{
+				"key": "minion_global_always_hit",
+				"value": "1"
+			},
+			{
+				"key": "traps_explode_on_timeout",
+				"value": "1"
+			},
+			{
+				"key": "maximum_rage",
+				"value": "30"
+			},
+			{
+				"key": "max_delve_degen_stacks",
+				"value": "5000"
+			},
+			{
+				"key": "max_azurite_debuff_stacks",
+				"value": "10"
+			},
+			{
+				"key": "melee_variation",
+				"value": "1"
+			},
+			{
+				"key": "impaled_debuff_base_duration_ms",
+				"value": "8000"
+			},
+			{
+				"key": "impaled_debuff_number_of_reflected_hits",
+				"value": "5"
+			},
+			{
+				"key": "base_total_number_of_sigils_allowed",
+				"value": "3"
+			},
+			{
+				"key": "maximum_life_leech_amount_per_leech_%_max_life",
+				"value": "10"
+			},
+			{
+				"key": "maximum_mana_leech_amount_per_leech_%_max_mana",
+				"value": "10"
+			},
+			{
+				"key": "maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield",
+				"value": "10"
+			},
+			{
+				"key": "enable_movement_skill_animation_skipping",
+				"value": "1"
+			},
+			{
+				"key": "melee_hit_damage_stun_multiplier_+%",
+				"value": "25"
+			},
+			{
+				"key": "non_physical_hit_damage_stun_multiplier_+%",
+				"value": "-25"
+			},
+			{
+				"key": "non_melee_hit_damage_stun_multiplier_+%_final",
+				"value": "-25"
+			},
+			{
+				"key": "object_inherent_melee_hit_stun_duration_+%_final",
+				"value": "50"
+			},
+			{
+				"key": "additional_insanity_effects_while_delirious",
+				"value": "1"
+			},
+			{
+				"key": "max_steel_ammo",
+				"value": "12"
+			},
+			{
+				"key": "chance_to_deal_triple_damage_%_per_brutal_charge",
+				"value": "3"
+			},
+			{
+				"key": "stun_threshold_+%_per_brutal_charge",
+				"value": "10"
+			},
+			{
+				"key": "ailment_damage_+%_final_per_affliction_charge",
+				"value": "8"
+			},
+			{
+				"key": "non_damaging_ailment_effect_+%_final_per_affliction_charge",
+				"value": "8"
+			},
+			{
+				"key": "elemental_damage_taken_goes_to_energy_shield_over_4_seconds_%_per_absorption_charge",
+				"value": "12"
+			},
+			{
+				"key": "actor_scale_+%_limit",
+				"value": "100"
+			},
+			{
+				"key": "mines_invulnerable_for_duration_ms",
+				"value": "2000"
+			},
+			{
+				"key": "traps_invulnerable_for_duration_ms",
+				"value": "2000"
+			},
+			{
+				"key": "damage_taken_when_hit_+%_final_per_fortification",
+				"value": "-1"
+			},
+			{
+				"key": "base_max_fortification",
+				"value": "20"
+			},
+			{
+				"key": "base_presence_radius",
+				"value": "80"
+			},
+			{
+				"key": "mtx_max_killcounter_stacks",
+				"value": "30000"
+			},
+			{
+				"key": "soul_eater_maximum_stacks",
+				"value": "45"
+			},
+			{
+				"key": "rage_loss_delay_ms",
+				"value": "2000"
+			},
+			{
+				"key": "trigger_attack_graft_each_second_channeling",
+				"value": "1"
+			},
+			{
+				"key": "maximum_active_sand_mirage_count",
+				"value": "3"
+			},
+			{
+				"key": "base_speed",
+				"value": "37"
+			}
+		],
+		"monsterConstants": [
+			{
+				"key": "item_drop_slots",
+				"value": "1"
+			},
+			{
+				"key": "energy_shield_recharge_rate_per_minute_%",
+				"value": "2000"
+			},
+			{
+				"key": "mana_regeneration_rate_per_minute_%",
+				"value": "100"
+			},
+			{
+				"key": "base_maximum_mana",
+				"value": "200"
+			},
+			{
+				"key": "maximum_physical_damage_reduction_%",
+				"value": "75"
+			},
+			{
+				"key": "max_viper_strike_orbs",
+				"value": "4"
+			},
+			{
+				"key": "base_maximum_all_resistances_%",
+				"value": "75"
+			},
+			{
+				"key": "max_fuse_arrow_orbs",
+				"value": "5"
+			},
+			{
+				"key": "max_fire_beam_stacks",
+				"value": "8"
+			},
+			{
+				"key": "max_charged_attack_stacks",
+				"value": "10"
+			},
+			{
+				"key": "base_critical_strike_multiplier",
+				"value": "130"
+			},
+			{
+				"key": "critical_ailment_dot_multiplier_+",
+				"value": "30"
+			},
+			{
+				"key": "max_endurance_charges",
+				"value": "3"
+			},
+			{
+				"key": "max_frenzy_charges",
+				"value": "3"
+			},
+			{
+				"key": "max_power_charges",
+				"value": "3"
+			},
+			{
+				"key": "base_attack_speed_+%_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "base_attack_speed_+%_per_frenzy_charge_if_not_player_minion",
+				"value": "11"
+			},
+			{
+				"key": "base_cast_speed_+%_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "base_cast_speed_+%_per_frenzy_charge_if_not_player_minion",
+				"value": "11"
+			},
+			{
+				"key": "movement_velocity_+%_per_frenzy_charge_if_not_player_minion",
+				"value": "5"
+			},
+			{
+				"key": "object_inherent_damage_+%_final_per_frenzy_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_reduction_%_per_endurance_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_reduction_%_per_endurance_charge_if_not_player_minion",
+				"value": "11"
+			},
+			{
+				"key": "elemental_damage_reduction_%_per_endurance_charge_if_player_minion",
+				"value": "4"
+			},
+			{
+				"key": "resist_all_elements_%_per_endurance_charge_if_not_player_minion",
+				"value": "15"
+			},
+			{
+				"key": "critical_strike_chance_+%_per_power_charge",
+				"value": "50"
+			},
+			{
+				"key": "critical_strike_chance_+%_per_power_charge_if_not_player_minion",
+				"value": "150"
+			},
+			{
+				"key": "physical_damage_%_to_add_as_cold_per_brine_charge",
+				"value": "4"
+			},
+			{
+				"key": "physical_damage_%_to_add_as_lightning_per_brine_charge",
+				"value": "4"
+			},
+			{
+				"key": "maximum_block_%",
+				"value": "75"
+			},
+			{
+				"key": "base_maximum_spell_block_%",
+				"value": "75"
+			},
+			{
+				"key": "base_number_of_totems_allowed",
+				"value": "1"
+			},
+			{
+				"key": "base_number_of_traps_allowed",
+				"value": "3"
+			},
+			{
+				"key": "base_number_of_remote_mines_allowed",
+				"value": "5"
+			},
+			{
+				"key": "movement_velocity_cap",
+				"value": "128"
+			},
+			{
+				"key": "maximum_life_leech_rate_%_per_minute",
+				"value": "1200"
+			},
+			{
+				"key": "maximum_mana_leech_rate_%_per_minute",
+				"value": "1200"
+			},
+			{
+				"key": "maximum_energy_shield_leech_rate_%_per_minute",
+				"value": "600"
+			},
+			{
+				"key": "monster_ignite_damage_+%_final",
+				"value": "-72"
+			},
+			{
+				"key": "monster_bleeding_damage_+%_final",
+				"value": "-86"
+			},
+			{
+				"key": "monster_poison_damage_+%_final",
+				"value": "-50"
+			},
+			{
+				"key": "bleeding_moving_damage_%_of_base_override",
+				"value": "500"
+			},
+			{
+				"key": "max_azurite_debuff_stacks",
+				"value": "10"
+			},
+			{
+				"key": "impaled_debuff_base_duration_ms",
+				"value": "8000"
+			},
+			{
+				"key": "impaled_debuff_number_of_reflected_hits",
+				"value": "5"
+			},
+			{
+				"key": "ignore_skill_weapon_restrictions",
+				"value": "1"
+			},
+			{
+				"key": "base_total_number_of_sigils_allowed",
+				"value": "3"
+			},
+			{
+				"key": "maximum_life_leech_amount_per_leech_%_max_life",
+				"value": "10"
+			},
+			{
+				"key": "maximum_mana_leech_amount_per_leech_%_max_mana",
+				"value": "10"
+			},
+			{
+				"key": "maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield",
+				"value": "10"
+			},
+			{
+				"key": "object_inherent_melee_hit_stun_duration_+%_final",
+				"value": "20"
+			},
+			{
+				"key": "scale_melee_range_to_actor_scale",
+				"value": "1"
+			},
+			{
+				"key": "use_melee_pattern_range",
+				"value": "1"
+			},
+			{
+				"key": "actor_scale_+%_limit",
+				"value": "100"
+			},
+			{
+				"key": "damage_taken_when_hit_+%_final_per_fortification",
+				"value": "-1"
+			},
+			{
+				"key": "base_max_fortification",
+				"value": "20"
+			},
+			{
+				"key": "soul_eater_maximum_stacks",
+				"value": "45"
+			}
+		],
+		"totemLifeMult": [
+			{
+				"id": 1,
+				"mult": 1
+			},
+			{
+				"id": 2,
+				"mult": 1
+			},
+			{
+				"id": 3,
+				"mult": 1
+			},
+			{
+				"id": 4,
+				"mult": 1.2
+			},
+			{
+				"id": 5,
+				"mult": 1
+			},
+			{
+				"id": 6,
+				"mult": 1.2
+			},
+			{
+				"id": 7,
+				"mult": 1.2
+			},
+			{
+				"id": 8,
+				"mult": 1.2
+			},
+			{
+				"id": 9,
+				"mult": 1
+			},
+			{
+				"id": 10,
+				"mult": 1
+			},
+			{
+				"id": 11,
+				"mult": 1
+			},
+			{
+				"id": 12,
+				"mult": 1
+			},
+			{
+				"id": 13,
+				"mult": 1.2
+			},
+			{
+				"id": 15,
+				"mult": 1.2
+			},
+			{
+				"id": 16,
+				"mult": 7.44
+			},
+			{
+				"id": 17,
+				"mult": 1.2
+			},
+			{
+				"id": 18,
+				"mult": 1
+			},
+			{
+				"id": 19,
+				"mult": 1
+			},
+			{
+				"id": 20,
+				"mult": 1.2
+			},
+			{
+				"id": 21,
+				"mult": 1.2
+			}
+		],
+		"monsterVarietyLifeMult": [
+			{
+				"name": "Skeletal Beast",
+				"mult": 2.38
+			},
+			{
+				"name": "Corrupted Beast",
+				"mult": 2.38
+			},
+			{
+				"name": "Charred Beast",
+				"mult": 2.3
+			},
+			{
+				"name": "Doomed Hibernator",
+				"mult": 2.38
+			},
+			{
+				"name": "Adolescent Rhoa",
+				"mult": 0.7
+			},
+			{
+				"name": "Bone Rhoa",
+				"mult": 1.12
+			},
+			{
+				"name": "Restless Bone Rhoa",
+				"mult": 1.12
+			},
+			{
+				"name": "Corrupted Rhoa",
+				"mult": 1.12
+			},
+			{
+				"name": "Bone Scavenger",
+				"mult": 0.99
+			},
+			{
+				"name": "Restless Small Bone Rhoa",
+				"mult": 0.99
+			},
+			{
+				"name": "Zombie Rhoa",
+				"mult": 1.12
+			},
+			{
+				"name": "Fated Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Ancient Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Restless Skeletal Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Timeless Hunter",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Lookout",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Born-again",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Poacher",
+				"mult": 0.96
+			},
+			{
+				"name": "Sandy Lookout",
+				"mult": 0.96
+			},
+			{
+				"name": "Burning Bowman",
+				"mult": 0.96
+			},
+			{
+				"name": "Restless Skeletal Burning Bowman",
+				"mult": 0.96
+			},
+			{
+				"name": "Weathered Watchman",
+				"mult": 0.96
+			},
+			{
+				"name": "Vault Hunter",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Restless Skeletal Split Shooter",
+				"mult": 0.96
+			},
+			{
+				"name": "Sandworn Poacher",
+				"mult": 0.99
+			},
+			{
+				"name": "Sin Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Thunder Thrall",
+				"mult": 0.96
+			},
+			{
+				"name": "Plagued Bowman",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Bleeder",
+				"mult": 0.96
+			},
+			{
+				"name": "Unresting Bleeder",
+				"mult": 0.99
+			},
+			{
+				"name": "Disbanded Dead",
+				"mult": 0.96
+			},
+			{
+				"name": "Vexing Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Bonewarped Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Bloodstained Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Azmeri Ancestor",
+				"mult": 0.96
+			},
+			{
+				"name": "Bone Archer",
+				"mult": 1.4
+			},
+			{
+				"name": "Axiom Frostguard",
+				"mult": 0.84
+			},
+			{
+				"name": "Restless Skeletal Frost Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Archmage",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Bishop",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Priest",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Keeper",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Preacher",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Rattler",
+				"mult": 0.84
+			},
+			{
+				"name": "Frost Harbinger",
+				"mult": 0.84
+			},
+			{
+				"name": "Malachai's Enlightened",
+				"mult": 1.3
+			},
+			{
+				"name": "Gleaming Saint",
+				"mult": 0.84
+			},
+			{
+				"name": "Desecrated Saint",
+				"mult": 0.84
+			},
+			{
+				"name": "Desecrated Sage",
+				"mult": 0.84
+			},
+			{
+				"name": "Brittle Arsonist",
+				"mult": 0.84
+			},
+			{
+				"name": "Restless Skeletal Fire Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Archmage",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Bishop",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Priest",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Harbinger",
+				"mult": 0.84
+			},
+			{
+				"name": "Smouldering Infernomage",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Rattler",
+				"mult": 0.84
+			},
+			{
+				"name": "Flame Preacher",
+				"mult": 0.84
+			},
+			{
+				"name": "Axiom Thunderguard",
+				"mult": 0.84
+			},
+			{
+				"name": "Restless Skeletal Lightning Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Servant of Rukuku",
+				"mult": 0.48
+			},
+			{
+				"name": "Thunder Archmage",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Bishop",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Harbinger",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Priest",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Keeper",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Preacher",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Champion",
+				"mult": 0.84
+			},
+			{
+				"name": "Thunder Rattler",
+				"mult": 0.84
+			},
+			{
+				"name": "Sparking Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Ancient Bonestalker",
+				"mult": 0.9
+			},
+			{
+				"name": "Restless Skeleton",
+				"mult": 0.9
+			},
+			{
+				"name": "Brittle Cleric",
+				"mult": 0.9
+			},
+			{
+				"name": "Brittle Thief",
+				"mult": 0.9
+			},
+			{
+				"name": "Rattling Bones",
+				"mult": 0.9
+			},
+			{
+				"name": "Unresting Bones",
+				"mult": 0.9
+			},
+			{
+				"name": "Vault Guardian",
+				"mult": 0.9
+			},
+			{
+				"name": "Timeless Wanderer",
+				"mult": 0.9
+			},
+			{
+				"name": "Sandworn Watchman",
+				"mult": 0.9
+			},
+			{
+				"name": "Ash Harvester",
+				"mult": 1.58
+			},
+			{
+				"name": "Angered Remains",
+				"mult": 0.9
+			},
+			{
+				"name": "Risen Saint",
+				"mult": 0.9
+			},
+			{
+				"name": "Sandy Guardian",
+				"mult": 0.9
+			},
+			{
+				"name": "Ancient Worker",
+				"mult": 0.9
+			},
+			{
+				"name": "Brittle Gladiator",
+				"mult": 0.9
+			},
+			{
+				"name": "Risen Gladiator",
+				"mult": 1.38
+			},
+			{
+				"name": "Brittle Bandit",
+				"mult": 0.9
+			},
+			{
+				"name": "Brittle Farmer",
+				"mult": 0.9
+			},
+			{
+				"name": "Smouldering Farmer",
+				"mult": 0.9
+			},
+			{
+				"name": "Nightmarish Farmer",
+				"mult": 0.9
+			},
+			{
+				"name": "Bonewarped Warrior",
+				"mult": 0.9
+			},
+			{
+				"name": "Bloodstained Warrior",
+				"mult": 0.9
+			},
+			{
+				"name": "Ancient Convict",
+				"mult": 0.9
+			},
+			{
+				"name": "Colossal Bonestalker",
+				"mult": 1.98
+			},
+			{
+				"name": "Restless Skeletal Colossal",
+				"mult": 1.98
+			},
+			{
+				"name": "Awoken Giant",
+				"mult": 1.98
+			},
+			{
+				"name": "Frost Guardian",
+				"mult": 1.08
+			},
+			{
+				"name": "Frost Champion",
+				"mult": 1.08
+			},
+			{
+				"name": "Frost Relicguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Volkuur's Frostguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Flame Guardian",
+				"mult": 1.08
+			},
+			{
+				"name": "Flame Champion",
+				"mult": 1.08
+			},
+			{
+				"name": "Flame Relicguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Volkuur's Flameguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Fairgraves' Crewman",
+				"mult": 1.68
+			},
+			{
+				"name": "Lost Crewman",
+				"mult": 0.9
+			},
+			{
+				"name": "Pirate Lord's Crewman",
+				"mult": 1.68
+			},
+			{
+				"name": "Bone Warden",
+				"mult": 1.08
+			},
+			{
+				"name": "Sparking Bones",
+				"mult": 1.08
+			},
+			{
+				"name": "Thunder Guardian",
+				"mult": 1.08
+			},
+			{
+				"name": "Thunder Relicguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Volkuur's Stormguard",
+				"mult": 1.08
+			},
+			{
+				"name": "Shavronne's Admirer",
+				"mult": 1.08
+			},
+			{
+				"name": "Skeleton Engineer",
+				"mult": 0.9
+			},
+			{
+				"name": "Undead Engineer",
+				"mult": 0.9
+			},
+			{
+				"name": "Cinder Bones",
+				"mult": 1.08
+			},
+			{
+				"name": "Icy Bones",
+				"mult": 1.08
+			},
+			{
+				"name": "Crackling Bones",
+				"mult": 1.08
+			},
+			{
+				"name": "Brittle Flametosser",
+				"mult": 0.84
+			},
+			{
+				"name": "Brittle Chillcaller",
+				"mult": 0.84
+			},
+			{
+				"name": "Brittle Stormtouched",
+				"mult": 0.84
+			},
+			{
+				"name": "Scarecrow",
+				"mult": 0.7
+			},
+			{
+				"name": "Hungry Corpse",
+				"mult": 0.72
+			},
+			{
+				"name": "placeholder boss",
+				"mult": 1.08
+			},
+			{
+				"name": "Drowned",
+				"mult": 1.08
+			},
+			{
+				"name": "Unthinking",
+				"mult": 1.08
+			},
+			{
+				"name": "Unstable Drowned",
+				"mult": 1.08
+			},
+			{
+				"name": "Drowned Champion",
+				"mult": 1.08
+			},
+			{
+				"name": "Dripping Dead",
+				"mult": 1.08
+			},
+			{
+				"name": "Sleepy Dead",
+				"mult": 1.08
+			},
+			{
+				"name": "Darktongue Thrall",
+				"mult": 1.8
+			},
+			{
+				"name": "Darktongue Servant",
+				"mult": 1.62
+			},
+			{
+				"name": "Darktongue Slave",
+				"mult": 1.62
+			},
+			{
+				"name": "Darktongue Risen",
+				"mult": 2.52
+			},
+			{
+				"name": "Pale Husk",
+				"mult": 0.99
+			},
+			{
+				"name": "Shambling Cadaver",
+				"mult": 1.08
+			},
+			{
+				"name": "Devout Dead",
+				"mult": 1.08
+			},
+			{
+				"name": "Sutured Aberration",
+				"mult": 1.08
+			},
+			{
+				"name": "Rotting Damned",
+				"mult": 1.08
+			},
+			{
+				"name": "Withered Husk",
+				"mult": 1.08
+			},
+			{
+				"name": "Fetid Shambler",
+				"mult": 1.08
+			},
+			{
+				"name": "Oozing Dead",
+				"mult": 1.08
+			},
+			{
+				"name": "Wrapped Nobleman",
+				"mult": 1.08
+			},
+			{
+				"name": "Dessicated Maraketh",
+				"mult": 1.08
+			},
+			{
+				"name": "Rotten Gladiator",
+				"mult": 1.08
+			},
+			{
+				"name": "Rotten Veteran Gladiator",
+				"mult": 1.08
+			},
+			{
+				"name": "Flayed Warrior",
+				"mult": 0.9
+			},
+			{
+				"name": "Restless Labourer",
+				"mult": 0.9
+			},
+			{
+				"name": "Restless Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Flayed Archer",
+				"mult": 0.96
+			},
+			{
+				"name": "Scorched Guard",
+				"mult": 1.08
+			},
+			{
+				"name": "Scorched Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Incinerated Mage",
+				"mult": 0.84
+			},
+			{
+				"name": "Enlightened Vicar",
+				"mult": 0.84
+			},
+			{
+				"name": "Bleak Aspirant",
+				"mult": 1.08
+			},
+			{
+				"name": "Crackling Acolyte",
+				"mult": 1.08
+			},
+			{
+				"name": "Bleak Vicar",
+				"mult": 0.84
+			},
+			{
+				"name": "Crackling Vicar",
+				"mult": 0.84
+			},
+			{
+				"name": "Brittle Longshoreman",
+				"mult": 0.96
+			},
+			{
+				"name": "Brittle Corsair",
+				"mult": 0.9
+			},
+			{
+				"name": "Atziri's Chosen",
+				"mult": 2.21
+			},
+			{
+				"name": "Skullbeak",
+				"mult": 4
+			},
+			{
+				"name": "Rose",
+				"mult": 16
+			},
+			{
+				"name": "Thorn",
+				"mult": 16
+			},
+			{
+				"name": "Desecrated Bonestalker",
+				"mult": 0.9
+			},
+			{
+				"name": "Frozen Supplicant",
+				"mult": 0.84
+			},
+			{
+				"name": "Storming Supplicant",
+				"mult": 0.84
+			},
+			{
+				"name": "Ossecati, Boneshaper",
+				"mult": 2.2
+			},
+			{
+				"name": "Corrupted Ashweaver",
+				"mult": 0.84
+			},
+			{
+				"name": "Corrupted Iceweaver",
+				"mult": 0.84
+			},
+			{
+				"name": "Corrupted Bonestalker",
+				"mult": 0.9
+			},
+			{
+				"name": "Rotting Corrupted",
+				"mult": 1.08
+			},
+			{
+				"name": "Corrupted Bonereaver",
+				"mult": 0.9
+			},
+			{
+				"name": "Corrupted Fireshot",
+				"mult": 0.96
+			},
+			{
+				"name": "Pale Blackguard",
+				"mult": 1.35
+			},
+			{
+				"name": "Thrall of Lunaris",
+				"mult": 1.35
+			},
+			{
+				"name": "Pale Commander",
+				"mult": 1.95
+			},
+			{
+				"name": "Voll's Fallen",
+				"mult": 1.3
+			},
+			{
+				"name": "Eternal Woe",
+				"mult": 1.3
+			},
+			{
+				"name": "Fallen Horror",
+				"mult": 1.3
+			},
+			{
+				"name": "Digested Bones",
+				"mult": 1.3
+			},
+			{
+				"name": "Impure Soldier",
+				"mult": 1.3
+			},
+			{
+				"name": "Crystallised Fallen",
+				"mult": 1.3
+			},
+			{
+				"name": "Sun Bleached Fallen",
+				"mult": 1.3
+			},
+			{
+				"name": "Bloodstained Fallen",
+				"mult": 1.3
+			},
+			{
+				"name": "Bloodstained Conjuror",
+				"mult": 1.28
+			},
+			{
+				"name": "Bloodsoaked Fallen",
+				"mult": 1.95
+			},
+			{
+				"name": "Impure Archer",
+				"mult": 1.1
+			},
+			{
+				"name": "Voll's Vanguard",
+				"mult": 1.1
+			},
+			{
+				"name": "Crystallised Sentry",
+				"mult": 1.1
+			},
+			{
+				"name": "Sun Bleached Vanguard",
+				"mult": 1.1
+			},
+			{
+				"name": "Bloodstained Vanguard",
+				"mult": 1.1
+			},
+			{
+				"name": "Bloodsoaked Vanguard",
+				"mult": 1.5
+			},
+			{
+				"name": "Forgotten Marksman",
+				"mult": 1.46
+			},
+			{
+				"name": "Corrupted Elite",
+				"mult": 1.2
+			},
+			{
+				"name": "Charged Engineer",
+				"mult": 1.4
+			},
+			{
+				"name": "Frozen Builder",
+				"mult": 1.4
+			},
+			{
+				"name": "Guardian of the Goddess",
+				"mult": 1.2
+			},
+			{
+				"name": "Cinder Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Burnt Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Frost Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Rime Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Thundrous Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Storm Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Bitter Deceiver",
+				"mult": 0.84
+			},
+			{
+				"name": "Seething Deceiver",
+				"mult": 0.84
+			},
+			{
+				"name": "Fulminating Deceiver",
+				"mult": 0.84
+			},
+			{
+				"name": "Ancient Contender",
+				"mult": 0.9
+			},
+			{
+				"name": "Putrescent Contender",
+				"mult": 1.08
+			},
+			{
+				"name": "Rotting Claimant",
+				"mult": 1.08
+			},
+			{
+				"name": "Rotting Contender",
+				"mult": 1.08
+			},
+			{
+				"name": "Ancient Combatant",
+				"mult": 0.9
+			},
+			{
+				"name": "Maze Crusher",
+				"mult": 1.98
+			},
+			{
+				"name": "Undead Guardian",
+				"mult": 0.9
+			},
+			{
+				"name": "Noble Dead",
+				"mult": 1.3
+			},
+			{
+				"name": "Experimented Dead",
+				"mult": 1.3
+			},
+			{
+				"name": "Dreadwheel",
+				"mult": 1.28
+			},
+			{
+				"name": "Bone Husk",
+				"mult": 2.07
+			},
+			{
+				"name": "Necrotic Bones ",
+				"mult": 2.16
+			},
+			{
+				"name": "[DNT] Bonier Husk",
+				"mult": 2.3
+			},
+			{
+				"name": "Brittle Miner",
+				"mult": 1.32
+			},
+			{
+				"name": "Rattling Slave",
+				"mult": 1.56
+			},
+			{
+				"name": "Deep Shambler",
+				"mult": 1.08
+			},
+			{
+				"name": "Deep Lunger",
+				"mult": 1.08
+			},
+			{
+				"name": "Risen Lackey",
+				"mult": 1.65
+			},
+			{
+				"name": "Flayed Vanguard",
+				"mult": 1.5
+			},
+			{
+				"name": "Flayed Lookout",
+				"mult": 1.2
+			},
+			{
+				"name": "Forgotten Rattler",
+				"mult": 1
+			},
+			{
+				"name": "Thresher",
+				"mult": 2.99
+			},
+			{
+				"name": "Primeval Watcher",
+				"mult": 1.7
+			},
+			{
+				"name": "Blighted Bonestalker",
+				"mult": 6
+			},
+			{
+				"name": "Blighted Ancient Archer",
+				"mult": 4.8
+			},
+			{
+				"name": "Blighted Colossal",
+				"mult": 13.5
+			},
+			{
+				"name": "Rattling Recruit",
+				"mult": 1.35
+			},
+			{
+				"name": "Unearthed Skeletal Swordsman",
+				"mult": 1.82
+			},
+			{
+				"name": "Unearthed Skeletal Warrior",
+				"mult": 1.98
+			},
+			{
+				"name": "Unearthed Skeletal Archer",
+				"mult": 1.54
+			},
+			{
+				"name": "Unearthed Rampager",
+				"mult": 2.4
+			},
+			{
+				"name": "Unearthed Urchin",
+				"mult": 1.74
+			},
+			{
+				"name": "[DNT] Iron Point v2",
+				"mult": 1.98
+			},
+			{
+				"name": "[DNT] Chatter v2",
+				"mult": 2
+			},
+			{
+				"name": "Unearthed Zombie",
+				"mult": 2
+			},
+			{
+				"name": "Bear Acolyte",
+				"mult": 0.9
+			},
+			{
+				"name": "Boar Acolyte",
+				"mult": 0.9
+			},
+			{
+				"name": "Stag Acolyte",
+				"mult": 0.9
+			},
+			{
+				"name": "Cave Beast",
+				"mult": 2.38
+			},
+			{
+				"name": "Effigy of Fiery Undeath",
+				"mult": 4
+			},
+			{
+				"name": "Forged Skeleton",
+				"mult": 1.12
+			},
+			{
+				"name": "Decayed Skeleton",
+				"mult": 1.14
+			},
+			{
+				"name": "Forged Void Crawler",
+				"mult": 2.88
+			},
+			{
+				"name": "Forged Skeletal Bear",
+				"mult": 3.6
+			}
+		],
+		"mapLevelLifeMult": [
+			{
+				"level": 66,
+				"mult": 1.01
+			},
+			{
+				"level": 67,
+				"mult": 1.03
+			},
+			{
+				"level": 68,
+				"mult": 1.05
+			},
+			{
+				"level": 69,
+				"mult": 1.09
+			},
+			{
+				"level": 70,
+				"mult": 1.13
+			},
+			{
+				"level": 71,
+				"mult": 1.19
+			},
+			{
+				"level": 72,
+				"mult": 1.24
+			},
+			{
+				"level": 73,
+				"mult": 1.3
+			},
+			{
+				"level": 74,
+				"mult": 1.3599999999999999
+			},
+			{
+				"level": 75,
+				"mult": 1.43
+			},
+			{
+				"level": 76,
+				"mult": 1.49
+			},
+			{
+				"level": 77,
+				"mult": 1.55
+			},
+			{
+				"level": 78,
+				"mult": 1.6099999999999999
+			},
+			{
+				"level": 79,
+				"mult": 1.6800000000000002
+			},
+			{
+				"level": 80,
+				"mult": 1.77
+			},
+			{
+				"level": 81,
+				"mult": 1.87
+			},
+			{
+				"level": 82,
+				"mult": 1.98
+			},
+			{
+				"level": 83,
+				"mult": 2.09
+			},
+			{
+				"level": 84,
+				"mult": 2.17
+			},
+			{
+				"level": 85,
+				"mult": 2.25
+			},
+			{
+				"level": 86,
+				"mult": 2.34
+			},
+			{
+				"level": 87,
+				"mult": 2.42
+			},
+			{
+				"level": 88,
+				"mult": 2.5
+			},
+			{
+				"level": 89,
+				"mult": 2.58
+			},
+			{
+				"level": 90,
+				"mult": 2.66
+			}
+		],
+		"mapLevelBossLifeMult": [
+			{
+				"level": 1,
+				"mult": 1.5
+			},
+			{
+				"level": 2,
+				"mult": 1.52
+			},
+			{
+				"level": 3,
+				"mult": 1.54
+			},
+			{
+				"level": 4,
+				"mult": 1.56
+			},
+			{
+				"level": 5,
+				"mult": 1.58
+			},
+			{
+				"level": 6,
+				"mult": 1.6
+			},
+			{
+				"level": 7,
+				"mult": 1.62
+			},
+			{
+				"level": 8,
+				"mult": 1.6400000000000001
+			},
+			{
+				"level": 9,
+				"mult": 1.6600000000000001
+			},
+			{
+				"level": 10,
+				"mult": 1.6800000000000002
+			},
+			{
+				"level": 11,
+				"mult": 1.7
+			},
+			{
+				"level": 12,
+				"mult": 1.72
+			},
+			{
+				"level": 13,
+				"mult": 1.74
+			},
+			{
+				"level": 14,
+				"mult": 1.76
+			},
+			{
+				"level": 15,
+				"mult": 1.78
+			},
+			{
+				"level": 16,
+				"mult": 1.8
+			},
+			{
+				"level": 17,
+				"mult": 1.8199999999999998
+			},
+			{
+				"level": 18,
+				"mult": 1.8399999999999999
+			},
+			{
+				"level": 19,
+				"mult": 1.8599999999999999
+			},
+			{
+				"level": 20,
+				"mult": 1.88
+			},
+			{
+				"level": 21,
+				"mult": 1.9
+			},
+			{
+				"level": 22,
+				"mult": 1.92
+			},
+			{
+				"level": 23,
+				"mult": 1.94
+			},
+			{
+				"level": 24,
+				"mult": 1.96
+			},
+			{
+				"level": 25,
+				"mult": 1.98
+			},
+			{
+				"level": 26,
+				"mult": 2
+			},
+			{
+				"level": 27,
+				"mult": 2.02
+			},
+			{
+				"level": 28,
+				"mult": 2.04
+			},
+			{
+				"level": 29,
+				"mult": 2.06
+			},
+			{
+				"level": 30,
+				"mult": 2.08
+			},
+			{
+				"level": 31,
+				"mult": 2.1
+			},
+			{
+				"level": 32,
+				"mult": 2.12
+			},
+			{
+				"level": 33,
+				"mult": 2.1399999999999997
+			},
+			{
+				"level": 34,
+				"mult": 2.16
+			},
+			{
+				"level": 35,
+				"mult": 2.1799999999999997
+			},
+			{
+				"level": 36,
+				"mult": 2.2
+			},
+			{
+				"level": 37,
+				"mult": 2.2199999999999998
+			},
+			{
+				"level": 38,
+				"mult": 2.24
+			},
+			{
+				"level": 39,
+				"mult": 2.26
+			},
+			{
+				"level": 40,
+				"mult": 2.2800000000000002
+			},
+			{
+				"level": 41,
+				"mult": 2.3
+			},
+			{
+				"level": 42,
+				"mult": 2.3200000000000003
+			},
+			{
+				"level": 43,
+				"mult": 2.34
+			},
+			{
+				"level": 44,
+				"mult": 2.3600000000000003
+			},
+			{
+				"level": 45,
+				"mult": 2.38
+			},
+			{
+				"level": 46,
+				"mult": 2.4
+			},
+			{
+				"level": 47,
+				"mult": 2.42
+			},
+			{
+				"level": 48,
+				"mult": 2.44
+			},
+			{
+				"level": 49,
+				"mult": 2.46
+			},
+			{
+				"level": 50,
+				"mult": 2.48
+			},
+			{
+				"level": 51,
+				"mult": 2.5
+			},
+			{
+				"level": 52,
+				"mult": 2.52
+			},
+			{
+				"level": 53,
+				"mult": 2.54
+			},
+			{
+				"level": 54,
+				"mult": 2.56
+			},
+			{
+				"level": 55,
+				"mult": 2.58
+			},
+			{
+				"level": 56,
+				"mult": 2.6
+			},
+			{
+				"level": 57,
+				"mult": 2.62
+			},
+			{
+				"level": 58,
+				"mult": 2.6399999999999997
+			},
+			{
+				"level": 59,
+				"mult": 2.66
+			},
+			{
+				"level": 60,
+				"mult": 2.6799999999999997
+			},
+			{
+				"level": 61,
+				"mult": 2.7
+			},
+			{
+				"level": 62,
+				"mult": 2.7199999999999998
+			},
+			{
+				"level": 63,
+				"mult": 2.74
+			},
+			{
+				"level": 64,
+				"mult": 2.76
+			},
+			{
+				"level": 65,
+				"mult": 2.7800000000000002
+			},
+			{
+				"level": 66,
+				"mult": 2.8
+			},
+			{
+				"level": 67,
+				"mult": 2.8
+			},
+			{
+				"level": 68,
+				"mult": 2.8
+			},
+			{
+				"level": 69,
+				"mult": 3.03
+			},
+			{
+				"level": 70,
+				"mult": 3.16
+			},
+			{
+				"level": 71,
+				"mult": 3.32
+			},
+			{
+				"level": 72,
+				"mult": 3.48
+			},
+			{
+				"level": 73,
+				"mult": 5.63
+			},
+			{
+				"level": 74,
+				"mult": 5.97
+			},
+			{
+				"level": 75,
+				"mult": 6.32
+			},
+			{
+				"level": 76,
+				"mult": 6.66
+			},
+			{
+				"level": 77,
+				"mult": 6.99
+			},
+			{
+				"level": 78,
+				"mult": 10.46
+			},
+			{
+				"level": 79,
+				"mult": 11.32
+			},
+			{
+				"level": 80,
+				"mult": 13.01
+			},
+			{
+				"level": 81,
+				"mult": 15.43
+			},
+			{
+				"level": 82,
+				"mult": 17.2
+			},
+			{
+				"level": 83,
+				"mult": 19.64
+			},
+			{
+				"level": 84,
+				"mult": 21.46
+			},
+			{
+				"level": 85,
+				"mult": 21.46
+			},
+			{
+				"level": 86,
+				"mult": 21.46
+			},
+			{
+				"level": 87,
+				"mult": 21.46
+			},
+			{
+				"level": 88,
+				"mult": 21.46
+			},
+			{
+				"level": 89,
+				"mult": 21.46
+			},
+			{
+				"level": 90,
+				"mult": 21.46
+			}
+		],
+		"mapLevelBossAilmentMult": [
+			{
+				"level": 1,
+				"mult": 0.81
+			},
+			{
+				"level": 2,
+				"mult": 0.81
+			},
+			{
+				"level": 3,
+				"mult": 0.81
+			},
+			{
+				"level": 4,
+				"mult": 0.81
+			},
+			{
+				"level": 5,
+				"mult": 0.81
+			},
+			{
+				"level": 6,
+				"mult": 0.81
+			},
+			{
+				"level": 7,
+				"mult": 0.81
+			},
+			{
+				"level": 8,
+				"mult": 0.81
+			},
+			{
+				"level": 9,
+				"mult": 0.81
+			},
+			{
+				"level": 10,
+				"mult": 0.81
+			},
+			{
+				"level": 11,
+				"mult": 0.81
+			},
+			{
+				"level": 12,
+				"mult": 0.81
+			},
+			{
+				"level": 13,
+				"mult": 0.81
+			},
+			{
+				"level": 14,
+				"mult": 0.81
+			},
+			{
+				"level": 15,
+				"mult": 0.81
+			},
+			{
+				"level": 16,
+				"mult": 0.81
+			},
+			{
+				"level": 17,
+				"mult": 0.81
+			},
+			{
+				"level": 18,
+				"mult": 0.81
+			},
+			{
+				"level": 19,
+				"mult": 0.81
+			},
+			{
+				"level": 20,
+				"mult": 0.81
+			},
+			{
+				"level": 21,
+				"mult": 0.81
+			},
+			{
+				"level": 22,
+				"mult": 0.81
+			},
+			{
+				"level": 23,
+				"mult": 0.81
+			},
+			{
+				"level": 24,
+				"mult": 0.81
+			},
+			{
+				"level": 25,
+				"mult": 0.81
+			},
+			{
+				"level": 26,
+				"mult": 0.81
+			},
+			{
+				"level": 27,
+				"mult": 0.81
+			},
+			{
+				"level": 28,
+				"mult": 0.81
+			},
+			{
+				"level": 29,
+				"mult": 0.81
+			},
+			{
+				"level": 30,
+				"mult": 0.81
+			},
+			{
+				"level": 31,
+				"mult": 0.81
+			},
+			{
+				"level": 32,
+				"mult": 0.81
+			},
+			{
+				"level": 33,
+				"mult": 0.81
+			},
+			{
+				"level": 34,
+				"mult": 0.81
+			},
+			{
+				"level": 35,
+				"mult": 0.81
+			},
+			{
+				"level": 36,
+				"mult": 0.81
+			},
+			{
+				"level": 37,
+				"mult": 0.81
+			},
+			{
+				"level": 38,
+				"mult": 0.81
+			},
+			{
+				"level": 39,
+				"mult": 0.81
+			},
+			{
+				"level": 40,
+				"mult": 0.81
+			},
+			{
+				"level": 41,
+				"mult": 0.81
+			},
+			{
+				"level": 42,
+				"mult": 0.81
+			},
+			{
+				"level": 43,
+				"mult": 0.81
+			},
+			{
+				"level": 44,
+				"mult": 0.81
+			},
+			{
+				"level": 45,
+				"mult": 0.81
+			},
+			{
+				"level": 46,
+				"mult": 0.81
+			},
+			{
+				"level": 47,
+				"mult": 0.81
+			},
+			{
+				"level": 48,
+				"mult": 0.81
+			},
+			{
+				"level": 49,
+				"mult": 0.81
+			},
+			{
+				"level": 50,
+				"mult": 0.81
+			},
+			{
+				"level": 51,
+				"mult": 0.8
+			},
+			{
+				"level": 52,
+				"mult": 0.79
+			},
+			{
+				"level": 53,
+				"mult": 0.78
+			},
+			{
+				"level": 54,
+				"mult": 0.77
+			},
+			{
+				"level": 55,
+				"mult": 0.76
+			},
+			{
+				"level": 56,
+				"mult": 0.75
+			},
+			{
+				"level": 57,
+				"mult": 0.74
+			},
+			{
+				"level": 58,
+				"mult": 0.73
+			},
+			{
+				"level": 59,
+				"mult": 0.72
+			},
+			{
+				"level": 60,
+				"mult": 0.71
+			},
+			{
+				"level": 61,
+				"mult": 0.7
+			},
+			{
+				"level": 62,
+				"mult": 0.69
+			},
+			{
+				"level": 63,
+				"mult": 0.68
+			},
+			{
+				"level": 64,
+				"mult": 0.67
+			},
+			{
+				"level": 65,
+				"mult": 0.66
+			},
+			{
+				"level": 66,
+				"mult": 0.65
+			},
+			{
+				"level": 67,
+				"mult": 0.64
+			},
+			{
+				"level": 68,
+				"mult": 0.63
+			},
+			{
+				"level": 69,
+				"mult": 0.59
+			},
+			{
+				"level": 70,
+				"mult": 0.58
+			},
+			{
+				"level": 71,
+				"mult": 0.57
+			},
+			{
+				"level": 72,
+				"mult": 0.56
+			},
+			{
+				"level": 73,
+				"mult": 0.55
+			},
+			{
+				"level": 74,
+				"mult": 0.53
+			},
+			{
+				"level": 75,
+				"mult": 0.52
+			},
+			{
+				"level": 76,
+				"mult": 0.51
+			},
+			{
+				"level": 77,
+				"mult": 0.5
+			},
+			{
+				"level": 78,
+				"mult": 0.49
+			},
+			{
+				"level": 79,
+				"mult": 0.48
+			},
+			{
+				"level": 80,
+				"mult": 0.48
+			},
+			{
+				"level": 81,
+				"mult": 0.47
+			},
+			{
+				"level": 82,
+				"mult": 0.47
+			},
+			{
+				"level": 83,
+				"mult": 0.47
+			},
+			{
+				"level": 84,
+				"mult": 0.47
+			},
+			{
+				"level": 85,
+				"mult": 0.47
+			},
+			{
+				"level": 86,
+				"mult": 0.47
+			},
+			{
+				"level": 87,
+				"mult": 0.47
+			},
+			{
+				"level": 88,
+				"mult": 0.47
+			},
+			{
+				"level": 89,
+				"mult": 0.47
+			},
+			{
+				"level": 90,
+				"mult": 0.47
+			}
+		],
+		"goldRespecPrices": [
+			4,
+			4,
+			4,
+			5,
+			5,
+			6,
+			6,
+			7,
+			8,
+			8,
+			9,
+			11,
+			12,
+			14,
+			15,
+			17,
+			18,
+			20,
+			22,
+			24,
+			26,
+			28,
+			31,
+			34,
+			36,
+			39,
+			43,
+			46,
+			50,
+			54,
+			58,
+			62,
+			67,
+			72,
+			83,
+			90,
+			97,
+			105,
+			113,
+			121,
+			130,
+			151,
+			161,
+			171,
+			182,
+			209,
+			222,
+			237,
+			252,
+			267,
+			295,
+			313,
+			333,
+			354,
+			376,
+			427,
+			452,
+			482,
+			513,
+			546,
+			618,
+			656,
+			694,
+			733,
+			773,
+			816,
+			860,
+			892,
+			921,
+			1055,
+			1203,
+			1365,
+			1541,
+			1748,
+			1974,
+			2221,
+			2490,
+			2770,
+			3073,
+			3400,
+			3752,
+			4131,
+			4538,
+			4976,
+			5444,
+			5967,
+			6526,
+			7126,
+			7766,
+			8450,
+			9851,
+			11380,
+			13042,
+			14847,
+			16801,
+			18914,
+			21192,
+			23647,
+			26286,
+			29119
+		]
+	},
+	"currencyNames": {
+		"Metadata/Items/AtlasExiles/AddModToRareCrusader": "Crusader's Exalted Orb",
+		"Metadata/Items/AtlasExiles/AddModToRareHunter": "Hunter's Exalted Orb",
+		"Metadata/Items/AtlasExiles/AddModToRareRedeemer": "Redeemer's Exalted Orb",
+		"Metadata/Items/AtlasExiles/AddModToRareWarlord": "Warlord's Exalted Orb",
+		"Metadata/Items/AtlasExiles/ApplyInfluence": "Awakener's Orb",
+		"Metadata/Items/Currency/AncestralOmenOnChanceMakeUnique": "Omen of Fortune",
+		"Metadata/Items/Currency/AncestralOmenOnChromaticAddWhiteSockets": "Omen of Trichromatism",
+		"Metadata/Items/Currency/AncestralOmenOnCriticalLifeAvoidDamage": "Omen of Death-dancing",
+		"Metadata/Items/Currency/AncestralOmenOnCriticalLifeGainAdrenaline": "Omen of Adrenaline",
+		"Metadata/Items/Currency/AncestralOmenOnCriticalLifeGainShadeForm": "Omen of Death's Door",
+		"Metadata/Items/Currency/AncestralOmenOnCriticalLifeRecoverFlaskCharges": "Omen of Refreshment",
+		"Metadata/Items/Currency/AncestralOmenOnDeathCreatePortal": "Omen of Return",
+		"Metadata/Items/Currency/AncestralOmenOnDeathPreventExpLoss": "Omen of Amelioration",
+		"Metadata/Items/Currency/AncestralOmenOnFusingMakeFullLinks": "Omen of Connections",
+		"Metadata/Items/Currency/AncestralOmenOnJewellersMakeFullSockets": "Omen of the Jeweller",
+		"Metadata/Items/Currency/AncestralOmenOnLevelingUpGainExperienceBuff": "Omen of Brilliance",
+		"Metadata/Items/Currency/AncestralOmenOnLevelingUpGainSoulEater": "Omen of the Soul Devourer",
+		"Metadata/Items/Currency/AncestralTattooArohongui1": "Tattoo of the Arohongui Moonwarden",
+		"Metadata/Items/Currency/AncestralTattooArohongui2": "Tattoo of the Arohongui Scout",
+		"Metadata/Items/Currency/AncestralTattooArohongui3": "Tattoo of the Arohongui Warrior",
+		"Metadata/Items/Currency/AncestralTattooArohongui4": "Tattoo of the Arohongui Warmonger",
+		"Metadata/Items/Currency/AncestralTattooArohongui5": "Tattoo of the Arohongui Shaman",
+		"Metadata/Items/Currency/AncestralTattooArohongui6": "Loyalty Tattoo of Ikiaho",
+		"Metadata/Items/Currency/AncestralTattooArohongui7": "Tattoo of the Arohongui Makanga",
+		"Metadata/Items/Currency/AncestralTattooHinekora1": "Tattoo of the Hinekora Warrior",
+		"Metadata/Items/Currency/AncestralTattooHinekora2": "Tattoo of the Hinekora Deathwarden",
+		"Metadata/Items/Currency/AncestralTattooHinekora3": "Tattoo of the Hinekora Shaman",
+		"Metadata/Items/Currency/AncestralTattooHinekora4": "Tattoo of the Hinekora Storyteller",
+		"Metadata/Items/Currency/AncestralTattooHinekora5": "Tattoo of the Hinekora Warmonger",
+		"Metadata/Items/Currency/AncestralTattooHinekora6": "Loyalty Tattoo of Tawhanuku",
+		"Metadata/Items/Currency/AncestralTattooHinekora7": "Tattoo of the Hinekora Makanga",
+		"Metadata/Items/Currency/AncestralTattooKitava1": "Tattoo of the Kitava Blood Drinker",
+		"Metadata/Items/Currency/AncestralTattooKitava2": "Tattoo of the Kitava Rebel",
+		"Metadata/Items/Currency/AncestralTattooKitava3": "Tattoo of the Kitava Warrior",
+		"Metadata/Items/Currency/AncestralTattooKitava4": "Tattoo of the Kitava Heart Eater",
+		"Metadata/Items/Currency/AncestralTattooKitava5": "Tattoo of the Kitava Shaman",
+		"Metadata/Items/Currency/AncestralTattooKitava6": "Loyalty Tattoo of Utula",
+		"Metadata/Items/Currency/AncestralTattooKitava7": "Tattoo of the Kitava Makanga",
+		"Metadata/Items/Currency/AncestralTattooNgamahu1": "Tattoo of the Ngamahu Firewalker",
+		"Metadata/Items/Currency/AncestralTattooNgamahu2": "Tattoo of the Ngamahu Shaman",
+		"Metadata/Items/Currency/AncestralTattooNgamahu3": "Tattoo of the Ngamahu Warrior",
+		"Metadata/Items/Currency/AncestralTattooNgamahu4": "Tattoo of the Ngamahu Warmonger",
+		"Metadata/Items/Currency/AncestralTattooNgamahu5": "Tattoo of the Ngamahu Woodcarver",
+		"Metadata/Items/Currency/AncestralTattooNgamahu6": "Loyalty Tattoo of Kaom",
+		"Metadata/Items/Currency/AncestralTattooNgamahu7": "Tattoo of the Ngamahu Makanga",
+		"Metadata/Items/Currency/AncestralTattooRamako1": "Tattoo of the Ramako Scout",
+		"Metadata/Items/Currency/AncestralTattooRamako2": "Tattoo of the Ramako Archer",
+		"Metadata/Items/Currency/AncestralTattooRamako3": "Tattoo of the Ramako Sniper",
+		"Metadata/Items/Currency/AncestralTattooRamako4": "Tattoo of the Ramako Fleetfoot",
+		"Metadata/Items/Currency/AncestralTattooRamako5": "Tattoo of the Ramako Shaman",
+		"Metadata/Items/Currency/AncestralTattooRamako6": "Loyalty Tattoo of Ahuana",
+		"Metadata/Items/Currency/AncestralTattooRamako7": "Tattoo of the Ramako Makanga",
+		"Metadata/Items/Currency/AncestralTattooRongokurai1": "Tattoo of the Rongokurai Warrior",
+		"Metadata/Items/Currency/AncestralTattooRongokurai2": "Tattoo of the Rongokurai Brute",
+		"Metadata/Items/Currency/AncestralTattooRongokurai3": "Tattoo of the Rongokurai Goliath",
+		"Metadata/Items/Currency/AncestralTattooRongokurai4": "Tattoo of the Rongokurai Turtle",
+		"Metadata/Items/Currency/AncestralTattooRongokurai5": "Tattoo of the Rongokurai Guard",
+		"Metadata/Items/Currency/AncestralTattooRongokurai6": "Loyalty Tattoo of Kahuturoa",
+		"Metadata/Items/Currency/AncestralTattooRongokurai7": "Tattoo of the Rongokurai Makanga",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableDex1": "Honoured Tattoo of the Hunter",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableDex2": "Honoured Tattoo of the Barbarian",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableDex3": "Honoured Tattoo of the Berserker",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableInt1": "Honoured Tattoo of the Wise",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableInt2": "Honoured Tattoo of the Storm",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableInt3": "Honoured Tattoo of the Flood",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableStr1": "Honoured Tattoo of the Warlord",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableStr2": "Honoured Tattoo of the Mountain",
+		"Metadata/Items/Currency/AncestralTattooSpecialNotableStr3": "Honoured Tattoo of the Pa",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode1": "Honoured Tattoo of the Dove",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode2": "Honoured Tattoo of the Sky",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode3": "Honoured Tattoo of the Tuatara",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode4": "Honoured Tattoo of the Pillager",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode5": "Honoured Tattoo of the Turtle",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode6": "Honoured Tattoo of the Oak",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode7": "Honoured Tattoo of the Hatungo",
+		"Metadata/Items/Currency/AncestralTattooSpecialSmallNode8": "Honoured Tattoo of the Flock",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique1": "Ancestral Tattoo of Bloodlines",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique2": "Honoured Tattoo of the Makanga",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique3": "Journey Tattoo of the Body",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique4": "Journey Tattoo of the Mind",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique5": "Journey Tattoo of the Soul",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique6": "Journey Tattoo of Makanui",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Duelist": "Forbidden Tattoo of the Duelist",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Marauder": "Forbidden Tattoo of the Marauder",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Ranger": "Forbidden Tattoo of the Ranger",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Scion": "Forbidden Tattoo of the Scion",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Shadow": "Forbidden Tattoo of the Shadow",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Templar": "Forbidden Tattoo of the Templar",
+		"Metadata/Items/Currency/AncestralTattooSpecialUnique7Witch": "Forbidden Tattoo of the Witch",
+		"Metadata/Items/Currency/AncestralTattooTasalio1": "Tattoo of the Tasalio Bladedancer",
+		"Metadata/Items/Currency/AncestralTattooTasalio2": "Tattoo of the Tasalio Tideshifter",
+		"Metadata/Items/Currency/AncestralTattooTasalio3": "Tattoo of the Tasalio Shaman",
+		"Metadata/Items/Currency/AncestralTattooTasalio4": "Tattoo of the Tasalio Warrior",
+		"Metadata/Items/Currency/AncestralTattooTasalio5": "Tattoo of the Tasalio Scout",
+		"Metadata/Items/Currency/AncestralTattooTasalio6": "Loyalty Tattoo of Rakiata",
+		"Metadata/Items/Currency/AncestralTattooTasalio7": "Tattoo of the Tasalio Makanga",
+		"Metadata/Items/Currency/AncestralTattooTawhoa1": "Tattoo of the Tawhoa Naturalist",
+		"Metadata/Items/Currency/AncestralTattooTawhoa2": "Tattoo of the Tawhoa Scout",
+		"Metadata/Items/Currency/AncestralTattooTawhoa3": "Tattoo of the Tawhoa Warrior",
+		"Metadata/Items/Currency/AncestralTattooTawhoa4": "Tattoo of the Tawhoa Herbalist",
+		"Metadata/Items/Currency/AncestralTattooTawhoa5": "Tattoo of the Tawhoa Shaman",
+		"Metadata/Items/Currency/AncestralTattooTawhoa6": "Loyalty Tattoo of Maata",
+		"Metadata/Items/Currency/AncestralTattooTawhoa7": "Tattoo of the Tawhoa Makanga",
+		"Metadata/Items/Currency/AncestralTattooTukohama1": "Tattoo of the Tukohama Shaman",
+		"Metadata/Items/Currency/AncestralTattooTukohama2": "Tattoo of the Tukohama Warrior",
+		"Metadata/Items/Currency/AncestralTattooTukohama3": "Tattoo of the Tukohama Brawler",
+		"Metadata/Items/Currency/AncestralTattooTukohama4": "Tattoo of the Tukohama Warmonger",
+		"Metadata/Items/Currency/AncestralTattooTukohama5": "Tattoo of the Tukohama Warcaller",
+		"Metadata/Items/Currency/AncestralTattooTukohama6": "Loyalty Tattoo of Akoya",
+		"Metadata/Items/Currency/AncestralTattooTukohama7": "Tattoo of the Tukohama Makanga",
+		"Metadata/Items/Currency/AncestralTattooValako1": "Tattoo of the Valako Stormrider",
+		"Metadata/Items/Currency/AncestralTattooValako2": "Tattoo of the Valako Scout",
+		"Metadata/Items/Currency/AncestralTattooValako3": "Tattoo of the Valako Warrior",
+		"Metadata/Items/Currency/AncestralTattooValako4": "Tattoo of the Valako Shieldbearer",
+		"Metadata/Items/Currency/AncestralTattooValako5": "Tattoo of the Valako Shaman",
+		"Metadata/Items/Currency/AncestralTattooValako6": "Loyalty Tattoo of Kiloava",
+		"Metadata/Items/Currency/AncestralTattooValako7": "Tattoo of the Valako Makanga",
+		"Metadata/Items/Currency/AstrolabeAbyss": "Lightless Astrolabe",
+		"Metadata/Items/Currency/AstrolabeBlight": "Fungal Astrolabe",
+		"Metadata/Items/Currency/AstrolabeBreach": "Grasping Astrolabe",
+		"Metadata/Items/Currency/AstrolabeDelirium": "Deceptive Astrolabe",
+		"Metadata/Items/Currency/AstrolabeExpedition": "Runic Astrolabe",
+		"Metadata/Items/Currency/AstrolabeGeneric": "Templar Astrolabe",
+		"Metadata/Items/Currency/AstrolabeHarvest": "Fruiting Astrolabe",
+		"Metadata/Items/Currency/AstrolabeLegion": "Timeless Astrolabe",
+		"Metadata/Items/Currency/AstrolabeRitual": "Nameless Astrolabe",
+		"Metadata/Items/Currency/AstrolabeUltimatum": "Chaotic Astrolabe",
+		"Metadata/Items/Currency/BenevolenceMemoryThread": "Memory of Reverence",
+		"Metadata/Items/Currency/CurrencyAddModToMagic": "Orb of Augmentation",
+		"Metadata/Items/Currency/CurrencyAddModToRare": "Exalted Orb",
+		"Metadata/Items/Currency/CurrencyAddModToRareElder": "Elder's Exalted Orb",
+		"Metadata/Items/Currency/CurrencyAddModToRareShaper": "Shaper's Exalted Orb",
+		"Metadata/Items/Currency/CurrencyAddModToRareShard": "Exalted Shard",
+		"Metadata/Items/Currency/CurrencyAddZanaInfluence": "Orb of Remembrance",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbAbyss": "Abyssal Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbArmour": "Armoursmith's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbBlight": "Blighted Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbBreach": "Obscured Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbCurrency": "Fine Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbDivinationCards": "Diviner's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbEssences": "Whispering Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbFossils": "Fossilised Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbFragments": "Fragmented Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbGems": "Thaumaturge's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbGeneric": "Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbHardMode": "Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbIncubators": "Timeless Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbLabyrinth": "Imperial Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbMaps": "Cartographer's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbMetamorphosis": "Challenging Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbPerandus": "Kalguuran Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbScarabs": "Skittering Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbTalismans": "Primal Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbTrinkets": "Jeweller's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbUniques": "Singular Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionOrbWeapons": "Blacksmith's Delirium Orb",
+		"Metadata/Items/Currency/CurrencyAfflictionRerollClusterEnchant": "Refracting Fog",
+		"Metadata/Items/Currency/CurrencyAfflictionShard": "Simulacrum Splinter",
+		"Metadata/Items/Currency/CurrencyAncestralSilverCoin": "Silver Coin",
+		"Metadata/Items/Currency/CurrencyArmourQuality": "Armourer's Scrap",
+		"Metadata/Items/Currency/CurrencyAtlasPassiveRefund": "Orb of Unmaking",
+		"Metadata/Items/Currency/CurrencyBreachUpgradeUniqueGeneral": "Flesh of Xesht",
+		"Metadata/Items/Currency/CurrencyConflictOrb": "Orb of Conflict",
+		"Metadata/Items/Currency/CurrencyConvertToNormal": "Orb of Scouring",
+		"Metadata/Items/Currency/CurrencyCorrupt": "Vaal Orb",
+		"Metadata/Items/Currency/CurrencyDeepwater": "Dead Man's Sulphur",
+		"Metadata/Items/Currency/CurrencyDelveCraftingAbyss": "Hollow Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingAttackMods": "Serrated Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingBleedPoison": "Corroded Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingCasterMods": "Aetheric Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingChaos": "Aberrant Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingCold": "Frigid Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingCorruptEssence": "Glyphic Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingDefences": "Dense Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingElemental": "Prismatic Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingEnchant": "Deft Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingFire": "Scorched Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingGemLevel": "Faceted Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingLife": "Pristine Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingLightning": "Metallic Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingLuckyModRolls": "Sanctified Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingMana": "Lucent Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingMinionsAuras": "Bound Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingMirror": "Fractured Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingPhysical": "Jagged Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingQuality": "Opulent Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingRandom": "Tangled Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingSellPrice": "Gilded Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingSockets": "Fundamental Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingSpeed": "Shuddering Fossil",
+		"Metadata/Items/Currency/CurrencyDelveCraftingVaal": "Bloodstained Fossil",
+		"Metadata/Items/Currency/CurrencyDuplicate": "Mirror of Kalandra",
+		"Metadata/Items/Currency/CurrencyDuplicateShard": "Mirror Shard",
+		"Metadata/Items/Currency/CurrencyEldritchAddModToRare": "Eldritch Exalted Orb",
+		"Metadata/Items/Currency/CurrencyEldritchEmber1": "Lesser Eldritch Ember",
+		"Metadata/Items/Currency/CurrencyEldritchEmber2": "Greater Eldritch Ember",
+		"Metadata/Items/Currency/CurrencyEldritchEmber3": "Grand Eldritch Ember",
+		"Metadata/Items/Currency/CurrencyEldritchEmber4": "Exceptional Eldritch Ember",
+		"Metadata/Items/Currency/CurrencyEldritchIchor1": "Lesser Eldritch Ichor",
+		"Metadata/Items/Currency/CurrencyEldritchIchor2": "Greater Eldritch Ichor",
+		"Metadata/Items/Currency/CurrencyEldritchIchor3": "Grand Eldritch Ichor",
+		"Metadata/Items/Currency/CurrencyEldritchIchor4": "Exceptional Eldritch Ichor",
+		"Metadata/Items/Currency/CurrencyEldritchRemoveMod": "Eldritch Orb of Annulment",
+		"Metadata/Items/Currency/CurrencyEldritchRerollRare": "Eldritch Chaos Orb",
+		"Metadata/Items/Currency/CurrencyEnkindlingOrb": "Enkindling Orb",
+		"Metadata/Items/Currency/CurrencyEssenceAnger1": "Muttering Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnger2": "Weeping Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnger3": "Wailing Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnger4": "Screaming Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnger5": "Shrieking Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnger6": "Deafening Essence of Anger",
+		"Metadata/Items/Currency/CurrencyEssenceAnguish1": "Wailing Essence of Anguish",
+		"Metadata/Items/Currency/CurrencyEssenceAnguish2": "Screaming Essence of Anguish",
+		"Metadata/Items/Currency/CurrencyEssenceAnguish3": "Shrieking Essence of Anguish",
+		"Metadata/Items/Currency/CurrencyEssenceAnguish4": "Deafening Essence of Anguish",
+		"Metadata/Items/Currency/CurrencyEssenceContempt1": "Whispering Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt2": "Muttering Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt3": "Weeping Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt4": "Wailing Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt5": "Screaming Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt6": "Shrieking Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceContempt7": "Deafening Essence of Contempt",
+		"Metadata/Items/Currency/CurrencyEssenceDelirium1": "Essence of Delirium",
+		"Metadata/Items/Currency/CurrencyEssenceDoubt1": "Weeping Essence of Doubt",
+		"Metadata/Items/Currency/CurrencyEssenceDoubt2": "Wailing Essence of Doubt",
+		"Metadata/Items/Currency/CurrencyEssenceDoubt3": "Screaming Essence of Doubt",
+		"Metadata/Items/Currency/CurrencyEssenceDoubt4": "Shrieking Essence of Doubt",
+		"Metadata/Items/Currency/CurrencyEssenceDoubt5": "Deafening Essence of Doubt",
+		"Metadata/Items/Currency/CurrencyEssenceDread1": "Screaming Essence of Dread",
+		"Metadata/Items/Currency/CurrencyEssenceDread2": "Shrieking Essence of Dread",
+		"Metadata/Items/Currency/CurrencyEssenceDread3": "Deafening Essence of Dread",
+		"Metadata/Items/Currency/CurrencyEssenceEnvy1": "Screaming Essence of Envy",
+		"Metadata/Items/Currency/CurrencyEssenceEnvy2": "Shrieking Essence of Envy",
+		"Metadata/Items/Currency/CurrencyEssenceEnvy3": "Deafening Essence of Envy",
+		"Metadata/Items/Currency/CurrencyEssenceFaridun1": "Essence of Desolation",
+		"Metadata/Items/Currency/CurrencyEssenceFear1": "Muttering Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceFear2": "Weeping Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceFear3": "Wailing Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceFear4": "Screaming Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceFear5": "Shrieking Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceFear6": "Deafening Essence of Fear",
+		"Metadata/Items/Currency/CurrencyEssenceGreed1": "Whispering Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed2": "Muttering Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed3": "Weeping Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed4": "Wailing Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed5": "Screaming Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed6": "Shrieking Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceGreed7": "Deafening Essence of Greed",
+		"Metadata/Items/Currency/CurrencyEssenceHatred1": "Whispering Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred2": "Muttering Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred3": "Weeping Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred4": "Wailing Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred5": "Screaming Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred6": "Shrieking Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHatred7": "Deafening Essence of Hatred",
+		"Metadata/Items/Currency/CurrencyEssenceHorror1": "Essence of Horror",
+		"Metadata/Items/Currency/CurrencyEssenceHysteria1": "Essence of Hysteria",
+		"Metadata/Items/Currency/CurrencyEssenceInsanity1": "Essence of Insanity",
+		"Metadata/Items/Currency/CurrencyEssenceLoathing1": "Wailing Essence of Loathing",
+		"Metadata/Items/Currency/CurrencyEssenceLoathing2": "Screaming Essence of Loathing",
+		"Metadata/Items/Currency/CurrencyEssenceLoathing3": "Shrieking Essence of Loathing",
+		"Metadata/Items/Currency/CurrencyEssenceLoathing4": "Deafening Essence of Loathing",
+		"Metadata/Items/Currency/CurrencyEssenceMisery1": "Screaming Essence of Misery",
+		"Metadata/Items/Currency/CurrencyEssenceMisery2": "Shrieking Essence of Misery",
+		"Metadata/Items/Currency/CurrencyEssenceMisery3": "Deafening Essence of Misery",
+		"Metadata/Items/Currency/CurrencyEssenceRage1": "Weeping Essence of Rage",
+		"Metadata/Items/Currency/CurrencyEssenceRage2": "Wailing Essence of Rage",
+		"Metadata/Items/Currency/CurrencyEssenceRage3": "Screaming Essence of Rage",
+		"Metadata/Items/Currency/CurrencyEssenceRage4": "Shrieking Essence of Rage",
+		"Metadata/Items/Currency/CurrencyEssenceRage5": "Deafening Essence of Rage",
+		"Metadata/Items/Currency/CurrencyEssenceScorn1": "Screaming Essence of Scorn",
+		"Metadata/Items/Currency/CurrencyEssenceScorn2": "Shrieking Essence of Scorn",
+		"Metadata/Items/Currency/CurrencyEssenceScorn3": "Deafening Essence of Scorn",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow1": "Muttering Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow2": "Weeping Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow3": "Wailing Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow4": "Screaming Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow5": "Shrieking Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSorrow6": "Deafening Essence of Sorrow",
+		"Metadata/Items/Currency/CurrencyEssenceSpite1": "Wailing Essence of Spite",
+		"Metadata/Items/Currency/CurrencyEssenceSpite2": "Screaming Essence of Spite",
+		"Metadata/Items/Currency/CurrencyEssenceSpite3": "Shrieking Essence of Spite",
+		"Metadata/Items/Currency/CurrencyEssenceSpite4": "Deafening Essence of Spite",
+		"Metadata/Items/Currency/CurrencyEssenceSuffering1": "Weeping Essence of Suffering",
+		"Metadata/Items/Currency/CurrencyEssenceSuffering2": "Wailing Essence of Suffering",
+		"Metadata/Items/Currency/CurrencyEssenceSuffering3": "Screaming Essence of Suffering",
+		"Metadata/Items/Currency/CurrencyEssenceSuffering4": "Shrieking Essence of Suffering",
+		"Metadata/Items/Currency/CurrencyEssenceSuffering5": "Deafening Essence of Suffering",
+		"Metadata/Items/Currency/CurrencyEssenceTorment1": "Muttering Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceTorment2": "Weeping Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceTorment3": "Wailing Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceTorment4": "Screaming Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceTorment5": "Shrieking Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceTorment6": "Deafening Essence of Torment",
+		"Metadata/Items/Currency/CurrencyEssenceWoe1": "Whispering Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe2": "Muttering Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe3": "Weeping Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe4": "Wailing Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe5": "Screaming Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe6": "Shrieking Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWoe7": "Deafening Essence of Woe",
+		"Metadata/Items/Currency/CurrencyEssenceWrath1": "Weeping Essence of Wrath",
+		"Metadata/Items/Currency/CurrencyEssenceWrath2": "Wailing Essence of Wrath",
+		"Metadata/Items/Currency/CurrencyEssenceWrath3": "Screaming Essence of Wrath",
+		"Metadata/Items/Currency/CurrencyEssenceWrath4": "Shrieking Essence of Wrath",
+		"Metadata/Items/Currency/CurrencyEssenceWrath5": "Deafening Essence of Wrath",
+		"Metadata/Items/Currency/CurrencyEssenceZeal1": "Wailing Essence of Zeal",
+		"Metadata/Items/Currency/CurrencyEssenceZeal2": "Screaming Essence of Zeal",
+		"Metadata/Items/Currency/CurrencyEssenceZeal3": "Shrieking Essence of Zeal",
+		"Metadata/Items/Currency/CurrencyEssenceZeal4": "Deafening Essence of Zeal",
+		"Metadata/Items/Currency/CurrencyFlaskQuality": "Glassblower's Bauble",
+		"Metadata/Items/Currency/CurrencyFractureRare": "Fracturing Orb",
+		"Metadata/Items/Currency/CurrencyFractureRareShard": "Fracturing Shard",
+		"Metadata/Items/Currency/CurrencyGemQuality": "Gemcutter's Prism",
+		"Metadata/Items/Currency/CurrencyHeistArmourEnchant": "Tailoring Orb",
+		"Metadata/Items/Currency/CurrencyHeistWeaponEnchant": "Tempering Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeAddModToRare": "Tainted Exalted Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeArmourQuality": "Tainted Armourer's Scrap",
+		"Metadata/Items/Currency/CurrencyHellscapeModValues": "Volatile Vaal Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeRerollRare": "Tainted Chaos Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeRerollSocketColours": "Tainted Chromatic Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeRerollSocketLinks": "Tainted Orb of Fusing",
+		"Metadata/Items/Currency/CurrencyHellscapeRerollSocketNumbers": "Tainted Jeweller's Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeUpgradeModTier": "Tainted Divine Teardrop",
+		"Metadata/Items/Currency/CurrencyHellscapeUpgradeToUnique": "Tainted Mythic Orb",
+		"Metadata/Items/Currency/CurrencyHellscapeWeaponQuality": "Tainted Blacksmith's Whetstone",
+		"Metadata/Items/Currency/CurrencyHinekorasLock": "Hinekora's Lock",
+		"Metadata/Items/Currency/CurrencyIdentification": "Scroll of Wisdom",
+		"Metadata/Items/Currency/CurrencyImprintOrb": "Eternal Orb",
+		"Metadata/Items/Currency/CurrencyInstillingOrb": "Instilling Orb",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityAttack": "Abrasive Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityAttribute": "Intrinsic Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityCaster": "Imbued Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityCritical": "Unstable Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityDefense": "Tempering Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityElemental": "Turbulent Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityPhysicalChaos": "Noxious Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityPrefix": "Sinistral Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityResistance": "Prismatic Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityResource": "Fertile Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualitySpeed": "Accelerating Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualitySuffix": "Dextral Catalyst",
+		"Metadata/Items/Currency/CurrencyJewelleryQualityVaal": "Tainted Catalyst",
+		"Metadata/Items/Currency/CurrencyLegionEternalEmpireShard": "Timeless Eternal Empire Splinter",
+		"Metadata/Items/Currency/CurrencyLegionKaruiShard": "Timeless Karui Splinter",
+		"Metadata/Items/Currency/CurrencyLegionMarakethShard": "Timeless Maraketh Splinter",
+		"Metadata/Items/Currency/CurrencyLegionTemplarShard": "Timeless Templar Splinter",
+		"Metadata/Items/Currency/CurrencyLegionVaalShard": "Timeless Vaal Splinter",
+		"Metadata/Items/Currency/CurrencyMapQualityCurrency": "Maven's Chisel of Avarice",
+		"Metadata/Items/Currency/CurrencyMapQualityDivinationCards": "Maven's Chisel of Divination",
+		"Metadata/Items/Currency/CurrencyMapQualityPackSize": "Maven's Chisel of Proliferation",
+		"Metadata/Items/Currency/CurrencyMapQualityRarity": "Maven's Chisel of Procurement",
+		"Metadata/Items/Currency/CurrencyMapQualityScarabs": "Maven's Chisel of Scarabs",
+		"Metadata/Items/Currency/CurrencyModValues": "Divine Orb",
+		"Metadata/Items/Currency/CurrencyMoreZanaInfluencedItems": "Orb of Intention",
+		"Metadata/Items/Currency/CurrencyMutatedAddModToMagic": "Foulborn Orb of Augmentation",
+		"Metadata/Items/Currency/CurrencyMutatedAddModToRare": "Foulborn Exalted Orb",
+		"Metadata/Items/Currency/CurrencyMutatedUpgradeMagicToRare": "Foulborn Regal Orb",
+		"Metadata/Items/Currency/CurrencyPassiveRefund": "Orb of Regret",
+		"Metadata/Items/Currency/CurrencyPortal": "Portal Scroll",
+		"Metadata/Items/Currency/CurrencyRefreshBarter": "Exotic Coinage",
+		"Metadata/Items/Currency/CurrencyRefreshDealer": "Scrap Metal",
+		"Metadata/Items/Currency/CurrencyRefreshGambler": "Astragali",
+		"Metadata/Items/Currency/CurrencyRefreshSaga": "Burial Medallion",
+		"Metadata/Items/Currency/CurrencyRemoveMod": "Orb of Annulment",
+		"Metadata/Items/Currency/CurrencyRemoveModShard": "Annulment Shard",
+		"Metadata/Items/Currency/CurrencyRemoveZanaInfluence": "Orb of Unravelling",
+		"Metadata/Items/Currency/CurrencyRerollDefences": "Sacred Orb",
+		"Metadata/Items/Currency/CurrencyRerollImplicit": "Blessed Orb",
+		"Metadata/Items/Currency/CurrencyRerollMagic": "Orb of Alteration",
+		"Metadata/Items/Currency/CurrencyRerollMagicShard": "Alteration Shard",
+		"Metadata/Items/Currency/CurrencyRerollRare": "Chaos Orb",
+		"Metadata/Items/Currency/CurrencyRerollRareShard": "Chaos Shard",
+		"Metadata/Items/Currency/CurrencyRerollRareVeiled": "Veiled Exalted Orb",
+		"Metadata/Items/Currency/CurrencyRerollRareVeiledChaos": "Veiled Chaos Orb",
+		"Metadata/Items/Currency/CurrencyRerollSocketColours": "Chromatic Orb",
+		"Metadata/Items/Currency/CurrencyRerollSocketLinks": "Orb of Fusing",
+		"Metadata/Items/Currency/CurrencyRerollSocketNumbers": "Jeweller's Orb",
+		"Metadata/Items/Currency/CurrencyRerollUnique": "Ancient Orb",
+		"Metadata/Items/Currency/CurrencyRitualSplinter": "Ritual Splinter",
+		"Metadata/Items/Currency/CurrencyRitualStone": "Ritual Vessel",
+		"Metadata/Items/Currency/CurrencyUpgradeInfluenceMod": "Orb of Dominance",
+		"Metadata/Items/Currency/CurrencyUpgradeMagicToRare": "Regal Orb",
+		"Metadata/Items/Currency/CurrencyUpgradeMagicToRareShard": "Regal Shard",
+		"Metadata/Items/Currency/CurrencyUpgradeRandomly": "Orb of Chance",
+		"Metadata/Items/Currency/CurrencyUpgradeToMagic": "Orb of Transmutation",
+		"Metadata/Items/Currency/CurrencyUpgradeToMagicShard": "Transmutation Shard",
+		"Metadata/Items/Currency/CurrencyUpgradeToRare": "Orb of Alchemy",
+		"Metadata/Items/Currency/CurrencyUpgradeToRareAndSetSockets": "Orb of Binding",
+		"Metadata/Items/Currency/CurrencyUpgradeToRareShard": "Alchemy Shard",
+		"Metadata/Items/Currency/CurrencyValdoPuzzleBox": "Valdo's Puzzle Box",
+		"Metadata/Items/Currency/CurrencyWeaponQuality": "Blacksmith's Whetstone",
+		"Metadata/Items/Currency/CurrencyWishConvertUnique": "Coin of Restoration",
+		"Metadata/Items/Currency/CurrencyWishConvertUniqueCorrupt": "Coin of Desecration",
+		"Metadata/Items/Currency/CurrencyWishSupportGemBlue": "Coin of Knowledge",
+		"Metadata/Items/Currency/CurrencyWishSupportGemGreen": "Coin of Skill",
+		"Metadata/Items/Currency/CurrencyWishSupportGemRed": "Coin of Power",
+		"Metadata/Items/Currency/FearMemoryThread": "Memory of Trauma",
+		"Metadata/Items/Currency/HarvestSeedBlue": "Primal Crystallised Lifeforce",
+		"Metadata/Items/Currency/HarvestSeedBoss": "Sacred Crystallised Lifeforce",
+		"Metadata/Items/Currency/HarvestSeedFaridun": "Crystallised Rancour",
+		"Metadata/Items/Currency/HarvestSeedGreen": "Vivid Crystallised Lifeforce",
+		"Metadata/Items/Currency/HarvestSeedRed": "Wild Crystallised Lifeforce",
+		"Metadata/Items/Currency/IgnoranceMemoryThread": "Memory of Loneliness",
+		"Metadata/Items/Currency/LegionCocoonBodyArmour": "Maraketh Enshrouding Crystal",
+		"Metadata/Items/Currency/LegionCocoonBoots": "Imperial Enshrouding Crystal",
+		"Metadata/Items/Currency/LegionCocoonGloves": "Karui Enshrouding Crystal",
+		"Metadata/Items/Currency/LegionCocoonHelmet": "Vaal Enshrouding Crystal",
+		"Metadata/Items/Currency/LegionCocoonShield": "Templar Enshrouding Crystal",
+		"Metadata/Items/Currency/Mushrune1": "Clear Oil",
+		"Metadata/Items/Currency/Mushrune10": "Opalescent Oil",
+		"Metadata/Items/Currency/Mushrune11": "Silver Oil",
+		"Metadata/Items/Currency/Mushrune12": "Golden Oil",
+		"Metadata/Items/Currency/Mushrune2": "Sepia Oil",
+		"Metadata/Items/Currency/Mushrune3": "Amber Oil",
+		"Metadata/Items/Currency/Mushrune4": "Verdant Oil",
+		"Metadata/Items/Currency/Mushrune5": "Teal Oil",
+		"Metadata/Items/Currency/Mushrune6": "Azure Oil",
+		"Metadata/Items/Currency/Mushrune6b": "Indigo Oil",
+		"Metadata/Items/Currency/Mushrune7": "Violet Oil",
+		"Metadata/Items/Currency/Mushrune8": "Crimson Oil",
+		"Metadata/Items/Currency/Mushrune9": "Black Oil",
+		"Metadata/Items/Currency/MushruneCorrupt": "Tainted Oil",
+		"Metadata/Items/Currency/MushruneMirror": "Reflective Oil",
+		"Metadata/Items/Currency/MushruneUber": "Prismatic Oil",
+		"Metadata/Items/Currency/ReflectiveMist": "Reflecting Mist",
+		"Metadata/Items/Currency/RunegraftAilmentRedirect": "Runegraft of Loyalty",
+		"Metadata/Items/Currency/RunegraftAttributeGlobalDefences": "Runegraft of the Fortress",
+		"Metadata/Items/Currency/RunegraftBootsGloves": "Runegraft of the Bound",
+		"Metadata/Items/Currency/RunegraftBuffScaling": "Runegraft of the Warp",
+		"Metadata/Items/Currency/RunegraftChainMana": "Runegraft of Refraction",
+		"Metadata/Items/Currency/RunegraftConnection": "Runegraft of Connection",
+		"Metadata/Items/Currency/RunegraftConsecratedGround": "Runegraft of Consecration",
+		"Metadata/Items/Currency/RunegraftCooldownRefresh": "Runegraft of Time",
+		"Metadata/Items/Currency/RunegraftCritRecoup": "Runegraft of Restitching",
+		"Metadata/Items/Currency/RunegraftDamagePerSocket": "Runegraft of the Jeweller",
+		"Metadata/Items/Currency/RunegraftElusive": "Runegraft of the Agile",
+		"Metadata/Items/Currency/RunegraftFishing": "Runegraft of the Angler",
+		"Metadata/Items/Currency/RunegraftFlatOffhandAttackTime": "Runegraft of the Sinistral",
+		"Metadata/Items/Currency/RunegraftFortificationBanner": "Runegraft of Rallying",
+		"Metadata/Items/Currency/RunegraftLifeFlaskRage": "Runegraft of Fury",
+		"Metadata/Items/Currency/RunegraftLifeFromManaFlasks": "Runegraft of Quaffing",
+		"Metadata/Items/Currency/RunegraftLowLifeRestore": "Runegraft of the River",
+		"Metadata/Items/Currency/RunegraftMatchedAttackDamage": "Runegraft of the Combatant",
+		"Metadata/Items/Currency/RunegraftNovaMarkedTarget": "Runegraft of the Novamark",
+		"Metadata/Items/Currency/RunegraftPoisonConversion": "Runegraft of Rotblood",
+		"Metadata/Items/Currency/RunegraftRandomCurse": "Runegraft of Blasphemy",
+		"Metadata/Items/Currency/RunegraftResurgence": "Runegraft of Resurgence",
+		"Metadata/Items/Currency/RunegraftSouls": "Runegraft of the Soulwick",
+		"Metadata/Items/Currency/RunegraftSpellLifeCost": "Runegraft of the Witchmark",
+		"Metadata/Items/Currency/RunegraftSpellbound": "Runegraft of the Spellbound",
+		"Metadata/Items/Currency/RunegraftSuffering": "Runegraft of Suffering",
+		"Metadata/Items/Currency/RunegraftSupportLevels": "Runegraft of Gemcraft",
+		"Metadata/Items/Currency/RunegraftTinctures": "Runegraft of the Imbued",
+		"Metadata/Items/Currency/RunegraftTreacherousAuras": "Runegraft of Treachery",
+		"Metadata/Items/Currency/RunegraftUnexciting": "Runegraft of Stability",
+		"Metadata/Items/Currency/RunegraftWarcrySpeed": "Runegraft of Bellows",
+		"Metadata/Items/Deepwater/DeepwaterAbyssCurrency": "Merrick's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterAttributeSwap": "The Genteel's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterBlankCurrency": "The Changeling's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterBottledItem": "Message in a Bottle",
+		"Metadata/Items/Deepwater/DeepwaterChartReroll": "Telesia's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterEldritch": "Ukatoa's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterGhostbuster": "Tzamoto's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterItemSplit": "Kishara's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterMercenaryCurrency": "Cyaxan's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterPantheon": "Brinehook's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterSaboteur": "Rotmother's Ducat",
+		"Metadata/Items/Deepwater/DeepwaterTatttoo": "Katakohi's Ducat",
+		"Metadata/Items/DivinationCards/DivinationCardDeck": "Stacked Deck",
+		"Metadata/Items/Heist/HeistCoin": "Rogue's Marker",
+		"Metadata/Items/MapFragments/CurrencyMavenKeyFragment": "Crescent Splinter"
+	}
+}

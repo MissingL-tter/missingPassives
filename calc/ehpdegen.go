@@ -15,7 +15,6 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	// splitDegen divides one degen amount over life / mana / energy shield.
 	splitDegen := func(damageType string, amount float64) (lifeDegen, manaDegen, energyShieldDegen float64) {
@@ -139,7 +138,7 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 				for _, damageType := range ailment.sourceTypes {
 					baseVal += outNum(output, damageType+"TakenDamage")
 				}
-				baseVal = baseVal * ailmentPercentBase(d, ailment.source) *
+				baseVal = baseVal * ailmentPercentBase(ailment.source) *
 					(enemyCritAilmentEffect / outNum(output, "EnemyCritEffect")) *
 					outNum(output, "Self"+ailment.source+"Effect") / 100
 				if baseVal > 0 {
@@ -182,14 +181,14 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 }
 
 // ailmentPercentBase reads data.misc["<source>PercentBase"].
-func ailmentPercentBase(d *data.Data, source string) float64 {
+func ailmentPercentBase(source string) float64 {
 	switch source {
 	case "Bleed":
-		return d.Misc.BleedPercentBase
+		return data.Misc.BleedPercentBase
 	case "Ignite":
-		return d.Misc.IgnitePercentBase
+		return data.Misc.IgnitePercentBase
 	case "Poison":
-		return d.Misc.PoisonPercentBase
+		return data.Misc.PoisonPercentBase
 	}
 	panic("ehp: unknown ailment degen source " + source)
 }

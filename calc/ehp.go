@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strconv"
 
@@ -44,7 +45,6 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	damageCategoryConfig := "Average"
 	if v := env.ConfigInput["enemyDamageType"]; truthy(v) {
@@ -188,7 +188,7 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 					conversionPercent := conv[damageTypeTo] / 100
 					skillConversionPercent := convSkill[damageTypeTo] / 100
 					if skillConversionPercent > 0 && damageTypeTo != "Chaos" {
-						physBonus := 1 + d.MonsterPhysConversionMultiTable[int(env.EnemyLevel)-1]/100
+						physBonus := 1 + data.MonsterPhysConversionMultiTable[int(env.EnemyLevel)-1]/100
 						conversionPercent += skillConversionPercent * physBonus
 					}
 					if gainAsPercent > 0 || conversionPercent > 0 {

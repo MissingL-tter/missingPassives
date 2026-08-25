@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -25,7 +26,6 @@ func (env *Env) doActorMisc(actor *performActor) {
 	enemyDB := actor.enemy.db
 	output := actor.output
 	condList := modDB.Conditions
-	d := env.Data
 	flr := func(v float64) float64 { return math.Floor(v) }
 
 	if env.ModeCombat {
@@ -70,7 +70,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 			output["RemovableFortification"] = math.Min(maxStacks-minStacks, overrideOr(modDB, "FortificationStacks", maxStacks)-minStacks)
 			output["FortificationStacks"] = stacks
 			output["FortificationStacksOver20"] = math.Min(math.Max(0, stacks-20), maxStacks-20)
-			fortifyDurBase := d.Misc.FortifyBaseDuration
+			fortifyDurBase := data.Misc.FortifyBaseDuration
 			if ov := skillModList.Override(nil, "FortifyDuration"); truthy(ov) {
 				fortifyDurBase = anyNum(ov)
 			}
@@ -274,7 +274,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 			}
 		}
 		if modDB.Flag(nil, "Chill") {
-			ail := d.NonDamagingAilment["Chill"]
+			ail := data.NonDamagingAilment["Chill"]
 			// `m_max(Sum(SelfChillOverride), Override(ChillVal)) or default`.
 			// Override returns NO VALUES when unset (ModDB.lua:219 falls off
 			// the end), so that collapses to the one-argument m_max — i.e.
@@ -320,7 +320,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 			modDB.AddMod(newMod("ActionSpeed", "INC", effect*sign, "Chill"))
 		}
 		if modDB.Flag(nil, "Shock") {
-			ail := d.NonDamagingAilment["Shock"]
+			ail := data.NonDamagingAilment["Shock"]
 			// Same shape as chill above: the Override contributes only when
 			// it exists, and the `or default` tail is dead. #EVAL
 			shockValue := modDB.Sum("BASE", nil, "SelfShockOverride")
@@ -349,7 +349,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 			modDB.AddMod(newMod("DamageTaken", "INC", effect, "Shock"))
 		}
 		if modDB.Flag(nil, "Scorch") {
-			ail := d.NonDamagingAilment["Scorch"]
+			ail := data.NonDamagingAilment["Scorch"]
 			scorchValue := math.Max(modDB.Sum("BASE", nil, "SelfScorchOverride"), anyNum(modDB.Override(nil, "ScorchVal")))
 			totalScorchSelfEffect := Mod(modDB, nil, "SelfScorchEffect")
 			avoidScorch := 0.0
@@ -654,7 +654,7 @@ func (env *Env) actionSpeedMod(actor *performActor) float64 {
 		minimumActionSpeed = v
 	}
 	maximumActionSpeedReduction, hasMaxRed := modDB.Max(nil, "MaximumActionSpeedReduction")
-	actionSpeedMod := 1 + (math.Max(-env.Data.Misc.TemporalChainsEffectCap, modDB.Sum("INC", nil, "TemporalChainsActionSpeed"))+modDB.Sum("INC", nil, "ActionSpeed"))/100
+	actionSpeedMod := 1 + (math.Max(-data.Misc.TemporalChainsEffectCap, modDB.Sum("INC", nil, "TemporalChainsActionSpeed"))+modDB.Sum("INC", nil, "ActionSpeed"))/100
 	actionSpeedMod = math.Max(minimumActionSpeed/100, actionSpeedMod)
 	if hasMaxRed {
 		actionSpeedMod = math.Min((100-maximumActionSpeedReduction)/100, actionSpeedMod)

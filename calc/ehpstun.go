@@ -2,12 +2,14 @@
 // self-stun chance.
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"math"
+)
 
 func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 	modDB := actor.db
 	output := actor.output
-	d := env.Data
 
 	stunThresholdBase := 0.0
 	switch {
@@ -43,11 +45,11 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 		output["BlockDuration"] = 0.0
 	} else {
 		stunDuration := 1 + modDB.Sum("INC", nil, "StunDuration")/100
-		baseStunDuration := d.Misc.StunBaseDuration
+		baseStunDuration := data.Misc.StunBaseDuration
 		stunRecovery := 1 + modDB.Sum("INC", nil, "StunRecovery")/100
 		stunAndBlockRecovery := 1 + modDB.Sum("INC", nil, "StunRecovery", "BlockRecovery")/100
-		output["StunDuration"] = math.Ceil(baseStunDuration*stunDuration/stunRecovery*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
-		output["BlockDuration"] = math.Ceil(baseStunDuration*stunDuration/stunAndBlockRecovery*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["StunDuration"] = math.Ceil(baseStunDuration*stunDuration/stunRecovery*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output["BlockDuration"] = math.Ceil(baseStunDuration*stunDuration/stunAndBlockRecovery*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	output["InterruptStunAvoidChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidInterruptStun"), 100)
 
@@ -56,13 +58,13 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 	// runs when the category IS "Average", so the Melee multiplier below can
 	// never apply to a non-melee category.
 	if damageCategoryConfig != "Average" {
-		effectiveEnemyDamage = effectiveEnemyDamage * (1 + d.Misc.StunNotMeleeDamageMult*3) / 4
+		effectiveEnemyDamage = effectiveEnemyDamage * (1 + data.Misc.StunNotMeleeDamageMult*3) / 4
 	} else if damageCategoryConfig != "Melee" {
-		effectiveEnemyDamage = effectiveEnemyDamage * d.Misc.StunNotMeleeDamageMult
+		effectiveEnemyDamage = effectiveEnemyDamage * data.Misc.StunNotMeleeDamageMult
 	}
-	baseStunChance := math.Min(d.Misc.StunBaseMult*effectiveEnemyDamage/outNum(output, "StunThreshold"), 100)
+	baseStunChance := math.Min(data.Misc.StunBaseMult*effectiveEnemyDamage/outNum(output, "StunThreshold"), 100)
 	chance := 0.0
-	if baseStunChance > d.Misc.MinStunChanceNeeded {
+	if baseStunChance > data.Misc.MinStunChanceNeeded {
 		chance = baseStunChance
 	}
 	output["SelfStunChance"] = chance * notAvoidChance / 100

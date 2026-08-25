@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	reCharmDigits   = regexp.MustCompile(`[0-9]+`)
-	reCharmUpper    = regexp.MustCompile(`[A-Z]`)
-	reTrailingTwo   = regexp.MustCompile(`2$`)
-	reTrailingOne   = regexp.MustCompile(`1$`)
-	reAltXYSuffix   = regexp.MustCompile(`Alt[XY]$`)
+	reCharmDigits = regexp.MustCompile(`[0-9]+`)
+	reCharmUpper  = regexp.MustCompile(`[A-Z]`)
+	reTrailingTwo = regexp.MustCompile(`2$`)
+	reTrailingOne = regexp.MustCompile(`1$`)
+	reAltXYSuffix = regexp.MustCompile(`Alt[XY]$`)
 )
 
-func (d *Data) buildThatWhichWasTaken() []string {
+func buildThatWhichWasTaken() []string {
 	out := []string{`
 Item Class: Jewels
 Rarity: Unique
@@ -34,7 +34,7 @@ Selected Alt Variant Three: 125
 Variant: None
 `[1:]}
 
-	charms := d.ItemMods["JewelCharm"]
+	charms := ItemMods["JewelCharm"]
 	var modIds []string
 	for modId := range charms {
 		if !reTrailingOne.MatchString(modId) {
@@ -82,9 +82,9 @@ func gemIsType(g *Gem, typ string) bool {
 	panic("data: unhandled gemIsType " + typ)
 }
 
-func (d *Data) buildReplicaDragonfangsFlight() []string {
+func buildReplicaDragonfangsFlight() []string {
 	mods := map[string]string{}
-	for _, gem := range d.Gems {
+	for _, gem := range Gems {
 		if !reAltXYSuffix.MatchString(gem.GrantedEffectId) && gemIsType(gem, "active skill") && gemIsType(gem, "non-vaal") {
 			mods[gem.Name] = "+3 to Level of all " + gem.Name + " Gems"
 		}

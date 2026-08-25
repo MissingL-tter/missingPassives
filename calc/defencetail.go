@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -16,7 +17,6 @@ func (env *Env) defenceRecoup(actor *performActor) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	// recoup
 	output["anyRecoup"] = 0.0
@@ -82,13 +82,13 @@ func (env *Env) defenceRecoup(actor *performActor) {
 	}
 
 	// Ward recharge
-	output["WardRechargeDelay"] = d.Misc.WardRechargeDelay / (1 + modDB.Sum("INC", nil, "WardRechargeFaster")/100)
+	output["WardRechargeDelay"] = data.Misc.WardRechargeDelay / (1 + modDB.Sum("INC", nil, "WardRechargeFaster")/100)
 
 	// Damage Reduction
 	if ov := modDB.Override(nil, "DamageReductionMax"); truthy(ov) {
 		output["DamageReductionMax"] = anyNum(ov)
 	} else {
-		output["DamageReductionMax"] = d.Misc.DamageReductionCap
+		output["DamageReductionMax"] = data.Misc.DamageReductionCap
 	}
 	modDB.AddMod(newMod("ArmourAppliesToPhysicalDamageTaken", "BASE", 100.0))
 	for _, damageType := range dmgTypeList {
@@ -136,13 +136,13 @@ func (env *Env) defenceRecoup(actor *performActor) {
 	// damage avoidances
 	output["specificTypeAvoidance"] = false
 	for _, damageType := range dmgTypeList {
-		output["Avoid"+damageType+"DamageChance"] = math.Min(modDB.Sum("BASE", nil, "Avoid"+damageType+"DamageChance"), d.Misc.AvoidChanceCap)
+		output["Avoid"+damageType+"DamageChance"] = math.Min(modDB.Sum("BASE", nil, "Avoid"+damageType+"DamageChance"), data.Misc.AvoidChanceCap)
 		if outNum(output, "Avoid"+damageType+"DamageChance") > 0 {
 			output["specificTypeAvoidance"] = true
 		}
 	}
-	output["AvoidProjectilesChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidProjectilesChance"), d.Misc.AvoidChanceCap)
-	output["AvoidAllDamageFromHitsChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidAllDamageFromHitsChance"), d.Misc.AvoidChanceCap)
+	output["AvoidProjectilesChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidProjectilesChance"), data.Misc.AvoidChanceCap)
+	output["AvoidAllDamageFromHitsChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidAllDamageFromHitsChance"), data.Misc.AvoidChanceCap)
 	if modDB.Flag(nil, "BlindImmune") {
 		output["BlindAvoidChance"] = 100.0
 	} else {
@@ -199,14 +199,14 @@ func (env *Env) defenceRecoup(actor *performActor) {
 		}
 	}
 
-	for _, ailment := range d.NonElementalAilmentTypeList {
+	for _, ailment := range data.NonElementalAilmentTypeList {
 		if modDB.Flag(nil, ailment+"Immune") {
 			output[ailment+"AvoidChance"] = 100.0
 		} else {
 			output[ailment+"AvoidChance"] = math.Floor(math.Min(modDB.Sum("BASE", nil, "Avoid"+ailment, "AvoidAilments"), 100))
 		}
 	}
-	for _, ailment := range d.ElementalAilmentTypeList {
+	for _, ailment := range data.ElementalAilmentTypeList {
 		shockAvoidAppliesToAll := modDB.Flag(nil, "ShockAvoidAppliesToElementalAilments") && ailment != "Shock"
 		if modDB.Flag(nil, ailment+"Immune", "ElementalAilmentImmune") {
 			output[ailment+"AvoidChance"] = 100.0
@@ -253,12 +253,12 @@ func (env *Env) defenceRecoup(actor *performActor) {
 		}
 	}
 
-	for _, ailment := range d.NonElementalAilmentTypeList {
+	for _, ailment := range data.NonElementalAilmentTypeList {
 		more := modDB.More(nil, "Self"+ailment+"Duration", "SelfAilmentDuration")
 		inc := (100 + modDB.Sum("INC", nil, "Self"+ailment+"Duration", "SelfAilmentDuration")) * 100
 		output["Self"+ailment+"Duration"] = inc * more / (100 + outNum(output, "DebuffExpirationRate") + modDB.Sum("BASE", nil, "Self"+ailment+"DebuffExpirationRate"))
 	}
-	for _, ailment := range d.ElementalAilmentTypeList {
+	for _, ailment := range data.ElementalAilmentTypeList {
 		igniteAppliesToAll := modDB.Flag(nil, "IgniteDurationAppliesToElementalAilments") && ailment != "Ignite"
 		more := modDB.More(nil, "Self"+ailment+"Duration", "SelfAilmentDuration", "SelfElementalAilmentDuration")
 		incExtra := 0.0
@@ -269,7 +269,7 @@ func (env *Env) defenceRecoup(actor *performActor) {
 		inc := (100 + modDB.Sum("INC", nil, "Self"+ailment+"Duration", "SelfAilmentDuration", "SelfElementalAilmentDuration") + incExtra) * 100
 		output["Self"+ailment+"Duration"] = more * inc / (100 + outNum(output, "DebuffExpirationRate") + modDB.Sum("BASE", nil, "Self"+ailment+"DebuffExpirationRate"))
 	}
-	for _, ailment := range d.AilmentTypeList {
+	for _, ailment := range data.AilmentTypeList {
 		selfEffect := Mod(modDB, nil, "Self"+ailment+"Effect")
 		var enemyEffect float64
 		if modDB.Flag(nil, "Condition:"+ailment+"edSelf") {

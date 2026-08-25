@@ -1,0 +1,86 @@
+[
+	{
+		"resource": "Mana",
+		"stat": "base_mana_cost",
+		"resourceString": "{0} Mana",
+		"divisor": 1
+	},
+	{
+		"resource": "Life",
+		"stat": "base_life_cost",
+		"resourceString": "{0} Life",
+		"divisor": 1
+	},
+	{
+		"resource": "ES",
+		"stat": "base_es_cost",
+		"resourceString": "{0} Energy Shield",
+		"divisor": 1
+	},
+	{
+		"resource": "Rage",
+		"stat": "base_rage_cost",
+		"resourceString": "{0} Rage",
+		"divisor": 1
+	},
+	{
+		"resource": "ManaPercent",
+		"stat": "base_mana_cost_%",
+		"resourceString": "{0}% Mana",
+		"divisor": 1
+	},
+	{
+		"resource": "LifePercent",
+		"stat": "base_life_cost_%",
+		"resourceString": "{0}% Life",
+		"divisor": 1
+	},
+	{
+		"resource": "UnreservedManaPercent",
+		"stat": "base_unreserved_mana_cost_%",
+		"resourceString": "[DNT] {0}% Unreserved Mana ",
+		"divisor": 1
+	},
+	{
+		"resource": "ManaPerMinute",
+		"stat": "base_mana_cost_per_minute",
+		"resourceString": "{0} Mana per second",
+		"divisor": 60
+	},
+	{
+		"resource": "LifePerMinute",
+		"stat": "base_life_cost_per_minute",
+		"resourceString": "{0} Life per second",
+		"divisor": 60
+	},
+	{
+		"resource": "ManaPercentPerMinute",
+		"stat": "base_mana_cost_%_per_minute",
+		"resourceString": "{0}% Mana per second",
+		"divisor": 60
+	},
+	{
+		"resource": "LifePercentPerMinute",
+		"stat": "base_life_cost_%_per_minute",
+		"resourceString": "{0}% Life per second",
+		"divisor": 60
+	},
+	{
+		"resource": "ESPerMinute",
+		"stat": "base_es_cost_per_minute",
+		"resourceString": "{0} Energy Shield per second",
+		"divisor": 60
+	},
+	{
+		"resource": "ESPercentPerMinute",
+		"stat": "base_es_cost_%_per_minute",
+		"resourceString": "{0}% Energy Shield per second",
+		"divisor": 60
+	},
+	{
+		"resource": "Soul",
+		"stat": " ",
+		"resourceString": "{0} Souls Per Use",
+		"divisor": 1
+	}
+]

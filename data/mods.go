@@ -13,19 +13,19 @@ func sortStrings(s []string) { sort.Strings(s) }
 
 // ItemModData is one mod pool entry.
 type ItemModData struct {
-	Lines               []string            `lua:"@array"`
-	Type                string              `lua:"type,omitempty"`
-	Affix               string              `lua:"affix"`
-	StatOrder           []float64           `lua:"statOrder"`
-	Level               float64             `lua:"level"`
-	Group               string              `lua:"group"`
-	WeightKey           []string            `lua:"weightKey"`
-	WeightVal           []float64           `lua:"weightVal"`
-	WeightMultiplierKey []string            `lua:"weightMultiplierKey"`
-	WeightMultiplierVal []float64           `lua:"weightMultiplierVal"`
-	Tags                []string            `lua:"tags"`
-	ModTags             []string            `lua:"modTags"`
-	TradeHashes         map[int64][]string  `lua:"tradeHashes"`
+	Lines               []string           `lua:"@array"`
+	Type                string             `lua:"type,omitempty"`
+	Affix               string             `lua:"affix"`
+	StatOrder           []float64          `lua:"statOrder"`
+	Level               float64            `lua:"level"`
+	Group               string             `lua:"group"`
+	WeightKey           []string           `lua:"weightKey"`
+	WeightVal           []float64          `lua:"weightVal"`
+	WeightMultiplierKey []string           `lua:"weightMultiplierKey"`
+	WeightMultiplierVal []float64          `lua:"weightMultiplierVal"`
+	Tags                []string           `lua:"tags"`
+	ModTags             []string           `lua:"modTags"`
+	TradeHashes         map[int64][]string `lua:"tradeHashes"`
 }
 
 // itemModPools maps data.itemMods keys to mods-document pool ids.
@@ -88,28 +88,28 @@ func loadModPool(pool []gamedata.ItemMod) map[string]ItemModData {
 	return out
 }
 
-func (d *Data) loadItemMods(src gamedata.ModsData) {
-	d.ItemMods = map[string]map[string]ItemModData{}
+func loadItemMods(src gamedata.ModsData) {
+	ItemMods = map[string]map[string]ItemModData{}
 	for key, poolId := range itemModPools {
-		d.ItemMods[key] = loadModPool(src.Pools[poolId])
+		ItemMods[key] = loadModPool(src.Pools[poolId])
 	}
-	d.VeiledMods = loadModPool(src.Pools["ModVeiled"])
-	d.BeastCraft = loadModPool(src.Pools["BeastCraft"])
-	d.NecropolisMods = loadModPool(src.Pools["ModNecropolis"])
+	VeiledMods = loadModPool(src.Pools["ModVeiled"])
+	BeastCraft = loadModPool(src.Pools["BeastCraft"])
+	NecropolisMods = loadModPool(src.Pools["ModNecropolis"])
 	// kept aside for the generated Bound by Destiny unique
-	d.bbdPool = loadModPool(src.Pools["BoundByDestiny"])
+	bbdPool = loadModPool(src.Pools["BoundByDestiny"])
 
 	// combined table of many mod categories
 	item := map[string]ItemModData{}
 	for _, key := range itemModsItemKeys {
-		for id, e := range d.ItemMods[key] {
+		for id, e := range ItemMods[key] {
 			item[id] = e
 		}
 	}
-	d.ItemMods["Item"] = item
+	ItemMods["Item"] = item
 
 	// data.uniqueMods["Watcher's Eye"]: the WatchersEye pool as a sorted list.
-	watchers := d.ItemMods["WatchersEye"]
+	watchers := ItemMods["WatchersEye"]
 	ids := make([]string, 0, len(watchers))
 	for id := range watchers {
 		ids = append(ids, id)
@@ -119,7 +119,7 @@ func (d *Data) loadItemMods(src gamedata.ModsData) {
 	for _, id := range ids {
 		list = append(list, UniqueModEntry{Id: id, Mod: watchers[id]})
 	}
-	d.UniqueMods = map[string][]UniqueModEntry{"Watcher's Eye": list}
+	UniqueMods = map[string][]UniqueModEntry{"Watcher's Eye": list}
 }
 
 // UniqueModEntry is one data.uniqueMods list entry.

@@ -3,13 +3,15 @@
 // total EHP and the survival time.
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"math"
+)
 
 func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	if damageCategoryConfig == "DamageOverTime" {
 		return
@@ -102,7 +104,7 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 			// solver, matching the reference.
 			avoidChance := 0.0
 			if truthy(output["specificTypeAvoidance"]) {
-				avoidChance = math.Min(outNum(output, "Avoid"+damageType+"DamageChance")+extraAvoidChance, d.Misc.AvoidChanceCap)
+				avoidChance = math.Min(outNum(output, "Avoid"+damageType+"DamageChance")+extraAvoidChance, data.Misc.AvoidChanceCap)
 				// unlucky config to lower the value of block, dodge, evade etc for ehp
 				worstOf := 1.0
 				if v := env.ConfigInput["EHPUnluckyWorstOf"]; truthy(v) {

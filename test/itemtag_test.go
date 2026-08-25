@@ -3,6 +3,8 @@ package test
 import (
 	"strings"
 	"testing"
+
+	"github.com/MissingL-tter/missingPassives/data"
 )
 
 // metaChars are the regex metacharacters that must not appear inside an
@@ -25,11 +27,11 @@ func interiorMeta(pat string) string {
 // with Lua string.find, whose metacharacters differ from Go's — so an edit
 // that introduces one must fail here rather than silently change matching.
 func TestItemTagPatternsAreLiteral(t *testing.T) {
-	d := loadGameData(t)
+	loadGameData(t)
 	checked := 0
 	for table, tbl := range map[string]map[string]map[string][]string{
-		"itemTagSpecial":                 d.ItemTagSpecial,
-		"itemTagSpecialExclusionPattern": d.ItemTagSpecialExclusionPattern,
+		"itemTagSpecial":                 data.ItemTagSpecial,
+		"itemTagSpecialExclusionPattern": data.ItemTagSpecialExclusionPattern,
 	} {
 		for key, slots := range tbl {
 			if strings.IndexAny(key, metaChars) >= 0 {

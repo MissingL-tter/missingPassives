@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -21,12 +22,11 @@ func optName(cond bool, names []string, name string) []string {
 func (env *Env) offenceDuration(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	output, enemyDB, activeSkill := c.output, c.enemyDB, c.activeSkill
-	d := env.Data
 
 	// Skill duration
 	debuffDurationMult := 1.0
 	if env.ModeEffective {
-		debuffDurationMult = 1 / math.Max(d.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
+		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 	mineDur := truthy(skillData["mineDurationAppliesToSkill"])
 
@@ -41,7 +41,7 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 		if truthy(skillData["debuff"]) {
 			duration *= debuffDurationMult
 		}
-		output["Duration"] = math.Ceil(duration*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["Duration"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	durationBase = anyNum(skillData["durationSecondary"]) + skillModList.Sum("BASE", skillCfg, "Duration", "SecondaryDuration")
 	if durationBase > 0 {
@@ -50,7 +50,7 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 		if truthy(skillData["debuffSecondary"]) {
 			duration *= debuffDurationMult
 		}
-		output["DurationSecondary"] = math.Ceil(duration*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["DurationSecondary"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	durationBase = anyNum(skillData["durationTertiary"]) + skillModList.Sum("BASE", skillCfg, "Duration", "TertiaryDuration")
 	if durationBase > 0 {
@@ -59,32 +59,32 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 		if truthy(skillData["debuffTertiary"]) {
 			duration *= debuffDurationMult
 		}
-		output["DurationTertiary"] = math.Ceil(duration*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["DurationTertiary"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	if durationBase = anyNum(skillData["auraDuration"]); durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, "Duration"), 0)
-		output["AuraDuration"] = math.Ceil(durationBase*dm*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["AuraDuration"] = math.Ceil(durationBase*dm*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	if durationBase = anyNum(skillData["reserveDuration"]); durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, "Duration"), 0)
-		output["ReserveDuration"] = math.Ceil(durationBase*dm*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+		output["ReserveDuration"] = math.Ceil(durationBase*dm*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	}
 	if durationBase = anyNum(skillData["soulPreventionDuration"]); durationBase > 0 {
 		names := []string{"SoulGainPreventionDuration"}
 		names = optName(truthy(skillData["skillEffectAppliesToSoulGainPrevention"]), names, "Duration")
 		names = optName(mineDur, names, "MineDuration")
 		dm := math.Max(Mod(skillModList, skillCfg, names...), 0)
-		output["SoulGainPreventionDuration"] = math.Max(math.Ceil(durationBase*dm*d.Misc.ServerTickRate), 1) / d.Misc.ServerTickRate
+		output["SoulGainPreventionDuration"] = math.Max(math.Ceil(durationBase*dm*data.Misc.ServerTickRate), 1) / data.Misc.ServerTickRate
 	}
 	totemDurationMod := math.Max(Mod(skillModList, skillCfg, "TotemDuration"), 0)
 	output["TotemDurationMod"] = totemDurationMod
 	totemDurationBase := skillModList.Sum("BASE", skillCfg, "TotemDuration")
-	output["TotemDuration"] = math.Ceil(totemDurationBase*totemDurationMod*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+	output["TotemDuration"] = math.Ceil(totemDurationBase*totemDurationMod*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 
 	impaleDurationMod := math.Max(Mod(skillModList, skillCfg, "ImpaleDuration"), 0)
 	output["ImpaleDurationMod"] = impaleDurationMod
-	impaleDurationBase := d.CharacterConstants["impaled_debuff_base_duration_ms"] / 1000
-	output["ImpaleDuration"] = math.Ceil(impaleDurationBase*impaleDurationMod*d.Misc.ServerTickRate*debuffDurationMult) / d.Misc.ServerTickRate
+	impaleDurationBase := data.CharacterConstants["impaled_debuff_base_duration_ms"] / 1000
+	output["ImpaleDuration"] = math.Ceil(impaleDurationBase*impaleDurationMod*data.Misc.ServerTickRate*debuffDurationMult) / data.Misc.ServerTickRate
 
 	// Skill uptime
 	// exclude vaal skills as we currently don't support soul generation or

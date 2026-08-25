@@ -32,8 +32,8 @@ type Gem struct {
 	GrantedEffectList      []*GrantedEffect
 }
 
-func (d *Data) loadGems(src gamedata.SkillsData) {
-	d.Gems = map[string]*Gem{}
+func loadGems(src gamedata.SkillsData) {
+	Gems = map[string]*Gem{}
 	for _, g := range src.Gems {
 		gem := &Gem{
 			Name:            sanitiseText(luaUnescape(g.Name)),
@@ -57,14 +57,14 @@ func (d *Data) loadGems(src gamedata.SkillsData) {
 		for _, t := range g.Tags {
 			gem.Tags[t] = true
 		}
-		d.Gems["Metadata/Items/Gems/SkillGem"+g.VariantId] = gem
+		Gems["Metadata/Items/Gems/SkillGem"+g.VariantId] = gem
 	}
 
 	setupGem := func(gem *Gem, gemId string) {
 		gem.Id = gemId
-		gem.GrantedEffect = d.Skills[gem.GrantedEffectId]
+		gem.GrantedEffect = Skills[gem.GrantedEffectId]
 		if gem.SecondaryGrantedEffectId != nil {
-			gem.SecondaryGrantedEffect = d.Skills[*gem.SecondaryGrantedEffectId]
+			gem.SecondaryGrantedEffect = Skills[*gem.SecondaryGrantedEffectId]
 		}
 		gem.GrantedEffectList = []*GrantedEffect{gem.GrantedEffect}
 		if gem.SecondaryGrantedEffect != nil {
@@ -74,20 +74,20 @@ func (d *Data) loadGems(src gamedata.SkillsData) {
 			panic("data: gem without naturalMaxLevel " + gemId)
 		}
 	}
-	for gemId, gem := range d.Gems {
+	for gemId, gem := range Gems {
 		setupGem(gem, gemId)
 	}
 
 	// Vaal AltX/AltY gems: synthesised for vaal gems whose secondary effect
 	// has an Alt variant skill.
 	toAdd := map[string]*Gem{}
-	for _, gemId := range sortedGemIds(d.Gems) {
-		gem := d.Gems[gemId]
+	for _, gemId := range sortedGemIds(Gems) {
+		gem := Gems[gemId]
 		if !gem.VaalGem || gem.SecondaryGrantedEffectId == nil {
 			continue
 		}
 		for _, alt := range []string{"AltX", "AltY"} {
-			altSkill := d.Skills[*gem.SecondaryGrantedEffectId+alt]
+			altSkill := Skills[*gem.SecondaryGrantedEffectId+alt]
 			if altSkill == nil {
 				continue
 			}
@@ -118,30 +118,30 @@ func (d *Data) loadGems(src gamedata.SkillsData) {
 		}
 	}
 	for id, gem := range toAdd {
-		d.Gems[id] = gem
+		Gems[id] = gem
 	}
 
 	// Lookups, rebuilt in sorted gem-id order.
-	d.GemForSkill = map[*GrantedEffect]string{}
-	d.GemForBaseName = map[string]string{}
-	d.GemsByGameId = map[string]map[string]*Gem{}
-	d.GemGrantedEffectIdForVaalGemId = map[string]string{}
-	d.GemVaalGemIdForBaseGemId = map[string]string{}
-	ids := sortedGemIds(d.Gems)
+	GemForSkill = map[*GrantedEffect]string{}
+	GemForBaseName = map[string]string{}
+	GemsByGameId = map[string]map[string]*Gem{}
+	GemGrantedEffectIdForVaalGemId = map[string]string{}
+	GemVaalGemIdForBaseGemId = map[string]string{}
+	ids := sortedGemIds(Gems)
 	for _, gemId := range ids {
-		gem := d.Gems[gemId]
-		d.GemForSkill[gem.GrantedEffect] = gemId
-		if d.GemsByGameId[gem.GameId] == nil {
-			d.GemsByGameId[gem.GameId] = map[string]*Gem{}
+		gem := Gems[gemId]
+		GemForSkill[gem.GrantedEffect] = gemId
+		if GemsByGameId[gem.GameId] == nil {
+			GemsByGameId[gem.GameId] = map[string]*Gem{}
 		}
-		d.GemsByGameId[gem.GameId][gem.VariantId] = gem
+		GemsByGameId[gem.GameId][gem.VariantId] = gem
 		baseName := gem.Name
 		if gem.GrantedEffect.Support && gem.GrantedEffectId != "SupportBarrage" {
 			baseName = baseName + " Support"
 		}
-		d.GemForBaseName[luaLower(baseName)] = gemId
+		GemForBaseName[luaLower(baseName)] = gemId
 		if gem.BaseTypeName != nil && *gem.BaseTypeName != baseName {
-			d.GemForBaseName[luaLower(*gem.BaseTypeName)] = gemId
+			GemForBaseName[luaLower(*gem.BaseTypeName)] = gemId
 		}
 	}
 	// The Vaal id lookups only ever process the original gems (the alt gems
@@ -154,28 +154,28 @@ func (d *Data) loadGems(src gamedata.SkillsData) {
 		}
 	}
 	for _, gemId := range originalIds {
-		gem := d.Gems[gemId]
+		gem := Gems[gemId]
 		if !gem.VaalGem || gem.SecondaryGrantedEffectId == nil {
 			continue
 		}
 		sec := *gem.SecondaryGrantedEffectId
-		d.GemGrantedEffectIdForVaalGemId[sec] = gemId
+		GemGrantedEffectIdForVaalGemId[sec] = gemId
 		for _, otherId := range originalIds {
-			if d.Gems[otherId].GrantedEffectId == sec {
-				d.GemVaalGemIdForBaseGemId[gemId] = otherId
+			if Gems[otherId].GrantedEffectId == sec {
+				GemVaalGemIdForBaseGemId[gemId] = otherId
 				break
 			}
 		}
 		for _, alt := range []string{"AltX", "AltY"} {
-			if d.Skills[sec+alt] == nil {
+			if Skills[sec+alt] == nil {
 				continue
 			}
-			d.GemGrantedEffectIdForVaalGemId[sec+alt] = gemId + alt
-			base, ok := d.GemVaalGemIdForBaseGemId[gemId]
+			GemGrantedEffectIdForVaalGemId[sec+alt] = gemId + alt
+			base, ok := GemVaalGemIdForBaseGemId[gemId]
 			if !ok {
 				panic("data: alt vaal gem without base mapping " + gemId)
 			}
-			d.GemVaalGemIdForBaseGemId[gemId+alt] = base + alt
+			GemVaalGemIdForBaseGemId[gemId+alt] = base + alt
 		}
 	}
 }
@@ -246,9 +246,9 @@ func GemCanon(g *Gem) map[string]any {
 }
 
 // GemForSkillCanon keys the lookup by skill id.
-func (d *Data) GemForSkillCanon() map[string]string {
+func GemForSkillCanon() map[string]string {
 	out := map[string]string{}
-	for ge, gemId := range d.GemForSkill {
+	for ge, gemId := range GemForSkill {
 		out[ge.Id] = gemId
 	}
 	return out

@@ -10,6 +10,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -195,7 +196,6 @@ func (env *Env) findTriggerSkill(skill, source *ActiveSkill, triggerRate *float6
 // rate, accounting for cooldown alignment.
 func (env *Env) calcMultiSpellRotationImpact(skillRotation []*simSkill, sourceRate float64,
 	triggerCD *float64, chance float64, actor *performActor) float64 {
-	d := env.Data
 	rotationIndex := 0
 	nextTrigger := 0.0
 	triggerIncrement := 1 / sourceRate
@@ -226,8 +226,8 @@ func (env *Env) calcMultiSpellRotationImpact(skillRotation []*simSkill, sourceRa
 				// cooldown starts at the beginning of the current tick and
 				// ends at the next tick after expiration.
 				skillRotation[currentIndex].count++
-				skillRotation[currentIndex].nextTrig = ceilB(floorB(nextTrigger, d.Misc.ServerTickTime)+
-					skillRotation[currentIndex].simCD, d.Misc.ServerTickTime)
+				skillRotation[currentIndex].nextTrig = ceilB(floorB(nextTrigger, data.Misc.ServerTickTime)+
+					skillRotation[currentIndex].simCD, data.Misc.ServerTickTime)
 				break
 			}
 			currentIndex = (currentIndex + 1) % skillCount // on cooldown, try the next

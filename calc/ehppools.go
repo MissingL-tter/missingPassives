@@ -2,7 +2,10 @@
 // loss (Petrified Blood), energy shield bypass and Mind over Matter.
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"math"
+)
 
 // calcLifeHitPoolWithLossPrevention ports the local of the same name.
 func calcLifeHitPoolWithLossPrevention(life, maxLife, lifeLossPrevented, lifeLossBelowHalfPrevented float64) float64 {
@@ -15,12 +18,11 @@ func calcLifeHitPoolWithLossPrevention(life, maxLife, lifeLossPrevented, lifeLos
 func (env *Env) ehpPools(actor *performActor) {
 	modDB := actor.db
 	output := actor.output
-	d := env.Data
 
 	// Life Recoverable
 	output["LifeRecoverable"] = outNum(output, "LifeUnreserved")
 	if truthy(env.ConfigInput["conditionLowLife"]) {
-		lowPerc := d.Misc.LowPoolThreshold
+		lowPerc := data.Misc.LowPoolThreshold
 		if v, ok := output["LowLifePercentage"]; ok && truthy(v) {
 			lowPerc = anyNum(v)
 		}

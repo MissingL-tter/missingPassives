@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -100,7 +101,6 @@ func (env *Env) offenceCombine(c *offenceCtx) {
 func (env *Env) offenceLeechRates(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	skillFlags, output, activeSkill := c.skillFlags, c.output, c.activeSkill
-	d := env.Data
 
 	if activeSkill.Minion != nil {
 		speed := outNum(output, "Speed")
@@ -111,13 +111,13 @@ func (env *Env) offenceLeechRates(c *offenceCtx) {
 	}
 
 	// Calculate leech rates
-	output["LifeLeechInstanceRate"] = outNum(output, "Life") * d.Misc.LeechRateBase * Mod(skillModList, skillCfg, "LifeLeechRate")
+	output["LifeLeechInstanceRate"] = outNum(output, "Life") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "LifeLeechRate")
 	output["LifeLeechRate"] = outNum(output, "LifeLeechInstances") * outNum(output, "LifeLeechInstanceRate")
 	output["LifeLeechPerHit"] = output["LifeLeechInstanceRate"]
-	output["EnergyShieldLeechInstanceRate"] = outNum(output, "EnergyShield") * d.Misc.LeechRateBase * Mod(skillModList, skillCfg, "EnergyShieldLeechRate")
+	output["EnergyShieldLeechInstanceRate"] = outNum(output, "EnergyShield") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "EnergyShieldLeechRate")
 	output["EnergyShieldLeechRate"] = outNum(output, "EnergyShieldLeechInstances") * outNum(output, "EnergyShieldLeechInstanceRate")
 	output["EnergyShieldLeechPerHit"] = output["EnergyShieldLeechInstanceRate"]
-	output["ManaLeechInstanceRate"] = outNum(output, "Mana") * d.Misc.LeechRateBase * Mod(skillModList, skillCfg, "ManaLeechRate")
+	output["ManaLeechInstanceRate"] = outNum(output, "Mana") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "ManaLeechRate")
 	output["ManaLeechRate"] = outNum(output, "ManaLeechInstances") * outNum(output, "ManaLeechInstanceRate")
 	output["ManaLeechPerHit"] = output["ManaLeechInstanceRate"]
 	// On full life, Immortal Ambition treats life leech as energy shield leech

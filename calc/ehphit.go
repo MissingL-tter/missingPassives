@@ -2,6 +2,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -12,7 +13,6 @@ func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string)
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	output["totalTakenHit"] = 0.0
 
@@ -56,7 +56,7 @@ func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string)
 		damage := outNum(output, damageType+"TakenDamage")
 		impaleDamage := 0.0
 		if enemyImpaleChance > 0 && damageType == "Physical" {
-			impaleDamage = damage * d.Misc.ImpaleStoredDamageBase
+			impaleDamage = damage * data.Misc.ImpaleStoredDamageBase
 		}
 		armourReduct := 0.0
 		impaleArmourReduct := 0.0

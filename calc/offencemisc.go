@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -14,7 +15,6 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	skillFlags, output, modDB := c.skillFlags, c.output, c.modDB
 	activeSkill, isAttack := c.activeSkill, c.isAttack
-	d := env.Data
 
 	// Other Misc DPS multipliers (like custom source)
 	dpsMultiplier := 1.0
@@ -110,7 +110,7 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 			} else if truthy(output["Cooldown"]) {
 				output["HitSpeed"] = 1 / (outNum(output, "HitTime") + outNum(output, "Cooldown"))
 			} else {
-				output["HitSpeed"] = math.Min(1/outNum(output, "HitTime"), d.Misc.ServerTickRate)
+				output["HitSpeed"] = math.Min(1/outNum(output, "HitTime"), data.Misc.ServerTickRate)
 			}
 		}
 	}

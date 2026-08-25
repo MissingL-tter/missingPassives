@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -15,7 +16,6 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
-	d := env.Data
 
 	totalHitMin, totalHitMax, totalHitAvg := 0.0, 0.0, 0.0
 	totalCritMin, totalCritMax, totalCritAvg := 0.0, 0.0, 0.0
@@ -140,7 +140,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 							resist = 0
 						} else {
 							resist = math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")+
-								skillModList.Sum("BASE", cfg, "EnemyPhysicalDamageReduction")+armourRed), d.Misc.EnemyPhysicalDamageReductionCap)
+								skillModList.Sum("BASE", cfg, "EnemyPhysicalDamageReduction")+armourRed), data.Misc.EnemyPhysicalDamageReductionCap)
 							if resist > 0 {
 								resist = resist * (1 - (skillModList.Sum("BASE", nil, "PartialIgnoreEnemyPhysicalDamageReduction")/100 + chanceToIgnoreDR/100))
 							}
@@ -348,7 +348,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 		if total == 0 {
 			return 0, 0
 		}
-		duration := amount / total / d.Misc.LeechRateBase
+		duration := amount / total / data.Misc.LeechRateBase
 		return duration, duration * hitRate
 	}
 

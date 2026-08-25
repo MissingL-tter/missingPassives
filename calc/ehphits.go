@@ -3,7 +3,10 @@
 // until life reaches zero.
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"math"
+)
 
 // damageIn models the DamageIn table: per-type damage plus the control
 // fields. Optional numeric fields are pointers because the reference tests
@@ -42,7 +45,6 @@ func newDamageIn() *damageIn {
 func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 	modDB := actor.db
 	output := actor.output
-	d := env.Data
 
 	numHits := 0.0
 	if in.cycles == 0 {
@@ -124,8 +126,8 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 
 	iterationMultiplier := 1.0
 	damageTotal := 0.0
-	maxDamage := d.Misc.EhpCalcMaxDamage
-	maxIterations := d.Misc.EhpCalcMaxIterationsToCalc
+	maxDamage := data.Misc.EhpCalcMaxDamage
+	maxIterations := data.Misc.EhpCalcMaxIterationsToCalc
 	for poolLife > 0 && in.iterations < maxIterations {
 		in.iterations++
 		damage := map[string]float64{}
@@ -202,7 +204,7 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 		// to speed it up, run recursively but accelerated.
 		// MoM/life-loss-prevention mechanics can collapse too many hits into
 		// one resulting in eHP jumps so we slow the acceleration.
-		speedUp := d.Misc.EhpCalcSpeedUp
+		speedUp := data.Misc.EhpCalcSpeedUp
 		if in.LimitEHPSpeedup {
 			speedUp = 4
 		}

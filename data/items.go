@@ -12,10 +12,10 @@ import (
 
 // Essence is one data.essences entry (keyed by base item id).
 type Essence struct {
-	Name string             `lua:"name"`
-	Type float64            `lua:"type"`
-	Tier float64            `lua:"tier"`
-	Mods map[string]string  `lua:"mods"`
+	Name string            `lua:"name"`
+	Type float64           `lua:"type"`
+	Tier float64           `lua:"tier"`
+	Mods map[string]string `lua:"mods"`
 }
 
 func loadEssences(src gamedata.Essences) map[string]Essence {
@@ -33,13 +33,13 @@ func loadEssences(src gamedata.Essences) map[string]Essence {
 
 // Pantheon is one data.pantheons entry (keyed by god id).
 type Pantheon struct {
-	IsMajorGod bool                  `lua:"isMajorGod"`
-	Souls      map[int]PantheonSoul  `lua:"souls"`
+	IsMajorGod bool                 `lua:"isMajorGod"`
+	Souls      map[int]PantheonSoul `lua:"souls"`
 }
 
 type PantheonSoul struct {
-	Name string         `lua:"name"`
-	Mods []PantheonMod  `lua:"mods"`
+	Name string        `lua:"name"`
+	Mods []PantheonMod `lua:"mods"`
 }
 
 type PantheonMod struct {
@@ -88,13 +88,13 @@ func loadCrucible(src gamedata.CrucibleNodes) map[string]CrucibleNode {
 	out := map[string]CrucibleNode{}
 	for _, n := range src {
 		c := CrucibleNode{
-			Lines:     unescapeAll(n.Lines),
-			Type:      n.Type,
-			Tier:      float64(n.Tier),
-			StatOrder: n.StatOrders,
-			Level:     float64(n.Level),
-			Group:     n.Group,
-			NodeType:  n.NodeType,
+			Lines:        unescapeAll(n.Lines),
+			Type:         n.Type,
+			Tier:         float64(n.Tier),
+			StatOrder:    n.StatOrders,
+			Level:        float64(n.Level),
+			Group:        n.Group,
+			NodeType:     n.NodeType,
 			NodeLocation: intsToFloats(n.NodeLocation),
 			WeightKey:    emptyIfNil(n.WeightKey),
 			WeightVal:    intsToFloats(n.WeightVal),
@@ -146,16 +146,16 @@ func loadMasterMods(src gamedata.MasterCrafts) []MasterCraft {
 }
 
 // FlavourText is one data.flavourText entry.
-type FlavourText struct {
+type flavourText struct {
 	Id   string   `lua:"id"`
 	Name string   `lua:"name"`
 	Text []string `lua:"text"`
 }
 
-func loadFlavourText(src gamedata.FlavourTexts) []FlavourText {
-	out := make([]FlavourText, 0, len(src))
+func loadFlavourText(src gamedata.FlavourTexts) []flavourText {
+	out := make([]flavourText, 0, len(src))
 	for _, ft := range src {
-		out = append(out, FlavourText{Id: ft.Id, Name: ft.Name, Text: unescapeAll(ft.Text)})
+		out = append(out, flavourText{Id: ft.Id, Name: ft.Name, Text: unescapeAll(ft.Text)})
 	}
 	return out
 }

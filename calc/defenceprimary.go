@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -16,7 +17,6 @@ func (env *Env) defencePrimary(actor *performActor) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
-	d := env.Data
 
 	ironReflexes := modDB.Flag(nil, "IronReflexes")
 	ward, energyShield, armour, evasion := 0.0, 0.0, 0.0, 0.0
@@ -186,7 +186,7 @@ func (env *Env) defencePrimary(actor *performActor) {
 			cap = outNum(output, "EnergyShield")
 		}
 		if lowESConfig {
-			cap = math.Min(outNum(output, "EnergyShield")*d.Misc.LowPoolThreshold, cap)
+			cap = math.Min(outNum(output, "EnergyShield")*data.Misc.LowPoolThreshold, cap)
 		}
 		output["EnergyShieldRecoveryCap"] = cap
 	} else {
@@ -215,9 +215,9 @@ func (env *Env) defencePrimary(actor *performActor) {
 			projectileEvadeStat = evadeStat
 		}
 		output["EvadeChance"] = 100 - (hitChance(evadeStat, enemyAccuracy)-evadeChance)*hitCh
-		output["MeleeEvadeChance"] = math.Max(0, math.Min(d.Misc.EvadeChanceCap,
+		output["MeleeEvadeChance"] = math.Max(0, math.Min(data.Misc.EvadeChanceCap,
 			(100-(hitChance(meleeEvadeStat, enemyAccuracy)-evadeChance)*hitCh)*Mod(modDB, nil, "EvadeChance", "MeleeEvadeChance")))
-		output["ProjectileEvadeChance"] = math.Max(0, math.Min(d.Misc.EvadeChanceCap,
+		output["ProjectileEvadeChance"] = math.Max(0, math.Min(data.Misc.EvadeChanceCap,
 			(100-(hitChance(projectileEvadeStat, enemyAccuracy)-evadeChance)*hitCh)*Mod(modDB, nil, "EvadeChance", "ProjectileEvadeChance")))
 		// Evade chance is only shown merged when melee and projectile agree
 		if outNum(output, "MeleeEvadeChance") != outNum(output, "ProjectileEvadeChance") {

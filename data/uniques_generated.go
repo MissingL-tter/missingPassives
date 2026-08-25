@@ -67,13 +67,13 @@ func isIn(list []string, v string) bool {
 	return false
 }
 
-func (d *Data) getVeiledMods(pool, baseType, specificType1, specificType2 string) []veiledMod {
+func getVeiledMods(pool, baseType, specificType1, specificType2 string) []veiledMod {
 	poolKey := ""
 	if pool == "catarina" {
 		poolKey = "catarina_veiled_prefix"
 	}
 	var out []veiledMod
-	for id, mod := range d.VeiledMods {
+	for id, mod := range VeiledMods {
 		findWeight := func(key string) (float64, bool) {
 			if key == "" {
 				return 0, false
@@ -113,9 +113,9 @@ func (d *Data) getVeiledMods(pool, baseType, specificType1, specificType2 string
 	return out
 }
 
-func (d *Data) getVeiledModsByName(modNames []string) []veiledMod {
+func getVeiledModsByName(modNames []string) []veiledMod {
 	var out []veiledMod
-	for id, mod := range d.VeiledMods {
+	for id, mod := range VeiledMods {
 		plain := parseVeiledModName(id)
 		if isIn(modNames, plain) || isIn(modNames, id) {
 			out = append(out, veiledMod{name: "(" + mod.Type + ") " + plain, lines: mod.Lines})
@@ -125,14 +125,14 @@ func (d *Data) getVeiledModsByName(modNames []string) []veiledMod {
 	return out
 }
 
-func (d *Data) buildGeneratedUniques() {
+func buildGeneratedUniques() {
 	add := func(lines []string) {
-		d.Uniques["generated"] = append(d.Uniques["generated"], strings.Join(lines, "\n"))
+		Uniques["generated"] = append(Uniques["generated"], strings.Join(lines, "\n"))
 	}
-	d.Uniques["generated"] = []string{}
+	Uniques["generated"] = []string{}
 
 	// ------------------------------------------------------- Paradoxica --
-	paradoxicaMods := d.getVeiledMods("base", "weapon", "one_hand_weapon", "")
+	paradoxicaMods := getVeiledMods("base", "weapon", "one_hand_weapon", "")
 	paradoxica := []string{
 		"Paradoxica",
 		"Vaal Rapier",
@@ -161,7 +161,7 @@ func (d *Data) buildGeneratedUniques() {
 	add(paradoxica)
 
 	// -------------------------------------------------- Cane of Kulemak --
-	caneMods := d.getVeiledMods("catarina", "weapon", "staff", "two_hand_weapon")
+	caneMods := getVeiledMods("catarina", "weapon", "staff", "two_hand_weapon")
 	cane := []string{
 		"Cane of Kulemak",
 		"Serpentine Staff",
@@ -178,8 +178,8 @@ func (d *Data) buildGeneratedUniques() {
 		cane = append(cane, "Variant: "+mod.name)
 	}
 	cane = append(cane, "Requires Level 68, 85 Str, 85 Int", "Implicits: 1")
-	cane = append(cane, strings.Join(d.ItemMods["ItemExclusive"]["StaffBlockPercentImplicitStaff2"].Lines, ""))
-	cane = append(cane, strings.Join(d.ItemMods["ItemExclusive"]["LocalVeiledModEffectUnique__1"].Lines, ""))
+	cane = append(cane, strings.Join(ItemMods["ItemExclusive"]["StaffBlockPercentImplicitStaff2"].Lines, ""))
+	cane = append(cane, strings.Join(ItemMods["ItemExclusive"]["LocalVeiledModEffectUnique__1"].Lines, ""))
 	for i, mod := range caneMods {
 		for _, line := range mod.lines {
 			cane = append(cane, "{variant:"+itoa(i+1)+"}"+line)
@@ -188,7 +188,7 @@ func (d *Data) buildGeneratedUniques() {
 	add(cane)
 
 	// --------------------------------------------- Replica Paradoxica --
-	replicaMods := d.getVeiledMods("all", "weapon", "one_hand_weapon", "")
+	replicaMods := getVeiledMods("all", "weapon", "one_hand_weapon", "")
 	replica := []string{
 		"Replica Paradoxica",
 		"Vaal Rapier",
@@ -218,7 +218,7 @@ func (d *Data) buildGeneratedUniques() {
 	add(replica)
 
 	// ----------------------------------------------- The Queen's Hunger --
-	queensMods := d.getVeiledModsByName([]string{
+	queensMods := getVeiledModsByName([]string{
 		"JunMasterVeiledLocalIncreasedEnergyShieldAndLifeHigh",
 		"JunMasterVeiledPhysicalDamageReductionRatingDuringSoulGainPrevention",
 		"JunMasterVeiledPercentageLifeAndMana",
@@ -284,7 +284,7 @@ func (d *Data) buildGeneratedUniques() {
 		"Has Alt Variant Two: true",
 	}
 	var notables []string
-	for name := range d.ClusterJewels.NotableSortOrder {
+	for name := range ClusterJewels.NotableSortOrder {
 		notables = append(notables, name)
 	}
 	sort.Strings(notables)
@@ -316,7 +316,7 @@ func (d *Data) buildGeneratedUniques() {
 	}
 	excludedGems := []string{"Block Chance Reduction", "Empower", "Enhance", "Enlighten", "Item Quantity"}
 	var supportGems []string
-	for _, gem := range d.Gems {
+	for _, gem := range Gems {
 		ge := gem.GrantedEffect
 		if ge.Support && ge.PlusVersionOf == nil && !isIn(excludedGems, ge.Name) {
 			supportGems = append(supportGems, ge.Name)
@@ -342,18 +342,18 @@ func (d *Data) buildGeneratedUniques() {
 	add(replicaShako)
 
 	// ----------------------------------------------- Precursor's Emblem --
-	add(d.buildPrecursorsEmblem())
+	add(buildPrecursorsEmblem())
 
 	// -------------------------------------------- The Balance of Terror --
 	add(buildBalanceOfTerror())
 
 	// Watcher's Eye / Sublime Vision / Vorana's March / Bound by Destiny.
-	we, sv, vm, bbd := d.buildEyeFamily()
+	we, sv, vm, bbd := buildEyeFamily()
 	add(we)
 	add(sv)
 	add(vm)
 	add(bbd)
 
-	add(d.buildThatWhichWasTaken())
-	add(d.buildReplicaDragonfangsFlight())
+	add(buildThatWhichWasTaken())
+	add(buildReplicaDragonfangsFlight())
 }

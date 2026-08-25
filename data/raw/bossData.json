@@ -1,0 +1,404 @@
+{
+	"skills": [
+		{
+			"key": "Atziri Flameblast",
+			"damageType": "Spell",
+			"damageMultipliers": [
+				{
+					"type": "Fire",
+					"min": 51.08668434446346,
+					"spread": 0.25543342172231726
+				}
+			],
+			"uberDamageMultiplier": 1.26,
+			"hasPen": true,
+			"pens": [
+				{
+					"name": "FirePen",
+					"text": "8"
+				}
+			],
+			"hasUberPen": true,
+			"uberPens": [
+				{
+					"name": "FirePen",
+					"text": "10"
+				}
+			],
+			"speed": 25000,
+			"critChance": 0,
+			"earlierUber": true,
+			"tooltip": "\"The Uber variant has 10 ^xB97123Fire^7 penetration (Applied on Pinnacle And Uber)\""
+		},
+		{
+			"key": "Shaper Ball",
+			"damageType": "SpellProjectile",
+			"damageMultipliers": [
+				{
+					"type": "Cold",
+					"min": 11.668066430447862,
+					"spread": 0.05834033215223933
+				}
+			],
+			"hasPen": true,
+			"pens": [
+				{
+					"name": "ColdPen",
+					"text": "25"
+				}
+			],
+			"hasUberPen": true,
+			"uberPens": [
+				{
+					"name": "ColdPen",
+					"text": "40"
+				}
+			],
+			"speed": 1400,
+			"critChance": 5,
+			"tooltip": "\"Allocating Cosmic Wounds increases the penetration to 40% (Applied on Uber) and adds 2 projectiles\""
+		},
+		{
+			"key": "Shaper Slam",
+			"damageType": "Melee",
+			"damageMultipliers": [
+				{
+					"type": "Physical",
+					"min": 12.35868328125704,
+					"spread": 0.06179341640628518
+				}
+			],
+			"uberDamageMultiplier": 1.6666666666666665,
+			"speed": 3510,
+			"uberSpeed": 1755,
+			"critChance": 0,
+			"tooltip": "\"Cannot be Evaded.  Allocating Cosmic Wounds increases Damage by a further 100% (Applied on Uber) and cannot be blocked or dodged\"",
+			"hasAdditional": true,
+			"uberCount": 3,
+			"uberVals": {
+				"CannotBeBlocked": "\"flag\"",
+				"CannotBeDodged": "\"flag\"",
+				"CannotBeEvaded": "\"flag\"",
+				"CannotBeSuppressed": "\"flag\""
+			}
+		},
+		{
+			"key": "Shaper Beam",
+			"damageType": "DamageOverTime",
+			"damageMultipliers": [
+				{
+					"type": "Lightning",
+					"min": 12.589581629679984,
+					"spread": 0
+				},
+				{
+					"type": "Cold",
+					"min": 9.136364959834285,
+					"spread": 0
+				},
+				{
+					"type": "Fire",
+					"min": 11.141451836499192,
+					"spread": 0
+				}
+			],
+			"speed": 1000,
+			"critChance": 0,
+			"tooltip": "\"Damage Over Time skill\""
+		},
+		{
+			"key": "Sirus Meteor",
+			"damageType": "Spell",
+			"damageMultipliers": [
+				{
+					"type": "Physical",
+					"min": 28.179207951973464,
+					"spread": 0.14090638379039075
+				}
+			],
+			"uberDamageMultiplier": 1.52,
+			"speed": 1500,
+			"critChance": 5,
+			"tooltip": "\"Earlier ones with less walls do less damage. Allocating The Perfect Storm increases Damage by a further 50% (Applied on Uber)\"",
+			"hasAdditional": true,
+			"baseCount": 3,
+			"uberCount": 3,
+			"baseVals": {
+				"PhysicalDamageSkillConvertToChaos": "25",
+				"PhysicalDamageSkillConvertToFire": "25",
+				"PhysicalDamageSkillConvertToLightning": "25"
+			},
+			"uberVals": {
+				"PhysicalDamageSkillConvertToChaos": "25",
+				"PhysicalDamageSkillConvertToFire": "25",
+				"PhysicalDamageSkillConvertToLightning": "25"
+			}
+		},
+		{
+			"key": "Cortex Ground Degen",
+			"damageType": "DamageOverTime",
+			"damageMultipliers": [
+				{
+					"type": "Physical",
+					"min": 5.301210608721385,
+					"spread": 0
+				}
+			],
+			"speed": 1630,
+			"critChance": 0,
+			"tooltip": "\"Damage Over Time skill\""
+		},
+		{
+			"key": "Exarch Ball",
+			"damageType": "Spell",
+			"damageMultipliers": [
+				{
+					"type": "Fire",
+					"min": 14.92494678463495,
+					"spread": 0.07462473392317472
+				}
+			],
+			"speed": 1000,
+			"critChance": 0,
+			"tooltip": "\"Spawns 8-18 waves of balls depending on which fight and which ball phase, Cannot be Blocked, Dodged, or Suppressed\"",
+			"hasAdditional": true,
+			"baseCount": 3,
+			"uberCount": 3,
+			"baseVals": {
+				"CannotBeBlocked": "\"flag\"",
+				"CannotBeDodged": "\"flag\"",
+				"CannotBeSuppressed": "\"flag\""
+			},
+			"uberVals": {
+				"CannotBeBlocked": "\"flag\"",
+				"CannotBeDodged": "\"flag\"",
+				"CannotBeSuppressed": "\"flag\""
+			}
+		},
+		{
+			"key": "Eater Beam",
+			"damageType": "Spell",
+			"damageMultipliers": [
+				{
+					"type": "Lightning",
+					"min": 12.164923902598453,
+					"spread": 0.24329847805196905
+				}
+			],
+			"speed": 2500,
+			"critChance": 5,
+			"tooltip": "\"Allocating Insatiable Appetite causes the beam to always shock for at least 30%\""
+		},
+		{
+			"key": "Maven Fireball",
+			"damageType": "SpellProjectile",
+			"damageMultipliers": [
+				{
+					"type": "Fire",
+					"min": 14.977416270255686,
+					"spread": 0.07488708135127842
+				}
+			],
+			"uberDamageMultiplier": 2.0273275862068965,
+			"hasPen": true,
+			"pens": [
+				{
+					"name": "FirePen",
+					"text": "\"\""
+				}
+			],
+			"hasUberPen": true,
+			"uberPens": [
+				{
+					"name": "FirePen",
+					"text": "30"
+				}
+			],
+			"speed": 3000,
+			"critChance": 5,
+			"tooltip": "\"Allocating Throw the Gauntlet increases Damage by a further 100% (Applied on Uber) and causes the fireball to have 30 ^xB97123Fire^7 penetration (Applied on Uber)\""
+		},
+		{
+			"key": "Maven Memory Game",
+			"damageType": "Spell",
+			"damageMultipliers": [
+				{
+					"type": "Physical",
+					"min": 26.072726362104095,
+					"spread": 0.13036363181052044
+				}
+			],
+			"uberDamageMultiplier": 1.0086206896551724,
+			"speed": 7500,
+			"critChance": 5,
+			"tooltip": "\"Cannot be Blocked, Dodged, or Suppressed. \\n\tIt is three separate hits, and has a large DoT effect.  Neither is taken into account here.  \\n\t\ti.e. Hits before death should be more than 3 to survive\"",
+			"hasAdditional": true,
+			"baseCount": 6,
+			"uberCount": 6,
+			"baseVals": {
+				"CannotBeBlocked": "\"flag\"",
+				"CannotBeDodged": "\"flag\"",
+				"CannotBeSuppressed": "\"flag\"",
+				"PhysicalDamageSkillConvertToCold": "100",
+				"PhysicalDamageSkillConvertToFire": "100",
+				"PhysicalDamageSkillConvertToLightning": "100"
+			},
+			"uberVals": {
+				"CannotBeBlocked": "\"flag\"",
+				"CannotBeDodged": "\"flag\"",
+				"CannotBeSuppressed": "\"flag\"",
+				"PhysicalDamageSkillConvertToCold": "100",
+				"PhysicalDamageSkillConvertToFire": "100",
+				"PhysicalDamageSkillConvertToLightning": "100"
+			}
+		}
+	],
+	"skillLists": [
+		[
+			"Atziri Flameblast",
+			"Shaper Ball",
+			"Shaper Slam",
+			"Shaper Beam",
+			"Sirus Meteor",
+			"Cortex Ground Degen",
+			"Exarch Ball",
+			"Eater Beam",
+			"Maven Fireball",
+			"Maven Memory Game"
+		]
+	],
+	"bosses": [
+		{
+			"displayName": "Venarius",
+			"armourMult": 50,
+			"evasionMult": 0,
+			"isUber": true
+		},
+		{
+			"displayName": "EaterOfWorlds",
+			"armourMult": 0,
+			"evasionMult": 0,
+			"isUber": true
+		},
+		{
+			"displayName": "SearingExarch",
+			"armourMult": 0,
+			"evasionMult": 50,
+			"isUber": true
+		},
+		{
+			"displayName": "Maven",
+			"armourMult": 25,
+			"evasionMult": 0,
+			"isUber": true
+		},
+		{
+			"displayName": "Sirus",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": true
+		},
+		{
+			"displayName": "Shaper",
+			"armourMult": 0,
+			"evasionMult": 33,
+			"isUber": true
+		},
+		{
+			"displayName": "Elder",
+			"armourMult": 0,
+			"evasionMult": 33,
+			"isUber": true
+		},
+		{
+			"displayName": "BlackStar",
+			"armourMult": 0,
+			"evasionMult": 50,
+			"isUber": false
+		},
+		{
+			"displayName": "InfiniteHunger",
+			"armourMult": 0,
+			"evasionMult": 0,
+			"isUber": false
+		},
+		{
+			"displayName": "Atziri",
+			"armourMult": 25,
+			"evasionMult": 50,
+			"isUber": false
+		},
+		{
+			"displayName": "Phoenix",
+			"armourMult": 50,
+			"evasionMult": 50,
+			"isUber": false
+		},
+		{
+			"displayName": "Hydra",
+			"armourMult": 50,
+			"evasionMult": 100,
+			"isUber": false
+		},
+		{
+			"displayName": "Minotaur",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": false
+		},
+		{
+			"displayName": "Chimera",
+			"armourMult": 50,
+			"evasionMult": 50,
+			"isUber": false
+		},
+		{
+			"displayName": "Enslaver",
+			"armourMult": 75,
+			"evasionMult": 33,
+			"isUber": false
+		},
+		{
+			"displayName": "Eradicator",
+			"armourMult": 0,
+			"evasionMult": 33,
+			"isUber": false
+		},
+		{
+			"displayName": "Constrictor",
+			"armourMult": 100,
+			"evasionMult": 33,
+			"isUber": false
+		},
+		{
+			"displayName": "Purifier",
+			"armourMult": 75,
+			"evasionMult": 33,
+			"isUber": false
+		},
+		{
+			"displayName": "Baran",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": false
+		},
+		{
+			"displayName": "Veritania",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": false
+		},
+		{
+			"displayName": "AlHezmin",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": false
+		},
+		{
+			"displayName": "Drox",
+			"armourMult": 100,
+			"evasionMult": 0,
+			"isUber": false
+		}
+	]
+}

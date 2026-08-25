@@ -5,6 +5,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -14,7 +15,6 @@ import (
 // initMinionModDB ports CalcPerform's initMinionModDB.
 func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any) {
 	modDB := env.ModDB
-	d := env.Data
 	minion := activeSkill.Minion
 	if output == nil {
 		output = map[string]any{}
@@ -24,7 +24,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 	env.initModDB(minion.DB)
 	baseLife := minion.LifeTable[int(minion.Level)-1] * minion.MinionData.Life
 	if minion.Hostile {
-		mult, ok := d.MapLevelLifeMult[int64(env.EnemyLevel)]
+		mult, ok := data.MapLevelLifeMult[int64(env.EnemyLevel)]
 		if !ok {
 			mult = 1
 		}
@@ -32,13 +32,13 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 	}
 	minion.DB.AddMod(newMod("Life", "BASE", math.Floor(baseLife), "Base"))
 	if minion.MinionData.EnergyShield != nil {
-		esTable := d.MonsterAllyLifeTable
+		esTable := data.MonsterAllyLifeTable
 		if minion.Hostile {
 			esTable = minion.LifeTable
 		}
 		baseES := esTable[int(minion.Level)-1] * minion.MinionData.Life * *minion.MinionData.EnergyShield
 		if minion.Hostile {
-			mult, ok := d.MapLevelLifeMult[int64(env.EnemyLevel)]
+			mult, ok := data.MapLevelLifeMult[int64(env.EnemyLevel)]
 			if !ok {
 				mult = 1
 			}
@@ -50,14 +50,14 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 	if minion.MinionData.Armour != nil {
 		armourMult = *minion.MinionData.Armour
 	}
-	minion.DB.AddMod(newMod("Armour", "BASE", roundDec(d.MonsterArmourTable[int(minion.Level)-1]*armourMult, 0), "Base"))
+	minion.DB.AddMod(newMod("Armour", "BASE", roundDec(data.MonsterArmourTable[int(minion.Level)-1]*armourMult, 0), "Base"))
 	evasionMult := 1.0
 	if minion.MinionData.Evasion != nil {
 		evasionMult = *minion.MinionData.Evasion
 	}
-	minion.DB.AddMod(newMod("Evasion", "BASE", roundDec(d.MonsterEvasionTable[int(minion.Level)-1]*evasionMult, 0), "Base"))
+	minion.DB.AddMod(newMod("Evasion", "BASE", roundDec(data.MonsterEvasionTable[int(minion.Level)-1]*evasionMult, 0), "Base"))
 	if modDB.Flag(nil, "MinionAccuracyEqualsAccuracy") {
-		accPerDex := d.Misc.AccuracyPerDexBase
+		accPerDex := data.Misc.AccuracyPerDexBase
 		if ov := modDB.Override(nil, "DexAccBonusOverride"); truthy(ov) {
 			accPerDex = anyNum(ov)
 		}
@@ -65,7 +65,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 	} else {
 		minion.DB.AddMod(newMod("CannotBeEvaded", "FLAG", 1.0, "Minion Attacks always hit"))
 	}
-	mc := d.MonsterConstants
+	mc := data.MonsterConstants
 	minion.DB.AddMod(newMod("CritMultiplier", "BASE", mc["base_critical_strike_multiplier"]-100, "Base"))
 	minion.DB.AddMod(newMod("DotMultiplier", "BASE", mc["critical_ailment_dot_multiplier_+"], "Base", modparser.Tag{"type": "Condition", "var": "CriticalStrike"}))
 	minion.DB.AddMod(newMod("FireResist", "BASE", minion.MinionData.FireResist, "Base"))
@@ -172,7 +172,7 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 	minion.ActiveSkillList = nil
 	var skillIdList []string
 	for _, skillId := range minionData.SkillList {
-		if env.Data.Skills[skillId] != nil {
+		if data.Skills[skillId] != nil {
 			skillIdList = append(skillIdList, skillId)
 		}
 	}
@@ -198,7 +198,7 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 		skillIdList = append(skillIdList, "Melee")
 	}
 	for _, skillId := range skillIdList {
-		ge := env.Data.Skills[skillId]
+		ge := data.Skills[skillId]
 		minionEffect := &ActiveEffect{GrantedEffect: ge, Level: 1, Quality: 0}
 		if luaLevelsLen(ge.Levels) > 1 {
 			// walk levels 1..n while levelRequirement <= minion level
@@ -256,7 +256,7 @@ func (env *Env) calcSkillDuration(skillModList modstore.Store, skillCfg *modstor
 	duration := durationBase * durationMod
 	debuffDurationMult := 1.0
 	if env.ModeEffective {
-		debuffDurationMult = 1 / math.Max(env.Data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
+		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 	if truthy(skillData["debuff"]) {
 		duration = duration * debuffDurationMult

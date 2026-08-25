@@ -14,72 +14,72 @@ const (
 
 // Misc is data.misc — the magic numbers. Fields marked (derived) are
 // computed from the .ot constants at Load.
-type Misc struct {
-	ServerTickTime                   float64 `lua:"ServerTickTime"`
-	ServerTickRate                   float64 `lua:"ServerTickRate"`
-	AccuracyPerDexBase               float64 `lua:"AccuracyPerDexBase"`
-	LowPoolThreshold                 float64 `lua:"LowPoolThreshold"`
-	TemporalChainsEffectCap          float64 `lua:"TemporalChainsEffectCap"`
-	BuffExpirationSlowCap            float64 `lua:"BuffExpirationSlowCap"`
-	DamageReductionCap               float64 `lua:"DamageReductionCap"`               // (derived)
-	EnemyPhysicalDamageReductionCap  float64 `lua:"EnemyPhysicalDamageReductionCap"`  // (derived)
-	ResistFloor                      float64 `lua:"ResistFloor"`
-	MaxResistCap                     float64 `lua:"MaxResistCap"`
-	EvadeChanceCap                   float64 `lua:"EvadeChanceCap"`
-	DodgeChanceCap                   float64 `lua:"DodgeChanceCap"`
-	BlockChanceCap                   float64 `lua:"BlockChanceCap"`
-	SuppressionChanceCap             float64 `lua:"SuppressionChanceCap"`
-	SuppressionEffect                float64 `lua:"SuppressionEffect"`
-	AvoidChanceCap                   float64 `lua:"AvoidChanceCap"`
-	FortifyBaseDuration              float64 `lua:"FortifyBaseDuration"`
-	ManaRegenBase                    float64 `lua:"ManaRegenBase"` // (derived)
-	EnergyShieldRechargeBase         float64 `lua:"EnergyShieldRechargeBase"`
-	EnergyShieldRechargeDelay        float64 `lua:"EnergyShieldRechargeDelay"`
-	WardRechargeDelay                float64 `lua:"WardRechargeDelay"`
-	Transfiguration                  float64 `lua:"Transfiguration"`
-	EnemyMaxResist                   float64 `lua:"EnemyMaxResist"` // (derived)
-	LeechRateBase                    float64 `lua:"LeechRateBase"`
-	DotDpsCap                        float64 `lua:"DotDpsCap"`
-	BleedPercentBase                 float64 `lua:"BleedPercentBase"`
-	BleedDurationBase                float64 `lua:"BleedDurationBase"`
-	PoisonPercentBase                float64 `lua:"PoisonPercentBase"`
-	PoisonDurationBase               float64 `lua:"PoisonDurationBase"`
-	IgnitePercentBase                float64 `lua:"IgnitePercentBase"`
-	IgniteDurationBase               float64 `lua:"IgniteDurationBase"`
-	ImpaleStoredDamageBase           float64 `lua:"ImpaleStoredDamageBase"`
-	TrapTriggerRadiusBase            float64 `lua:"TrapTriggerRadiusBase"`
-	MineDetonationRadiusBase         float64 `lua:"MineDetonationRadiusBase"`
-	MineAuraRadiusBase               float64 `lua:"MineAuraRadiusBase"`
-	BrandAttachmentRangeBase         float64 `lua:"BrandAttachmentRangeBase"`
-	ProjectileDistanceCap            float64 `lua:"ProjectileDistanceCap"`
-	PlayerMovementSpeed              float64 `lua:"PlayerMovementSpeed"` // (derived)
-	MinStunChanceNeeded              float64 `lua:"MinStunChanceNeeded"`
-	StunBaseMult                     float64 `lua:"StunBaseMult"`
-	StunBaseDuration                 float64 `lua:"StunBaseDuration"`
-	StunNotMeleeDamageMult           float64 `lua:"StunNotMeleeDamageMult"`
-	MaxEnemyLevel                    float64 `lua:"MaxEnemyLevel"`
+type misc struct {
+	ServerTickTime                    float64 `lua:"ServerTickTime"`
+	ServerTickRate                    float64 `lua:"ServerTickRate"`
+	AccuracyPerDexBase                float64 `lua:"AccuracyPerDexBase"`
+	LowPoolThreshold                  float64 `lua:"LowPoolThreshold"`
+	TemporalChainsEffectCap           float64 `lua:"TemporalChainsEffectCap"`
+	BuffExpirationSlowCap             float64 `lua:"BuffExpirationSlowCap"`
+	DamageReductionCap                float64 `lua:"DamageReductionCap"`              // (derived)
+	EnemyPhysicalDamageReductionCap   float64 `lua:"EnemyPhysicalDamageReductionCap"` // (derived)
+	ResistFloor                       float64 `lua:"ResistFloor"`
+	MaxResistCap                      float64 `lua:"MaxResistCap"`
+	EvadeChanceCap                    float64 `lua:"EvadeChanceCap"`
+	DodgeChanceCap                    float64 `lua:"DodgeChanceCap"`
+	BlockChanceCap                    float64 `lua:"BlockChanceCap"`
+	SuppressionChanceCap              float64 `lua:"SuppressionChanceCap"`
+	SuppressionEffect                 float64 `lua:"SuppressionEffect"`
+	AvoidChanceCap                    float64 `lua:"AvoidChanceCap"`
+	FortifyBaseDuration               float64 `lua:"FortifyBaseDuration"`
+	ManaRegenBase                     float64 `lua:"ManaRegenBase"` // (derived)
+	EnergyShieldRechargeBase          float64 `lua:"EnergyShieldRechargeBase"`
+	EnergyShieldRechargeDelay         float64 `lua:"EnergyShieldRechargeDelay"`
+	WardRechargeDelay                 float64 `lua:"WardRechargeDelay"`
+	Transfiguration                   float64 `lua:"Transfiguration"`
+	EnemyMaxResist                    float64 `lua:"EnemyMaxResist"` // (derived)
+	LeechRateBase                     float64 `lua:"LeechRateBase"`
+	DotDpsCap                         float64 `lua:"DotDpsCap"`
+	BleedPercentBase                  float64 `lua:"BleedPercentBase"`
+	BleedDurationBase                 float64 `lua:"BleedDurationBase"`
+	PoisonPercentBase                 float64 `lua:"PoisonPercentBase"`
+	PoisonDurationBase                float64 `lua:"PoisonDurationBase"`
+	IgnitePercentBase                 float64 `lua:"IgnitePercentBase"`
+	IgniteDurationBase                float64 `lua:"IgniteDurationBase"`
+	ImpaleStoredDamageBase            float64 `lua:"ImpaleStoredDamageBase"`
+	TrapTriggerRadiusBase             float64 `lua:"TrapTriggerRadiusBase"`
+	MineDetonationRadiusBase          float64 `lua:"MineDetonationRadiusBase"`
+	MineAuraRadiusBase                float64 `lua:"MineAuraRadiusBase"`
+	BrandAttachmentRangeBase          float64 `lua:"BrandAttachmentRangeBase"`
+	ProjectileDistanceCap             float64 `lua:"ProjectileDistanceCap"`
+	PlayerMovementSpeed               float64 `lua:"PlayerMovementSpeed"` // (derived)
+	MinStunChanceNeeded               float64 `lua:"MinStunChanceNeeded"`
+	StunBaseMult                      float64 `lua:"StunBaseMult"`
+	StunBaseDuration                  float64 `lua:"StunBaseDuration"`
+	StunNotMeleeDamageMult            float64 `lua:"StunNotMeleeDamageMult"`
+	MaxEnemyLevel                     float64 `lua:"MaxEnemyLevel"`
 	MaxExperiencePenaltyFreeAreaLevel float64 `lua:"maxExperiencePenaltyFreeAreaLevel"`
-	ExperiencePenaltyMultiplier      float64 `lua:"experiencePenaltyMultiplier"`
-	StdBossDPSMult                   float64 `lua:"stdBossDPSMult"`
-	PinnacleBossDPSMult              float64 `lua:"pinnacleBossDPSMult"`
-	PinnacleBossPen                  float64 `lua:"pinnacleBossPen"`
-	UberBossDPSMult                  float64 `lua:"uberBossDPSMult"`
-	UberBossPen                      float64 `lua:"uberBossPen"`
-	EhpCalcSpeedUp                   float64 `lua:"ehpCalcSpeedUp"`
-	EhpCalcMaxDamage                 float64 `lua:"ehpCalcMaxDamage"`
-	EhpCalcMaxIterationsToCalc       float64 `lua:"ehpCalcMaxIterationsToCalc"`
-	MaxHitSmoothingPasses            float64 `lua:"maxHitSmoothingPasses"`
-	MaxStatIncrease                  float64 `lua:"maxStatIncrease"`
-	PvpElemental1                    float64 `lua:"PvpElemental1"`
-	PvpElemental2                    float64 `lua:"PvpElemental2"`
-	PvpNonElemental1                 float64 `lua:"PvpNonElemental1"`
-	PvpNonElemental2                 float64 `lua:"PvpNonElemental2"`
-	MatchingSocketQualityBonus       float64 `lua:"MatchingSocketQualityBonus"`
+	ExperiencePenaltyMultiplier       float64 `lua:"experiencePenaltyMultiplier"`
+	StdBossDPSMult                    float64 `lua:"stdBossDPSMult"`
+	PinnacleBossDPSMult               float64 `lua:"pinnacleBossDPSMult"`
+	PinnacleBossPen                   float64 `lua:"pinnacleBossPen"`
+	UberBossDPSMult                   float64 `lua:"uberBossDPSMult"`
+	UberBossPen                       float64 `lua:"uberBossPen"`
+	EhpCalcSpeedUp                    float64 `lua:"ehpCalcSpeedUp"`
+	EhpCalcMaxDamage                  float64 `lua:"ehpCalcMaxDamage"`
+	EhpCalcMaxIterationsToCalc        float64 `lua:"ehpCalcMaxIterationsToCalc"`
+	MaxHitSmoothingPasses             float64 `lua:"maxHitSmoothingPasses"`
+	MaxStatIncrease                   float64 `lua:"maxStatIncrease"`
+	PvpElemental1                     float64 `lua:"PvpElemental1"`
+	PvpElemental2                     float64 `lua:"PvpElemental2"`
+	PvpNonElemental1                  float64 `lua:"PvpNonElemental1"`
+	PvpNonElemental2                  float64 `lua:"PvpNonElemental2"`
+	MatchingSocketQualityBonus        float64 `lua:"MatchingSocketQualityBonus"`
 }
 
-func miscTable(characterConstants, monsterConstants map[string]float64) Misc {
-	return Misc{
-		ServerTickTime:                  0.033,
+func miscTable(characterConstants, monsterConstants map[string]float64) misc {
+	return misc{
+		ServerTickTime: 0.033,
 		// float64(...) forces the division to round through the double, as
 		// the reference's runtime `1 / 0.033` does: Go would otherwise fold
 		// the untyped constant expression at arbitrary precision and land
@@ -100,37 +100,37 @@ func miscTable(characterConstants, monsterConstants map[string]float64) Misc {
 		SuppressionEffect:               40,
 		AvoidChanceCap:                  75,
 		FortifyBaseDuration:             6,
-		ManaRegenBase: characterConstants["mana_regeneration_rate_per_minute_%"] / 60 / 100,
+		ManaRegenBase:                   characterConstants["mana_regeneration_rate_per_minute_%"] / 60 / 100,
 		// #EVAL: archive parity — Data.lua writes this key twice in one table
 		// constructor (the derived value, then 0.33); under LuaJIT the
 		// derived value is the one that survives.
-		EnergyShieldRechargeBase: characterConstants["energy_shield_recharge_rate_per_minute_%"] / 60 / 100,
-		EnergyShieldRechargeDelay:       2,
-		WardRechargeDelay:               2,
-		Transfiguration:                 0.3,
-		EnemyMaxResist:                  monsterConstants["base_maximum_all_resistances_%"],
-		LeechRateBase:                   0.02,
-		DotDpsCap:                       35791394, // (2 ^ 31 - 1) / 60 (int max / 60 seconds)
-		BleedPercentBase:                70,
-		BleedDurationBase:               5,
-		PoisonPercentBase:               0.30,
-		PoisonDurationBase:              2,
-		IgnitePercentBase:               0.9,
-		IgniteDurationBase:              4,
-		ImpaleStoredDamageBase:          0.1,
-		TrapTriggerRadiusBase:           10,
-		MineDetonationRadiusBase:        60,
-		MineAuraRadiusBase:              35,
-		BrandAttachmentRangeBase:        30,
-		ProjectileDistanceCap:           150,
-		PlayerMovementSpeed:             characterConstants["base_speed"],
-		MinStunChanceNeeded:             20,
-		StunBaseMult:                    200,
-		StunBaseDuration:                0.35,
-		StunNotMeleeDamageMult:          0.75,
-		MaxEnemyLevel:                   85,
+		EnergyShieldRechargeBase:          characterConstants["energy_shield_recharge_rate_per_minute_%"] / 60 / 100,
+		EnergyShieldRechargeDelay:         2,
+		WardRechargeDelay:                 2,
+		Transfiguration:                   0.3,
+		EnemyMaxResist:                    monsterConstants["base_maximum_all_resistances_%"],
+		LeechRateBase:                     0.02,
+		DotDpsCap:                         35791394, // (2 ^ 31 - 1) / 60 (int max / 60 seconds)
+		BleedPercentBase:                  70,
+		BleedDurationBase:                 5,
+		PoisonPercentBase:                 0.30,
+		PoisonDurationBase:                2,
+		IgnitePercentBase:                 0.9,
+		IgniteDurationBase:                4,
+		ImpaleStoredDamageBase:            0.1,
+		TrapTriggerRadiusBase:             10,
+		MineDetonationRadiusBase:          60,
+		MineAuraRadiusBase:                35,
+		BrandAttachmentRangeBase:          30,
+		ProjectileDistanceCap:             150,
+		PlayerMovementSpeed:               characterConstants["base_speed"],
+		MinStunChanceNeeded:               20,
+		StunBaseMult:                      200,
+		StunBaseDuration:                  0.35,
+		StunNotMeleeDamageMult:            0.75,
+		MaxEnemyLevel:                     85,
 		MaxExperiencePenaltyFreeAreaLevel: 70,
-		ExperiencePenaltyMultiplier:     0.06,
+		ExperiencePenaltyMultiplier:       0.06,
 		// Expected values to calculate EHP
 		StdBossDPSMult:      4 / 4.40,
 		PinnacleBossDPSMult: 8 / 4.40,
@@ -377,14 +377,14 @@ var highPrecisionMods = map[string]map[string]int{
 }
 
 // WeaponTypeInfo is one data.weaponTypeInfo entry.
-type WeaponTypeInfo struct {
+type weaponTypeDef struct {
 	OneHand bool    `lua:"oneHand"`
 	Melee   bool    `lua:"melee"`
 	Flag    string  `lua:"flag"`
 	Label   *string `lua:"label"`
 }
 
-var weaponTypeInfo = map[string]WeaponTypeInfo{
+var weaponTypeInfo = map[string]weaponTypeDef{
 	"None":                       {OneHand: true, Melee: true, Flag: "Unarmed"},
 	"Bow":                        {OneHand: false, Melee: false, Flag: "Bow"},
 	"Claw":                       {OneHand: true, Melee: true, Flag: "Claw"},
@@ -423,7 +423,7 @@ var unarmedWeaponData = map[int]UnarmedWeapon{
 
 // JewelRadius is one data.jewelRadii entry; the squared fields exist only on
 // the tree version setJewelRadiiGlobally selected.
-type JewelRadius struct {
+type jewelRadius struct {
 	Inner        float64  `lua:"inner"`
 	Outer        float64  `lua:"outer"`
 	Col          string   `lua:"col"`
@@ -435,8 +435,8 @@ type JewelRadius struct {
 // buildJewelRadii constructs data.jewelRadii and applies
 // setJewelRadiiGlobally(latestTreeVersion) — the latest version is past
 // 3.15, so 3_16 is selected and mutated.
-func buildJewelRadii() (map[string][]*JewelRadius, float64) {
-	radii := map[string][]*JewelRadius{
+func buildJewelRadii() (map[string][]*jewelRadius, float64) {
+	radii := map[string][]*jewelRadius{
 		"3_15": {
 			{Inner: 0, Outer: 800, Col: "^xBB6600", Label: "Small"},
 			{Inner: 0, Outer: 1200, Col: "^x66FFCC", Label: "Medium"},
@@ -472,12 +472,12 @@ func buildJewelRadii() (map[string][]*JewelRadius, float64) {
 }
 
 // EnchantmentSource is one data.enchantmentSource entry.
-type EnchantmentSource struct {
+type enchantmentSource struct {
 	Name  string `lua:"name"`
 	Label string `lua:"label"`
 }
 
-var enchantmentSource = []EnchantmentSource{
+var EnchantmentSource = []enchantmentSource{
 	{Name: "ENKINDLING", Label: "Enkindling Orb"},
 	{Name: "INSTILLING", Label: "Instilling Orb"},
 	{Name: "RUNESMITH", Label: "Runecraft Bench"},

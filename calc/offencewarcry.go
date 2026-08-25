@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -37,7 +38,6 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 	skillFlags, activeSkill, actor := c.skillFlags, c.activeSkill, c.actor
 	enemyDB, cfg := c.enemyDB, pass.cfg
 	globalOutput := c.output
-	d := env.Data
 
 	// Exerted Attack members
 	exertedDoubleDamage := env.ModDB.Sum("BASE", cfg, "ExertDoubleDamageChance")
@@ -244,7 +244,7 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 				pactCastTime = *ct
 			}
 			castRate := 1 / pactCastTime * Mod(value.SkillModList, value.SkillCfg, "Speed") * env.actionSpeedMod(actor)
-			castTime := 1 / math.Min(castRate, d.Misc.ServerTickRate)
+			castTime := 1 / math.Min(castRate, data.Misc.ServerTickRate)
 			count := value.SkillModList.Sum("BASE", value.SkillCfg, pactKey+"EmpoweredSpells")
 			storedUses := warcryStoredUses(value)
 			uptime := 100.0
@@ -294,7 +294,7 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 				if truthy(globalOutput["SoulGainPreventionDuration"]) {
 					duration := outNum(globalOutput, "SoulGainPreventionDuration")
 					durationMod := 1 + value.SkillModList.Sum("BASE", value.SkillCfg, "KtashPactSoulGainPrevention")*effectMult/100
-					globalOutput["SoulGainPreventionDuration"] = math.Max(math.Ceil(duration*durationMod*d.Misc.ServerTickRate), 1) / d.Misc.ServerTickRate
+					globalOutput["SoulGainPreventionDuration"] = math.Max(math.Ceil(duration*durationMod*data.Misc.ServerTickRate), 1) / data.Misc.ServerTickRate
 				}
 			}
 			globalOutput[calculated] = true

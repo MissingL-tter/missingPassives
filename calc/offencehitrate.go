@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -15,7 +16,6 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
 	skillFlags, enemyDB, modDB := c.skillFlags, c.enemyDB, c.modDB
 	activeSkill, isAttack := c.activeSkill, c.isAttack
-	d := env.Data
 	globalOutput := c.output
 
 	var storedMainHandAccuracy, storedMainHandAccuracyVsEnemy float64
@@ -144,7 +144,7 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 
 			// Calculates the max number of trauma stacks you can sustain
 			if skillModList.Flag(nil, "HasTrauma") {
-				effectiveAttackRateCap := d.Misc.ServerTickRate * repeats
+				effectiveAttackRateCap := data.Misc.ServerTickRate * repeats
 				duration := skillModList.Sum("BASE", cfg, "TraumaDuration") * Mod(skillModList, skillCfg, "Duration")
 				traumaPerAttack := 1 + math.Min(skillModList.Sum("BASE", cfg, "ExtraTrauma"), 100)/100
 				incAttackSpeedPerTrauma := skillModList.Sum("INC", skillCfg, "SpeedPerTrauma")
@@ -207,7 +207,7 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 				skillData["showAverage"] = false
 			}
 			if !activeSkill.SkillTypes[modparser.SkillType.Channel] {
-				output["Speed"] = math.Min(outNum(output, "Speed"), d.Misc.ServerTickRate*repeats)
+				output["Speed"] = math.Min(outNum(output, "Speed"), data.Misc.ServerTickRate*repeats)
 			}
 			if outNum(output, "Speed") == 0 {
 				output["Time"] = 0.0

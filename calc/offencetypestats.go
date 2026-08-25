@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -14,7 +15,6 @@ import (
 // (L274). The Lua returns (cooldown, rounded, addedCooldown); only the
 // first two are read outside the breakdown.
 func (env *Env) calcSkillCooldown(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData map[string]any) (cooldown float64, rounded bool) {
-	d := env.Data
 	cooldownOverride := skillModList.Override(skillCfg, "CooldownRecovery")
 	addedCooldown := skillModList.Sum("BASE", skillCfg, "CooldownRecovery")
 	if truthy(cooldownOverride) {
@@ -28,16 +28,15 @@ func (env *Env) calcSkillCooldown(skillModList *modstore.List, skillCfg *modstor
 		skillModList.Sum("BASE", skillCfg, "AdditionalCooldownUses") > 0 {
 		return cooldown, false
 	}
-	cooldown = math.Ceil(cooldown*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+	cooldown = math.Ceil(cooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	return cooldown, true
 }
 
 // calcWarcryCastTime ports the local of the same name (L289).
 func (env *Env) calcWarcryCastTime(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData map[string]any, actor *performActor) float64 {
-	d := env.Data
 	baseSpeed := 1 / skillModList.Sum("BASE", skillCfg, "WarcryCastTime")
 	warcryCastTime := baseSpeed * Mod(skillModList, skillCfg, "WarcrySpeed") * env.actionSpeedMod(actor)
-	warcryCastTime = math.Min(warcryCastTime, d.Misc.ServerTickRate)
+	warcryCastTime = math.Min(warcryCastTime, data.Misc.ServerTickRate)
 	warcryCastTime = 1 / warcryCastTime
 	if skillModList.Flag(skillCfg, "InstantWarcry") || truthy(skillData["triggeredByAutoexertion"]) {
 		warcryCastTime = 0
@@ -50,7 +49,6 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 	actor, skillModList, skillCfg, skillData := c.actor, c.skillModList, c.skillCfg, c.skillData
 	skillFlags, output, enemyDB := c.skillFlags, c.output, c.enemyDB
 	activeSkill := c.activeSkill
-	d := env.Data
 
 	// Calculate skill type stats
 	if activeSkill.Minion != nil {
@@ -277,7 +275,7 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 		} else {
 			output["TrapThrowCount"] = trapThrowCount
 		}
-		output["TrapThrowingSpeed"] = math.Min(outNum(output, "TrapThrowingSpeed"), d.Misc.ServerTickRate)
+		output["TrapThrowingSpeed"] = math.Min(outNum(output, "TrapThrowingSpeed"), data.Misc.ServerTickRate)
 		output["TrapThrowingTime"] = 1 / outNum(output, "TrapThrowingSpeed")
 		skillData["timeOverride"] = outNum(output, "TrapThrowingTime") / outNum(output, "TrapThrowCount")
 
@@ -290,7 +288,7 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 		if hasBaseCooldown || skillModList.Sum("BASE", skillCfg, "CooldownRecovery") != 0 {
 			if hasBaseCooldown {
 				tc := baseCooldown / Mod(skillModList, skillCfg, "CooldownRecovery")
-				output["TrapCooldown"] = math.Ceil(tc*d.Misc.ServerTickRate) / d.Misc.ServerTickRate
+				output["TrapCooldown"] = math.Ceil(tc*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 			} else {
 				// Assign Trap Cooldown if the trap/skill does not have
 				// cooldown but gains cooldown elsewhere
@@ -300,7 +298,7 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 		}
 		incArea, moreArea := Mods(skillModList, skillCfg, "TrapTriggerAreaOfEffect")
 		areaMod := roundDec(roundDec(incArea*moreArea, 10), 2)
-		output["TrapTriggerRadius"] = calcRadius(d.Misc.TrapTriggerRadiusBase, areaMod)
+		output["TrapTriggerRadius"] = calcRadius(data.Misc.TrapTriggerRadiusBase, areaMod)
 		output["TrapTriggerRadiusMetre"] = outNum(output, "TrapTriggerRadius") / 10
 	} else if truthy(skillData["cooldown"]) || skillModList.Sum("BASE", skillCfg, "CooldownRecovery") != 0 {
 		cooldown, _ := env.calcSkillCooldown(skillModList, skillCfg, skillData)
@@ -333,7 +331,7 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 			output["MineLayingSpeed"] = outNum(output, "MineLayingSpeed") / (1 + (outNum(output, "MineThrowCount")-1)*0.1)
 		}
 
-		output["MineLayingSpeed"] = math.Min(outNum(output, "MineLayingSpeed"), d.Misc.ServerTickRate)
+		output["MineLayingSpeed"] = math.Min(outNum(output, "MineLayingSpeed"), data.Misc.ServerTickRate)
 		output["MineLayingTime"] = 1 / outNum(output, "MineLayingSpeed")
 
 		// Trap mine interaction where the Character throws mines, mine throws traps
@@ -345,10 +343,10 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 
 		incArea, moreArea := Mods(skillModList, skillCfg, "MineDetonationAreaOfEffect")
 		areaMod := roundDec(roundDec(incArea*moreArea, 10), 2)
-		output["MineDetonationRadius"] = calcRadius(d.Misc.MineDetonationRadiusBase, areaMod)
+		output["MineDetonationRadius"] = calcRadius(data.Misc.MineDetonationRadiusBase, areaMod)
 		output["MineDetonationRadiusMetre"] = outNum(output, "MineDetonationRadius") / 10
 		if activeSkill.SkillTypes[modparser.SkillType.Aura] {
-			output["MineAuraRadius"] = calcRadius(d.Misc.MineAuraRadiusBase, outNum(output, "AreaOfEffectMod"))
+			output["MineAuraRadius"] = calcRadius(data.Misc.MineAuraRadiusBase, outNum(output, "AreaOfEffectMod"))
 			output["MineAuraRadiusMetre"] = outNum(output, "MineAuraRadius") / 10
 		}
 	}
@@ -374,7 +372,7 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 		output["TotemArmour"] = skillModList.Sum("BASE", skillCfg, "TotemArmour")
 	}
 	if activeSkill.SkillTypes[modparser.SkillType.Brand] {
-		output["BrandAttachmentRange"] = d.Misc.BrandAttachmentRangeBase * Mod(skillModList, skillCfg, "BrandAttachmentRange")
+		output["BrandAttachmentRange"] = data.Misc.BrandAttachmentRangeBase * Mod(skillModList, skillCfg, "BrandAttachmentRange")
 		output["BrandAttachmentRangeMetre"] = outNum(output, "BrandAttachmentRange") / 10
 		output["ActiveBrandLimit"] = skillModList.Sum("BASE", skillCfg, "ActiveBrandLimit")
 		if v, ok := skillData["attachedBrandCount"]; ok && v != nil {
@@ -394,14 +392,14 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 		// Sum just assigned, and 0 is truthy in Lua.
 		lvl := int(outNum(output, "CorpseLevel"))
 		varietyMult := 1.0
-		if v, ok := d.MonsterVarietyLifeMult[str(skillData["corpseMonsterVariety"])]; ok {
+		if v, ok := data.MonsterVarietyLifeMult[str(skillData["corpseMonsterVariety"])]; ok {
 			varietyMult = v
 		}
 		mapMult := 1.0
-		if v, ok := d.MapLevelLifeMult[int64(env.EnemyLevel)]; ok {
+		if v, ok := data.MapLevelLifeMult[int64(env.EnemyLevel)]; ok {
 			mapMult = v
 		}
-		output["BaseCorpseLife"] = luaIndex("monsterLifeTable", d.MonsterLifeTable, lvl) * varietyMult * mapMult
+		output["BaseCorpseLife"] = luaIndex("monsterLifeTable", data.MonsterLifeTable, lvl) * varietyMult * mapMult
 		output["CorpseLifeInc"] = 1 + skillModList.Sum("INC", skillCfg, "CorpseLife")/100
 		output["CorpseLife"] = outNum(output, "BaseCorpseLife") * outNum(output, "CorpseLifeInc")
 	}

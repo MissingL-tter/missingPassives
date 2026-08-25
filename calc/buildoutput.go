@@ -3,8 +3,6 @@
 // every active skill before anything reads one.
 package calc
 
-import "github.com/MissingL-tter/missingPassives/data"
-
 // BuildActiveSkill ports calcs.buildActiveSkill (Calcs.lua L391): build a
 // fresh environment, find the skill in it by uuid, and run a full perform on
 // it. The point is the cacheData at the end of that perform -- the caller
@@ -23,7 +21,7 @@ func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID str
 	}
 	replay := *env.Replay
 	replay.GlobalCache = nil
-	fullEnv := initEnvOverride(env.Data, env.Build, mode, &replay, env.OverrideConditions)
+	fullEnv := initEnvOverride(env.Build, mode, &replay, env.OverrideConditions)
 	fullEnv.buildDepth = env.buildDepth + 1
 
 	// env.limitedSkills contains a map of uuids that should be limited in
@@ -74,12 +72,12 @@ func (env *Env) FillGlobalCache(mode string) {
 
 // BuildOutput ports the driver itself: one env for the main skill, a full
 // perform on it, then a cache entry for every other active skill.
-func BuildOutput(d *data.Data, in *BuildInput, mode string, replay *ReplayInput) *Env {
+func BuildOutput(in *BuildInput, mode string, replay *ReplayInput) *Env {
 	// The driver computes the cache; anything the fixture carried would
 	// mask that.
 	own := *replay
 	own.GlobalCache = nil
-	env := InitEnv(d, in, mode, &own)
+	env := InitEnv(in, mode, &own)
 	env.PerformFull(false)
 	if mode == "MAIN" {
 		env.FillGlobalCache(mode)

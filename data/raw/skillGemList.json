@@ -1,0 +1,5377 @@
+{
+	"groups": [
+		{
+			"type": "Strength",
+			"active": [
+				{
+					"name": "Leap Slam",
+					"effects": [
+						"LeapSlam"
+					]
+				},
+				{
+					"name": "Leap Slam of Groundbreaking",
+					"effects": [
+						"LeapSlamAltX"
+					]
+				},
+				{
+					"name": "Holy Sweep",
+					"effects": [
+						"Sweep"
+					]
+				},
+				{
+					"name": "Holy Sweep of Hammerfalls",
+					"effects": [
+						"SweepAltX"
+					]
+				},
+				{
+					"name": "Vaal Sweep",
+					"effects": [
+						"VaalSweep"
+					]
+				},
+				{
+					"name": "Ground Slam",
+					"effects": [
+						"GroundSlam"
+					]
+				},
+				{
+					"name": "Ground Slam of Earthshaking",
+					"effects": [
+						"GroundSlamAltX"
+					]
+				},
+				{
+					"name": "Vaal Ground Slam",
+					"effects": [
+						"VaalGroundSlam"
+					]
+				},
+				{
+					"name": "Cleave",
+					"effects": [
+						"Cleave"
+					]
+				},
+				{
+					"name": "Cleave of Rage",
+					"effects": [
+						"CleaveAltX"
+					]
+				},
+				{
+					"name": "Shield Charge",
+					"effects": [
+						"ShieldCharge"
+					]
+				},
+				{
+					"name": "Enduring Cry",
+					"effects": [
+						"EnduringCry"
+					]
+				},
+				{
+					"name": "Immortal Call",
+					"effects": [
+						"ImmortalCall"
+					]
+				},
+				{
+					"name": "Vaal Immortal Call",
+					"effects": [
+						"VaalImmortalCall"
+					]
+				},
+				{
+					"name": "Infernal Blow",
+					"effects": [
+						"InfernalBlow"
+					]
+				},
+				{
+					"name": "Infernal Blow of Immolation",
+					"effects": [
+						"InfernalBlowAltX"
+					]
+				},
+				{
+					"name": "Glacial Hammer",
+					"effects": [
+						"GlacialHammer"
+					]
+				},
+				{
+					"name": "Glacial Hammer of Shattering",
+					"effects": [
+						"GlacialHammerAltX"
+					]
+				},
+				{
+					"name": "Vaal Glacial Hammer",
+					"effects": [
+						"VaalGlacialHammer"
+					]
+				},
+				{
+					"name": "Warlord's Mark",
+					"effects": [
+						"WarlordsMark"
+					]
+				},
+				{
+					"name": "Punishment",
+					"effects": [
+						"Punishment"
+					]
+				},
+				{
+					"name": "Punishment",
+					"effects": [
+						"NewPunishment"
+					]
+				},
+				{
+					"name": "Heavy Strike",
+					"effects": [
+						"HeavyStrike"
+					]
+				},
+				{
+					"name": "Heavy Strike of Trarthus",
+					"effects": [
+						"HeavyStrikeAltY"
+					]
+				},
+				{
+					"name": "Vaal Heavy Strike",
+					"effects": [
+						"VaalHeavyStrike"
+					]
+				},
+				{
+					"name": "Dominating Blow",
+					"effects": [
+						"DominatingBlow"
+					]
+				},
+				{
+					"name": "Dominating Blow of Inspiring",
+					"effects": [
+						"DominatingBlowAltX"
+					]
+				},
+				{
+					"name": "Molten Shell",
+					"effects": [
+						"MoltenShell"
+					]
+				},
+				{
+					"name": "Vaal Molten Shell",
+					"effects": [
+						"VaalMoltenShell"
+					]
+				},
+				{
+					"name": "Vitality",
+					"effects": [
+						"Vitality"
+					]
+				},
+				{
+					"name": "Determination",
+					"effects": [
+						"Determination"
+					]
+				},
+				{
+					"name": "Anger",
+					"effects": [
+						"Anger"
+					]
+				},
+				{
+					"name": "Shockwave Totem",
+					"effects": [
+						"ShockwaveTotem"
+					]
+				},
+				{
+					"name": "Shockwave Totem of Authority",
+					"effects": [
+						"ShockwaveTotemAltX"
+					]
+				},
+				{
+					"name": "Rejuvenation Totem",
+					"effects": [
+						"RejuvenationTotem"
+					]
+				},
+				{
+					"name": "Decoy Totem",
+					"effects": [
+						"DecoyTotem"
+					]
+				},
+				{
+					"name": "Devouring Totem",
+					"effects": [
+						"DevouringTotem"
+					]
+				},
+				{
+					"name": "Holy Flame Totem",
+					"effects": [
+						"HolyFlameTotem"
+					]
+				},
+				{
+					"name": "Holy Flame Totem of Ire",
+					"effects": [
+						"HolyFlameTotemAltX"
+					]
+				},
+				{
+					"name": "Searing Bond",
+					"effects": [
+						"SearingBond"
+					]
+				},
+				{
+					"name": "Searing Bond of Detonation",
+					"effects": [
+						"SearingBondAltX"
+					]
+				},
+				{
+					"name": "Animate Guardian",
+					"effects": [
+						"AnimateGuardian"
+					]
+				},
+				{
+					"name": "Animate Guardian of Smiting",
+					"effects": [
+						"AnimateGuardianAltX"
+					]
+				},
+				{
+					"name": "Purity of Fire",
+					"effects": [
+						"PurityOfFire"
+					]
+				},
+				{
+					"name": "Vaal Impurity of Fire",
+					"effects": [
+						"VaalImpurityOfFire"
+					]
+				},
+				{
+					"name": "Molten Strike",
+					"effects": [
+						"MoltenStrike"
+					]
+				},
+				{
+					"name": "Molten Strike of the Zenith",
+					"effects": [
+						"MoltenStrikeAltX"
+					]
+				},
+				{
+					"name": "Herald of Ash",
+					"effects": [
+						"HeraldOfAsh"
+					]
+				},
+				{
+					"name": "Herald of Purity",
+					"effects": [
+						"HeraldOfPurity"
+					]
+				},
+				{
+					"name": "Doryani's Touch",
+					"effects": [
+						"DoryanisTouch"
+					]
+				},
+				{
+					"name": "Swordstorm",
+					"effects": [
+						"Swordstorm"
+					]
+				},
+				{
+					"name": "Eviscerate",
+					"effects": [
+						"Eviscerate"
+					]
+				},
+				{
+					"name": "Static Strike",
+					"effects": [
+						"StaticStrike"
+					]
+				},
+				{
+					"name": "Static Strike of Gathering Lightning",
+					"effects": [
+						"StaticStrikeAltX"
+					]
+				},
+				{
+					"name": "Crushing Fist",
+					"effects": [
+						"CrushingFist"
+					]
+				},
+				{
+					"name": "Vengeful Cry",
+					"effects": [
+						"VengefulCry"
+					]
+				},
+				{
+					"name": "Summon Flame Golem",
+					"effects": [
+						"SummonFlameGolem"
+					]
+				},
+				{
+					"name": "Summon Flame Golem of Hordes",
+					"effects": [
+						"SummonFlameGolemAltX"
+					]
+				},
+				{
+					"name": "Summon Flame Golem of the Meteor",
+					"effects": [
+						"SummonFlameGolemAltY"
+					]
+				},
+				{
+					"name": "Ice Crash",
+					"effects": [
+						"IceCrash"
+					]
+				},
+				{
+					"name": "Ice Crash of Cadence",
+					"effects": [
+						"IceCrashAltX"
+					]
+				},
+				{
+					"name": "Rallying Cry",
+					"effects": [
+						"RallyingCry"
+					]
+				},
+				{
+					"name": "Infernal Cry",
+					"effects": [
+						"InfernalCry",
+						"Combust"
+					]
+				},
+				{
+					"name": "Vigilant Strike",
+					"effects": [
+						"VigilantStrike"
+					]
+				},
+				{
+					"name": "Summon Stone Golem",
+					"effects": [
+						"SummonStoneGolem"
+					]
+				},
+				{
+					"name": "Summon Stone Golem of Hordes",
+					"effects": [
+						"SummonStoneGolemAltX"
+					]
+				},
+				{
+					"name": "Summon Stone Golem of Safeguarding",
+					"effects": [
+						"SummonStoneGolemAltY"
+					]
+				},
+				{
+					"name": "Earthquake",
+					"effects": [
+						"Earthquake"
+					]
+				},
+				{
+					"name": "Earthquake of Amplification",
+					"effects": [
+						"EarthquakeAltX"
+					]
+				},
+				{
+					"name": "Ancestral Protector",
+					"effects": [
+						"AncestralProtector"
+					]
+				},
+				{
+					"name": "Ancestral Blademaster",
+					"effects": [
+						"AncestorTotemSlash"
+					]
+				},
+				{
+					"name": "Ancestral Warchief",
+					"effects": [
+						"AncestralWarchief"
+					]
+				},
+				{
+					"name": "Sunder",
+					"effects": [
+						"Sunder"
+					]
+				},
+				{
+					"name": "Sunder of Earthbreaking",
+					"effects": [
+						"SunderAltX"
+					]
+				},
+				{
+					"name": "Sunder of Trarthus",
+					"effects": [
+						"SunderAltY"
+					]
+				},
+				{
+					"name": "Infernal Sweep",
+					"effects": [
+						"InfernalSweep"
+					]
+				},
+				{
+					"name": "Tectonic Slam",
+					"effects": [
+						"TectonicSlam"
+					]
+				},
+				{
+					"name": "Tectonic Slam of Cataclysm",
+					"effects": [
+						"TectonicSlamAltX"
+					]
+				},
+				{
+					"name": "Vulnerability",
+					"effects": [
+						"Vulnerability"
+					]
+				},
+				{
+					"name": "Vaal Earthquake",
+					"effects": [
+						"VaalEarthquake"
+					]
+				},
+				{
+					"name": "Vaal Ancestral Warchief",
+					"effects": [
+						"VaalAncestralWarchief"
+					]
+				},
+				{
+					"name": "Consecrated Path",
+					"effects": [
+						"ConsecratedPath"
+					]
+				},
+				{
+					"name": "Consecrated Path of Endurance",
+					"effects": [
+						"ConsecratedPathAltX"
+					]
+				},
+				{
+					"name": "Smite",
+					"effects": [
+						"Smite"
+					]
+				},
+				{
+					"name": "Smite of Divine Judgement",
+					"effects": [
+						"SmiteAltX"
+					]
+				},
+				{
+					"name": "War Banner",
+					"effects": [
+						"WarBanner"
+					]
+				},
+				{
+					"name": "Dread Banner",
+					"effects": [
+						"DreadBanner"
+					]
+				},
+				{
+					"name": "Steelskin",
+					"effects": [
+						"QuickGuard"
+					]
+				},
+				{
+					"name": "Bladestorm",
+					"effects": [
+						"Bladestorm"
+					]
+				},
+				{
+					"name": "Bladestorm of Uncertainty",
+					"effects": [
+						"BladestormAltX"
+					]
+				},
+				{
+					"name": "Blood and Sand",
+					"effects": [
+						"BloodAndSand"
+					]
+				},
+				{
+					"name": "Berserk",
+					"effects": [
+						"Berserk"
+					]
+				},
+				{
+					"name": "Perforate",
+					"effects": [
+						"Perforate"
+					]
+				},
+				{
+					"name": "Perforate of Duality",
+					"effects": [
+						"PerforateAltX"
+					]
+				},
+				{
+					"name": "Perforate of Bloodshed",
+					"effects": [
+						"PerforateAltY"
+					]
+				},
+				{
+					"name": "Chain Hook",
+					"effects": [
+						"ChainHook"
+					]
+				},
+				{
+					"name": "Chain Hook of Angling",
+					"effects": [
+						"ChainHookAltX"
+					]
+				},
+				{
+					"name": "Chain Hook of Trarthus",
+					"effects": [
+						"ChainHookAltY"
+					]
+				},
+				{
+					"name": "Flesh and Stone",
+					"effects": [
+						"FleshAndStone"
+					]
+				},
+				{
+					"name": "Pride",
+					"effects": [
+						"Pride"
+					]
+				},
+				{
+					"name": "Intimidating Cry",
+					"effects": [
+						"IntimidatingCry"
+					]
+				},
+				{
+					"name": "Seismic Cry",
+					"effects": [
+						"SeismicCry"
+					]
+				},
+				{
+					"name": "Ancestral Cry",
+					"effects": [
+						"AncestralCry"
+					]
+				},
+				{
+					"name": "Earthshatter",
+					"effects": [
+						"Earthshatter"
+					]
+				},
+				{
+					"name": "Earthshatter of Fragility",
+					"effects": [
+						"EarthshatterAltX"
+					]
+				},
+				{
+					"name": "Earthshatter of Prominence",
+					"effects": [
+						"EarthshatterAltY"
+					]
+				},
+				{
+					"name": "General's Cry",
+					"effects": [
+						"GeneralsCry",
+						"GeneralsCrySupport"
+					]
+				},
+				{
+					"name": "Exsanguinate",
+					"effects": [
+						"Exsanguinate"
+					]
+				},
+				{
+					"name": "Exsanguinate of Transmission",
+					"effects": [
+						"ExsanguinateAltX"
+					]
+				},
+				{
+					"name": "Corrupting Fever",
+					"effects": [
+						"CorruptingFever"
+					]
+				},
+				{
+					"name": "Reap",
+					"effects": [
+						"Reap"
+					]
+				},
+				{
+					"name": "Reap of Butchery",
+					"effects": [
+						"ReapAltX"
+					]
+				},
+				{
+					"name": "Petrified Blood",
+					"effects": [
+						"PetrifiedBlood"
+					]
+				},
+				{
+					"name": "Defiance Banner",
+					"effects": [
+						"DefianceBanner"
+					]
+				},
+				{
+					"name": "Rage Vortex",
+					"effects": [
+						"RageVortex"
+					]
+				},
+				{
+					"name": "Rage Vortex of Berserking",
+					"effects": [
+						"RageVortexAltX"
+					]
+				},
+				{
+					"name": "Battlemage's Cry",
+					"effects": [
+						"BattlemagesCry",
+						"BattlemagesCrySupport"
+					]
+				},
+				{
+					"name": "Absolution",
+					"effects": [
+						"Absolution"
+					]
+				},
+				{
+					"name": "Absolution of Inspiring",
+					"effects": [
+						"AbsolutionAltX"
+					]
+				},
+				{
+					"name": "Shield Crush",
+					"effects": [
+						"ShieldCrush"
+					]
+				},
+				{
+					"name": "Shield Crush of the Chieftain",
+					"effects": [
+						"ShieldCrushAltX"
+					]
+				},
+				{
+					"name": "Boneshatter",
+					"effects": [
+						"Boneshatter"
+					]
+				},
+				{
+					"name": "Boneshatter of Complex Trauma",
+					"effects": [
+						"BoneshatterAltX"
+					]
+				},
+				{
+					"name": "Boneshatter of Carnage",
+					"effects": [
+						"BoneshatterAltY"
+					]
+				},
+				{
+					"name": "Flame Link",
+					"effects": [
+						"FlameLink"
+					]
+				},
+				{
+					"name": "Protective Link",
+					"effects": [
+						"ProtectiveLink"
+					]
+				},
+				{
+					"name": "Volcanic Fissure",
+					"effects": [
+						"VolcanicFissure"
+					]
+				},
+				{
+					"name": "Volcanic Fissure of Snaking",
+					"effects": [
+						"VolcanicFissureAltX"
+					]
+				},
+				{
+					"name": "Vaal Volcanic Fissure",
+					"effects": [
+						"VaalVolcanicFissure"
+					]
+				},
+				{
+					"name": "Frozen Legion",
+					"effects": [
+						"FrozenLegion",
+						"FrozenSweep"
+					]
+				},
+				{
+					"name": "Frozen Legion of Rallying",
+					"effects": [
+						"FrozenLegionAltX",
+						"FrozenSweepAltX"
+					]
+				},
+				{
+					"name": "Vaal Cleave",
+					"effects": [
+						"VaalCleave"
+					]
+				},
+				{
+					"name": "Vaal Molten Strike",
+					"effects": [
+						"VaalMoltenStrike"
+					]
+				},
+				{
+					"name": "Vaal Smite",
+					"effects": [
+						"VaalSmite"
+					]
+				},
+				{
+					"name": "Vaal Reap",
+					"effects": [
+						"VaalReap"
+					]
+				},
+				{
+					"name": "Vaal Absolution",
+					"effects": [
+						"VaalAbsolution"
+					]
+				},
+				{
+					"name": "Vaal Domination",
+					"effects": [
+						"VaalDomination"
+					]
+				},
+				{
+					"name": "Vaal Rejuvenation Totem",
+					"effects": [
+						"VaalRejuvenationTotem"
+					]
+				},
+				{
+					"name": "Holy Hammers",
+					"effects": [
+						"HolyHammers"
+					]
+				},
+				{
+					"name": "Holy Hammers of Spirals",
+					"effects": [
+						"HolyHammersAltX"
+					]
+				},
+				{
+					"name": "Shield of Light",
+					"effects": [
+						"ShieldOfLight"
+					]
+				},
+				{
+					"name": "Holy Strike",
+					"effects": [
+						"HolyStrike"
+					]
+				},
+				{
+					"name": "Divine Blast",
+					"effects": [
+						"DivineBlast"
+					]
+				},
+				{
+					"name": "Divine Blast of Radiance",
+					"effects": [
+						"DivineBlastAltX"
+					]
+				},
+				{
+					"name": "Autoexertion",
+					"effects": [
+						"Autoexertion",
+						"SupportAutoexertion"
+					]
+				},
+				{
+					"name": "Heart of Flame",
+					"effects": [
+						"GraftSkillXophMoltenShell"
+					]
+				},
+				{
+					"name": "His Burning Message",
+					"effects": [
+						"GraftSkillXophGeyserExplosion"
+					]
+				},
+				{
+					"name": "Call the Pyre",
+					"effects": [
+						"GraftSkillXophFlamePillars"
+					]
+				},
+				{
+					"name": "The Grey Wind Howls",
+					"effects": [
+						"GraftSkillXophAilmentBuff"
+					]
+				},
+				{
+					"name": "Return to Dust",
+					"effects": [
+						"GraftSkillUulNetolHandSlam"
+					]
+				},
+				{
+					"name": "Seize the Flesh",
+					"effects": [
+						"GraftSkillUulNetolBoneSpires"
+					]
+				},
+				{
+					"name": "Violent Desire",
+					"effects": [
+						"GraftSkillUulNetolImpaleBuff"
+					]
+				},
+				{
+					"name": "Tender Embrace",
+					"effects": [
+						"GraftSkillUulNetolLowlife"
+					]
+				}
+			],
+			"support": [
+				{
+					"name": "Added Fire Damage Support",
+					"effects": [
+						"SupportAddedFireDamage"
+					]
+				},
+				{
+					"name": "Inspiration Support",
+					"effects": [
+						"SupportInspiration"
+					]
+				},
+				{
+					"name": "Knockback Support",
+					"effects": [
+						"SupportKnockback"
+					]
+				},
+				{
+					"name": "Life Leech Support",
+					"effects": [
+						"SupportLifeLeech"
+					]
+				},
+				{
+					"name": "Stun Support",
+					"effects": [
+						"SupportStun"
+					]
+				},
+				{
+					"name": "Melee Physical Damage Support",
+					"effects": [
+						"SupportMeleePhysicalDamage"
+					]
+				},
+				{
+					"name": "Item Quantity Support",
+					"effects": [
+						"SupportItemQuantity"
+					]
+				},
+				{
+					"name": "More Duration Support",
+					"effects": [
+						"SupportMoreDuration"
+					]
+				},
+				{
+					"name": "Cold to Fire Support",
+					"effects": [
+						"SupportColdToFire"
+					]
+				},
+				{
+					"name": "Elemental Damage with Attacks Support",
+					"effects": [
+						"SupportElementalDamageWithAttacks"
+					]
+				},
+				{
+					"name": "Bloodlust Support",
+					"effects": [
+						"SupportBloodlust"
+					]
+				},
+				{
+					"name": "Life Gain on Hit Support",
+					"effects": [
+						"SupportLifeGainOnHit"
+					]
+				},
+				{
+					"name": "Arrogance Support",
+					"effects": [
+						"SupportArrogance"
+					]
+				},
+				{
+					"name": "Iron Grip Support",
+					"effects": [
+						"SupportIronGrip"
+					]
+				},
+				{
+					"name": "Iron Will Support",
+					"effects": [
+						"SupportIronWill"
+					]
+				},
+				{
+					"name": "Damage on Full Life Support",
+					"effects": [
+						"SupportDamageOnFullLife"
+					]
+				},
+				{
+					"name": "Spell Totem Support",
+					"effects": [
+						"SupportSpellTotem"
+					]
+				},
+				{
+					"name": "Ballista Totem Support",
+					"effects": [
+						"SupportBallistaTotem"
+					]
+				},
+				{
+					"name": "Fire Penetration Support",
+					"effects": [
+						"SupportFirePenetration"
+					]
+				},
+				{
+					"name": "Multistrike Support",
+					"effects": [
+						"SupportMultistrike"
+					]
+				},
+				{
+					"name": "Melee Splash Support",
+					"effects": [
+						"SupportMeleeSplash"
+					]
+				},
+				{
+					"name": "Burning Damage Support",
+					"effects": [
+						"SupportBurningDamage"
+					]
+				},
+				{
+					"name": "Cast on Melee Kill Support",
+					"effects": [
+						"SupportCastOnMeleeKill",
+						"SupportCastOnMeleeKillTriggered"
+					]
+				},
+				{
+					"name": "Empower Support",
+					"effects": [
+						"SupportEmpower"
+					]
+				},
+				{
+					"name": "Endurance Charge on Melee Stun Support",
+					"effects": [
+						"SupportEnduranceChargeOnMeleeStun"
+					]
+				},
+				{
+					"name": "Less Duration Support",
+					"effects": [
+						"SupportLessDuration"
+					]
+				},
+				{
+					"name": "Cast when Damage Taken Support",
+					"effects": [
+						"SupportCastWhenDamageTaken"
+					]
+				},
+				{
+					"name": "Generosity Support",
+					"effects": [
+						"SupportGenerosity"
+					]
+				},
+				{
+					"name": "Fortify Support",
+					"effects": [
+						"SupportFortify"
+					]
+				},
+				{
+					"name": "Chance to Bleed Support",
+					"effects": [
+						"SupportChanceToBleed"
+					]
+				},
+				{
+					"name": "Lesser Reduced Mana Cost Support",
+					"effects": [
+						"SupportLesserReducedManaCost"
+					]
+				},
+				{
+					"name": "Maim Support",
+					"effects": [
+						"SupportMaim"
+					]
+				},
+				{
+					"name": "Brutality Support",
+					"effects": [
+						"SupportBrutality"
+					]
+				},
+				{
+					"name": "Ruthless Support",
+					"effects": [
+						"SupportRuthless"
+					]
+				},
+				{
+					"name": "Ancestral Call Support",
+					"effects": [
+						"SupportAncestralCall"
+					]
+				},
+				{
+					"name": "Multiple Totems Support",
+					"effects": [
+						"SupportMultipleTotems"
+					]
+				},
+				{
+					"name": "Shockwave Support",
+					"effects": [
+						"SupportShockwave",
+						"SupportBluntWeaponShockwave"
+					]
+				},
+				{
+					"name": "Pulverise Support",
+					"effects": [
+						"SupportPulverise"
+					]
+				},
+				{
+					"name": "Rage Support",
+					"effects": [
+						"SupportRage"
+					]
+				},
+				{
+					"name": "Awakened Added Fire Damage Support",
+					"effects": [
+						"SupportAwakenedAddedFireDamage"
+					]
+				},
+				{
+					"name": "Awakened Ancestral Call Support",
+					"effects": [
+						"SupportAwakenedAncestralCall"
+					]
+				},
+				{
+					"name": "Awakened Brutality Support",
+					"effects": [
+						"SupportAwakenedBrutality"
+					]
+				},
+				{
+					"name": "Awakened Burning Damage Support",
+					"effects": [
+						"SupportAwakenedBurningDamage"
+					]
+				},
+				{
+					"name": "Awakened Elemental Damage with Attacks Support",
+					"effects": [
+						"SupportAwakenedElementalDamageWithAttacks"
+					]
+				},
+				{
+					"name": "Awakened Fire Penetration Support",
+					"effects": [
+						"SupportAwakenedFirePenetration"
+					]
+				},
+				{
+					"name": "Awakened Generosity Support",
+					"effects": [
+						"SupportAwakenedGenerosity"
+					]
+				},
+				{
+					"name": "Awakened Melee Physical Damage Support",
+					"effects": [
+						"SupportAwakenedMeleePhysicalDamage"
+					]
+				},
+				{
+					"name": "Awakened Melee Splash Support",
+					"effects": [
+						"SupportAwakenedMeleeSplash"
+					]
+				},
+				{
+					"name": "Awakened Multistrike Support",
+					"effects": [
+						"SupportAwakenedMultistrike"
+					]
+				},
+				{
+					"name": "Awakened Empower Support",
+					"effects": [
+						"SupportAwakenedEmpower"
+					]
+				},
+				{
+					"name": "Fist of War Support",
+					"effects": [
+						"SupportFistofWar"
+					]
+				},
+				{
+					"name": "Urgent Orders Support",
+					"effects": [
+						"SupportUrgentOrders"
+					]
+				},
+				{
+					"name": "Bloodthirst Support",
+					"effects": [
+						"SupportBloodthirst"
+					]
+				},
+				{
+					"name": "Cruelty Support",
+					"effects": [
+						"SupportCruelty"
+					]
+				},
+				{
+					"name": "Lifetap Support",
+					"effects": [
+						"SupportLifetap"
+					]
+				},
+				{
+					"name": "Earthbreaker Support",
+					"effects": [
+						"SupportEarthbreaker"
+					]
+				},
+				{
+					"name": "Behead Support",
+					"effects": [
+						"SupportBehead"
+					]
+				},
+				{
+					"name": "Divine Blessing Support",
+					"effects": [
+						"SupportDivineBlessing"
+					]
+				},
+				{
+					"name": "Eternal Blessing Support",
+					"effects": [
+						"SupportEternalBlessing"
+					]
+				},
+				{
+					"name": "Trauma Support",
+					"effects": [
+						"SupportTrauma"
+					]
+				},
+				{
+					"name": "Flamewood Support",
+					"effects": [
+						"SupportFlamewood",
+						"AvengingFlame"
+					]
+				},
+				{
+					"name": "Corrupting Cry Support",
+					"effects": [
+						"SupportCorruptingCry"
+					]
+				},
+				{
+					"name": "Guardian's Blessing Support",
+					"effects": [
+						"SupportGuardiansBlessing",
+						"SupportGuardiansBlessingMinion"
+					]
+				},
+				{
+					"name": "Controlled Blaze Support",
+					"effects": [
+						"SupportControlledBlaze"
+					]
+				},
+				{
+					"name": "Volatility Support",
+					"effects": [
+						"SupportVolatility"
+					]
+				},
+				{
+					"name": "Overexertion Support",
+					"effects": [
+						"SupportOverexertion"
+					]
+				},
+				{
+					"name": "Expert Retaliation Support",
+					"effects": [
+						"SupportExpertRetaliation"
+					]
+				},
+				{
+					"name": "Vaal Temptation Support",
+					"effects": [
+						"SupportVaalTemptation"
+					]
+				},
+				{
+					"name": "Pyre Support",
+					"effects": [
+						"SupportPyre",
+						"TriggeredSupportPyre"
+					]
+				},
+				{
+					"name": "Bonespire Support",
+					"effects": [
+						"SupportBonespire",
+						"TriggeredSupportBonespire"
+					]
+				},
+				{
+					"name": "Greater Ancestral Call Support",
+					"effects": [
+						"SupportGreaterAncestralCall"
+					]
+				},
+				{
+					"name": "Fissure Support",
+					"effects": [
+						"SupportFissure",
+						"TriggeredSupportFissure"
+					]
+				},
+				{
+					"name": "Divine Sentinel Support",
+					"effects": [
+						"SupportDivineSentinel"
+					]
+				},
+				{
+					"name": "Annihilation Support",
+					"effects": [
+						"SupportAnnhilation"
+					]
+				},
+				{
+					"name": "Void Shockwave Support",
+					"effects": [
+						"SupportVoidShockwave",
+						"TriggeredSupportVoidShockwave"
+					]
+				},
+				{
+					"name": "Overheat Support",
+					"effects": [
+						"SupportOverheat"
+					]
+				},
+				{
+					"name": "Greater Multistrike Support",
+					"effects": [
+						"SupportGreaterMultistrike"
+					]
+				},
+				{
+					"name": "Bloodsoaked Banner Support",
+					"effects": [
+						"SupportBloodsoakedBanner"
+					]
+				},
+				{
+					"name": "Transfusion Support",
+					"effects": [
+						"SupportTransfusion"
+					]
+				},
+				{
+					"name": "Crystalfall Support",
+					"effects": [
+						"SupportCrystalfall",
+						"TriggeredSupportCrystalfall"
+					]
+				},
+				{
+					"name": "Excommunicate Support",
+					"effects": [
+						"SupportExcommunicate"
+					]
+				},
+				{
+					"name": "Blessed Call Support",
+					"effects": [
+						"SupportBlessedCall"
+					]
+				},
+				{
+					"name": "Hallow Support",
+					"effects": [
+						"SupportHallow"
+					]
+				}
+			]
+		},
+		{
+			"type": "Dexterity",
+			"active": [
+				{
+					"name": "Charged Dash",
+					"effects": [
+						"ChargedDash"
+					]
+				},
+				{
+					"name": "Charged Dash of Projection",
+					"effects": [
+						"ChargedDashAltX"
+					]
+				},
+				{
+					"name": "Blade Flurry",
+					"effects": [
+						"BladeFlurry"
+					]
+				},
+				{
+					"name": "Blade Flurry of Incision",
+					"effects": [
+						"BladeFlurryAltX"
+					]
+				},
+				{
+					"name": "Double Strike",
+					"effects": [
+						"DoubleStrike"
+					]
+				},
+				{
+					"name": "Double Strike of Impaling",
+					"effects": [
+						"DoubleStrikeAltX"
+					]
+				},
+				{
+					"name": "Double Strike of Momentum",
+					"effects": [
+						"DoubleStrikeAltY"
+					]
+				},
+				{
+					"name": "Vaal Double Strike",
+					"effects": [
+						"VaalDoubleStrike"
+					]
+				},
+				{
+					"name": "Lacerate",
+					"effects": [
+						"Lacerate"
+					]
+				},
+				{
+					"name": "Lacerate of Butchering",
+					"effects": [
+						"LacerateAltX"
+					]
+				},
+				{
+					"name": "Lacerate of Haemorrhage",
+					"effects": [
+						"LacerateAltY"
+					]
+				},
+				{
+					"name": "Elemental Hit",
+					"effects": [
+						"ElementalHit"
+					]
+				},
+				{
+					"name": "Elemental Hit of the Spectrum",
+					"effects": [
+						"ElementalHitAltX"
+					]
+				},
+				{
+					"name": "Dual Strike",
+					"effects": [
+						"DualStrike"
+					]
+				},
+				{
+					"name": "Dual Strike of Ambidexterity",
+					"effects": [
+						"DualStrikeAltX"
+					]
+				},
+				{
+					"name": "Whirling Blades",
+					"effects": [
+						"WhirlingBlades"
+					]
+				},
+				{
+					"name": "Frenzy",
+					"effects": [
+						"Frenzy"
+					]
+				},
+				{
+					"name": "Frenzy of Onslaught",
+					"effects": [
+						"FrenzyAltX"
+					]
+				},
+				{
+					"name": "Detonate Dead",
+					"effects": [
+						"DetonateDead"
+					]
+				},
+				{
+					"name": "Detonate Dead of Scavenging",
+					"effects": [
+						"DetonateDeadAltX"
+					]
+				},
+				{
+					"name": "Detonate Dead of Chain Reaction",
+					"effects": [
+						"DetonateDeadAltY"
+					]
+				},
+				{
+					"name": "Vaal Detonate Dead",
+					"effects": [
+						"VaalDetonateDead"
+					]
+				},
+				{
+					"name": "Volatile Dead",
+					"effects": [
+						"VolatileDead"
+					]
+				},
+				{
+					"name": "Volatile Dead of Confinement",
+					"effects": [
+						"VolatileDeadAltX"
+					]
+				},
+				{
+					"name": "Volatile Dead of Seething",
+					"effects": [
+						"VolatileDeadAltY"
+					]
+				},
+				{
+					"name": "Unearth",
+					"effects": [
+						"Unearth"
+					]
+				},
+				{
+					"name": "Split Arrow",
+					"effects": [
+						"SplitArrow"
+					]
+				},
+				{
+					"name": "Split Arrow of Splitting",
+					"effects": [
+						"SplitArrowAltX"
+					]
+				},
+				{
+					"name": "Caustic Arrow",
+					"effects": [
+						"CausticArrow"
+					]
+				},
+				{
+					"name": "Caustic Arrow of Poison",
+					"effects": [
+						"CausticArrowAltX"
+					]
+				},
+				{
+					"name": "Blood Rage",
+					"effects": [
+						"BloodRage"
+					]
+				},
+				{
+					"name": "Backstab",
+					"effects": [
+						"Backstab"
+					]
+				},
+				{
+					"name": "Flicker Strike",
+					"effects": [
+						"FlickerStrike"
+					]
+				},
+				{
+					"name": "Flicker Strike of Power",
+					"effects": [
+						"FlickerStrikeAltX"
+					]
+				},
+				{
+					"name": "Vaal Flicker Strike",
+					"effects": [
+						"VaalFlickerStrike"
+					]
+				},
+				{
+					"name": "Viper Strike",
+					"effects": [
+						"ViperStrike"
+					]
+				},
+				{
+					"name": "Viper Strike of the Mamba",
+					"effects": [
+						"ViperStrikeAltX"
+					]
+				},
+				{
+					"name": "Phase Run",
+					"effects": [
+						"PhaseRun"
+					]
+				},
+				{
+					"name": "Phase Run",
+					"effects": [
+						"PhaseRun"
+					]
+				},
+				{
+					"name": "Explosive Arrow",
+					"effects": [
+						"ExplosiveArrow"
+					]
+				},
+				{
+					"name": "Temporal Chains",
+					"effects": [
+						"TemporalChains"
+					]
+				},
+				{
+					"name": "Sniper's Mark",
+					"effects": [
+						"SnipersMark"
+					]
+				},
+				{
+					"name": "Rain of Arrows",
+					"effects": [
+						"RainOfArrows"
+					]
+				},
+				{
+					"name": "Rain of Arrows of Artillery",
+					"effects": [
+						"RainOfArrowsAltX"
+					]
+				},
+				{
+					"name": "Rain of Arrows of Saturation",
+					"effects": [
+						"RainOfArrowsAltY"
+					]
+				},
+				{
+					"name": "Vaal Rain of Arrows",
+					"effects": [
+						"VaalRainOfArrows"
+					]
+				},
+				{
+					"name": "Lightning Strike",
+					"effects": [
+						"LightningStrike"
+					]
+				},
+				{
+					"name": "Lightning Strike of Arcing",
+					"effects": [
+						"LightningStrikeAltX"
+					]
+				},
+				{
+					"name": "Vaal Lightning Strike",
+					"effects": [
+						"VaalLightningStrike"
+					]
+				},
+				{
+					"name": "Puncture",
+					"effects": [
+						"Puncture"
+					]
+				},
+				{
+					"name": "Puncture of Shanking",
+					"effects": [
+						"PunctureAltX"
+					]
+				},
+				{
+					"name": "Lightning Arrow",
+					"effects": [
+						"LightningArrow"
+					]
+				},
+				{
+					"name": "Lightning Arrow of Electrocution",
+					"effects": [
+						"LightningArrowAltX"
+					]
+				},
+				{
+					"name": "Haste",
+					"effects": [
+						"Haste"
+					]
+				},
+				{
+					"name": "Vaal Haste",
+					"effects": [
+						"VaalHaste"
+					]
+				},
+				{
+					"name": "Grace",
+					"effects": [
+						"Grace"
+					]
+				},
+				{
+					"name": "Vaal Grace",
+					"effects": [
+						"VaalGrace"
+					]
+				},
+				{
+					"name": "Hatred",
+					"effects": [
+						"Hatred"
+					]
+				},
+				{
+					"name": "Burning Arrow",
+					"effects": [
+						"BurningArrow"
+					]
+				},
+				{
+					"name": "Burning Arrow of Vigour",
+					"effects": [
+						"BurningArrowAltX"
+					]
+				},
+				{
+					"name": "Vaal Burning Arrow",
+					"effects": [
+						"VaalBurningArrow"
+					]
+				},
+				{
+					"name": "Bear Trap",
+					"effects": [
+						"BearTrap"
+					]
+				},
+				{
+					"name": "Bear Trap of Skewers",
+					"effects": [
+						"BearTrapAltX"
+					]
+				},
+				{
+					"name": "Fire Trap",
+					"effects": [
+						"FireTrap"
+					]
+				},
+				{
+					"name": "Fire Trap of Blasting",
+					"effects": [
+						"FireTrapAltX"
+					]
+				},
+				{
+					"name": "Vaal Fire Trap",
+					"effects": [
+						"VaalFireTrap"
+					]
+				},
+				{
+					"name": "Ethereal Knives",
+					"effects": [
+						"EtherealKnives"
+					]
+				},
+				{
+					"name": "Ethereal Knives of Lingering Blades",
+					"effects": [
+						"EtherealKnivesAltX"
+					]
+				},
+				{
+					"name": "Ethereal Knives of the Massacre",
+					"effects": [
+						"EtherealKnivesAltY"
+					]
+				},
+				{
+					"name": "Ice Shot",
+					"effects": [
+						"IceShot"
+					]
+				},
+				{
+					"name": "Ice Shot of Penetration",
+					"effects": [
+						"IceShotAltX"
+					]
+				},
+				{
+					"name": "Arctic Armour",
+					"effects": [
+						"ArcticArmour"
+					]
+				},
+				{
+					"name": "Arctic Armour",
+					"effects": [
+						"ArcticArmour"
+					]
+				},
+				{
+					"name": "Vaal Arctic Armour",
+					"effects": [
+						"VaalArcticArmour"
+					]
+				},
+				{
+					"name": "Cyclone",
+					"effects": [
+						"Cyclone"
+					]
+				},
+				{
+					"name": "Cyclone of Tumult",
+					"effects": [
+						"CycloneAltX"
+					]
+				},
+				{
+					"name": "Vaal Cyclone",
+					"effects": [
+						"VaalCyclone"
+					]
+				},
+				{
+					"name": "Reave",
+					"effects": [
+						"Reave"
+					]
+				},
+				{
+					"name": "Reave of Refraction",
+					"effects": [
+						"ReaveAltX"
+					]
+				},
+				{
+					"name": "Vaal Reave",
+					"effects": [
+						"VaalReave"
+					]
+				},
+				{
+					"name": "Smoke Mine",
+					"effects": [
+						"SmokeMine"
+					]
+				},
+				{
+					"name": "Spectral Shield Throw",
+					"effects": [
+						"SpectralShieldThrow"
+					]
+				},
+				{
+					"name": "Spectral Shield Throw of Shattering",
+					"effects": [
+						"SpectralShieldThrowAltX"
+					]
+				},
+				{
+					"name": "Spectral Shield Throw of Trarthus",
+					"effects": [
+						"SpectralShieldThrowAltY"
+					]
+				},
+				{
+					"name": "Spectral Throw",
+					"effects": [
+						"SpectralThrow"
+					]
+				},
+				{
+					"name": "Spectral Throw of Materialising",
+					"effects": [
+						"SpectralThrowAltX"
+					]
+				},
+				{
+					"name": "Spectral Throw of Trarthus",
+					"effects": [
+						"SpectralThrowAltY"
+					]
+				},
+				{
+					"name": "Vaal Spectral Throw",
+					"effects": [
+						"VaalSpectralThrow"
+					]
+				},
+				{
+					"name": "Animate Weapon",
+					"effects": [
+						"AnimateWeapon"
+					]
+				},
+				{
+					"name": "Animate Weapon of Self Reflection",
+					"effects": [
+						"AnimateWeaponAltX"
+					]
+				},
+				{
+					"name": "Animate Weapon of Ranged Arms",
+					"effects": [
+						"AnimateWeaponAltY"
+					]
+				},
+				{
+					"name": "Purity of Ice",
+					"effects": [
+						"PurityOfIce"
+					]
+				},
+				{
+					"name": "Vaal Impurity of Ice",
+					"effects": [
+						"VaalImpurityOfIce"
+					]
+				},
+				{
+					"name": "Barrage",
+					"effects": [
+						"Barrage"
+					]
+				},
+				{
+					"name": "Barrage of Volley Fire",
+					"effects": [
+						"BarrageAltX"
+					]
+				},
+				{
+					"name": "Desecrate",
+					"effects": [
+						"Desecrate"
+					]
+				},
+				{
+					"name": "Tornado Shot",
+					"effects": [
+						"TornadoShot"
+					]
+				},
+				{
+					"name": "Tornado Shot of Cloudburst",
+					"effects": [
+						"TornadoShotAltX"
+					]
+				},
+				{
+					"name": "Herald of Ice",
+					"effects": [
+						"HeraldOfIce"
+					]
+				},
+				{
+					"name": "Herald of Agony",
+					"effects": [
+						"HeraldOfAgony"
+					]
+				},
+				{
+					"name": "Poacher's Mark",
+					"effects": [
+						"PoachersMark"
+					]
+				},
+				{
+					"name": "Blink Arrow",
+					"effects": [
+						"BlinkArrow"
+					]
+				},
+				{
+					"name": "Blink Arrow of Bombarding Clones",
+					"effects": [
+						"BlinkArrowAltX"
+					]
+				},
+				{
+					"name": "Blink Arrow of Prismatic Clones",
+					"effects": [
+						"BlinkArrowAltY"
+					]
+				},
+				{
+					"name": "Mirror Arrow",
+					"effects": [
+						"MirrorArrow"
+					]
+				},
+				{
+					"name": "Mirror Arrow of Bombarding Clones",
+					"effects": [
+						"MirrorArrowAltX"
+					]
+				},
+				{
+					"name": "Mirror Arrow of Prismatic Clones",
+					"effects": [
+						"MirrorArrowAltY"
+					]
+				},
+				{
+					"name": "Glacial Shield Swipe",
+					"effects": [
+						"GlacialShieldSwipe"
+					]
+				},
+				{
+					"name": "Summon Ice Golem",
+					"effects": [
+						"SummonIceGolem"
+					]
+				},
+				{
+					"name": "Summon Ice Golem of Hordes",
+					"effects": [
+						"SummonIceGolemAltX"
+					]
+				},
+				{
+					"name": "Summon Ice Golem of Shattering",
+					"effects": [
+						"SummonIceGolemAltY"
+					]
+				},
+				{
+					"name": "Frost Blades",
+					"effects": [
+						"FrostBlades"
+					]
+				},
+				{
+					"name": "Frost Blades of Katabasis",
+					"effects": [
+						"FrostBladesAltX"
+					]
+				},
+				{
+					"name": "Wild Strike",
+					"effects": [
+						"WildStrike"
+					]
+				},
+				{
+					"name": "Wild Strike of Extremes",
+					"effects": [
+						"WildStrikeAltX"
+					]
+				},
+				{
+					"name": "Ice Trap",
+					"effects": [
+						"IceTrap"
+					]
+				},
+				{
+					"name": "Ice Trap of Hollowness",
+					"effects": [
+						"IceTrapAltX"
+					]
+				},
+				{
+					"name": "Blast Rain",
+					"effects": [
+						"BlastRain"
+					]
+				},
+				{
+					"name": "Blast Rain of Trarthus",
+					"effects": [
+						"BlastRainAltX"
+					]
+				},
+				{
+					"name": "Galvanic Arrow",
+					"effects": [
+						"GalvanicArrow"
+					]
+				},
+				{
+					"name": "Galvanic Arrow of Energy",
+					"effects": [
+						"GalvanicArrowAltX"
+					]
+				},
+				{
+					"name": "Galvanic Arrow of Surging",
+					"effects": [
+						"GalvanicArrowAltY"
+					]
+				},
+				{
+					"name": "Bladefall",
+					"effects": [
+						"Bladefall"
+					]
+				},
+				{
+					"name": "Bladefall of Volleys",
+					"effects": [
+						"BladefallAltX"
+					]
+				},
+				{
+					"name": "Bladefall of Impaling",
+					"effects": [
+						"BladefallAltY"
+					]
+				},
+				{
+					"name": "Bladefall of Trarthus",
+					"effects": [
+						"BladefallAltZ"
+					]
+				},
+				{
+					"name": "Blade Vortex",
+					"effects": [
+						"BladeVortex"
+					]
+				},
+				{
+					"name": "Blade Vortex of the Scythe",
+					"effects": [
+						"BladeVortexAltX"
+					]
+				},
+				{
+					"name": "Vaal Blade Vortex",
+					"effects": [
+						"VaalBladeVortex"
+					]
+				},
+				{
+					"name": "Blade Vortex",
+					"effects": [
+						"NewNewBladeVortex"
+					]
+				},
+				{
+					"name": "Siege Ballista",
+					"effects": [
+						"SiegeBallista"
+					]
+				},
+				{
+					"name": "Siege Ballista of Splintering",
+					"effects": [
+						"SiegeBallistaAltX"
+					]
+				},
+				{
+					"name": "Siege Ballista of Trarthus",
+					"effects": [
+						"SiegeBallistaAltY"
+					]
+				},
+				{
+					"name": "Shadow Blades",
+					"effects": [
+						"ShadowBlades"
+					]
+				},
+				{
+					"name": "Cremation",
+					"effects": [
+						"Cremation"
+					]
+				},
+				{
+					"name": "Cremation of Exhuming",
+					"effects": [
+						"CremationAltX"
+					]
+				},
+				{
+					"name": "Cremation of the Volcano",
+					"effects": [
+						"CremationAltY"
+					]
+				},
+				{
+					"name": "Spectral Spinning Weapon",
+					"effects": [
+						"SpectralSpinningWeapon"
+					]
+				},
+				{
+					"name": "Explosive Trap",
+					"effects": [
+						"ExplosiveTrap"
+					]
+				},
+				{
+					"name": "Explosive Trap of Shrapnel",
+					"effects": [
+						"ExplosiveTrapAltX"
+					]
+				},
+				{
+					"name": "Explosive Trap of Magnitude",
+					"effects": [
+						"ExplosiveTrapAltY"
+					]
+				},
+				{
+					"name": "Flamethrower Trap",
+					"effects": [
+						"FlamethrowerTrap"
+					]
+				},
+				{
+					"name": "Flamethrower Trap of Stability",
+					"effects": [
+						"FlamethrowerTrapAltX"
+					]
+				},
+				{
+					"name": "Seismic Trap",
+					"effects": [
+						"SeismicTrap"
+					]
+				},
+				{
+					"name": "Seismic Trap of Swells",
+					"effects": [
+						"SeismicTrapAltX"
+					]
+				},
+				{
+					"name": "Scourge Arrow",
+					"effects": [
+						"ScourgeArrow"
+					]
+				},
+				{
+					"name": "Scourge Arrow of Menace",
+					"effects": [
+						"ScourgeArrowAltX"
+					]
+				},
+				{
+					"name": "Toxic Rain",
+					"effects": [
+						"ToxicRain"
+					]
+				},
+				{
+					"name": "Toxic Rain of Sporeburst",
+					"effects": [
+						"ToxicRainAltX"
+					]
+				},
+				{
+					"name": "Toxic Rain of Withering",
+					"effects": [
+						"ToxicRainAltY"
+					]
+				},
+				{
+					"name": "Lancing Steel",
+					"effects": [
+						"LancingSteel"
+					]
+				},
+				{
+					"name": "Lancing Steel of Spraying",
+					"effects": [
+						"LancingSteelAltX"
+					]
+				},
+				{
+					"name": "Shattering Steel",
+					"effects": [
+						"ShatteringSteel"
+					]
+				},
+				{
+					"name": "Shattering Steel of Ammunition",
+					"effects": [
+						"ShatteringSteelAltX"
+					]
+				},
+				{
+					"name": "Dash",
+					"effects": [
+						"Dash"
+					]
+				},
+				{
+					"name": "Precision",
+					"effects": [
+						"Precision"
+					]
+				},
+				{
+					"name": "Cobra Lash",
+					"effects": [
+						"CobraLash"
+					]
+				},
+				{
+					"name": "Withering Step",
+					"effects": [
+						"WitheringStep"
+					]
+				},
+				{
+					"name": "Plague Bearer",
+					"effects": [
+						"PlagueBearer"
+					]
+				},
+				{
+					"name": "Pestilent Strike",
+					"effects": [
+						"PestilentStrike"
+					]
+				},
+				{
+					"name": "Venom Gyre",
+					"effects": [
+						"VenomGyre"
+					]
+				},
+				{
+					"name": "Shrapnel Ballista",
+					"effects": [
+						"ShrapnelBallista"
+					]
+				},
+				{
+					"name": "Shrapnel Ballista of Steel",
+					"effects": [
+						"ShrapnelBallistaAltX"
+					]
+				},
+				{
+					"name": "Ensnaring Arrow",
+					"effects": [
+						"EnsnaringArrow"
+					]
+				},
+				{
+					"name": "Artillery Ballista",
+					"effects": [
+						"ArtilleryBallista"
+					]
+				},
+				{
+					"name": "Artillery Ballista of Cross Strafe",
+					"effects": [
+						"ArtilleryBallistaAltX"
+					]
+				},
+				{
+					"name": "Artillery Ballista of Focus Fire",
+					"effects": [
+						"ArtilleryBallistaAltY"
+					]
+				},
+				{
+					"name": "Blade Blast",
+					"effects": [
+						"BladeBlast"
+					]
+				},
+				{
+					"name": "Blade Blast of Unloading",
+					"effects": [
+						"BladeBlastAltX"
+					]
+				},
+				{
+					"name": "Blade Blast of Dagger Detonation",
+					"effects": [
+						"BladeBlastAltY"
+					]
+				},
+				{
+					"name": "Splitting Steel",
+					"effects": [
+						"SplittingSteel"
+					]
+				},
+				{
+					"name": "Splitting Steel of Ammunition",
+					"effects": [
+						"SplittingSteelAltX"
+					]
+				},
+				{
+					"name": "Flammable Shot",
+					"effects": [
+						"OilArrow"
+					]
+				},
+				{
+					"name": "Spectral Helix",
+					"effects": [
+						"SpectralHelix"
+					]
+				},
+				{
+					"name": "Spectral Helix of Trarthus",
+					"effects": [
+						"SpectralHelixAltY"
+					]
+				},
+				{
+					"name": "Ambush",
+					"effects": [
+						"Ambush"
+					]
+				},
+				{
+					"name": "Blade Trap",
+					"effects": [
+						"BladeTrap"
+					]
+				},
+				{
+					"name": "Blade Trap of Greatswords",
+					"effects": [
+						"BladeTrapAltX"
+					]
+				},
+				{
+					"name": "Blade Trap of Laceration",
+					"effects": [
+						"BladeTrapAltY"
+					]
+				},
+				{
+					"name": "Storm Rain",
+					"effects": [
+						"StormRain"
+					]
+				},
+				{
+					"name": "Storm Rain of the Conduit",
+					"effects": [
+						"StormRainAltX"
+					]
+				},
+				{
+					"name": "Storm Rain of the Fence",
+					"effects": [
+						"StormRainAltY"
+					]
+				},
+				{
+					"name": "Explosive Concoction",
+					"effects": [
+						"ExplosiveConcoction"
+					]
+				},
+				{
+					"name": "Explosive Concoction of Destruction",
+					"effects": [
+						"ExplosiveConcoctionAltX"
+					]
+				},
+				{
+					"name": "Poisonous Concoction",
+					"effects": [
+						"PoisonousConcoction"
+					]
+				},
+				{
+					"name": "Poisonous Concoction of Bouncing",
+					"effects": [
+						"PoisonousConcoctionAltX"
+					]
+				},
+				{
+					"name": "Temporal Rift",
+					"effects": [
+						"TemporalRift"
+					]
+				},
+				{
+					"name": "Tornado",
+					"effects": [
+						"Tornado"
+					]
+				},
+				{
+					"name": "Tornado of Elemental Turbulence",
+					"effects": [
+						"TornadoAltY"
+					]
+				},
+				{
+					"name": "Vampiric Link",
+					"effects": [
+						"VampiricLink"
+					]
+				},
+				{
+					"name": "Intuitive Link",
+					"effects": [
+						"IntuitiveLink",
+						"SupportIntuitiveLink"
+					]
+				},
+				{
+					"name": "Alchemist's Mark",
+					"effects": [
+						"AlchemistsMark"
+					]
+				},
+				{
+					"name": "Vaal Caustic Arrow",
+					"effects": [
+						"VaalCausticArrow"
+					]
+				},
+				{
+					"name": "Vaal Venom Gyre",
+					"effects": [
+						"VaalVenomGyre"
+					]
+				},
+				{
+					"name": "Vaal Blade Flurry",
+					"effects": [
+						"VaalBladeFlurry"
+					]
+				},
+				{
+					"name": "Vaal Animate Weapon",
+					"effects": [
+						"VaalAnimateWeapon"
+					]
+				},
+				{
+					"name": "Vaal Lightning Arrow",
+					"effects": [
+						"VaalLightningArrow"
+					]
+				},
+				{
+					"name": "Vaal Ice Shot",
+					"effects": [
+						"VaalIceShot"
+					]
+				},
+				{
+					"name": "Vaal Split Arrow",
+					"effects": [
+						"VaalSplitArrow"
+					]
+				},
+				{
+					"name": "Snipe",
+					"effects": [
+						"Snipe",
+						"ChannelledSnipeSupport"
+					]
+				},
+				{
+					"name": "Conflagration",
+					"effects": [
+						"Conflagration"
+					]
+				},
+				{
+					"name": "Thunderstorm",
+					"effects": [
+						"Thunderstorm",
+						"ThunderstormMiniTornados"
+					]
+				},
+				{
+					"name": "Dance in the White",
+					"effects": [
+						"GraftSkillTulTornado",
+						"GraftSkillTulTornadoProjectile"
+					]
+				},
+				{
+					"name": "Falling Crystals",
+					"effects": [
+						"GraftSkillTulIceMortar"
+					]
+				},
+				{
+					"name": "Preserving Stillness",
+					"effects": [
+						"GraftSkillTulAegis"
+					]
+				}
+			],
+			"support": [
+				{
+					"name": "Faster Attacks Support",
+					"effects": [
+						"SupportFasterAttacks"
+					]
+				},
+				{
+					"name": "Greater Multiple Projectiles Support",
+					"effects": [
+						"SupportGreaterMultipleProjectiles"
+					]
+				},
+				{
+					"name": "Multiple Projectiles Support",
+					"effects": [
+						"SupportLesserMultipleProjectiles"
+					]
+				},
+				{
+					"name": "Faster Projectiles Support",
+					"effects": [
+						"SupportFasterProjectiles"
+					]
+				},
+				{
+					"name": "Added Cold Damage Support",
+					"effects": [
+						"SupportAddedColdDamage"
+					]
+				},
+				{
+					"name": "Additional Accuracy Support",
+					"effects": [
+						"SupportAdditionalAccuracy"
+					]
+				},
+				{
+					"name": "Mana Leech Support",
+					"effects": [
+						"SupportManaLeech"
+					]
+				},
+				{
+					"name": "Pierce Support",
+					"effects": [
+						"SupportPierce"
+					]
+				},
+				{
+					"name": "Trap Support",
+					"effects": [
+						"SupportTrap"
+					]
+				},
+				{
+					"name": "Culling Strike Support",
+					"effects": [
+						"SupportCullingStrike"
+					]
+				},
+				{
+					"name": "Point Blank Support",
+					"effects": [
+						"SupportPointBlank"
+					]
+				},
+				{
+					"name": "Chance to Flee Support",
+					"effects": [
+						"SupportChanceToFlee"
+					]
+				},
+				{
+					"name": "Blind Support",
+					"effects": [
+						"SupportBlind"
+					]
+				},
+				{
+					"name": "Cold Penetration Support",
+					"effects": [
+						"SupportColdPenetration"
+					]
+				},
+				{
+					"name": "Chain Support",
+					"effects": [
+						"SupportChain"
+					]
+				},
+				{
+					"name": "Split Projectiles Support",
+					"effects": [
+						"SupportSplitProjectiles"
+					]
+				},
+				{
+					"name": "Fork Support",
+					"effects": [
+						"SupportFork"
+					]
+				},
+				{
+					"name": "Returning Projectiles Support",
+					"effects": [
+						"SupportReturningProjectiles"
+					]
+				},
+				{
+					"name": "Cast On Critical Strike Support",
+					"effects": [
+						"SupportCastOnCriticalStrike",
+						"SupportCastOnCritTriggered"
+					]
+				},
+				{
+					"name": "Multiple Traps Support",
+					"effects": [
+						"SupportMultipleTraps"
+					]
+				},
+				{
+					"name": "Slower Projectiles Support",
+					"effects": [
+						"SupportSlowerProjectiles"
+					]
+				},
+				{
+					"name": "Cast on Death Support",
+					"effects": [
+						"SupportCastOnDeath"
+					]
+				},
+				{
+					"name": "Enhance Support",
+					"effects": [
+						"SupportEnhance"
+					]
+				},
+				{
+					"name": "Vicious Projectiles Support",
+					"effects": [
+						"SupportViciousProjectiles"
+					]
+				},
+				{
+					"name": "Block Chance Reduction Support",
+					"effects": [
+						"SupportBlockChanceReduction"
+					]
+				},
+				{
+					"name": "Ice Bite Support",
+					"effects": [
+						"SupportIceBite"
+					]
+				},
+				{
+					"name": "Hypothermia Support",
+					"effects": [
+						"SupportHypothermia"
+					]
+				},
+				{
+					"name": "Trap and Mine Damage Support",
+					"effects": [
+						"SupportTrapAndMineDamage"
+					]
+				},
+				{
+					"name": "Critical Strike Affliction Support",
+					"effects": [
+						"SupportCriticalStrikeAffliction"
+					]
+				},
+				{
+					"name": "Void Manipulation Support",
+					"effects": [
+						"SupportVoidManipulation"
+					]
+				},
+				{
+					"name": "Swift Affliction Support",
+					"effects": [
+						"SupportSwiftAffliction"
+					]
+				},
+				{
+					"name": "Cluster Traps Support",
+					"effects": [
+						"SupportClusterTraps"
+					]
+				},
+				{
+					"name": "Advanced Traps Support",
+					"effects": [
+						"SupportAdvancedTraps"
+					]
+				},
+				{
+					"name": "Chance to Poison Support",
+					"effects": [
+						"SupportChanceToPoison"
+					]
+				},
+				{
+					"name": "Deadly Ailments Support",
+					"effects": [
+						"SupportDeadlyAilments"
+					]
+				},
+				{
+					"name": "Vile Toxins Support",
+					"effects": [
+						"SupportVileToxins"
+					]
+				},
+				{
+					"name": "Momentum Support",
+					"effects": [
+						"SupportMomentum"
+					]
+				},
+				{
+					"name": "Volley Support",
+					"effects": [
+						"SupportVolley"
+					]
+				},
+				{
+					"name": "Mirage Archer Support",
+					"effects": [
+						"SupportMirageArcher"
+					]
+				},
+				{
+					"name": "Charged Traps Support",
+					"effects": [
+						"SupportChargedTraps"
+					]
+				},
+				{
+					"name": "Withering Touch Support",
+					"effects": [
+						"SupportWitheringTouch"
+					]
+				},
+				{
+					"name": "Close Combat Support",
+					"effects": [
+						"SupportCloseCombat"
+					]
+				},
+				{
+					"name": "Impale Support",
+					"effects": [
+						"SupportImpale"
+					]
+				},
+				{
+					"name": "Nightblade Support",
+					"effects": [
+						"SupportNightblade"
+					]
+				},
+				{
+					"name": "Swift Assembly Support",
+					"effects": [
+						"SupportSwiftAssembly"
+					]
+				},
+				{
+					"name": "Arrow Nova Support",
+					"effects": [
+						"SupportArrowNova"
+					]
+				},
+				{
+					"name": "Barrage Support",
+					"effects": [
+						"SupportBarrage"
+					]
+				},
+				{
+					"name": "Greater Volley Support",
+					"effects": [
+						"SupportGreaterVolley"
+					]
+				},
+				{
+					"name": "Awakened Added Cold Damage Support",
+					"effects": [
+						"SupportAwakenedAddedColdDamage"
+					]
+				},
+				{
+					"name": "Awakened Arrow Nova Support",
+					"effects": [
+						"SupportAwakenedArrowNova"
+					]
+				},
+				{
+					"name": "Awakened Cast On Critical Strike Support",
+					"effects": [
+						"SupportAwakenedCastOnCriticalStrike",
+						"SupportCastOnCritTriggeredPlus"
+					]
+				},
+				{
+					"name": "Awakened Chain Support",
+					"effects": [
+						"SupportAwakenedChain"
+					]
+				},
+				{
+					"name": "Awakened Cold Penetration Support",
+					"effects": [
+						"SupportAwakenedColdPenetration"
+					]
+				},
+				{
+					"name": "Awakened Deadly Ailments Support",
+					"effects": [
+						"SupportAwakenedDeadlyAilments"
+					]
+				},
+				{
+					"name": "Awakened Fork Support",
+					"effects": [
+						"SupportAwakenedFork"
+					]
+				},
+				{
+					"name": "Awakened Greater Multiple Projectiles Support",
+					"effects": [
+						"SupportAwakenedGreaterMultipleProjectiles"
+					]
+				},
+				{
+					"name": "Awakened Swift Affliction Support",
+					"effects": [
+						"SupportAwakenedSwiftAffliction"
+					]
+				},
+				{
+					"name": "Awakened Void Manipulation Support",
+					"effects": [
+						"SupportAwakenedVoidManipulation"
+					]
+				},
+				{
+					"name": "Awakened Vicious Projectiles Support",
+					"effects": [
+						"SupportAwakenedViciousProjectiles"
+					]
+				},
+				{
+					"name": "Awakened Enhance Support",
+					"effects": [
+						"SupportAwakenedEnhance"
+					]
+				},
+				{
+					"name": "Second Wind Support",
+					"effects": [
+						"SupportSecondWind"
+					]
+				},
+				{
+					"name": "Focused Ballista Support",
+					"effects": [
+						"SupportFocusedBallista"
+					]
+				},
+				{
+					"name": "Mark On Hit Support",
+					"effects": [
+						"SupportMarkOnHit"
+					]
+				},
+				{
+					"name": "Manaforged Arrows Support",
+					"effects": [
+						"SupportManaforgedArrows"
+					]
+				},
+				{
+					"name": "Locus Mine Support",
+					"effects": [
+						"SupportLocusMine"
+					]
+				},
+				{
+					"name": "Sadism Support",
+					"effects": [
+						"SupportSadism"
+					]
+				},
+				{
+					"name": "Rupture Support",
+					"effects": [
+						"SupportRupture"
+					]
+				},
+				{
+					"name": "Cast on Ward Break Support",
+					"effects": [
+						"SupportCastOnWardBreak"
+					]
+				},
+				{
+					"name": "Machinations Support",
+					"effects": [
+						"SupportMachinations"
+					]
+				},
+				{
+					"name": "Cull the Weak Support",
+					"effects": [
+						"SupportCullTheWeak"
+					]
+				},
+				{
+					"name": "Greater Fork Support",
+					"effects": [
+						"SupportGreaterFork"
+					]
+				},
+				{
+					"name": "Greater Chain Support",
+					"effects": [
+						"SupportGreaterChain"
+					]
+				},
+				{
+					"name": "Lethal Dose Support",
+					"effects": [
+						"SupportLethalDose"
+					]
+				},
+				{
+					"name": "Companionship Support",
+					"effects": [
+						"SupportCompanionship"
+					]
+				},
+				{
+					"name": "Invention Support",
+					"effects": [
+						"SupportInvention"
+					]
+				},
+				{
+					"name": "Voidstorm Support",
+					"effects": [
+						"SupportVoidstorm",
+						"TriggeredSupportVoidstorm"
+					]
+				},
+				{
+					"name": "Pacifism Support",
+					"effects": [
+						"SupportPacifism"
+					]
+				},
+				{
+					"name": "Unholy Trinity Support",
+					"effects": [
+						"SupportUnholyTrinity"
+					]
+				},
+				{
+					"name": "Windburst Support",
+					"effects": [
+						"SupportWindburst",
+						"TriggeredSupportWindburst"
+					]
+				}
+			]
+		},
+		{
+			"type": "Intelligence",
+			"active": [
+				{
+					"name": "Fireball",
+					"effects": [
+						"Fireball"
+					]
+				},
+				{
+					"name": "Vaal Fireball",
+					"effects": [
+						"VaalFireball"
+					]
+				},
+				{
+					"name": "Ice Nova",
+					"effects": [
+						"IceNova"
+					]
+				},
+				{
+					"name": "Ice Nova of Frostbolts",
+					"effects": [
+						"IceNovaAltX"
+					]
+				},
+				{
+					"name": "Ice Nova of Deep Freeze",
+					"effects": [
+						"IceNovaAltY"
+					]
+				},
+				{
+					"name": "Icefire",
+					"effects": [
+						"Icefire"
+					]
+				},
+				{
+					"name": "Vaal Ice Nova",
+					"effects": [
+						"VaalIceNova"
+					]
+				},
+				{
+					"name": "Riptide",
+					"effects": [
+						"Riptide"
+					]
+				},
+				{
+					"name": "Cold Snap",
+					"effects": [
+						"ColdSnap"
+					]
+				},
+				{
+					"name": "Cold Snap of Power",
+					"effects": [
+						"ColdSnapAltX"
+					]
+				},
+				{
+					"name": "Vaal Cold Snap",
+					"effects": [
+						"VaalColdSnap"
+					]
+				},
+				{
+					"name": "Raise Zombie",
+					"effects": [
+						"RaiseZombie"
+					]
+				},
+				{
+					"name": "Raise Zombie of Slamming",
+					"effects": [
+						"RaiseZombieAltX"
+					]
+				},
+				{
+					"name": "Raise Zombie of Falling",
+					"effects": [
+						"RaiseZombieAltY"
+					]
+				},
+				{
+					"name": "Damage Infusion",
+					"effects": [
+						"DamageInfusion"
+					]
+				},
+				{
+					"name": "Ignite",
+					"effects": [
+						"Ignite"
+					]
+				},
+				{
+					"name": "Righteous Fire",
+					"effects": [
+						"RighteousFire"
+					]
+				},
+				{
+					"name": "Righteous Fire of Arcane Devotion",
+					"effects": [
+						"RighteousFireAltX"
+					]
+				},
+				{
+					"name": "Vaal Righteous Fire",
+					"effects": [
+						"VaalRighteousFire"
+					]
+				},
+				{
+					"name": "Fire Weapon",
+					"effects": [
+						"FireWeapon"
+					]
+				},
+				{
+					"name": "Discharge",
+					"effects": [
+						"Discharge"
+					]
+				},
+				{
+					"name": "Discharge of Misery",
+					"effects": [
+						"DischargeAltX"
+					]
+				},
+				{
+					"name": "Spark",
+					"effects": [
+						"Spark"
+					]
+				},
+				{
+					"name": "Spark of the Nova",
+					"effects": [
+						"SparkAltX"
+					]
+				},
+				{
+					"name": "Spark of Unpredictability",
+					"effects": [
+						"SparkAltY"
+					]
+				},
+				{
+					"name": "Vaal Spark",
+					"effects": [
+						"VaalSpark"
+					]
+				},
+				{
+					"name": "Ice Spear",
+					"effects": [
+						"IceSpear"
+					]
+				},
+				{
+					"name": "Ice Spear of Splitting",
+					"effects": [
+						"IceSpearAltX"
+					]
+				},
+				{
+					"name": "Raise Spectre",
+					"effects": [
+						"RaiseSpectre"
+					]
+				},
+				{
+					"name": "Raise Spectre of Transience",
+					"effects": [
+						"RaiseSpectreAltX"
+					]
+				},
+				{
+					"name": "Frost Wall",
+					"effects": [
+						"FrostWall"
+					]
+				},
+				{
+					"name": "Frost Wall of Encroachment",
+					"effects": [
+						"FrostWallAltX"
+					]
+				},
+				{
+					"name": "Wall of Force",
+					"effects": [
+						"WallOfForce"
+					]
+				},
+				{
+					"name": "Freezing Pulse",
+					"effects": [
+						"FreezingPulse"
+					]
+				},
+				{
+					"name": "Shock Nova",
+					"effects": [
+						"ShockNova"
+					]
+				},
+				{
+					"name": "Shock Nova of Procession",
+					"effects": [
+						"ShockNovaAltX"
+					]
+				},
+				{
+					"name": "Shock Nova",
+					"effects": [
+						"NewShockNova"
+					]
+				},
+				{
+					"name": "Elemental Weakness",
+					"effects": [
+						"ElementalWeakness"
+					]
+				},
+				{
+					"name": "Enfeeble",
+					"effects": [
+						"Enfeeble"
+					]
+				},
+				{
+					"name": "Assassin's Mark",
+					"effects": [
+						"AssassinsMark"
+					]
+				},
+				{
+					"name": "Despair",
+					"effects": [
+						"Despair"
+					]
+				},
+				{
+					"name": "Lightning Warp",
+					"effects": [
+						"LightningWarp"
+					]
+				},
+				{
+					"name": "Vaal Lightning Warp",
+					"effects": [
+						"VaalLightningWarpInstant"
+					]
+				},
+				{
+					"name": "Summon Skeletons",
+					"effects": [
+						"SummonSkeletons"
+					]
+				},
+				{
+					"name": "Summon Skeletons of Archers",
+					"effects": [
+						"SummonSkeletonsAltX"
+					]
+				},
+				{
+					"name": "Summon Skeletons of Mages",
+					"effects": [
+						"SummonSkeletonsAltY"
+					]
+				},
+				{
+					"name": "Vaal Summon Skeletons",
+					"effects": [
+						"VaalSummonSkeletons"
+					]
+				},
+				{
+					"name": "Firestorm",
+					"effects": [
+						"Firestorm"
+					]
+				},
+				{
+					"name": "Firestorm of Meteors",
+					"effects": [
+						"FirestormAltX"
+					]
+				},
+				{
+					"name": "Firestorm of Pelting",
+					"effects": [
+						"FirestormAltY"
+					]
+				},
+				{
+					"name": "Tempest Shield",
+					"effects": [
+						"TempestShield"
+					]
+				},
+				{
+					"name": "Mana-Infused Staff",
+					"effects": [
+						"ManaInfusedStaff"
+					]
+				},
+				{
+					"name": "Power Siphon",
+					"effects": [
+						"PowerSiphon"
+					]
+				},
+				{
+					"name": "Power Siphon of the Archmage",
+					"effects": [
+						"PowerSiphonAltX"
+					]
+				},
+				{
+					"name": "Vaal Power Siphon",
+					"effects": [
+						"VaalPowerSiphon"
+					]
+				},
+				{
+					"name": "Purity of Elements",
+					"effects": [
+						"PurityOfElements"
+					]
+				},
+				{
+					"name": "Discipline",
+					"effects": [
+						"Discipline"
+					]
+				},
+				{
+					"name": "Vaal Discipline",
+					"effects": [
+						"VaalDiscipline"
+					]
+				},
+				{
+					"name": "Wrath",
+					"effects": [
+						"Wrath"
+					]
+				},
+				{
+					"name": "Clarity",
+					"effects": [
+						"Clarity"
+					]
+				},
+				{
+					"name": "Vaal Clarity",
+					"effects": [
+						"VaalClarity"
+					]
+				},
+				{
+					"name": "Icicle Mine",
+					"effects": [
+						"IcicleMine"
+					]
+				},
+				{
+					"name": "Icicle Mine of Fanning",
+					"effects": [
+						"IcicleMineAltX"
+					]
+				},
+				{
+					"name": "Icicle Mine of Sabotage",
+					"effects": [
+						"IcicleMineAltY"
+					]
+				},
+				{
+					"name": "Conversion Trap",
+					"effects": [
+						"ConversionTrap"
+					]
+				},
+				{
+					"name": "Creeping Frost",
+					"effects": [
+						"CreepingFrost"
+					]
+				},
+				{
+					"name": "Creeping Frost of Floes",
+					"effects": [
+						"CreepingFrostAltX"
+					]
+				},
+				{
+					"name": "Arc",
+					"effects": [
+						"Arc"
+					]
+				},
+				{
+					"name": "Arc of Surging",
+					"effects": [
+						"ArcAltX"
+					]
+				},
+				{
+					"name": "Arc of Oscillating",
+					"effects": [
+						"ArcAltY"
+					]
+				},
+				{
+					"name": "Vaal Arc",
+					"effects": [
+						"VaalArc"
+					]
+				},
+				{
+					"name": "Flammability",
+					"effects": [
+						"Flammability"
+					]
+				},
+				{
+					"name": "Frostbite",
+					"effects": [
+						"Frostbite"
+					]
+				},
+				{
+					"name": "Conductivity",
+					"effects": [
+						"Conductivity"
+					]
+				},
+				{
+					"name": "Storm Burst",
+					"effects": [
+						"StormBurst"
+					]
+				},
+				{
+					"name": "Storm Burst of Repulsion",
+					"effects": [
+						"StormBurstAltX"
+					]
+				},
+				{
+					"name": "Incinerate",
+					"effects": [
+						"Incinerate"
+					]
+				},
+				{
+					"name": "Incinerate of Expanse",
+					"effects": [
+						"IncinerateAltX"
+					]
+				},
+				{
+					"name": "Incinerate of Venting",
+					"effects": [
+						"IncinerateAltY"
+					]
+				},
+				{
+					"name": "Lightning Trap",
+					"effects": [
+						"LightningTrap"
+					]
+				},
+				{
+					"name": "Lightning Trap of Sparking",
+					"effects": [
+						"LightningTrapAltX"
+					]
+				},
+				{
+					"name": "Vaal Lightning Trap",
+					"effects": [
+						"VaalLightningTrap"
+					]
+				},
+				{
+					"name": "Purity of Lightning",
+					"effects": [
+						"PurityOfLightning"
+					]
+				},
+				{
+					"name": "Vaal Impurity of Lightning",
+					"effects": [
+						"VaalImpurityOfLightning"
+					]
+				},
+				{
+					"name": "Storm Call",
+					"effects": [
+						"StormCall"
+					]
+				},
+				{
+					"name": "Storm Call of Trarthus",
+					"effects": [
+						"StormCallAltX"
+					]
+				},
+				{
+					"name": "Vaal Storm Call",
+					"effects": [
+						"VaalStormCall"
+					]
+				},
+				{
+					"name": "Flameblast",
+					"effects": [
+						"Flameblast"
+					]
+				},
+				{
+					"name": "Flameblast of Celerity",
+					"effects": [
+						"FlameblastAltX"
+					]
+				},
+				{
+					"name": "Flameblast of Contraction",
+					"effects": [
+						"FlameblastAltY"
+					]
+				},
+				{
+					"name": "Vaal Flameblast",
+					"effects": [
+						"VaalFlameblast"
+					]
+				},
+				{
+					"name": "Ball Lightning",
+					"effects": [
+						"BallLightning"
+					]
+				},
+				{
+					"name": "Ball Lightning of Orbiting",
+					"effects": [
+						"BallLightningAltX"
+					]
+				},
+				{
+					"name": "Ball Lightning of Static",
+					"effects": [
+						"BallLightningAltY"
+					]
+				},
+				{
+					"name": "Wildfire",
+					"effects": [
+						"InfernalSwarm"
+					]
+				},
+				{
+					"name": "Summon Raging Spirit",
+					"effects": [
+						"SummonRagingSpirit"
+					]
+				},
+				{
+					"name": "Summon Raging Spirit of Enormity",
+					"effects": [
+						"SummonRagingSpiritAltX"
+					]
+				},
+				{
+					"name": "Flame Surge",
+					"effects": [
+						"FlameSurge"
+					]
+				},
+				{
+					"name": "Flame Surge of Combusting",
+					"effects": [
+						"FlameSurgeAltX"
+					]
+				},
+				{
+					"name": "Flesh Offering",
+					"effects": [
+						"FleshOffering"
+					]
+				},
+				{
+					"name": "Bone Offering",
+					"effects": [
+						"BoneOffering"
+					]
+				},
+				{
+					"name": "Spirit Offering",
+					"effects": [
+						"SpiritOffering"
+					]
+				},
+				{
+					"name": "Glacial Cascade",
+					"effects": [
+						"GlacialCascade"
+					]
+				},
+				{
+					"name": "Glacial Cascade of the Fissure",
+					"effects": [
+						"GlacialCascadeAltX"
+					]
+				},
+				{
+					"name": "Pyroclast Mine",
+					"effects": [
+						"PyroclastMine"
+					]
+				},
+				{
+					"name": "Pyroclast Mine of Sabotage",
+					"effects": [
+						"PyroclastMineAltX"
+					]
+				},
+				{
+					"name": "Herald of Thunder",
+					"effects": [
+						"HeraldOfThunder"
+					]
+				},
+				{
+					"name": "Lightning Tendrils",
+					"effects": [
+						"LightningTendrils"
+					]
+				},
+				{
+					"name": "Lightning Tendrils of Eccentricity",
+					"effects": [
+						"LightningTendrilsAltX"
+					]
+				},
+				{
+					"name": "Lightning Tendrils of Escalation",
+					"effects": [
+						"LightningTendrilsAltY"
+					]
+				},
+				{
+					"name": "Lightning Tendrils",
+					"effects": [
+						"LightningTendrils"
+					]
+				},
+				{
+					"name": "Kinetic Blast",
+					"effects": [
+						"KineticBlast"
+					]
+				},
+				{
+					"name": "Kinetic Blast of Clustering",
+					"effects": [
+						"KineticBlastAltX"
+					]
+				},
+				{
+					"name": "Divine Retribution",
+					"effects": [
+						"DivineRetribution"
+					]
+				},
+				{
+					"name": "Summon Chaos Golem",
+					"effects": [
+						"SummonChaosGolem"
+					]
+				},
+				{
+					"name": "Summon Chaos Golem of Hordes",
+					"effects": [
+						"SummonChaosGolemAltX"
+					]
+				},
+				{
+					"name": "Summon Chaos Golem of the Maelström",
+					"effects": [
+						"SummonChaosGolemAltY"
+					]
+				},
+				{
+					"name": "Summon Lightning Golem",
+					"effects": [
+						"SummonLightningGolem"
+					]
+				},
+				{
+					"name": "Summon Lightning Golem of Hordes",
+					"effects": [
+						"SummonLightningGolemAltX"
+					]
+				},
+				{
+					"name": "Flame Dash",
+					"effects": [
+						"FlameDash"
+					]
+				},
+				{
+					"name": "Flame Dash of Incinerating",
+					"effects": [
+						"FlameDashAltX"
+					]
+				},
+				{
+					"name": "Flame Dash of Return",
+					"effects": [
+						"FlameDashAltY"
+					]
+				},
+				{
+					"name": "Rolling Magma",
+					"effects": [
+						"RollingMagma"
+					]
+				},
+				{
+					"name": "Frost Bomb",
+					"effects": [
+						"FrostBomb"
+					]
+				},
+				{
+					"name": "Frost Bomb of Instability",
+					"effects": [
+						"FrostBombAltX"
+					]
+				},
+				{
+					"name": "Frost Bomb of Forthcoming",
+					"effects": [
+						"FrostBombAltY"
+					]
+				},
+				{
+					"name": "Orb of Storms",
+					"effects": [
+						"OrbOfStorms"
+					]
+				},
+				{
+					"name": "Orb of Storms of Squalls",
+					"effects": [
+						"OrbOfStormsAltX"
+					]
+				},
+				{
+					"name": "Righteous Lightning",
+					"effects": [
+						"RighteousLightning"
+					]
+				},
+				{
+					"name": "Contagion",
+					"effects": [
+						"Contagion"
+					]
+				},
+				{
+					"name": "Contagion of Subsiding",
+					"effects": [
+						"ContagionAltX"
+					]
+				},
+				{
+					"name": "Contagion of Transference",
+					"effects": [
+						"ContagionAltY"
+					]
+				},
+				{
+					"name": "Wither",
+					"effects": [
+						"Wither"
+					]
+				},
+				{
+					"name": "Blight",
+					"effects": [
+						"Blight"
+					]
+				},
+				{
+					"name": "Blight of Contagion",
+					"effects": [
+						"BlightAltX"
+					]
+				},
+				{
+					"name": "Blight of Atrophy",
+					"effects": [
+						"BlightAltY"
+					]
+				},
+				{
+					"name": "Essence Drain",
+					"effects": [
+						"EssenceDrain"
+					]
+				},
+				{
+					"name": "Essence Drain of Desperation",
+					"effects": [
+						"EssenceDrainAltX"
+					]
+				},
+				{
+					"name": "Essence Drain of Wickedness",
+					"effects": [
+						"EssenceDrainAltY"
+					]
+				},
+				{
+					"name": "Frostbolt",
+					"effects": [
+						"FrostBolt"
+					]
+				},
+				{
+					"name": "Vortex",
+					"effects": [
+						"Vortex"
+					]
+				},
+				{
+					"name": "Vortex of Projection",
+					"effects": [
+						"VortexAltX"
+					]
+				},
+				{
+					"name": "Elemental Projectiles",
+					"effects": [
+						"ElementalProjectiles"
+					]
+				},
+				{
+					"name": "Dark Bargain",
+					"effects": [
+						"DarkPact"
+					]
+				},
+				{
+					"name": "Dark Bargain of Trarthus",
+					"effects": [
+						"DarkPactAltX"
+					]
+				},
+				{
+					"name": "Scorching Ray",
+					"effects": [
+						"ScorchingRay"
+					]
+				},
+				{
+					"name": "Scorching Ray of Immolation",
+					"effects": [
+						"ScorchingRayAltX"
+					]
+				},
+				{
+					"name": "Summon Skeletons Channelled",
+					"effects": [
+						"SummonSkeletonsChannelled"
+					]
+				},
+				{
+					"name": "Bodyswap",
+					"effects": [
+						"Bodyswap"
+					]
+				},
+				{
+					"name": "Bodyswap of Sacrifice",
+					"effects": [
+						"BodyswapAltX"
+					]
+				},
+				{
+					"name": "Siphoning Trap",
+					"effects": [
+						"SiphoningTrap"
+					]
+				},
+				{
+					"name": "Siphoning Trap of Pain",
+					"effects": [
+						"SiphoningTrapAltX"
+					]
+				},
+				{
+					"name": "Lightning Spire Trap",
+					"effects": [
+						"LightningSpireTrap"
+					]
+				},
+				{
+					"name": "Lightning Spire Trap of Zapping",
+					"effects": [
+						"LightningSpireTrapAltX"
+					]
+				},
+				{
+					"name": "Lightning Spire Trap of Overloading",
+					"effects": [
+						"LightningSpireTrapAltY"
+					]
+				},
+				{
+					"name": "Vaal Flesh Offering",
+					"effects": [
+						"VaalFleshOffering"
+					]
+				},
+				{
+					"name": "Vaal Blight",
+					"effects": [
+						"VaalBlight"
+					]
+				},
+				{
+					"name": "Summon Holy Relic",
+					"effects": [
+						"SummonHolyRelic"
+					]
+				},
+				{
+					"name": "Summon Holy Relic of Conviction",
+					"effects": [
+						"SummonHolyRelicAltX"
+					]
+				},
+				{
+					"name": "Winter Orb",
+					"effects": [
+						"WinterOrb"
+					]
+				},
+				{
+					"name": "Storm Brand",
+					"effects": [
+						"StormBrand"
+					]
+				},
+				{
+					"name": "Storm Brand of Indecision",
+					"effects": [
+						"StormBrandAltX"
+					]
+				},
+				{
+					"name": "Armageddon Brand",
+					"effects": [
+						"ArmageddonBrand"
+					]
+				},
+				{
+					"name": "Armageddon Brand of Volatility",
+					"effects": [
+						"ArmageddonBrandAltX"
+					]
+				},
+				{
+					"name": "Armageddon Brand of Recall",
+					"effects": [
+						"ArmageddonBrandAltY"
+					]
+				},
+				{
+					"name": "Brand Recall",
+					"effects": [
+						"BrandRecall"
+					]
+				},
+				{
+					"name": "Purifying Flame",
+					"effects": [
+						"PurifyingFlame"
+					]
+				},
+				{
+					"name": "Purifying Flame of Revelations",
+					"effects": [
+						"PurifyingFlameAltX"
+					]
+				},
+				{
+					"name": "Soulrend",
+					"effects": [
+						"Soulrend"
+					]
+				},
+				{
+					"name": "Soulrend of Reaping",
+					"effects": [
+						"SoulrendAltX"
+					]
+				},
+				{
+					"name": "Soulrend of the Spiral",
+					"effects": [
+						"SoulrendAltY"
+					]
+				},
+				{
+					"name": "Bane",
+					"effects": [
+						"Bane",
+						"SupportDarkRitual"
+					]
+				},
+				{
+					"name": "Bane of Condemnation",
+					"effects": [
+						"BaneAltX",
+						"SupportDarkRitualAltX"
+					]
+				},
+				{
+					"name": "Wave of Conviction",
+					"effects": [
+						"WaveOfConviction"
+					]
+				},
+				{
+					"name": "Wave of Conviction of Trarthus",
+					"effects": [
+						"WaveOfConvictionAltY"
+					]
+				},
+				{
+					"name": "Zealotry",
+					"effects": [
+						"Zealotry"
+					]
+				},
+				{
+					"name": "Divine Ire",
+					"effects": [
+						"DivineIre"
+					]
+				},
+				{
+					"name": "Divine Ire of Holy Lightning",
+					"effects": [
+						"DivineIreAltX"
+					]
+				},
+				{
+					"name": "Divine Ire of Disintegration",
+					"effects": [
+						"DivineIreAltY"
+					]
+				},
+				{
+					"name": "Malevolence",
+					"effects": [
+						"Malevolence"
+					]
+				},
+				{
+					"name": "Bone Armour",
+					"effects": [
+						"BoneArmour"
+					]
+				},
+				{
+					"name": "Frostblink",
+					"effects": [
+						"Frostblink"
+					]
+				},
+				{
+					"name": "Frostblink of Wintry Blast",
+					"effects": [
+						"FrostblinkAltX"
+					]
+				},
+				{
+					"name": "Summon Carrion Golem",
+					"effects": [
+						"SummonCarrionGolem"
+					]
+				},
+				{
+					"name": "Summon Carrion Golem of Hordes",
+					"effects": [
+						"SummonCarrionGolemAltX"
+					]
+				},
+				{
+					"name": "Summon Carrion Golem of Scavenging",
+					"effects": [
+						"SummonCarrionGolemAltY"
+					]
+				},
+				{
+					"name": "Stormblast Mine",
+					"effects": [
+						"StormblastMine"
+					]
+				},
+				{
+					"name": "Summon Skitterbots",
+					"effects": [
+						"SummonSkitterbots"
+					]
+				},
+				{
+					"name": "Arcane Cloak",
+					"effects": [
+						"ArcaneCloak"
+					]
+				},
+				{
+					"name": "Stormbind",
+					"effects": [
+						"Stormbind",
+						"RuneBlast"
+					]
+				},
+				{
+					"name": "Stormbind of Teleportation",
+					"effects": [
+						"StormbindAltX",
+						"RuneBlastAltX"
+					]
+				},
+				{
+					"name": "Kinetic Bolt",
+					"effects": [
+						"KineticBolt"
+					]
+				},
+				{
+					"name": "Kinetic Bolt of Fragmentation",
+					"effects": [
+						"KineticBoltAltX"
+					]
+				},
+				{
+					"name": "Spellslinger",
+					"effects": [
+						"Spellslinger",
+						"SupportSpellslinger"
+					]
+				},
+				{
+					"name": "Arcanist Brand",
+					"effects": [
+						"BrandSupport",
+						"SupportBrandSupport"
+					]
+				},
+				{
+					"name": "Penance Brand",
+					"effects": [
+						"PenanceBrand"
+					]
+				},
+				{
+					"name": "Penance Brand of Dissipation",
+					"effects": [
+						"PenanceBrandAltX"
+					]
+				},
+				{
+					"name": "Penance Brand of Conduction",
+					"effects": [
+						"PenanceBrandAltY"
+					]
+				},
+				{
+					"name": "Wintertide Brand",
+					"effects": [
+						"WintertideBrand"
+					]
+				},
+				{
+					"name": "Blazing Salvo",
+					"effects": [
+						"BlazingSalvo"
+					]
+				},
+				{
+					"name": "Void Sphere",
+					"effects": [
+						"VoidSphere"
+					]
+				},
+				{
+					"name": "Void Sphere of Rending",
+					"effects": [
+						"VoidSphereAltX"
+					]
+				},
+				{
+					"name": "Crackling Lance",
+					"effects": [
+						"CracklingLance"
+					]
+				},
+				{
+					"name": "Crackling Lance of Branching",
+					"effects": [
+						"CracklingLanceAltX"
+					]
+				},
+				{
+					"name": "Crackling Lance of Disintegration",
+					"effects": [
+						"CracklingLanceAltY"
+					]
+				},
+				{
+					"name": "Frost Shield",
+					"effects": [
+						"FrostShield"
+					]
+				},
+				{
+					"name": "Sigil of Power",
+					"effects": [
+						"SigilOfPower"
+					]
+				},
+				{
+					"name": "Flame Wall",
+					"effects": [
+						"FlameWall"
+					]
+				},
+				{
+					"name": "Hexblast",
+					"effects": [
+						"Hexblast"
+					]
+				},
+				{
+					"name": "Hexblast of Contradiction",
+					"effects": [
+						"HexblastAltX"
+					]
+				},
+				{
+					"name": "Hexblast of Havoc",
+					"effects": [
+						"HexblastAltY"
+					]
+				},
+				{
+					"name": "Hydrosphere",
+					"effects": [
+						"Hydrosphere"
+					]
+				},
+				{
+					"name": "Envy",
+					"effects": [
+						"Envy"
+					]
+				},
+				{
+					"name": "Voltaxic Burst",
+					"effects": [
+						"VoltaxicBurst"
+					]
+				},
+				{
+					"name": "Forbidden Rite",
+					"effects": [
+						"ForbiddenRite"
+					]
+				},
+				{
+					"name": "Forbidden Rite of Soul Sacrifice",
+					"effects": [
+						"ForbiddenRiteAltX"
+					]
+				},
+				{
+					"name": "Manabond",
+					"effects": [
+						"Manabond"
+					]
+				},
+				{
+					"name": "Blood Offering",
+					"effects": [
+						"BloodOffering"
+					]
+				},
+				{
+					"name": "Summon Reaper",
+					"effects": [
+						"SummonReaper"
+					]
+				},
+				{
+					"name": "Summon Reaper of Revenants",
+					"effects": [
+						"SummonReaperAltX"
+					]
+				},
+				{
+					"name": "Summon Reaper of Eviscerating",
+					"effects": [
+						"SummonReaperAltY"
+					]
+				},
+				{
+					"name": "Eye of Winter",
+					"effects": [
+						"EyeOfWinter"
+					]
+				},
+				{
+					"name": "Eye of Winter of Finality",
+					"effects": [
+						"EyeOfWinterAltX"
+					]
+				},
+				{
+					"name": "Eye of Winter of Transience",
+					"effects": [
+						"EyeOfWinterAltY"
+					]
+				},
+				{
+					"name": "Energy Blade",
+					"effects": [
+						"EnergyBlade"
+					]
+				},
+				{
+					"name": "Soul Link",
+					"effects": [
+						"SoulLink"
+					]
+				},
+				{
+					"name": "Destructive Link",
+					"effects": [
+						"DestructiveLink"
+					]
+				},
+				{
+					"name": "Lightning Conduit",
+					"effects": [
+						"LightningConduit"
+					]
+				},
+				{
+					"name": "Lightning Conduit of the Heavens",
+					"effects": [
+						"LightningConduitAltX"
+					]
+				},
+				{
+					"name": "Galvanic Field",
+					"effects": [
+						"GalvanicField"
+					]
+				},
+				{
+					"name": "Galvanic Field of Intensity",
+					"effects": [
+						"GalvanicFieldAltX"
+					]
+				},
+				{
+					"name": "Vaal Firestorm",
+					"effects": [
+						"VaalFirestorm"
+					]
+				},
+				{
+					"name": "Kinetic Rain",
+					"effects": [
+						"KineticRain",
+						"KineticRainKineticInstability"
+					]
+				},
+				{
+					"name": "Kinetic Rain of Impact",
+					"effects": [
+						"KineticRainAltX"
+					]
+				},
+				{
+					"name": "Somatic Shell",
+					"effects": [
+						"SomaticShell"
+					]
+				},
+				{
+					"name": "Kinetic Fusillade",
+					"effects": [
+						"KineticFusillade"
+					]
+				},
+				{
+					"name": "Kinetic Fusillade of Detonation",
+					"effects": [
+						"KineticFusilladeAltX"
+					]
+				},
+				{
+					"name": "Automation",
+					"effects": [
+						"Automation",
+						"SupportAutomation"
+					]
+				},
+				{
+					"name": "Wreathed in Light",
+					"effects": [
+						"GraftSkillEshLightningRing"
+					]
+				},
+				{
+					"name": "Glowing Silhouette",
+					"effects": [
+						"GraftSkillEshLightningClones"
+					]
+				},
+				{
+					"name": "Enervating Grasp",
+					"effects": [
+						"GraftSkillEshLightningHands"
+					]
+				},
+				{
+					"name": "Overcharged Sinews",
+					"effects": [
+						"GraftSkillEshJoltBuff"
+					]
+				},
+				{
+					"name": "The Great Avalanche",
+					"effects": [
+						"GraftSkillTulSummon"
+					]
+				}
+			],
+			"support": [
+				{
+					"name": "Increased Area of Effect Support",
+					"effects": [
+						"SupportIncreasedAreaOfEffect"
+					]
+				},
+				{
+					"name": "Added Lightning Damage Support",
+					"effects": [
+						"SupportAddedLightningDamage"
+					]
+				},
+				{
+					"name": "Increased Critical Strikes Support",
+					"effects": [
+						"SupportIncreasedCriticalStrikes"
+					]
+				},
+				{
+					"name": "Increased Critical Damage Support",
+					"effects": [
+						"SupportIncreasedCriticalDamage"
+					]
+				},
+				{
+					"name": "Added Chaos Damage Support",
+					"effects": [
+						"SupportAddedChaosDamage"
+					]
+				},
+				{
+					"name": "Item Rarity Support",
+					"effects": [
+						"SupportItemRarity"
+					]
+				},
+				{
+					"name": "Faster Casting Support",
+					"effects": [
+						"SupportFasterCasting"
+					]
+				},
+				{
+					"name": "Concentrated Effect Support",
+					"effects": [
+						"SupportConcentratedEffect"
+					]
+				},
+				{
+					"name": "Minion Damage Support",
+					"effects": [
+						"SupportMinionDamage"
+					]
+				},
+				{
+					"name": "Combustion Support",
+					"effects": [
+						"SupportCombustion"
+					]
+				},
+				{
+					"name": "Minion Speed Support",
+					"effects": [
+						"SupportMinionSpeed"
+					]
+				},
+				{
+					"name": "Minion Life Support",
+					"effects": [
+						"SupportMinionLife"
+					]
+				},
+				{
+					"name": "Elemental Proliferation Support",
+					"effects": [
+						"SupportElementalProliferation"
+					]
+				},
+				{
+					"name": "Blastchain Mine Support",
+					"effects": [
+						"SupportBlastchainMine"
+					]
+				},
+				{
+					"name": "Lightning Penetration Support",
+					"effects": [
+						"SupportLightningPenetration"
+					]
+				},
+				{
+					"name": "Elemental Penetration Support",
+					"effects": [
+						"SupportElementalPenetration"
+					]
+				},
+				{
+					"name": "Spell Echo Support",
+					"effects": [
+						"SupportSpellEcho"
+					]
+				},
+				{
+					"name": "Power Charge On Critical Support",
+					"effects": [
+						"SupportPowerChargeOnCritical"
+					]
+				},
+				{
+					"name": "Elemental Army Support",
+					"effects": [
+						"SupportElementalArmy"
+					]
+				},
+				{
+					"name": "Hextouch Support",
+					"effects": [
+						"SupportHextouch",
+						"SupportCurseOnHitCurse"
+					]
+				},
+				{
+					"name": "Cast when Stunned Support",
+					"effects": [
+						"SupportCastWhenStunned"
+					]
+				},
+				{
+					"name": "Enlighten Support",
+					"effects": [
+						"SupportEnlighten"
+					]
+				},
+				{
+					"name": "Physical to Lightning Support",
+					"effects": [
+						"SupportPhysicalToLightning"
+					]
+				},
+				{
+					"name": "Blasphemy Support",
+					"effects": [
+						"SupportBlasphemy"
+					]
+				},
+				{
+					"name": "Innervate Support",
+					"effects": [
+						"SupportInnervate"
+					]
+				},
+				{
+					"name": "Controlled Destruction Support",
+					"effects": [
+						"SupportControlledDestruction"
+					]
+				},
+				{
+					"name": "Elemental Focus Support",
+					"effects": [
+						"SupportElementalFocus"
+					]
+				},
+				{
+					"name": "Minefield Support",
+					"effects": [
+						"SupportMinefield"
+					]
+				},
+				{
+					"name": "Cast while Channelling Support",
+					"effects": [
+						"SupportCastWhileChannelling",
+						"SupportCastWhileChannellingTriggered"
+					]
+				},
+				{
+					"name": "Ignite Proliferation Support",
+					"effects": [
+						"SupportIgniteProliferation"
+					]
+				},
+				{
+					"name": "Decay Support",
+					"effects": [
+						"SupportDecay"
+					]
+				},
+				{
+					"name": "Efficacy Support",
+					"effects": [
+						"SupportEfficacy"
+					]
+				},
+				{
+					"name": "Immolate Support",
+					"effects": [
+						"SupportImmolate"
+					]
+				},
+				{
+					"name": "Unbound Ailments Support",
+					"effects": [
+						"SupportUnboundAilments"
+					]
+				},
+				{
+					"name": "Arcane Surge Support",
+					"effects": [
+						"SupportArcaneSurge"
+					]
+				},
+				{
+					"name": "Infused Channelling Support",
+					"effects": [
+						"SupportInfusedChannelling"
+					]
+				},
+				{
+					"name": "Spell Cascade Support",
+					"effects": [
+						"SupportSpellCascade"
+					]
+				},
+				{
+					"name": "Summon Phantasm Support",
+					"effects": [
+						"SupportSummonPhantasm"
+					]
+				},
+				{
+					"name": "Charged Mines Support",
+					"effects": [
+						"SupportChargedMines"
+					]
+				},
+				{
+					"name": "Bonechill Support",
+					"effects": [
+						"SupportBonechill"
+					]
+				},
+				{
+					"name": "Energy Leech Support",
+					"effects": [
+						"SupportEnergyLeech"
+					]
+				},
+				{
+					"name": "Intensify Support",
+					"effects": [
+						"SupportIntensify"
+					]
+				},
+				{
+					"name": "Unleash Support",
+					"effects": [
+						"SupportUnleash"
+					]
+				},
+				{
+					"name": "Feeding Frenzy Support",
+					"effects": [
+						"SupportFeedingFrenzy"
+					]
+				},
+				{
+					"name": "Predator Support",
+					"effects": [
+						"SupportPredator",
+						"SignalPrey"
+					]
+				},
+				{
+					"name": "Meat Shield Support",
+					"effects": [
+						"SupportMeatShield"
+					]
+				},
+				{
+					"name": "High-Impact Mine Support",
+					"effects": [
+						"SupportHighImpactMine"
+					]
+				},
+				{
+					"name": "Infernal Legion Support",
+					"effects": [
+						"SupportInfernalLegion"
+					]
+				},
+				{
+					"name": "Awakened Added Chaos Damage Support",
+					"effects": [
+						"SupportAwakenedAddedChaosDamage"
+					]
+				},
+				{
+					"name": "Awakened Added Lightning Damage Support",
+					"effects": [
+						"SupportAwakenedAddedLightningDamage"
+					]
+				},
+				{
+					"name": "Awakened Blasphemy Support",
+					"effects": [
+						"SupportAwakenedBlasphemy"
+					]
+				},
+				{
+					"name": "Awakened Cast While Channelling Support",
+					"effects": [
+						"SupportAwakenedCastWhileChannelling",
+						"SupportCastWhileChannellingTriggeredPlus"
+					]
+				},
+				{
+					"name": "Awakened Controlled Destruction Support",
+					"effects": [
+						"SupportAwakenedControlledDestruction"
+					]
+				},
+				{
+					"name": "Awakened Hextouch Support",
+					"effects": [
+						"SupportAwakenedHextouch",
+						"SupportCurseOnHitCursePlus"
+					]
+				},
+				{
+					"name": "Awakened Elemental Focus Support",
+					"effects": [
+						"SupportAwakenedElementalFocus"
+					]
+				},
+				{
+					"name": "Awakened Increased Area of Effect Support",
+					"effects": [
+						"SupportAwakenedIncreasedAreaofEffect"
+					]
+				},
+				{
+					"name": "Awakened Lightning Penetration Support",
+					"effects": [
+						"SupportAwakenedLightningPenetration"
+					]
+				},
+				{
+					"name": "Awakened Minion Damage Support",
+					"effects": [
+						"SupportAwakenedMinionDamage"
+					]
+				},
+				{
+					"name": "Awakened Spell Cascade Support",
+					"effects": [
+						"SupportAwakenedSpellCascade"
+					]
+				},
+				{
+					"name": "Awakened Spell Echo Support",
+					"effects": [
+						"SupportAwakenedSpellEcho"
+					]
+				},
+				{
+					"name": "Awakened Unbound Ailments Support",
+					"effects": [
+						"SupportAwakenedUnboundAilments"
+					]
+				},
+				{
+					"name": "Awakened Unleash Support",
+					"effects": [
+						"SupportAwakenedUnleash"
+					]
+				},
+				{
+					"name": "Awakened Enlighten Support",
+					"effects": [
+						"SupportAwakenedEnlighten"
+					]
+				},
+				{
+					"name": "Archmage Support",
+					"effects": [
+						"SupportArchmage"
+					]
+				},
+				{
+					"name": "Swiftbrand Support",
+					"effects": [
+						"SupportSwiftbrand"
+					]
+				},
+				{
+					"name": "Impending Doom Support",
+					"effects": [
+						"SupportImpendingDoom",
+						"DoomBlast"
+					]
+				},
+				{
+					"name": "Pinpoint Support",
+					"effects": [
+						"SupportPinpoint"
+					]
+				},
+				{
+					"name": "Trinity Support",
+					"effects": [
+						"SupportTrinity"
+					]
+				},
+				{
+					"name": "Overcharge Support",
+					"effects": [
+						"SupportOvercharge"
+					]
+				},
+				{
+					"name": "Cursed Ground Support",
+					"effects": [
+						"SupportCursedGround"
+					]
+				},
+				{
+					"name": "Hex Bloom Support",
+					"effects": [
+						"SupportHexBloom"
+					]
+				},
+				{
+					"name": "Prismatic Burst Support",
+					"effects": [
+						"SupportPrismaticBurst",
+						"PrismaticBurst"
+					]
+				},
+				{
+					"name": "Spellblade Support",
+					"effects": [
+						"SupportSpellblade"
+					]
+				},
+				{
+					"name": "Devour Support",
+					"effects": [
+						"SupportDevour"
+					]
+				},
+				{
+					"name": "Fresh Meat Support",
+					"effects": [
+						"SupportFreshMeat"
+					]
+				},
+				{
+					"name": "Sacrifice Support",
+					"effects": [
+						"SupportSacrifice"
+					]
+				},
+				{
+					"name": "Frigid Bond Support",
+					"effects": [
+						"SupportFrigidBond"
+					]
+				},
+				{
+					"name": "Sacred Wisps Support",
+					"effects": [
+						"SupportSacredWisps",
+						"SummonSacredWisp"
+					]
+				},
+				{
+					"name": "Greater Spell Cascade Support",
+					"effects": [
+						"SupportGreaterSpellCascade"
+					]
+				},
+				{
+					"name": "Invert the Rules Support",
+					"effects": [
+						"SupportInvertTheRules"
+					]
+				},
+				{
+					"name": "Vaal Sacrifice Support",
+					"effects": [
+						"SupportVaalSacrifice"
+					]
+				},
+				{
+					"name": "Greater Spell Echo Support",
+					"effects": [
+						"SupportGreaterSpellEcho"
+					]
+				},
+				{
+					"name": "Foulgrasp Support",
+					"effects": [
+						"SupportFoulgrasp",
+						"TriggeredSupportFoulgrasp"
+					]
+				},
+				{
+					"name": "Hiveborn Support",
+					"effects": [
+						"SupportHiveborn",
+						"TriggeredSupportHiveborn"
+					]
+				},
+				{
+					"name": "Scornful Herald Support",
+					"effects": [
+						"SupportScornfulHerald"
+					]
+				},
+				{
+					"name": "Hextoad Support",
+					"effects": [
+						"SupportHextoad",
+						"TriggeredSupportHextoad"
+					]
+				},
+				{
+					"name": "Hexpass Support",
+					"effects": [
+						"SupportHexpass"
+					]
+				},
+				{
+					"name": "Greater Kinetic Instability Support",
+					"effects": [
+						"SupportGreaterKineticInstability",
+						"TriggeredSupportGreaterKineticInstability"
+					]
+				},
+				{
+					"name": "Cooldown Recovery Support",
+					"effects": [
+						"SupportCooldownRecovery"
+					]
+				},
+				{
+					"name": "Eldritch Blasphemy Support",
+					"effects": [
+						"SupportEldritchBlasphemy"
+					]
+				},
+				{
+					"name": "Gluttony Support",
+					"effects": [
+						"SupportGluttony"
+					]
+				},
+				{
+					"name": "Congregation Support",
+					"effects": [
+						"SupportCongregation"
+					]
+				},
+				{
+					"name": "Frostmage Support",
+					"effects": [
+						"SupportFrostmage"
+					]
+				},
+				{
+					"name": "Greater Devour Support",
+					"effects": [
+						"SupportGreaterDevour"
+					]
+				},
+				{
+					"name": "Greater Unleash Support",
+					"effects": [
+						"SupportGreaterUnleash"
+					]
+				},
+				{
+					"name": "Communion Support",
+					"effects": [
+						"SupportMinionPact"
+					]
+				},
+				{
+					"name": "Overloaded Intensity Support",
+					"effects": [
+						"SupportOverloadedIntensity"
+					]
+				},
+				{
+					"name": "Coursing Current Support",
+					"effects": [
+						"SupportCrustaceousGrasp"
+					]
+				},
+				{
+					"name": "Focused Channelling Support",
+					"effects": [
+						"SupportFocusedChannelling"
+					]
+				},
+				{
+					"name": "Kinetic Instability Support",
+					"effects": [
+						"SupportKineticInstability",
+						"TriggeredSupportKineticInstability"
+					]
+				},
+				{
+					"name": "Living Lightning Support",
+					"effects": [
+						"SupportLivingLightning",
+						"TriggeredSupportLivingLightning"
+					]
+				},
+				{
+					"name": "Exemplar Support",
+					"effects": [
+						"SupportExemplar"
+					]
+				}
+			]
+		},
+		{
+			"type": "Other",
+			"active": [
+				{
+					"name": "Wand Teleport",
+					"effects": [
+						"WandTeleport"
+					]
+				},
+				{
+					"name": "Portal",
+					"effects": [
+						"Portal"
+					]
+				},
+				{
+					"name": "Vaal Breach",
+					"effects": [
+						"VaalBreach"
+					]
+				},
+				{
+					"name": "Detonate Mines",
+					"effects": [
+						"GemDetonateMines"
+					]
+				},
+				{
+					"name": "Convocation",
+					"effects": [
+						"ConvocationOld"
+					]
+				},
+				{
+					"name": "Convocation",
+					"effects": [
+						"Convocation"
+					]
+				},
+				{
+					"name": "Static Tether",
+					"effects": [
+						"StaticTether"
+					]
+				},
+				{
+					"name": "Capture Monster",
+					"effects": [
+						"CaptureMonster"
+					]
+				},
+				{
+					"name": "Death Aura",
+					"effects": [
+						"DeathAura"
+					]
+				},
+				{
+					"name": "Gluttony of Elements",
+					"effects": [
+						"GluttonyOfElements"
+					]
+				},
+				{
+					"name": "Blinding Aura",
+					"effects": [
+						"BlindingAura"
+					]
+				},
+				{
+					"name": "Order: To me!",
+					"effects": [
+						"CallMercenary"
+					]
+				},
+				{
+					"name": "Pact of Beidat",
+					"effects": [
+						"PactOfBeidat"
+					]
+				},
+				{
+					"name": "Pact of Ghorr",
+					"effects": [
+						"PactOfGhorr",
+						"TriggeredBloodrend"
+					]
+				},
+				{
+					"name": "Pact of K'Tash",
+					"effects": [
+						"PactOfKtash"
+					]
+				},
+				{
+					"name": "Pact of Lycia",
+					"effects": [
+						"PactOfLycia",
+						"TriggeredHeavensScourge"
+					]
+				}
+			],
+			"support": [
+				{
+					"name": "Vaal Soul Harvesting",
+					"effects": [
+						"SupportVaalSoulHarvesting"
+					]
+				},
+				{
+					"name": "Eclipse Support",
+					"effects": [
+						"SupportEclipse"
+					]
+				}
+			]
+		}
+	]
+}

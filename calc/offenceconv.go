@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
@@ -32,7 +33,6 @@ func (c *offenceCtx) convTable(cfg *modstore.Cfg) conversionTable {
 func (env *Env) offenceConversion(c *offenceCtx) {
 	actor, skillModList, skillCfg, skillData := c.actor, c.skillModList, c.skillCfg, c.skillData
 	skillFlags, output, activeSkill := c.skillFlags, c.output, c.activeSkill
-	d := env.Data
 
 	// (The reference's Brand block here only builds activeSkill.infoMessage.)
 
@@ -41,7 +41,7 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 	if truthy(skillData["corpseLife"]) {
 		monsterLife = anyNum(skillData["corpseLife"])
 	} else if env.EnemyLevel != 0 {
-		monsterLife = luaIndex("monsterLifeTable", d.MonsterLifeTable, int(env.EnemyLevel))
+		monsterLife = luaIndex("monsterLifeTable", data.MonsterLifeTable, int(env.EnemyLevel))
 	}
 	c.monsterLife = monsterLife
 	if truthy(skillData["explodeCorpse"]) && (truthy(skillData["corpseLife"]) || env.EnemyLevel != 0) {

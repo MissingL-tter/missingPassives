@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -39,7 +40,6 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 	actor, skillModList, skillCfg, skillData := c.actor, c.skillModList, c.skillCfg, c.skillData
 	skillFlags, output, modDB := c.skillFlags, c.output, c.modDB
 	activeSkill := c.activeSkill
-	d := env.Data
 
 	if modDB.Flag(nil, "Elusive") && skillModList.Flag(nil, "SupportedByNightblade") {
 		elusiveEffect := outNum(output, "ElusiveEffectMod") / 100
@@ -82,7 +82,7 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 			if name == "" {
 				continue
 			}
-			base := d.ItemBases[name]
+			base := data.ItemBases[name]
 			if base == nil || base.Weapon == nil {
 				continue
 			}
@@ -114,8 +114,8 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 	}
 	// weapon1info/weapon2info are locals in the reference too, and used only
 	// by the Spellblade block just below.
-	weapon1info, hasWeapon1info := d.WeaponTypeInfo[str(actor.ms.WeaponData1["type"])]
-	_, hasWeapon2info := d.WeaponTypeInfo[str(actor.ms.WeaponData2["type"])]
+	weapon1info, hasWeapon1info := data.WeaponTypeInfo[str(actor.ms.WeaponData1["type"])]
+	_, hasWeapon2info := data.WeaponTypeInfo[str(actor.ms.WeaponData2["type"])]
 
 	// account for Spellblade
 	if spellbladeMulti, ok := skillModList.Max(skillCfg, "OneHandWeaponDamageAppliesToSpells"); ok {

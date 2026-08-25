@@ -34,7 +34,6 @@ type GrantedSkill struct {
 // Implements modstore.Item for the ItemCondition eval tag.
 type Item struct {
 	In *ItemInput
-	D  *data.Data // itemTagSpecial pools for FindModifierSubstring
 	// jewelData.limitDisabled
 	JewelLimitDisabled bool
 }
@@ -77,7 +76,7 @@ func (it *Item) FindModifierSubstring(substring, itemSlotName string) bool {
 		lower := strings.ToLower(line)
 		if patFind(lower, substring) && !patFind(lower, substring+" modifier") {
 			excluded := false
-			if slotPats := it.D.ItemTagSpecialExclusionPattern[substring]; slotPats != nil {
+			if slotPats := data.ItemTagSpecialExclusionPattern[substring]; slotPats != nil {
 				for _, specialMod := range slotPats[itemSlotName] {
 					if patFind(lower, strings.ToLower(specialMod)) {
 						excluded = true
@@ -89,7 +88,7 @@ func (it *Item) FindModifierSubstring(substring, itemSlotName string) bool {
 				return true
 			}
 		}
-		if slotPats := it.D.ItemTagSpecial[substring]; slotPats != nil {
+		if slotPats := data.ItemTagSpecial[substring]; slotPats != nil {
 			for _, specialMod := range slotPats[itemSlotName] {
 				if patFind(lower, strings.ToLower(specialMod)) {
 					return true
@@ -149,7 +148,6 @@ func listFlagOf(mods []*modparser.Mod, name string) bool {
 // Env mirrors the slice of the Lua env the ported stages populate.
 type Env struct {
 	Build       *BuildInput
-	Data        *data.Data
 	Mode        string
 	ConfigInput map[string]any
 
@@ -229,6 +227,11 @@ type Env struct {
 	// (the reference memoizes into the shared skill tables; per-env keeps
 	// the game-data canon pristine, same values).
 	statMapOverlay map[*data.GrantedEffect]map[string]*data.StatMapEntry
+	// globalEffectOverlay carries the hasGlobalEffect stamps the reference's
+	// lazy statMap copies write onto the shared skill tables at calc time
+	// (Data.lua metatable -> processMod). Kept per-env so the loaded data
+	// stays immutable after Load; geHasGlobalEffect is the reader.
+	globalEffectOverlay map[*data.GrantedEffect]bool
 	// TriggeredCostWipes marks skill levels whose cost the reference wipes
 	// for triggered granted skills (ProcessSocketGroup mutates the shared
 	// table; kept per-env). The perform-stage cost reads must consult it.
@@ -259,7 +262,20 @@ func (env *Env) statMapLookup(ge *data.GrantedEffect, key string) *data.StatMapE
 			return e
 		}
 	}
-	e := data.LazyStatMapCopy(ge, key)
+	e, setsGlobal := data.LazyStatMapCopy(ge, key)
+	if setsGlobal {
+		// The reference stamps hasGlobalEffect onto the SHARED granted
+		// effect here; the overlay keeps the loaded data immutable, same
+		// values (see globalEffectOverlay).
+		if env.globalEffectOverlay == nil {
+			env.globalEffectOverlay = map[*data.GrantedEffect]bool{}
+		}
+		owner := ge
+		if ge.StatMapOwner != nil {
+			owner = ge.StatMapOwner
+		}
+		env.globalEffectOverlay[owner] = true
+	}
 	if e != nil {
 		if env.statMapOverlay == nil {
 			env.statMapOverlay = map[*data.GrantedEffect]map[string]*data.StatMapEntry{}
@@ -292,7 +308,7 @@ func newMod(name, typ string, value any, rest ...any) *modparser.Mod {
 // initModDB ports calcs.initModDB: stats and conditions common to all
 // actors, in the reference's statement order.
 func (env *Env) initModDB(modDB *modstore.DB) {
-	cc := env.Data.CharacterConstants
+	cc := data.CharacterConstants
 	tag := func(kv modparser.Tag) modparser.Tag { return kv }
 	add := func(m *modparser.Mod) { modDB.AddMod(m) }
 	add(newMod("FireResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
@@ -589,18 +605,18 @@ type ReplayInput struct {
 // BuildInput, including the Energy Blade re-entry (the reference restarts
 // initEnv with override.conditions when an enabled Energy Blade gem is
 // found).
-func InitEnv(d *data.Data, in *BuildInput, mode string, replay *ReplayInput) *Env {
-	return initEnvOverride(d, in, mode, replay, nil)
+func InitEnv(in *BuildInput, mode string, replay *ReplayInput) *Env {
+	return initEnvOverride(in, mode, replay, nil)
 }
 
 // initEnvOverride is initEnv with the reference's `override` argument, which
 // copyActiveSkill passes on from the env it copies (`calcs.initEnv(env.build,
 // mode, env.override)`) so a sub-environment inherits an Energy Blade
 // re-entry instead of rediscovering it.
-func initEnvOverride(d *data.Data, in *BuildInput, mode string, replay *ReplayInput, overrideConditions []string) *Env {
+func initEnvOverride(in *BuildInput, mode string, replay *ReplayInput, overrideConditions []string) *Env {
 	orderStart := 0
 	for {
-		env, restart := initEnvPass(d, in, mode, replay, orderStart, overrideConditions)
+		env, restart := initEnvPass(in, mode, replay, orderStart, overrideConditions)
 		if !restart {
 			return env
 		}
@@ -609,7 +625,7 @@ func initEnvOverride(d *data.Data, in *BuildInput, mode string, replay *ReplayIn
 	}
 }
 
-func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
+func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
 	// CALCULATOR is what copyActiveSkill's second initEnv uses. It differs
 	// from MAIN only in skipping the write-backs onto the build objects
 	// that exist for the UI (node.finalModList, gemInstance.displayEffect,
@@ -625,15 +641,14 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 		if !ok {
 			panic("calc: non-gem skillGem in SocketedIn eval")
 		}
-		return GemIsType(d, g, keyword, false)
+		return GemIsType(g, keyword, false)
 	}
 	modstore.Externals.GetGameIdFromGemName = func(name string, dropVaal bool) (string, bool) {
-		id := GetGameIdFromGemName(d, name, dropVaal)
+		id := GetGameIdFromGemName(name, dropVaal)
 		return id, id != ""
 	}
 	env := &Env{
 		Build:               in,
-		Data:                d,
 		Mode:                mode,
 		ConfigInput:         in.ConfigInput,
 		ClassID:             in.ClassID,
@@ -669,7 +684,7 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 	if in.ConfigEnemyLevel != nil {
 		env.EnemyLevel = *in.ConfigEnemyLevel
 	} else {
-		env.EnemyLevel = math.Min(d.Misc.MaxEnemyLevel, in.CharacterLevel)
+		env.EnemyLevel = math.Min(data.Misc.MaxEnemyLevel, in.CharacterLevel)
 	}
 
 	// Create player/enemy actors
@@ -696,14 +711,14 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 	}
 	modDB.Multipliers["Level"] = math.Max(1, math.Min(100, in.CharacterLevel))
 	env.initModDB(modDB)
-	cc := d.CharacterConstants
+	cc := data.CharacterConstants
 	resistPenalty := -60.0
 	if v, ok := in.ConfigInput["resistancePenalty"]; ok && truthy(v) {
 		resistPenalty = anyNum(v)
 	}
 	modDB.AddMod(newMod("Life", "BASE", cc["life_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": 38.0}))
 	modDB.AddMod(newMod("Mana", "BASE", cc["mana_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": 34.0}))
-	modDB.AddMod(newMod("ManaRegen", "BASE", d.Misc.ManaRegenBase, "Base", modparser.Tag{"type": "PerStat", "stat": "Mana", "div": 1.0}))
+	modDB.AddMod(newMod("ManaRegen", "BASE", data.Misc.ManaRegenBase, "Base", modparser.Tag{"type": "PerStat", "stat": "Mana", "div": 1.0}))
 	modDB.AddMod(newMod("Devotion", "BASE", 0.0, "Base"))
 	modDB.AddMod(newMod("Evasion", "BASE", cc["base_evasion_rating"], "Base"))
 	modDB.AddMod(newMod("Accuracy", "BASE", cc["accuracy_rating_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": -cc["accuracy_rating_per_level"]}))
@@ -769,15 +784,15 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 
 	// Add Pantheon mods
 	if god, _ := in.ConfigInput["pantheonMajorGod"].(string); god != "None" && god != "" {
-		applySoulMod(modDB, d.Pantheons[god])
+		applySoulMod(modDB, data.Pantheons[god])
 	}
 	if god, _ := in.ConfigInput["pantheonMinorGod"].(string); god != "None" && god != "" {
-		applySoulMod(modDB, d.Pantheons[god])
+		applySoulMod(modDB, data.Pantheons[god])
 	}
 
 	// Initialise enemy modifier database
 	env.initModDB(enemyDB)
-	enemyDB.AddMod(newMod("Accuracy", "BASE", d.MonsterAccuracyTable[int(env.EnemyLevel)-1], "Base"))
+	enemyDB.AddMod(newMod("Accuracy", "BASE", data.MonsterAccuracyTable[int(env.EnemyLevel)-1], "Base"))
 	enemyDB.AddMod(newMod("Condition:AgainstDamageOverTime", "FLAG", true, "Base", modparser.ModFlag.Dot, modparser.Tag{"type": "ActorCondition", "actor": "player", "var": "Combat"}))
 
 	// Add mods from the config tab, then the party tab
@@ -837,13 +852,13 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 	for _, group := range in.SkillsTab.SocketGroups {
 		for _, gem := range group.GemList {
 			if gem.GemDataID != nil {
-				gem.GemData = d.Gems[*gem.GemDataID]
+				gem.GemData = data.Gems[*gem.GemDataID]
 				if gem.GemData == nil {
 					panic("calc: unknown gemDataId " + *gem.GemDataID)
 				}
 			}
 			if gem.GrantedEffectID != nil {
-				gem.GrantedEffect = d.Skills[*gem.GrantedEffectID]
+				gem.GrantedEffect = data.Skills[*gem.GrantedEffectID]
 				if gem.GrantedEffect == nil {
 					panic("calc: unknown grantedEffectId " + *gem.GrantedEffectID)
 				}
@@ -925,4 +940,11 @@ func initEnvPass(d *data.Data, in *BuildInput, mode string, replay *ReplayInput,
 	}
 
 	return env, false
+}
+
+// geHasGlobalEffect is `grantedEffect.hasGlobalEffect` with the calc-time
+// stamps the reference writes onto the shared tables read from the per-env
+// overlay instead.
+func (env *Env) geHasGlobalEffect(ge *data.GrantedEffect) bool {
+	return ge.HasGlobalEffect || env.globalEffectOverlay[ge]
 }

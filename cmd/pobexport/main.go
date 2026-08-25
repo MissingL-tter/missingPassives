@@ -19,10 +19,10 @@ import (
 
 func main() {
 	src := flag.String("src", "", "extracted GGPK root (holds Data/ and Metadata/)")
-	out := flag.String("out", "", "output directory for the generated <script>.json documents")
+	out := flag.String("out", "data/raw", "output directory for the generated <script>.json documents")
 	tpl := flag.String("tpl", ".archive/src", "source tree holding hand-maintained templates (Export/Uniques, Export/Skills)")
 	flag.Parse()
-	if *src == "" || *out == "" {
+	if *src == "" {
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -66,5 +66,20 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Println(s.Name, "->", s.Name+".json")
+	}
+
+	// The hand-maintained foulborn map rides along so raw/ is the complete
+	// data artifact.
+	if len(want) == 0 {
+		fb, err := os.ReadFile(filepath.Join(*tpl, "Data", "ModFoulbornMap.jsonc"))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "ModFoulbornMap:", err)
+			os.Exit(1)
+		}
+		if err := os.WriteFile(filepath.Join(*out, "ModFoulbornMap.jsonc"), fb, 0o644); err != nil {
+			fmt.Fprintln(os.Stderr, "ModFoulbornMap:", err)
+			os.Exit(1)
+		}
+		fmt.Println("ModFoulbornMap.jsonc copied")
 	}
 }

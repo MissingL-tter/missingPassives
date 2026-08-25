@@ -129,8 +129,8 @@ func resolveSkillType(s string) any {
 	return nil
 }
 
-func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]string) {
-	d.Skills = map[string]*GrantedEffect{}
+func loadSkills(src gamedata.SkillsData, statMapCopies map[string][]string) {
+	Skills = map[string]*GrantedEffect{}
 	for _, name := range []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"} {
 		f := src.Files[name]
 		if len(f.Skills) != len(f.Tails) {
@@ -140,7 +140,7 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 			if hdr.Invalid {
 				panic("data: invalid skill " + hdr.GrantedId + " (unknown granted effect)")
 			}
-			d.Skills[hdr.GrantedId] = buildGrantedEffect(hdr, f.Tails[i])
+			Skills[hdr.GrantedId] = buildGrantedEffect(hdr, f.Tails[i])
 		}
 	}
 	// Skills whose whole block is hand-written passthrough.
@@ -159,15 +159,15 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 				ge.StatMap[k] = copyStatMapEntry(e)
 			}
 		}
-		d.Skills[id] = ge
+		Skills[id] = ge
 	}
 	// Resolve cross-skill table aliases so mutation is shared, as in the
 	// reference. statMapGroups collects the skills sharing each target's
 	// statMap table so the backref owner can be settled deterministically.
 	statMapGroups := map[string][]string{}
-	for id, ge := range d.Skills {
+	for id, ge := range Skills {
 		if custom := skillCustom[id]; custom != nil && custom.StatMapAlias != "" {
-			target := d.Skills[custom.StatMapAlias]
+			target := Skills[custom.StatMapAlias]
 			if target.StatMap == nil {
 				target.StatMap = map[string]*StatMapEntry{}
 			}
@@ -176,7 +176,7 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 		}
 		for k, v := range ge.Custom {
 			if alias, ok := v.(SkillAlias); ok {
-				target := d.Skills[alias.Skill]
+				target := Skills[alias.Skill]
 				if alias.Key == "baseMods" && target.BaseMods != nil {
 					ge.Custom[k] = target.BaseMods
 					// The Lua shares the table outright
@@ -196,8 +196,8 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 	// Post-process in sorted id order: shared tables' final mod sources are
 	// last-writer-wins, and the archive dump makes the same deterministic
 	// re-assignment (the reference's own pairs() order varies per process).
-	ids := make([]string, 0, len(d.Skills))
-	for id := range d.Skills {
+	ids := make([]string, 0, len(Skills))
+	for id := range Skills {
 		ids = append(ids, id)
 	}
 	sortStrings(ids)
@@ -211,11 +211,11 @@ func (d *Data) loadSkills(src gamedata.SkillsData, statMapCopies map[string][]st
 			}
 		}
 		for _, m := range append(members, target) {
-			d.Skills[m].StatMapOwner = d.Skills[owner]
+			Skills[m].StatMapOwner = Skills[owner]
 		}
 	}
 	for _, id := range ids {
-		ge := d.Skills[id]
+		ge := Skills[id]
 		ge.Name = sanitiseText(ge.Name)
 		ge.Id = id
 		ge.ModSource = "Skill:" + id
@@ -445,10 +445,14 @@ func mapSet(m map[string]float64, k string, v float64) map[string]float64 {
 // (Data.lua L1004-1016). Returns nil when the shared map lacks the key.
 // Pure: the caller memoizes (the calc replay keeps copies per env so the
 // shared data — whose canon the game-data test compares — stays pristine).
-func LazyStatMapCopy(ge *GrantedEffect, key string) *StatMapEntry {
+// The second result reports whether the reference's processMod would have
+// stamped hasGlobalEffect onto the owner — the reference writes the shared
+// skill table here (Data.lua's metatable memoizes into it); this port keeps
+// the loaded data immutable and hands the flag to the caller instead.
+func LazyStatMapCopy(ge *GrantedEffect, key string) (*StatMapEntry, bool) {
 	base := skillStatMap[key]
 	if base == nil {
-		return nil
+		return nil, false
 	}
 	// The metatable passes `t._grantedEffect`, the skill that owns the
 	// statMap table — not necessarily the skill being looked up, since a
@@ -457,11 +461,12 @@ func LazyStatMapCopy(ge *GrantedEffect, key string) *StatMapEntry {
 	if ge.StatMapOwner != nil {
 		owner = ge.StatMapOwner
 	}
+	setsGlobal := false
 	entry := copyStatMapEntry(base)
 	for i, m := range entry.Mods {
-		entry.Mods[i] = processModBlind(owner, m, key)
+		entry.Mods[i] = processModBlindInto(owner, m, key, &setsGlobal)
 	}
-	return entry
+	return entry, setsGlobal
 }
 
 // anyList adapts []any so nil stays nil for forEachTableValue.
@@ -493,6 +498,14 @@ func forEachTableValue(v any, fn func(any)) {
 
 // processMod ports Data.lua's processMod for a proper mod.
 func processMod(ge *GrantedEffect, mod *modparser.Mod, statName string) {
+	processModInto(ge, mod, statName, &ge.HasGlobalEffect)
+}
+
+// processModInto is processMod with the hasGlobalEffect write directed at a
+// sink: load-time callers pass the granted effect's own field, the calc-time
+// lazy-copy path passes a local so the shared data stays immutable after
+// Load.
+func processModInto(ge *GrantedEffect, mod *modparser.Mod, statName string, globalFlag *bool) {
 	mod.Source = ge.ModSource
 	mod.SourceSet = true
 	if vm, ok := mod.Value.(map[string]any); ok {
@@ -503,7 +516,7 @@ func processMod(ge *GrantedEffect, mod *modparser.Mod, statName string) {
 	}
 	for _, tag := range mod.Tags {
 		if tm, ok := tag.(map[string]any); ok && tm["type"] == "GlobalEffect" {
-			ge.HasGlobalEffect = true
+			*globalFlag = true
 			break
 		}
 	}
@@ -517,6 +530,10 @@ func processMod(ge *GrantedEffect, mod *modparser.Mod, statName string) {
 // table gets a source key, and any appended ActorCondition tag lands in its
 // array part).
 func processTableMod(ge *GrantedEffect, grp *modparser.D, statName string) {
+	processTableModInto(ge, grp, statName, &ge.HasGlobalEffect)
+}
+
+func processTableModInto(ge *GrantedEffect, grp *modparser.D, statName string, globalFlag *bool) {
 	if grp.KV == nil {
 		grp.KV = map[string]any{}
 	}
@@ -529,7 +546,7 @@ func processTableMod(ge *GrantedEffect, grp *modparser.D, statName string) {
 	}
 	for _, e := range grp.Arr {
 		if tm, ok := e.(map[string]any); ok && tm["type"] == "GlobalEffect" {
-			ge.HasGlobalEffect = true
+			*globalFlag = true
 			break
 		}
 	}
@@ -563,16 +580,22 @@ func processMapMod(ge *GrantedEffect, m map[string]any, statName string) {
 // processModBlind is the statMap metatable's pass, which treats groups as
 // mods. Returns the possibly rewrapped element.
 func processModBlind(ge *GrantedEffect, m any, statName string) any {
+	return processModBlindInto(ge, m, statName, &ge.HasGlobalEffect)
+}
+
+// processModBlindInto is processModBlind with the hasGlobalEffect sink
+// exposed, for the calc-time lazy-copy path.
+func processModBlindInto(ge *GrantedEffect, m any, statName string, globalFlag *bool) any {
 	switch t := m.(type) {
 	case *modparser.Mod:
-		processMod(ge, t, statName)
+		processModInto(ge, t, statName, globalFlag)
 		return t
 	case *modparser.D:
-		processTableMod(ge, t, statName)
+		processTableModInto(ge, t, statName, globalFlag)
 		return t
 	case []any:
 		grp := &modparser.D{Arr: t}
-		processTableMod(ge, grp, statName)
+		processTableModInto(ge, grp, statName, globalFlag)
 		return grp
 	case map[string]any:
 		processMapMod(ge, t, statName)

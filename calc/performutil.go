@@ -5,6 +5,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"sort"
 	"strings"
@@ -97,7 +98,7 @@ func (env *Env) doActorLifeMana(actor *performActor) {
 	if lowLifePerc > 0 {
 		output["LowLifePercentage"] = 100.0 * lowLifePerc
 	} else {
-		output["LowLifePercentage"] = 100.0 * env.Data.Misc.LowPoolThreshold
+		output["LowLifePercentage"] = 100.0 * data.Misc.LowPoolThreshold
 	}
 	fullLifePerc := modDB.Sum("BASE", nil, "FullLifePercentage")
 	if fullLifePerc > 0 {
@@ -158,7 +159,6 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 	itemList := actor.ms.ItemList
 	weaponData1 := actor.ms.WeaponData1
 	weaponData2 := actor.ms.WeaponData2
-	d := env.Data
 
 	// Set conditions
 	if (itemList["Weapon 2"] != nil && itemList["Weapon 2"].ItemType() == "Shield") ||
@@ -168,7 +168,7 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 		condList["OffHandIsEmpty"] = true
 	}
 	applyWeaponConds := func(weaponData map[string]any) {
-		info := d.WeaponTypeInfo[str(weaponData["type"])]
+		info := data.WeaponTypeInfo[str(weaponData["type"])]
 		condList["Using"+info.Flag] = true
 		if truthy(weaponData["countsAsAll1H"]) {
 			weaponData["AddedUsingAxe"] = !truthy(condList["UsingAxe"])
@@ -229,7 +229,7 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 			if str(weaponData["type"]) == "One Handed Sword" && str(weaponData["subType"]) == "Thrusting" {
 				return "One Handed Sword"
 			}
-			info := d.WeaponTypeInfo[str(weaponData["type"])]
+			info := data.WeaponTypeInfo[str(weaponData["type"])]
 			if info.Label != nil {
 				return *info.Label
 			}
@@ -239,8 +239,8 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 			return str(weaponData["type"])
 		}
 		if getWeaponType(weaponData1) != getWeaponType(weaponData2) {
-			info1 := d.WeaponTypeInfo[str(weaponData1["type"])]
-			info2 := d.WeaponTypeInfo[str(weaponData2["type"])]
+			info1 := data.WeaponTypeInfo[str(weaponData1["type"])]
+			info2 := data.WeaponTypeInfo[str(weaponData2["type"])]
 			if info1.OneHand && info2.OneHand {
 				condList["WieldingDifferentWeaponTypes"] = true
 			}
@@ -490,7 +490,7 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 			modDB.AddMod(newMod("PhysicalDamage", "INC", actor.strDmgBonus, "Strength", modparser.ModFlag.Melee))
 		}
 		if !modDB.Flag(nil, "NoDexterityAttributeBonuses") {
-			accPerDex := env.Data.Misc.AccuracyPerDexBase
+			accPerDex := data.Misc.AccuracyPerDexBase
 			if ov := modDB.Override(nil, "DexAccBonusOverride"); truthy(ov) {
 				accPerDex = anyNum(ov)
 			}
@@ -534,7 +534,7 @@ func (env *Env) doActorLifeManaReservation(actor *performActor, addAura bool) {
 			output[pool+"UnreservedPercent"] = (max - reserved) / max * 100
 			output[pool+"UncancellableReservation"] = math.Min(uncancellable, 0)
 			output[pool+"CancellableReservation"] = 100 - uncancellable
-			threshold := env.Data.Misc.LowPoolThreshold
+			threshold := data.Misc.LowPoolThreshold
 			if lowPerc > 0 {
 				threshold = lowPerc
 			}
@@ -559,7 +559,6 @@ func (env *Env) doActorLifeManaReservation(actor *performActor, addAura bool) {
 
 // determineCursePriority ports CalcPerform's determineCursePriority.
 func (env *Env) determineCursePriority(curseName string, activeSkill *ActiveSkill) float64 {
-	d := env.Data
 	source := ""
 	slot := ""
 	socket := 1
@@ -577,18 +576,18 @@ func (env *Env) determineCursePriority(curseName string, activeSkill *ActiveSkil
 			}
 		}
 	}
-	basePriority := float64(d.CursePriority[curseName])
-	socketPriority := float64(socket) * float64(d.CursePriority["SocketPriorityBase"])
+	basePriority := float64(data.CursePriority[curseName])
+	socketPriority := float64(socket) * float64(data.CursePriority["SocketPriorityBase"])
 	// slot:gsub(" (Swap)", "") — the parens are a Lua capture: strips " Swap"
-	slotPriority := float64(d.CursePriority[strings.ReplaceAll(slot, " Swap", "")])
+	slotPriority := float64(data.CursePriority[strings.ReplaceAll(slot, " Swap", "")])
 	sourcePriority := 0.0
 	if activeSkill != nil && activeSkill.SkillTypes[modparser.SkillType.Aura] {
-		sourcePriority = float64(d.CursePriority["CurseFromAura"])
+		sourcePriority = float64(data.CursePriority["CurseFromAura"])
 	} else if source != "" {
-		sourcePriority = float64(d.CursePriority["CurseFromEquipment"])
+		sourcePriority = float64(data.CursePriority["CurseFromEquipment"])
 	}
-	if source != "" && (slotPriority == float64(d.CursePriority["Ring 2"]) || slotPriority == float64(d.CursePriority["Ring 3"])) {
-		slotPriority = float64(d.CursePriority["Ring 1"])
+	if source != "" && (slotPriority == float64(data.CursePriority["Ring 2"]) || slotPriority == float64(data.CursePriority["Ring 3"])) {
+		slotPriority = float64(data.CursePriority["Ring 1"])
 	}
 	return basePriority + socketPriority + slotPriority + sourcePriority
 }

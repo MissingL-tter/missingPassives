@@ -60,17 +60,20 @@ var modFlagByName = func() map[string]int64 {
 	return out
 }()
 
-// getWeaponFlags ports the local getWeaponFlags: nil flags means the
-// weapon is unusable; info is non-nil whenever the type is known.
-func (env *Env) getWeaponFlags(weaponData map[string]any, weaponTypes []map[string]bool) (*int64, *data.WeaponTypeInfo) {
-	info, ok := env.Data.WeaponTypeInfo[str(weaponData["type"])]
+// getWeaponFlags ports the local getWeaponFlags. The reference returns
+// `flags, info`; the callers only ever consume info's Melee field and its
+// non-nilness, so the port returns exactly those: nil flags means the
+// weapon is unusable, known reports whether the weapon type was recognized
+// at all (the reference's info ~= nil).
+func (env *Env) getWeaponFlags(weaponData map[string]any, weaponTypes []map[string]bool) (_ *int64, melee, known bool) {
+	info, ok := data.WeaponTypeInfo[str(weaponData["type"])]
 	if !ok {
-		return nil, nil
+		return nil, false, false
 	}
 	for _, types := range weaponTypes {
 		if !types[str(weaponData["type"])] &&
 			(!truthy(weaponData["countsAsAll1H"]) || !(types["Claw"] || types["Dagger"] || types["One Handed Axe"] || types["One Handed Mace"] || types["One Handed Sword"])) {
-			return nil, &info
+			return nil, info.Melee, true
 		}
 	}
 	flags := modFlagByName[info.Flag]
@@ -90,7 +93,7 @@ func (env *Env) getWeaponFlags(weaponData map[string]any, weaponTypes []map[stri
 			flags |= modparser.ModFlag.WeaponRanged
 		}
 	}
-	return &flags, &info
+	return &flags, info.Melee, true
 }
 
 // mergeLevelMod ports the local mergeLevelMod, without the instance cache
@@ -146,7 +149,7 @@ func statMapScale(kv map[string]any, statValue float64) *float64 {
 func (env *Env) mergeSkillInstanceMods(modList *modstore.List, skillEffect *ActiveEffect, extraStats []any) {
 	ValidateGemLevel(skillEffect)
 	grantedEffect := skillEffect.GrantedEffect
-	stats := BuildSkillInstanceStats(env.Data, skillEffect, grantedEffect)
+	stats := BuildSkillInstanceStats(skillEffect, grantedEffect)
 	if len(extraStats) > 0 {
 		for _, sv := range extraStats {
 			tag, _ := sv.(modparser.Tag)
@@ -212,7 +215,6 @@ func lvlExtra(level *data.SkillLevel, key string) (float64, bool) {
 
 // buildActiveSkillModList ports calcs.buildActiveSkillModList.
 func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
-	d := env.Data
 	skillTypes := activeSkill.SkillTypes
 	skillFlags := activeSkill.SkillFlags
 	activeEffect := activeSkill.ActiveEffect
@@ -287,33 +289,32 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			}
 		}
 		var weapon1Flags *int64
-		var weapon1Info *data.WeaponTypeInfo
+		var weapon1Melee, weapon1Known bool
 		if !skillFlags["forceOffHand"] {
-			weapon1Flags, weapon1Info = env.getWeaponFlags(activeSkill.Actor.WeaponData1, weaponTypes)
+			weapon1Flags, weapon1Melee, weapon1Known = env.getWeaponFlags(activeSkill.Actor.WeaponData1, weaponTypes)
 		}
 		if weapon1Flags == nil && activeSkill.SummonSkill != nil {
 			// Minion skills seem to ignore weapon types
-			f := modFlagByName[d.WeaponTypeInfo["None"].Flag]
-			info := d.WeaponTypeInfo["None"]
-			weapon1Flags, weapon1Info = &f, &info
+			f := modFlagByName[data.WeaponTypeInfo["None"].Flag]
+			weapon1Flags, weapon1Melee, weapon1Known = &f, data.WeaponTypeInfo["None"].Melee, true
 		}
 		if weapon1Flags != nil {
 			if skillFlags["attack"] || skillFlags["dotFromAttack"] {
 				activeSkill.Weapon1Flags = weapon1Flags
 				skillFlags["weapon1Attack"] = true
-				if weapon1Info.Melee && skillFlags["melee"] {
+				if weapon1Melee && skillFlags["melee"] {
 					delete(skillFlags, "projectile")
-				} else if !weapon1Info.Melee && skillFlags["projectile"] {
+				} else if !weapon1Melee && skillFlags["projectile"] {
 					delete(skillFlags, "melee")
 				}
 			}
-		} else if (skillTypes[modparser.SkillType.DualWieldOnly] || skillFlags["forceMainHand"] || weapon1Info != nil) && activeSkill.SummonSkill == nil {
+		} else if (skillTypes[modparser.SkillType.DualWieldOnly] || skillFlags["forceMainHand"] || weapon1Known) && activeSkill.SummonSkill == nil {
 			// Skill requires a compatible main hand weapon
 			skillFlags["disable"] = true
 			activeSkill.DisableReason = "Main Hand weapon is not usable with this skill"
 		}
 		if !skillFlags["forceMainHand"] {
-			weapon2Flags, weapon2Info := env.getWeaponFlags(activeSkill.Actor.WeaponData2, weaponTypes)
+			weapon2Flags, _, weapon2Known := env.getWeaponFlags(activeSkill.Actor.WeaponData2, weaponTypes)
 			if weapon2Flags != nil {
 				if skillTypes[modparser.SkillType.DualWieldRequiresDifferentTypes] &&
 					str(activeSkill.Actor.WeaponData1["type"]) == str(activeSkill.Actor.WeaponData2["type"]) &&
@@ -326,7 +327,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					activeSkill.Weapon2Flags = weapon2Flags
 					skillFlags["weapon2Attack"] = true
 				}
-			} else if (skillTypes[modparser.SkillType.DualWieldOnly] || weapon2Info != nil) && activeSkill.SummonSkill == nil {
+			} else if (skillTypes[modparser.SkillType.DualWieldOnly] || weapon2Known) && activeSkill.SummonSkill == nil {
 				skillFlags["disable"] = true
 				if activeSkill.DisableReason == "" {
 					activeSkill.DisableReason = "Off Hand weapon is not usable with this skill"
@@ -341,7 +342,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	}
 
 	// Apply stat-map flagged skill flags
-	for stat, statValue := range BuildSkillInstanceStats(d, activeEffect, activeGrantedEffect) {
+	for stat, statValue := range BuildSkillInstanceStats(activeEffect, activeGrantedEffect) {
 		mapEntry := env.statMapLookup(activeGrantedEffect, stat)
 		if statValue != 0 && mapEntry != nil {
 			if sf := str(mapEntry.KV["skillFlag"]); sf != "" {
@@ -585,7 +586,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	skillModList.AddMod(newMod("GemQuality", "BASE", gemQuality, "Max Quality"))
 	socketMatches := activeEffect.SrcInstance != nil && truthy(activeEffect.SrcInstance.KV["matchesSocket"])
 	if socketMatches {
-		skillModList.AddMod(newMod("GemSocketQuality", "BASE", d.Misc.MatchingSocketQualityBonus, "Socket Quality"))
+		skillModList.AddMod(newMod("GemSocketQuality", "BASE", data.Misc.MatchingSocketQualityBonus, "Socket Quality"))
 	}
 	for _, supportProperty := range skillModList.Tabulate("LIST", activeSkill.SkillCfg, "SupportedGemProperty") {
 		value, _ := supportProperty.Value.(modparser.Tag)
@@ -804,7 +805,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			}
 			activeEffect.SrcInstance.KV["skillMinion"] = minionType
 		}
-		minionData := d.Minions[minionType]
+		minionData := data.Minions[minionType]
 		if minionData == nil {
 			panic("calc: unknown minion type " + minionType)
 		}
@@ -839,20 +840,20 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			minion.Uses = uses
 		}
 		if minion.Hostile {
-			minion.LifeTable = d.MonsterLifeTable
+			minion.LifeTable = data.MonsterLifeTable
 		} else if minionData.LifeScaling == "AltLife1" {
-			minion.LifeTable = d.MonsterLifeTable2
+			minion.LifeTable = data.MonsterLifeTable2
 		} else if minionData.LifeScaling == "AltLife2" {
-			minion.LifeTable = d.MonsterLifeTable3
+			minion.LifeTable = data.MonsterLifeTable3
 		} else if isSpectre {
-			minion.LifeTable = d.MonsterLifeTable
+			minion.LifeTable = data.MonsterLifeTable
 		} else {
-			minion.LifeTable = d.MonsterAllyLifeTable
+			minion.LifeTable = data.MonsterAllyLifeTable
 		}
 		attackTime := minionData.AttackTime
-		damageTable := d.MonsterAllyDamageTable
+		damageTable := data.MonsterAllyDamageTable
 		if isSpectre || minion.Hostile {
-			damageTable = d.MonsterDamageTable
+			damageTable = data.MonsterDamageTable
 		}
 		damage := damageTable[int(minion.Level)-1] * minionData.Damage
 		if !minionData.BaseDamageIgnoresAttackSpeed {

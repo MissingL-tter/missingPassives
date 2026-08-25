@@ -53,7 +53,7 @@ func snapshotCfg(cfg *modstore.Cfg) *modstore.Cfg {
 }
 
 func (env *Env) unarmedWeaponData() map[string]any {
-	uw := env.Data.UnarmedWeaponData[int(env.ClassID)]
+	uw := data.UnarmedWeaponData[int(env.ClassID)]
 	return map[string]any{
 		"type":        uw.Type,
 		"AttackRate":  uw.AttackRate,
@@ -67,7 +67,6 @@ func (env *Env) unarmedWeaponData() map[string]any {
 // skill groups initEnv (re)builds. UI-only effects (colours, error
 // messages) are skipped.
 func (env *Env) processSocketGroup(group *SocketGroupInput) {
-	d := env.Data
 	for _, gem := range group.GemList {
 		if _, ok := gem.KV["nameSpec"]; !ok {
 			gem.KV["nameSpec"] = ""
@@ -80,7 +79,7 @@ func (env *Env) processSocketGroup(group *SocketGroupInput) {
 		gem.GemData, gem.GrantedEffect = nil, nil
 		if id := str(gem.KV["gemId"]); id != "" {
 			// Specified by gem ID (skills granted by skill gems)
-			gem.GemData = d.Gems[id]
+			gem.GemData = data.Gems[id]
 			if gem.GemData != nil {
 				gem.KV["nameSpec"] = gem.GemData.Name
 				gem.KV["skillId"] = gem.GemData.GrantedEffectId
@@ -90,7 +89,7 @@ func (env *Env) processSocketGroup(group *SocketGroupInput) {
 			// #EVAL: archive parity — the reference indexes gemForSkill
 			// (keyed by granted-effect TABLE) with the skillId STRING, which
 			// never matches, so item-granted skills never resolve a gem.
-			gem.GrantedEffect = d.Skills[skillId]
+			gem.GrantedEffect = data.Skills[skillId]
 			if truthy(gem.KV["triggered"]) {
 				if lvl := gem.GrantedEffect.Levels[anyNum(gem.KV["level"])]; lvl != nil {
 					// the reference wipes the shared level's cost table;
@@ -135,7 +134,6 @@ func (env *Env) processSocketGroup(group *SocketGroupInput) {
 // the initEnv re-entry.
 func (env *Env) buildSkillsStage() bool {
 	in := env.Build
-	d := env.Data
 	env.geFromItemMark = map[*data.GrantedEffect]bool{}
 	env.slotsByName = map[string]*SlotInput{}
 	for _, slot := range in.ItemsTab.Slots {
@@ -146,7 +144,7 @@ func (env *Env) buildSkillsStage() bool {
 		markList := map[*SocketGroupInput]bool{}
 		getNormalizedSkillLevel := func(gs *GrantedSkill) float64 {
 			// Levels in socketGroup.gemList[1].level are normalized
-			norm := &ActiveEffect{GrantedEffect: d.Skills[gs.SkillID], Level: gs.Level}
+			norm := &ActiveEffect{GrantedEffect: data.Skills[gs.SkillID], Level: gs.Level}
 			ValidateGemLevel(norm)
 			return norm.Level
 		}
@@ -392,7 +390,7 @@ func (env *Env) buildSkillsStage() bool {
 
 		addExtraSupports := func(value modparser.Tag, grantedEffect *data.GrantedEffect, level *float64) {
 			if grantedEffect == nil && value != nil {
-				grantedEffect = d.Skills[str(value["skillId"])]
+				grantedEffect = data.Skills[str(value["skillId"])]
 			}
 			if value != nil && grantedEffect != nil {
 				// Only item ExtraSupport gems are flagged as fromItem
@@ -400,13 +398,13 @@ func (env *Env) buildSkillsStage() bool {
 			}
 			if value != nil && grantedEffect != nil && !grantedEffect.Support {
 				// Skill gems sharing a support gem's name (e.g. Barrage)
-				grantedEffect = d.Skills["Support"+str(value["skillId"])]
+				grantedEffect = data.Skills["Support"+str(value["skillId"])]
 				env.geFromItemMark[grantedEffect] = true
 			}
 			if grantedEffect != nil {
-				gemId := d.GemForBaseName[luaLower(grantedEffect.Name)]
+				gemId := data.GemForBaseName[luaLower(grantedEffect.Name)]
 				if gemId == "" {
-					gemId = d.GemForBaseName[luaLower(grantedEffect.Name+" Support")]
+					gemId = data.GemForBaseName[luaLower(grantedEffect.Name+" Support")]
 				}
 				lvl := 0.0
 				if level != nil {
@@ -417,7 +415,7 @@ func (env *Env) buildSkillsStage() bool {
 				for _, targetList := range targetListList {
 					*targetList = append(*targetList, &ActiveEffect{
 						GrantedEffect: grantedEffect,
-						GemData:       d.Gems[gemId],
+						GemData:       data.Gems[gemId],
 						Level:         lvl,
 						Quality:       0,
 					})
@@ -435,10 +433,10 @@ func (env *Env) buildSkillsStage() bool {
 		}
 		// if the slot has an imbued support, add it as an ExtraSupport
 		if geId := in.SkillsTab.ImbuedSupportBySlot[gc.SlotName]; geId != "" && truthy(group.KV["imbuedSupport"]) {
-			imbued := d.Skills[geId]
+			imbued := data.Skills[geId]
 			one := 1.0
 			addExtraSupports(nil, imbued, &one)
-			if gemData := d.Gems[d.GemForSkill[imbued]]; gemData != nil && gemData.SecondaryGrantedEffect != nil && gemData.SecondaryGrantedEffect.Support {
+			if gemData := data.Gems[data.GemForSkill[imbued]]; gemData != nil && gemData.SecondaryGrantedEffect != nil && gemData.SecondaryGrantedEffect.Support {
 				addExtraSupports(nil, gemData.SecondaryGrantedEffect, &one)
 			}
 		}
@@ -453,7 +451,7 @@ func (env *Env) buildSkillsStage() bool {
 				}
 				socketBonus := 0.0
 				if truthy(gem.KV["matchesSocket"]) {
-					socketBonus = d.Misc.MatchingSocketQualityBonus
+					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				supportEffect := &ActiveEffect{
 					GrantedEffect: grantedEffect,
@@ -548,12 +546,12 @@ func (env *Env) buildSkillsStage() bool {
 				if geIndex == 1 {
 					enableGlobal = truthy(gem.KV["enableGlobal2"])
 				}
-				if grantedEffect.Support || geUnsupported(grantedEffect) || (grantedEffect.HasGlobalEffect && !enableGlobal) {
+				if grantedEffect.Support || geUnsupported(grantedEffect) || (env.geHasGlobalEffect(grantedEffect) && !enableGlobal) {
 					continue
 				}
 				socketBonus := 0.0
 				if truthy(gem.KV["matchesSocket"]) {
-					socketBonus = d.Misc.MatchingSocketQualityBonus
+					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				activeEffect := &ActiveEffect{
 					GrantedEffect: grantedEffect,
@@ -723,7 +721,7 @@ func (env *Env) buildSkillsStage() bool {
 	if env.PlayerMainSkill == nil {
 		// Add a default main skill if none are specified
 		defaultEffect := &ActiveEffect{
-			GrantedEffect: d.Skills["Melee"],
+			GrantedEffect: data.Skills["Melee"],
 			Level:         1,
 			Quality:       0,
 		}

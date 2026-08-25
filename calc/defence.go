@@ -3,6 +3,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -27,7 +28,6 @@ func elemNames(elem, own, shared string) []string {
 func (env *Env) Resistances(actor *performActor) {
 	modDB := actor.db
 	output := actor.output
-	d := env.Data
 
 	output["PhysicalResist"] = 0.0
 
@@ -85,7 +85,7 @@ func (env *Env) Resistances(actor *performActor) {
 		if ov := modDB.Override(nil, prefix+elem+"ResistMax"); truthy(ov) {
 			return anyNum(ov)
 		}
-		return math.Min(d.Misc.MaxResistCap, modDB.Sum("BASE", nil, elemNames(elem, prefix+elem+"ResistMax", sharedName)...))
+		return math.Min(data.Misc.MaxResistCap, modDB.Sum("BASE", nil, elemNames(elem, prefix+elem+"ResistMax", sharedName)...))
 	}
 
 	// Highest Maximum Elemental Resistance for Melding of the Flesh
@@ -107,7 +107,7 @@ func (env *Env) Resistances(actor *performActor) {
 	}
 
 	for _, elem := range resistTypeList {
-		min := d.Misc.ResistFloor
+		min := data.Misc.ResistFloor
 		max := resistMaxOf("", elem, "ElementalResistMax")
 		totemMax := resistMaxOf("Totem", elem, "TotemElementalResistMax")
 

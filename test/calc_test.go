@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
-	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -591,7 +590,7 @@ func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 // post-initEnv state. Variants with items or skills wait on those stages;
 // the variant list below only ever grows.
 func TestCalcInitEnvAgainstReference(t *testing.T) {
-	d := loadGameData(t)
+	loadGameData(t)
 	variants := map[string]string{ // variant -> dump file
 		"empty":                 "calc_empty.jsonl",
 		"coc.treeonly":          "calc_coc.jsonl",
@@ -714,6 +713,12 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		"trig3.treeonly":        "calc_trig3.jsonl",
 		"trig3.noskills":        "calc_trig3.jsonl",
 		"trig3.full":            "calc_trig3.jsonl",
+		"trig4.treeonly":        "calc_trig4.jsonl",
+		"trig4.noskills":        "calc_trig4.jsonl",
+		"trig4.full":            "calc_trig4.jsonl",
+		"mjolner.treeonly":      "calc_mjolner.jsonl",
+		"mjolner.noskills":      "calc_mjolner.jsonl",
+		"mjolner.full":          "calc_mjolner.jsonl",
 	}
 	checked := 0
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
@@ -735,16 +740,21 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 					}
 				}()
 			}
-			checkCalcVariant(t, d, variant, file, &checked)
+			checkCalcVariant(t, variant, file, &checked)
 		}()
 	}
 	if checked < 25 && only == "" {
 		t.Fatalf("expected 25 variants checked, got %d", checked)
 	}
+	// A narrowed run that matches nothing passes vacuously and reads as
+	// green; fail it instead.
+	if only != "" && checked == 0 {
+		t.Fatalf("MP_ONLY=%q matched no variants", only)
+	}
 	t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
 }
 
-func checkCalcVariant(t *testing.T, d *data.Data, variant, file string, checkedTotal *int) {
+func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 	{
 		checked := 0
 		defer func() { *checkedTotal += checked }()
@@ -874,9 +884,9 @@ func checkCalcVariant(t *testing.T, d *data.Data, variant, file string, checkedT
 		// the main skill's entry with a pre-offence one, exactly as the
 		// dump's manual perform does.
 		if os.Getenv("MP_NODRIVER") == "" {
-			replay.GlobalCache = calc.BuildOutput(d, in, "MAIN", replay).GlobalCache
+			replay.GlobalCache = calc.BuildOutput(in, "MAIN", replay).GlobalCache
 		}
-		env := calc.InitEnv(d, in, "MAIN", replay)
+		env := calc.InitEnv(in, "MAIN", replay)
 		// The checkpoint phase mirrors the dump's stubbed defence/offence
 		// handoff, so nested performs (mirage sub-environments) stay
 		// body-only exactly as the dump's did.
@@ -1078,11 +1088,10 @@ func checkCalcVariant(t *testing.T, d *data.Data, variant, file string, checkedT
 		} else if env.PlayerMainSkill.Mirage != nil {
 			t.Errorf("%s built a mirage the archive has none of", variant)
 		}
-		scrubWarcryResidue(env)
 		// Negative control: a corrupted input must stop matching.
 		bad := decodeCalcFixture(m)
 		bad.ConfigModList = bad.ConfigModList[1:]
-		badEnv := calc.InitEnv(d, bad, "MAIN", &calc.ReplayInput{
+		badEnv := calc.InitEnv(bad, "MAIN", &calc.ReplayInput{
 			AllocOrders:            decodeAllocOrders(allocOrders),
 			NodeOrders:             decodeAllocOrders(nodeOrders),
 			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
@@ -1096,23 +1105,6 @@ func checkCalcVariant(t *testing.T, d *data.Data, variant, file string, checkedT
 		})
 		if badGot == dbs {
 			t.Errorf("%s: corrupted input still matched the archive dbs", variant)
-		}
-	}
-}
-
-// scrubWarcryResidue mirrors dump_calc.lua's scrubPerformResidue: perform
-// writes warcryPowerBonus into shared skill tag tables; remove it so the
-// next variant starts clean.
-func scrubWarcryResidue(env *calc.Env) {
-	for _, as := range env.PlayerActiveSkills {
-		for _, buff := range as.BuffListTyped {
-			for _, mod := range buff.ModList {
-				for _, tv := range mod.Tags {
-					if tag, ok := tv.(modparser.Tag); ok {
-						delete(tag, "warcryPowerBonus")
-					}
-				}
-			}
 		}
 	}
 }

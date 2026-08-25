@@ -176,7 +176,6 @@ func (env *Env) calcAreaOfEffect(c *offenceCtx) {
 
 // calcResistForType ports the local of the same name (L461-474).
 func (env *Env) calcResistForType(c *offenceCtx, damageType string, cfg *modstore.Cfg) float64 {
-	d := env.Data
 	enemyDB := c.enemyDB
 
 	var resist float64
@@ -185,13 +184,13 @@ func (env *Env) calcResistForType(c *offenceCtx, damageType string, cfg *modstor
 		resist = anyNum(ov)
 		haveResist = true
 	}
-	maxResist := d.Misc.EnemyMaxResist
+	maxResist := data.Misc.EnemyMaxResist
 	if !enemyDB.Flag(nil, "DoNotChangeMaxResFromConfig") {
-		configured := d.Misc.EnemyMaxResist
+		configured := data.Misc.EnemyMaxResist
 		if v := env.ConfigInput["enemy"+damageType+"Resist"]; truthy(v) {
 			configured = anyNum(v)
 		}
-		maxResist = math.Min(math.Max(configured, d.Misc.EnemyMaxResist), d.Misc.MaxResistCap)
+		maxResist = math.Min(math.Max(configured, data.Misc.EnemyMaxResist), data.Misc.MaxResistCap)
 	}
 	if !haveResist {
 		if env.ModDB.Flag(nil, "Enemy"+damageType+"ResistEqualToYours") {
@@ -201,7 +200,7 @@ func (env *Env) calcResistForType(c *offenceCtx, damageType string, cfg *modstor
 			resist = enemyDB.Sum("BASE", cfg, names...) * math.Max(Mod(enemyDB, cfg, names...), 0)
 		}
 	}
-	return math.Max(math.Min(resist, maxResist), d.Misc.ResistFloor)
+	return math.Max(math.Min(resist, maxResist), data.Misc.ResistFloor)
 }
 
 // runSkillFunc ports the local of the same name: the granted effect's
@@ -227,7 +226,6 @@ func (env *Env) runSkillFunc(c *offenceCtx, name string) {
 // focused conditions, the SkillData merges and the attribute bonuses.
 func (env *Env) offencePrologue(c *offenceCtx) {
 	skillModList, skillCfg, skillData := c.skillModList, c.skillCfg, c.skillData
-	d := env.Data
 
 	// NOTE: calcAreaOfEffect is defined early in the reference but first
 	// called at L1152, in the skill-type-stats section, after weaponRange
@@ -267,17 +265,17 @@ func (env *Env) offencePrologue(c *offenceCtx) {
 	}
 	if skillModList.Flag(nil, "TransfigurationOfBody") {
 		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "Life")*d.Misc.Transfiguration),
+			math.Floor(skillModList.Sum("INC", nil, "Life")*data.Misc.Transfiguration),
 			"Transfiguration of Body", modparser.ModFlag.Attack))
 	}
 	if skillModList.Flag(nil, "TransfigurationOfMind") {
 		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "Mana")*d.Misc.Transfiguration),
+			math.Floor(skillModList.Sum("INC", nil, "Mana")*data.Misc.Transfiguration),
 			"Transfiguration of Mind"))
 	}
 	if skillModList.Flag(nil, "TransfigurationOfSoul") {
 		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "EnergyShield")*d.Misc.Transfiguration),
+			math.Floor(skillModList.Sum("INC", nil, "EnergyShield")*data.Misc.Transfiguration),
 			"Transfiguration of Soul", modparser.ModFlag.Spell))
 	}
 

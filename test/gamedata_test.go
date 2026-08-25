@@ -80,70 +80,72 @@ var _ = func() bool {
 // any disagreement.
 func TestGameDataAgainstReference(t *testing.T) {
 	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
-	d := loadGameData(t)
-	restoreGameDataLoadState(d)
+	// The loaded data set is immutable after Load (calc runs keep their
+	// mutations per-env), so it can be compared regardless of what ran
+	// before this test.
+	loadGameData(t)
 
 	checks := map[string]func() any{
-		"monsterEvasionTable":             func() any { return d.MonsterEvasionTable },
-		"monsterAccuracyTable":            func() any { return d.MonsterAccuracyTable },
-		"monsterLifeTable":                func() any { return d.MonsterLifeTable },
-		"monsterLifeTable2":               func() any { return d.MonsterLifeTable2 },
-		"monsterLifeTable3":               func() any { return d.MonsterLifeTable3 },
-		"monsterAllyLifeTable":            func() any { return d.MonsterAllyLifeTable },
-		"monsterDamageTable":              func() any { return d.MonsterDamageTable },
-		"monsterAllyDamageTable":          func() any { return d.MonsterAllyDamageTable },
-		"monsterArmourTable":              func() any { return d.MonsterArmourTable },
-		"monsterAilmentThresholdTable":    func() any { return d.MonsterAilmentThresholdTable },
-		"monsterPhysConversionMultiTable": func() any { return d.MonsterPhysConversionMultiTable },
-		"gameConstants":                   func() any { return d.GameConstants },
-		"characterConstants":              func() any { return d.CharacterConstants },
-		"monsterConstants":                func() any { return d.MonsterConstants },
-		"totemLifeMult":                   func() any { return d.TotemLifeMult },
-		"monsterVarietyLifeMult":          func() any { return d.MonsterVarietyLifeMult },
-		"mapLevelLifeMult":                func() any { return d.MapLevelLifeMult },
-		"mapLevelBossLifeMult":            func() any { return d.MapLevelBossLifeMult },
-		"mapLevelBossAilmentMult":         func() any { return d.MapLevelBossAilmentMult },
-		"goldRespecPrices":                func() any { return d.GoldRespecPrices },
-		"misc":                            func() any { return d.Misc },
+		"monsterEvasionTable":             func() any { return data.MonsterEvasionTable },
+		"monsterAccuracyTable":            func() any { return data.MonsterAccuracyTable },
+		"monsterLifeTable":                func() any { return data.MonsterLifeTable },
+		"monsterLifeTable2":               func() any { return data.MonsterLifeTable2 },
+		"monsterLifeTable3":               func() any { return data.MonsterLifeTable3 },
+		"monsterAllyLifeTable":            func() any { return data.MonsterAllyLifeTable },
+		"monsterDamageTable":              func() any { return data.MonsterDamageTable },
+		"monsterAllyDamageTable":          func() any { return data.MonsterAllyDamageTable },
+		"monsterArmourTable":              func() any { return data.MonsterArmourTable },
+		"monsterAilmentThresholdTable":    func() any { return data.MonsterAilmentThresholdTable },
+		"monsterPhysConversionMultiTable": func() any { return data.MonsterPhysConversionMultiTable },
+		"gameConstants":                   func() any { return data.GameConstants },
+		"characterConstants":              func() any { return data.CharacterConstants },
+		"monsterConstants":                func() any { return data.MonsterConstants },
+		"totemLifeMult":                   func() any { return data.TotemLifeMult },
+		"monsterVarietyLifeMult":          func() any { return data.MonsterVarietyLifeMult },
+		"mapLevelLifeMult":                func() any { return data.MapLevelLifeMult },
+		"mapLevelBossLifeMult":            func() any { return data.MapLevelBossLifeMult },
+		"mapLevelBossAilmentMult":         func() any { return data.MapLevelBossAilmentMult },
+		"goldRespecPrices":                func() any { return data.GoldRespecPrices },
+		"misc":                            func() any { return data.Misc },
 		"powerStatList": func() any {
 			m := map[string]any{"GetFromOutput": luacanon.Fn{}}
-			for i, e := range d.PowerStatList {
+			for i, e := range data.PowerStatList {
 				m[strconv.Itoa(i+1)] = e
 			}
 			return m
 		},
-		"skillColorMap":                  func() any { return d.SkillColorMap },
-		"monsterExperienceLevelMap":      func() any { return d.MonsterExperienceLevelMap },
-		"cursePriority":                  func() any { return d.CursePriority },
-		"keystones":                      func() any { return d.Keystones },
-		"ailmentTypeList":                func() any { return d.AilmentTypeList },
-		"elementalAilmentTypeList":       func() any { return d.ElementalAilmentTypeList },
-		"nonDamagingAilmentTypeList":     func() any { return d.NonDamagingAilmentTypeList },
-		"nonElementalAilmentTypeList":    func() any { return d.NonElementalAilmentTypeList },
-		"nonDamagingAilment":             func() any { return d.NonDamagingAilment },
-		"defaultHighPrecision":           func() any { return d.DefaultHighPrecision },
-		"highPrecisionMods":              func() any { return d.HighPrecisionMods },
-		"modScalability":                 func() any { return d.ModScalability },
-		"weaponTypeInfo":                 func() any { return d.WeaponTypeInfo },
-		"unarmedWeaponData":              func() any { return d.UnarmedWeaponData },
-		"jewelRadii":                     func() any { return d.JewelRadii },
-		"jewelRadius":                    func() any { return d.JewelRadius },
-		"maxJewelRadius":                 func() any { return d.MaxJewelRadius },
-		"enchantmentSource":              func() any { return d.EnchantmentSource },
-		"timelessJewelTypes":             func() any { return d.TimelessJewelTypes },
-		"timelessJewelSeedMin":           func() any { return d.TimelessJewelSeedMin },
-		"timelessJewelSeedMax":           func() any { return d.TimelessJewelSeedMax },
-		"timelessJewelAdditions":         func() any { return d.TimelessJewelAdditions },
-		"itemTagSpecial":                 func() any { return d.ItemTagSpecial },
-		"itemTagSpecialExclusionPattern": func() any { return d.ItemTagSpecialExclusionPattern },
-		"casterTagCrucibleUniques":       func() any { return d.CasterTagCrucibleUniques },
-		"minionTagCrucibleUniques":       func() any { return d.MinionTagCrucibleUniques },
-		"costs":                          func() any { return d.Costs },
-		"mapMods":                        func() any { return d.MapMods },
-		"nodeIDList":                     func() any { return d.NodeIDList },
-		"abyssNotableNames":              func() any { return d.AbyssNotableNames },
-		"timelessJewelTradeIDs":          func() any { return d.TimelessJewelTradeIDs },
-		"timelessJewelLUTs":              func() any { return d.TimelessJewelLUTs },
+		"skillColorMap":                  func() any { return data.SkillColorMap },
+		"monsterExperienceLevelMap":      func() any { return data.MonsterExperienceLevelMap },
+		"cursePriority":                  func() any { return data.CursePriority },
+		"keystones":                      func() any { return data.Keystones },
+		"ailmentTypeList":                func() any { return data.AilmentTypeList },
+		"elementalAilmentTypeList":       func() any { return data.ElementalAilmentTypeList },
+		"nonDamagingAilmentTypeList":     func() any { return data.NonDamagingAilmentTypeList },
+		"nonElementalAilmentTypeList":    func() any { return data.NonElementalAilmentTypeList },
+		"nonDamagingAilment":             func() any { return data.NonDamagingAilment },
+		"defaultHighPrecision":           func() any { return data.DefaultHighPrecision },
+		"highPrecisionMods":              func() any { return data.HighPrecisionMods },
+		"modScalability":                 func() any { return data.ModScalability },
+		"weaponTypeInfo":                 func() any { return data.WeaponTypeInfo },
+		"unarmedWeaponData":              func() any { return data.UnarmedWeaponData },
+		"jewelRadii":                     func() any { return data.JewelRadii },
+		"jewelRadius":                    func() any { return data.JewelRadius },
+		"maxJewelRadius":                 func() any { return data.MaxJewelRadius },
+		"enchantmentSource":              func() any { return data.EnchantmentSource },
+		"timelessJewelTypes":             func() any { return data.TimelessJewelTypes },
+		"timelessJewelSeedMin":           func() any { return data.TimelessJewelSeedMin },
+		"timelessJewelSeedMax":           func() any { return data.TimelessJewelSeedMax },
+		"timelessJewelAdditions":         func() any { return data.TimelessJewelAdditions },
+		"itemTagSpecial":                 func() any { return data.ItemTagSpecial },
+		"itemTagSpecialExclusionPattern": func() any { return data.ItemTagSpecialExclusionPattern },
+		"casterTagCrucibleUniques":       func() any { return data.CasterTagCrucibleUniques },
+		"minionTagCrucibleUniques":       func() any { return data.MinionTagCrucibleUniques },
+		"costs":                          func() any { return data.Costs },
+		"mapMods":                        func() any { return data.MapMods },
+		"nodeIDList":                     func() any { return data.NodeIDList },
+		"abyssNotableNames":              func() any { return data.AbyssNotableNames },
+		"timelessJewelTradeIDs":          func() any { return data.TimelessJewelTradeIDs },
+		"timelessJewelLUTs":              func() any { return data.TimelessJewelLUTs },
 		// function-valued members: ported by the stat-describer and
 		// timeless-jewel-data modules
 		"describeStats":              func() any { return luacanon.Fn{} },
@@ -152,45 +154,45 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"readAbyssJewelLUT":          func() any { return luacanon.Fn{} },
 		"resolveAbyssJewelComponent": func() any { return luacanon.Fn{} },
 		"getAbyssJewelComponentRoll": func() any { return luacanon.Fn{} },
-		"bosses":                         func() any { return d.Bosses },
-		"bossStats":                      func() any { return d.BossStats },
-		"enemyIsBossTooltip":             func() any { return d.EnemyIsBossTooltip },
-		"essences":                       func() any { return d.Essences },
-		"pantheons":                      func() any { return d.Pantheons },
-		"crucible":                       func() any { return d.Crucible },
-		"masterMods":                     func() any { return d.MasterMods },
-		"flavourText":                    func() any { return d.FlavourText },
+		"bosses":                     func() any { return data.Bosses },
+		"bossStats":                  func() any { return data.BossStats },
+		"enemyIsBossTooltip":         func() any { return data.EnemyIsBossTooltip },
+		"essences":                   func() any { return data.Essences },
+		"pantheons":                  func() any { return data.Pantheons },
+		"crucible":                   func() any { return data.Crucible },
+		"masterMods":                 func() any { return data.MasterMods },
+		"flavourText":                func() any { return data.FlavourText },
 		"enchantments": func() any {
-			m := map[string]any{"Helmet": d.HelmetEnchants}
-			for k, v := range d.Enchantments {
+			m := map[string]any{"Helmet": data.HelmetEnchants}
+			for k, v := range data.Enchantments {
 				m[k] = v
 			}
 			return m
 		},
-		"beastCraft":     func() any { return d.BeastCraft },
-		"necropolisMods": func() any { return d.NecropolisMods },
-		"uniqueMods":     func() any { return d.UniqueMods },
-		"veiledMods":     func() any { return d.VeiledMods },
-		"clusterJewels":  func() any { return d.ClusterJewels },
-		"clusterJewelInfoForNotable": func() any { return d.ClusterJewelInfoForNotable },
-		"bossSkills":       func() any { return d.BossSkills },
-		"bossSkillsList":   func() any { return d.BossSkillsList },
-		"foulbornMap":      func() any { return d.FoulbornMap },
-		"itemBases":        func() any { return d.ItemBases },
-		"itemBaseLists":    func() any { return d.ItemBaseLists },
-		"itemBaseTypeList": func() any { return d.ItemBaseTypeList },
-		"rares":            func() any { return d.Rares },
-		"rareLikeUniques":  func() any { return d.RareLikeUniques },
-		"minions":          func() any { return d.Minions },
-		"spectres":         func() any { return d.Spectres },
-		"skills":           func() any { return d.Skills },
-		"skillStatMap":     func() any { return d.SkillStatMap },
-		"gems":             func() any { return d.Gems },
-		"gemForSkill":      func() any { return d.GemForSkillCanon() },
-		"gemForBaseName":   func() any { return d.GemForBaseName },
+		"beastCraft":                 func() any { return data.BeastCraft },
+		"necropolisMods":             func() any { return data.NecropolisMods },
+		"uniqueMods":                 func() any { return data.UniqueMods },
+		"veiledMods":                 func() any { return data.VeiledMods },
+		"clusterJewels":              func() any { return data.ClusterJewels },
+		"clusterJewelInfoForNotable": func() any { return data.ClusterJewelInfoForNotable },
+		"bossSkills":                 func() any { return data.BossSkills },
+		"bossSkillsList":             func() any { return data.BossSkillsList },
+		"foulbornMap":                func() any { return data.FoulbornMap },
+		"itemBases":                  func() any { return data.ItemBases },
+		"itemBaseLists":              func() any { return data.ItemBaseLists },
+		"itemBaseTypeList":           func() any { return data.ItemBaseTypeList },
+		"rares":                      func() any { return data.Rares },
+		"rareLikeUniques":            func() any { return data.RareLikeUniques },
+		"minions":                    func() any { return data.Minions },
+		"spectres":                   func() any { return data.Spectres },
+		"skills":                     func() any { return data.Skills },
+		"skillStatMap":               func() any { return data.SkillStatMap },
+		"gems":                       func() any { return data.Gems },
+		"gemForSkill":                func() any { return data.GemForSkillCanon() },
+		"gemForBaseName":             func() any { return data.GemForBaseName },
 		"gemsByGameId": func() any {
 			out := map[string]map[string]string{}
-			for gameId, m := range d.GemsByGameId {
+			for gameId, m := range data.GemsByGameId {
 				out[gameId] = map[string]string{}
 				for variantId, gem := range m {
 					out[gameId][variantId] = gem.Id
@@ -198,8 +200,8 @@ func TestGameDataAgainstReference(t *testing.T) {
 			}
 			return out
 		},
-		"gemGrantedEffectIdForVaalGemId": func() any { return d.GemGrantedEffectIdForVaalGemId },
-		"gemVaalGemIdForBaseGemId":       func() any { return d.GemVaalGemIdForBaseGemId },
+		"gemGrantedEffectIdForVaalGemId": func() any { return data.GemGrantedEffectIdForVaalGemId },
+		"gemVaalGemIdForBaseGemId":       func() any { return data.GemVaalGemIdForBaseGemId },
 		"skills.statMapKeys": func() any {
 			out := map[string][]string{}
 			for id, keys := range readStatMapCopiesHelper(dumpPath) {
@@ -208,14 +210,14 @@ func TestGameDataAgainstReference(t *testing.T) {
 			return out
 		},
 	}
-	for typ := range d.Uniques {
+	for typ := range data.Uniques {
 		typ := typ
-		checks["uniques."+typ] = func() any { return d.Uniques[typ] }
+		checks["uniques."+typ] = func() any { return data.Uniques[typ] }
 	}
 	_ = checks["uniques.generated"] // built by data.buildGeneratedUniques
-	for key := range d.ItemMods {
+	for key := range data.ItemMods {
 		key := key
-		checks["itemMods."+key] = func() any { return d.ItemMods[key] }
+		checks["itemMods."+key] = func() any { return data.ItemMods[key] }
 	}
 
 	f, err := os.Open(dumpPath)

@@ -285,12 +285,12 @@ func (env *Env) applyGemMods(effect *ActiveEffect, modList []modstore.TabEntry) 
 		match := true
 		if kl, ok := value["keywordList"].([]any); ok {
 			for _, kw := range kl {
-				if !GemIsType(env.Data, effect.GemData, str(kw), true) {
+				if !GemIsType(effect.GemData, str(kw), true) {
 					match = false
 					break
 				}
 			}
-		} else if !GemIsType(env.Data, effect.GemData, str(value["keyword"]), true) {
+		} else if !GemIsType(effect.GemData, str(value["keyword"]), true) {
 			match = false
 		}
 		if match {
