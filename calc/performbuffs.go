@@ -117,10 +117,20 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 			geName := activeSkill.ActiveEffect.GrantedEffect.Name
 			part2 := anyNum(activeSkill.SkillPart) == 2
 			if (geName == "Blight" || geName == "Blight of Contagion" || geName == "Blight of Atrophy") && part2 {
-				panic("perform: Blight part 2 needs getCachedOutputValue (unported stage cache)")
+				vals := env.getCachedOutputValue(activeSkill, "Speed", "Duration")
+				rate, duration := anyNum(vals[0]), anyNum(vals[1])
+				baseMaxStages := activeSkill.SkillModList.Sum("BASE", env.PlayerMainSkill.SkillCfg, "BlightBaseMaxStages")
+				maximum := math.Min(math.Floor(rate*duration)-1, baseMaxStages-1)
+				activeSkill.SkillModList.AddMod(newMod("Multiplier:"+noSpace(geName)+"MaxStages", "BASE", maximum, "Base"))
+				activeSkill.SkillModList.AddMod(newMod("Multiplier:"+noSpace(geName)+"StageAfterFirst", "BASE", maximum, "Base"))
 			}
 			if geName == "Penance Brand of Dissipation" && part2 {
-				panic("perform: Penance Brand of Dissipation part 2 needs getCachedOutputValue")
+				// HitSpeed is the brand activation frequency
+				vals := env.getCachedOutputValue(activeSkill, "HitSpeed", "Duration")
+				activationFrequency, duration := anyNum(vals[0]), anyNum(vals[1])
+				ticks := math.Max(math.Min(math.Floor(activationFrequency*duration)-1, 19), 0)
+				activeSkill.SkillModList.AddMod(newMod("Multiplier:PenanceBrandofDissipationMaxStages", "BASE", ticks, "Base"))
+				activeSkill.SkillModList.AddMod(newMod("Multiplier:PenanceBrandofDissipationStageAfterFirst", "BASE", ticks, "Base"))
 			}
 			if (geName == "Scorching Ray" || geName == "Scorching Ray of Immolation") && part2 {
 				maximum := 7.0
@@ -128,7 +138,9 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 				activeSkill.SkillModList.AddMod(newMod("Multiplier:"+noSpace(geName)+"StageAfterFirst", "BASE", maximum, "Base"))
 			}
 			if geName == "Earthquake of Amplification" && part2 {
-				panic("perform: Earthquake of Amplification part 2 needs getCachedOutputValue")
+				duration := anyNum(env.getCachedOutputValue(activeSkill, "Duration")[0])
+				durationMulti := math.Floor(duration * 10)
+				activeSkill.SkillModList.AddMod(newMod("Multiplier:100msEarthquakeDuration", "BASE", durationMulti, "Skill:EarthquakeAltX"))
 			}
 		}
 	}
@@ -988,8 +1000,27 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 		enemyDB.ReplaceMod(newMod("Multiplier:ImpaleStacks", "BASE", maxImpaleStacks, "Config", modparser.Tag{"type": "Condition", "var": "Combat"}))
 	}
 
+	// Foulborn Choir of the Storm: needs to run after the main auras (in
+	// case of Purity of Lightning / Elements) but before extra auras
+	// (Radiant Faith). Resistances run on a CHILD ModDB so the conversion
+	// pass cannot mutate the player's own mods; the output map is shared, so
+	// the resist numbers land where the mana re-derivation reads them.
 	if modDB.Flag(nil, "ManaIncreasedByOvercappedLightningRes") {
-		panic("perform: ManaIncreasedByOvercappedLightningRes needs calcs.resistances (unported)")
+		tempDB := modstore.NewDB(modDB)
+		tempActor := &performActor{
+			db:        tempDB,
+			output:    env.playerPA.output,
+			mainSkill: env.playerPA.mainSkill,
+			skills:    env.playerPA.skills,
+			enemy:     env.playerPA.enemy,
+			ms:        env.Player,
+		}
+		tempDB.Actor = env.Player
+		env.Resistances(tempActor)
+		// Re-derive life/mana and the reservations now that overcapped
+		// lightning resistance feeds increased mana.
+		env.doActorLifeMana(env.playerPA)
+		env.doActorLifeManaReservation(env.playerPA, true)
 	}
 
 	if modDB.Flag(env.PlayerMainSkill.SkillCfg, "Condition:CanInflictHallowingFlame") {
@@ -1519,4 +1550,20 @@ func copyModForTagWrite(m *modparser.Mod) *modparser.Mod {
 		c.Tags[0] = nt
 	}
 	return &c
+}
+
+// getCachedOutputValue ports the local of the same name (CalcPerform L30):
+// output values from the skill's own cached solo build, building it on a
+// miss (the {uuid} limited flag stops the nested build's stage loop from
+// recursing back into this skill).
+func (env *Env) getCachedOutputValue(activeSkill *ActiveSkill, keys ...string) []any {
+	uuid := env.cacheSkillUUID(activeSkill)
+	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+		env.BuildActiveSkill(env.Mode, activeSkill, uuid, uuid)
+	}
+	out := make([]any, len(keys))
+	for i, k := range keys {
+		out[i] = env.GlobalCache[uuid].out(k)
+	}
+	return out
 }

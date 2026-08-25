@@ -23,6 +23,12 @@ func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID str
 	replay.GlobalCache = nil
 	fullEnv := initEnvOverride(env.Build, mode, &replay, env.OverrideConditions)
 	fullEnv.buildDepth = env.buildDepth + 1
+	// The cache is SHARED with the requesting env — materialize it there
+	// first, because a nested cacheData writing into its own lazily created
+	// map would be invisible to the parent (and to every sibling build).
+	if env.GlobalCache == nil {
+		env.GlobalCache = map[string]*CachedSkill{}
+	}
 
 	// env.limitedSkills contains a map of uuids that should be limited in
 	// calculation, in order to prevent infinite recursion loops
@@ -43,7 +49,15 @@ func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID str
 		if fullEnv.cacheSkillUUID(activeSkill) == targetUUID {
 			fullEnv.PlayerMainSkill = activeSkill
 			fullEnv.GlobalCache = env.GlobalCache
-			fullEnv.PerformFull(true)
+			// The reference's nested perform runs whatever the stage
+			// functions currently are: the real handoff normally, no-ops
+			// during the dump's checkpoint phase.
+			fullEnv.StubHandoff = env.StubHandoff
+			if env.StubHandoff {
+				fullEnv.Perform()
+			} else {
+				fullEnv.PerformFull(true)
+			}
 			return
 		}
 	}
@@ -78,6 +92,7 @@ func BuildOutput(in *BuildInput, mode string, replay *ReplayInput) *Env {
 	own := *replay
 	own.GlobalCache = nil
 	env := InitEnv(in, mode, &own)
+	env.GlobalCache = map[string]*CachedSkill{}
 	env.PerformFull(false)
 	if mode == "MAIN" {
 		env.FillGlobalCache(mode)

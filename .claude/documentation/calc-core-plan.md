@@ -538,6 +538,33 @@ DONE (2026-08-26): data/raw + package-level data — the PoB-shaped boot.
   full suite ~110s, dominated by the export differential (97s, the one
   GGPK-dependent test).
 
+DONE (2026-08-26, cont.): the guard tail. getCachedOutputValue ported (the
+{uuid} limited flag is what stops self-recursion; found a REAL driver bug:
+BuildOutput started with a NIL cache map, so nested cacheData installed into
+per-env private maps -- siblings re-missed, FillGlobalCache rebuilt skills
+without the limited flag, and Penance's own solo build got its stage
+multiplier; materialize the shared map in the PARENT before any perform).
+Stage blocks: Blight/Penance/EQ-of-Amplification part 2 (authored stages
+build; Scorching Ray verified with them). Doom Blast expiration + hexblast
+sources (authored config-flip copies of the corpus doomblast build; note
+config DEFAULTS reach the fixture -- doomBlastSource=vixen came from the
+default, the XML carries nothing). PvP scaling (offence + EHP; authored
+misc1 with PvpScaling config). Foulborn Choir overcapped-lightning-res
+block (temp child-ModDB resistances + life/mana re-derivation; a plain rare
+amulet line reaches it). FindSkillGem + the nameSpec migration (five Lua
+abbreviation patterns implemented natively; OnFrame pre-migrates resolvable
+names before any dump, so only UNRESOLVABLE names exercise the replay
+branch). stagesAreOverlaps: reference-dead (nothing sets it) -- implemented
+as the real expression, panics removed. Tawhoa's Chosen mirage (authored
+Tawhoa's Felling + Earthquake). copyActiveSkill minion branch (authored
+Saviour + Dominating Blow; verified through the Reflection sub-build's
+cache canon). Minion damage fixup: the Go guard was BROADER than the
+reference -- L488 acts only on minionData.damageFixup (Flame/Lightning
+Golem); minion actors now carry MinionData (MonsterTags + DamageFixup).
+Corpus 43 -> 48 builds, 147 variants. Remaining calc guards: party-tab crit
+(waits on the party module), the per-skill callback gate (97 UnportedFn
+left), and three defensive assertions.
+
 OPEN, POST-PARITY: the compared canons are `%.14g` on both sides, so the
 differential is blind below the 15th significant digit -- exactly the band
 harness bug 2 lived in. A green run does not rule out sub-ulp drift that a

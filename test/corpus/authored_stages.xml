@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Witch" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="3" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemBlight" variantId="Blight" enableGlobal1="true" level="20" nameSpec="Blight" skillId="Blight" skillPart="2" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemPenanceBrand" variantId="PenanceBrandAltX" enableGlobal1="true" level="20" nameSpec="Penance Brand of Dissipation" skillId="PenanceBrandAltX" skillPart="2" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Gloves" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemEarthquake" variantId="EarthquakeAltX" enableGlobal1="true" level="20" nameSpec="Earthquake of Amplification" skillId="EarthquakeAltX" skillPart="2" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Boots" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemFireBeam" variantId="ScorchingRay" enableGlobal1="true" level="20" nameSpec="Scorching Ray" skillId="ScorchingRay" skillPart="2" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<ItemSet useSecondWeaponSet="nil" id="1">
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

@@ -516,8 +516,11 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	activeSkill.SkillModList = skillModList
 	activeSkill.BaseSkillModList = skillModList
 
-	if activeSkill.Actor.MinionData != nil {
-		panic("calc: minion damage fixup unported")
+	if md := activeSkill.Actor.MinionData; md != nil && md.DamageFixup != nil {
+		// Spell damage fixup for a few minions whose attack time was
+		// rebalanced: less damage, more speed, net-neutral DPS.
+		skillModList.AddMod(newMod("Damage", "MORE", -100**md.DamageFixup, "Damage Fixup", modparser.ModFlag.Attack))
+		skillModList.AddMod(newMod("Speed", "MORE", 100**md.DamageFixup, "Damage Fixup", modparser.ModFlag.Attack))
 	}
 
 	// Mods which apply curses are not disabled by Gruthkul's Pelt

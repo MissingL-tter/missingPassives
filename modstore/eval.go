@@ -39,9 +39,11 @@ type ActiveSkill struct {
 	BuffNames  []string // buffList[i].name
 }
 
-// MinionData carries what the MonsterTag tag reads.
+// MinionData carries the minion-table fields mod evaluation and the skill
+// builder read (the reference hands the whole minion data table around).
 type MinionData struct {
 	MonsterTags []string
+	DamageFixup *float64
 }
 
 // Actor is the slice of the calc actor that mod stores touch.
@@ -52,7 +54,7 @@ type Actor struct {
 	Level           float64
 	Others          map[string]*Actor // any other actor types
 	DB              Store             // actor.modDB
-	Output          map[string]any // numeric stats plus perform-owned tables/flags (Lua actor.output)
+	Output          map[string]any    // numeric stats plus perform-owned tables/flags (Lua actor.output)
 	ItemList        map[string]Item
 	WeaponData1     map[string]any
 	WeaponData2     map[string]any

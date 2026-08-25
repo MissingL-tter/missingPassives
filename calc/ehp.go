@@ -232,7 +232,24 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	env.ehpMaxHit(actor)
 	env.ehpDegens(actor, damageCategoryConfig)
 	if truthy(env.ConfigInput["PvpScaling"]) {
-		panic("ehp: PvP scaling unported (no corpus build enables it)")
+		output := actor.output
+		pvpTvalue := outNum(output, "enemySkillTime")
+		pvpMultiplier := 1.0
+		if truthy(env.ConfigInput["enemyMultiplierPvpDamage"]) {
+			pvpMultiplier = anyNum(env.ConfigInput["enemyMultiplierPvpDamage"]) / 100
+		}
+		pvpNonElemental1 := data.Misc.PvpNonElemental1
+		pvpNonElemental2 := data.Misc.PvpNonElemental2
+		pvpElemental1 := data.Misc.PvpElemental1
+		pvpElemental2 := data.Misc.PvpElemental2
+
+		percentageNonElemental := (outNum(output, "PhysicalTakenHit") + outNum(output, "ChaosTakenHit")) / outNum(output, "totalTakenHit")
+		percentageElemental := 1 - percentageNonElemental
+		portionNonElemental := math.Pow(outNum(output, "totalTakenHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
+			pvpTvalue * pvpNonElemental2 * percentageNonElemental
+		portionElemental := math.Pow(outNum(output, "totalTakenHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
+			pvpTvalue * pvpElemental2 * percentageElemental
+		output["PvPTotalTakenHit"] = (portionNonElemental + portionElemental) * pvpMultiplier
 	}
 }
 

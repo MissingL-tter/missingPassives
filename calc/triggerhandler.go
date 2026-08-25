@@ -243,9 +243,27 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	if config.triggerName == "Doom Blast" {
 		switch str(env.ConfigInput["doomBlastSource"]) {
 		case "expiration":
-			panic("triggers: Doom Blast expiration source unported (no corpus build sets it)")
+			// The hexes fall off on their own; if they'd expire faster than
+			// they're recast, expiration behaves like replacement (overlaps).
+			expirationRate := 1 / anyNum(env.GlobalCache[uuid].out("Duration"))
+			if trigRate != nil && expirationRate > *trigRate {
+				env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+			} else {
+				trigRate = &expirationRate
+			}
 		case "hexblast":
-			panic("triggers: Doom Blast hexblast source unported (no corpus build sets it)")
+			// Hexblast consumes the hex: one blast per cast+recast cycle.
+			var hexBlast *ActiveSkill
+			var rate *float64
+			for _, skill := range env.PlayerActiveSkills {
+				if skill.ActiveEffect.GrantedEffect.Name == "Hexblast" && !isTriggered(skill) && skill != main {
+					hexBlast, rate, uuid = env.findTriggerSkill(skill, hexBlast, rate, nil)
+				}
+			}
+			if hexBlast != nil && trigRate != nil && rate != nil {
+				combined := 1 / (1 / *trigRate + 1 / *rate)
+				trigRate = &combined
+			}
 		}
 	}
 	switch {
@@ -340,10 +358,9 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		switch {
 		case truthy(main.SkillData["ignoresTickRate"]) && config.triggeredSkillCond == nil:
 			overlaps := 1.0
-			if config.stagesAreOverlaps != nil {
-				panic("triggers: stagesAreOverlaps path unported")
-			}
-			if config.overlaps != nil {
+			if v, ok := env.stageOverlaps(config); ok {
+				overlaps = v
+			} else if config.overlaps != nil {
 				overlaps = *config.overlaps
 			}
 			output["SkillTriggerRate"] = math.Min(outNum(output, "TriggerRateCap"), outNum(output, "EffectiveSourceRate")*overlaps)
@@ -368,8 +385,10 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 			if actor.db.Flag(nil, "HaveTriggerBots") && main.SkillTypes[modparser.SkillType.Spell] {
 				rate = 2 * rate
 			}
-			if config.stagesAreOverlaps != nil {
-				panic("triggers: stagesAreOverlaps path unported")
+			// stagesAreOverlaps is the skill part which makes the stages
+			// behave as overlaps
+			if hitsPerCast, ok := env.stageOverlaps(config); ok {
+				rate = hitsPerCast * rate
 			}
 			output["SkillTriggerRate"] = rate
 		}
@@ -522,4 +541,25 @@ func (env *Env) helmetFocusHandler() {
 	main.InfoMessage = "Assuming perfect focus Re-Use"
 	main.SkillData["triggerRate"] = output["SkillTriggerRate"]
 	main.SkillFlags["globalTrigger"] = true
+}
+
+// stageOverlaps evaluates `config.stagesAreOverlaps and mainSkill.skillPart
+// == it and srcInstance.skillStageCount` (L804/L827). #EVAL: no configTable
+// entry in the archive ever SETS stagesAreOverlaps — the hook is
+// reference-dead — so this always reports false today; it exists so the
+// expression is the reference's rather than a guess if an entry ever grows
+// one.
+func (env *Env) stageOverlaps(config *triggerConfig) (float64, bool) {
+	if config.stagesAreOverlaps == nil {
+		return 0, false
+	}
+	main := env.PlayerMainSkill
+	if anyNum(main.SkillPart) != anyNum(config.stagesAreOverlaps) || main.ActiveEffect.SrcInstance == nil {
+		return 0, false
+	}
+	v, ok := main.ActiveEffect.SrcInstance.KV["skillStageCount"]
+	if !ok || !truthy(v) {
+		return 0, false
+	}
+	return anyNum(v), true
 }

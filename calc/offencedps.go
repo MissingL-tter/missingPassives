@@ -71,8 +71,71 @@ func (env *Env) offencePassDPS(c *offenceCtx, pass *damagePass) {
 	skillFlags["notAveragePvP"] = false
 
 	if truthy(env.ConfigInput["PvpScaling"]) {
-		panic("offence: PvP scaling unported (no corpus build sets PvpScaling)")
+		skillFlags["isPvP"] = true
+		skillFlags["attackPvP"] = skillFlags["attack"]
+		skillFlags["notAttackPvP"] = !skillFlags["attack"]
+		skillFlags["weapon1AttackPvP"] = skillFlags["weapon1Attack"]
+		skillFlags["weapon2AttackPvP"] = skillFlags["weapon2Attack"]
+		skillFlags["notAveragePvP"] = skillFlags["notAverage"]
+		var pvpTvalue float64
+		if truthy(env.ConfigInput["multiplierPvpTvalueOverride"]) {
+			pvpTvalue = anyNum(env.ConfigInput["multiplierPvpTvalueOverride"]) / 1000
+		} else {
+			switch {
+			case truthy(skillData["cooldown"]):
+				pvpTvalue = anyNum(skillData["cooldown"])
+			case skillFlags["mine"]:
+				pvpTvalue = orOne(outNum(output, "MineLayingTime")) / outNum(globalOutput, "ActionSpeedMod")
+			case skillFlags["trap"]:
+				pvpTvalue = orOne(outNum(output, "TrapThrowingTime")) / outNum(globalOutput, "ActionSpeedMod")
+			default:
+				speed := outNum(globalOutput, "Speed")
+				if truthy(globalOutput["HitSpeed"]) {
+					speed = outNum(globalOutput, "HitSpeed")
+				}
+				pvpTvalue = 1 / (speed / outNum(globalOutput, "ActionSpeedMod")) * skillModList.More(cfg, "PvpTvalueMultiplier")
+			}
+			if pvpTvalue > 2147483647 {
+				pvpTvalue = 1
+			}
+		}
+		pvpMultiplier := skillModList.More(cfg, "PvpDamageMultiplier")
+
+		pvpNonElemental1 := data.Misc.PvpNonElemental1
+		pvpNonElemental2 := data.Misc.PvpNonElemental2
+		pvpElemental1 := data.Misc.PvpElemental1
+		pvpElemental2 := data.Misc.PvpElemental2
+
+		percentageNonElemental := (outNum(output, "PhysicalHitAverage") + outNum(output, "ChaosHitAverage")) /
+			(outNum(output, "TotalMin") + outNum(output, "TotalMax")) * 2
+		percentageElemental := 1 - percentageNonElemental
+		portionNonElemental := math.Pow(outNum(output, "AverageHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
+			pvpTvalue * pvpNonElemental2 * percentageNonElemental
+		portionElemental := math.Pow(outNum(output, "AverageHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
+			pvpTvalue * pvpElemental2 * percentageElemental
+		output["PvpAverageHit"] = (portionNonElemental + portionElemental) * pvpMultiplier
+		output["PvpAverageDamage"] = outNum(output, "PvpAverageHit") * outNum(output, "HitChance") / 100
+		speed := outNum(globalOutput, "Speed")
+		if truthy(globalOutput["HitSpeed"]) {
+			speed = outNum(globalOutput, "HitSpeed")
+		}
+		output["PvpTotalDPS"] = outNum(output, "PvpAverageDamage") * speed * anyNum(skillData["dpsMultiplier"])
+
+		// fix for these being nan
+		for _, k := range []string{"PvpAverageHit", "PvpAverageDamage", "PvpTotalDPS"} {
+			if math.IsNaN(outNum(output, k)) {
+				output[k] = 0.0
+			}
+		}
 	}
+}
+
+// orOne is `x or 1` over an output read that stores no key when absent.
+func orOne(v float64) float64 {
+	if v == 0 {
+		return 1
+	}
+	return v
 }
 
 // offenceCombine ports L3897-3956: fold the two weapon passes together.

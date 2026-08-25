@@ -83,6 +83,12 @@ func (env *Env) performBody() {
 				Level:    minion.Level,
 				Output:   map[string]any{},
 				ItemList: map[string]modstore.Item{},
+				// the reference's actor.minionData is the minion table
+				// itself; carry the fields its readers touch
+				MinionData: &modstore.MinionData{
+					MonsterTags: minion.MinionData.MonsterTags,
+					DamageFixup: minion.MinionData.DamageFixup,
+				},
 			}
 			// minion actor wiring: parent/enemy set at initMinionModDB time
 			// in spirit; the store-facing links are enough for eval

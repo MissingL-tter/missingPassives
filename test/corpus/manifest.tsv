@@ -44,3 +44,9 @@ trig1	../../test/corpus/authored_triggers1.xml
 trig2	../../test/corpus/authored_triggers2.xml
 trig3	../../test/corpus/authored_triggers3.xml
 mjolner	Builds/mjolner.xml
+stages	../../test/corpus/authored_stages.xml
+doomexp	../../test/corpus/authored_doomexp.xml
+doomhex	../../test/corpus/authored_doomhex.xml
+misc1	../../test/corpus/authored_misc1.xml
+misc2	../../test/corpus/authored_misc2.xml
+misc3	../../test/corpus/authored_misc3.xml

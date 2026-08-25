@@ -6,6 +6,7 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strconv"
 
@@ -50,7 +51,7 @@ func (env *Env) RunMirages() bool {
 	case main.ActiveEffect.GrantedEffect.Name == "Reflection":
 		config = env.saviourConfig()
 	case main.ActiveEffect.GrantedEffect.Name == "Tawhoa's Chosen":
-		panic("mirages: Tawhoa's Chosen unported (no corpus build reaches it)")
+		config = env.tawhoasChosenConfig()
 	case truthy(main.SkillData["triggeredBySacredWisps"]):
 		config = env.sacredWispsConfig()
 	case truthy(main.SkillData["triggeredByGeneralsCry"]):
@@ -129,10 +130,23 @@ func (env *Env) copyActiveSkill(mode string, skill *ActiveSkill) (*ActiveSkill, 
 	newSkill.SkillModList = modstore.NewList(newSkill.BaseSkillModList)
 	if newSkill.Minion != nil {
 		// `newSkill.minion.modDB = new("ModDB")` with the minion itself as
-		// the actor. This port splits the Lua minion table into Minion and
-		// its modstore.Actor, and the actor is not built until Perform, so
-		// the wiring here is not derivable from the reference alone.
-		panic("mirages: copyActiveSkill minion branch unported (no corpus build reaches it)")
+		// the actor; this port's minion actor bridge is built here the same
+		// way Perform builds it.
+		m := newSkill.Minion
+		m.DB = modstore.NewDB(nil)
+		m.Ms = &modstore.Actor{
+			DB:       m.DB,
+			Level:    m.Level,
+			Output:   map[string]any{},
+			ItemList: map[string]modstore.Item{},
+			MinionData: &modstore.MinionData{
+				MonsterTags: m.MinionData.MonsterTags,
+				DamageFixup: m.MinionData.DamageFixup,
+			},
+		}
+		m.DB.Actor = m.Ms
+		env.createMinionSkills(newSkill)
+		newSkill.SkillPartName = m.MainSkill.ActiveEffect.GrantedEffect.Name
 	}
 	return newSkill, newEnv
 }
@@ -414,5 +428,97 @@ func (env *Env) generalsCryMirage() {
 			m := value.Mod
 			main.SkillModList.AddMod(newMod(spec.out, m.Type, m.Value, m.Source, m.Flags, m.KeywordFlags))
 		}
+	}
+}
+
+// tawhoasChosenConfig ports the Tawhoa's Chosen branch (CalcMirages L163):
+// the mirage chieftain repeats the best slam/strike, replacing the main
+// skill's calculation, with the trigger rate standing in for attack speed.
+func (env *Env) tawhoasChosenConfig() *mirageConfig {
+	main := env.PlayerMainSkill
+	var usedSkillBestDps, effectiveSourceRate float64
+	var triggerRateCap, skillTriggerRate float64
+	return &mirageConfig{
+		compareFunc: func(skill *ActiveSkill, mirageSkill *ActiveSkill) *ActiveSkill {
+			isDisabled := skill.SkillFlags["disable"]
+			skillTypeMatch := (skill.SkillTypes[modparser.SkillType.Slam] || skill.SkillTypes[modparser.SkillType.Melee]) &&
+				skill.SkillTypes[modparser.SkillType.Attack]
+			skillTypeExcludes := skill.SkillTypes[modparser.SkillType.Vaal] || skill.SkillTypes[modparser.SkillType.SummonsTotem]
+			usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
+			if skill != main && !isTriggered(skill) && !isDisabled && skillTypeMatch && !skillTypeExcludes && !usedByMirage {
+				uuid := env.cacheSkillUUID(skill)
+				if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+					env.BuildActiveSkill(env.Mode, skill, uuid)
+				}
+				c := env.GlobalCache[uuid]
+				if mirageSkill == nil || (c != nil && c.TotalDPS != nil && *c.TotalDPS > usedSkillBestDps) {
+					if c != nil {
+						if c.TotalDPS != nil {
+							usedSkillBestDps = *c.TotalDPS
+						}
+						if c.Speed != nil {
+							effectiveSourceRate = *c.Speed
+						}
+						return c.ActiveSkill
+					}
+				}
+			}
+			return mirageSkill
+		},
+		preCalcFunc: func(newSkill *ActiveSkill, newEnv *Env) {
+			icdrSkill := Mod(newSkill.SkillModList, newSkill.SkillCfg, "CooldownRecovery")
+
+			triggeredCD := anyNum(newSkill.SkillData["cooldown"])
+			triggeredCDAdjusted := triggeredCD / icdrSkill
+			triggeredCDTickRounded := math.Ceil(triggeredCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+
+			triggerCD := anyNum(main.SkillData["cooldown"])
+			triggerCDAdjusted := triggerCD / icdrSkill
+			triggerCDTickRounded := math.Ceil(triggerCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+
+			actionCooldown := math.Max(triggeredCDTickRounded, triggerCDTickRounded)
+
+			triggerRateCap = math.Inf(1)
+			if actionCooldown != 0 {
+				triggerRateCap = 1 / actionCooldown
+			}
+
+			skillTriggerRate = 0
+			if effectiveSourceRate != 0 {
+				sim := &simSkill{uuid: env.cacheSkillUUID(main), cd: &triggeredCD, icdr: &icdrSkill}
+				skillTriggerRate = env.calcMultiSpellRotationImpact([]*simSkill{sim}, effectiveSourceRate, &triggerCD, 100, env.playerPA)
+			}
+
+			// Override attack speed with the trigger rate
+			newSkill.SkillData["triggerRate"] = skillTriggerRate
+			newSkill.SkillData["triggered"] = true
+			newSkill.SkillFlags["triggered"] = true
+
+			// Does not use player resources
+			newSkill.SkillModList.AddMod(newMod("HasNoCost", "FLAG", true, "Used by Tawhoa's Chosen"))
+
+			moreDamage := main.SkillModList.Sum("BASE", main.SkillCfg, "ChieftainMirageChieftainMoreDamage")
+			// Add new modifiers to new skill (which already has all the old
+			// skill's modifiers)
+			newSkill.SkillModList.AddMod(newMod("Damage", "MORE", moreDamage, "Tawhoa's Chosen", nil, nil))
+		},
+		postCalcFunc: func(newSkill *ActiveSkill, newEnv *Env) {
+			env.PlayerMainSkill = newSkill
+			env.PlayerMainSkill.InfoMessage = "Tawhoa's Chosen using " + newSkill.ActiveEffect.GrantedEffect.Name
+
+			env.Player.Output = newEnv.Player.Output
+			env.Player.Output["Speed"] = skillTriggerRate
+			env.Player.Output["TriggerRateCap"] = triggerRateCap
+			env.Player.Output["EffectiveSourceRate"] = effectiveSourceRate
+			env.Player.Output["SkillTriggerRate"] = skillTriggerRate
+			if env.playerPA != nil {
+				env.playerPA.output = newEnv.Player.Output
+				env.playerPA.mainSkill = newSkill
+			}
+		},
+		mirageSkillNotFoundFunc: func() {
+			main.DisableReason = "No Tawhoa's Chosen active skill found"
+			main.SkillFlags["disable"] = true
+		},
 	}
 }
