@@ -496,6 +496,23 @@ Now unblocked: getCachedOutputValue (Blight part 2 guard), CALCS mode,
 buildOutput's display half (FullDPS roll-up, cost warnings, config
 discovery).
 
+DONE (2026-08-25, later): ALL 80 trigger configs written; corpus 38 -> 42
+builds via AUTHORED shells (test/corpus/authored_*.xml + manifest rows) --
+minimal builds that exist purely to reach guards: trig1 (gem triggers:
+melee-kill/stunned/ward-break/death/prismatic-burst/snipe/intuitive-link),
+trig2 (Mjolner, Oskarm, Kitava's Thirst, both Mark rings), trig3 (Asenath's
+Chant, Maloney's Mechanism, Lioneye's Paws), trig4 (Ngamahu's Flame, Shroud
+of the Lightless). helmetFocusHandler and the Kitava mana-spent handler path
+ported with them. Authoring notes: copy a corpus XML's shape; socket groups
+need no items except where the trigger checks the slot's item (Maloney's
+reads the quiver's modSource); unique item text comes verbatim from
+Data/Uniques/* minus variant markers, one line per mod (the two-line
+Kitava's trigger text is ONE mod line in an item); only the ACTIVE ItemSet's
+slots exist (a second ItemSet is invisible to the calc). Verify a new
+authored build loads by checking the dump's .skills list before porting
+against it. Roughly half the config table is exercised by the corpus now;
+the rest is code[x]/archive-unverified awaiting more shells.
+
 OPEN, POST-PARITY: the compared canons are `%.14g` on both sides, so the
 differential is blind below the 15th significant digit -- exactly the band
 harness bug 2 lived in. A green run does not rule out sub-ulp drift that a
