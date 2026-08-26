@@ -49,9 +49,12 @@ type MasteryEffect struct {
 // Legion (timeless jewel) passives are also Nodes; they carry a string id
 // (IDStr) and no geometry.
 type Node struct {
-	ID         int64
-	IDStr      string // mod source id: decimal of ID, or the legion id
-	Name       string // dn (= name in the 3_10+ format)
+	ID    int64
+	IDStr string // mod source id: decimal of ID, or the legion id
+	Name  string // dn (= name in the 3_10+ format)
+	// NameStr is node.name as distinct from dn: tree nodes carry both (the
+	// same string); legion passives have only dn.
+	NameStr    *string
 	Icon       string
 	GroupID    int64
 	Orbit      int64
@@ -398,6 +401,7 @@ func decodeNode(nm map[string]any) *Node {
 		Raw:                    nm,
 	}
 	node.IDStr = strconv.FormatInt(node.ID, 10)
+	node.NameStr = &node.Name
 	node.Sd = strList(nm["stats"])
 	if csi, ok := nm["classStartIndex"].(float64); ok {
 		v := int64(csi)
