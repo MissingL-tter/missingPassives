@@ -81,9 +81,9 @@ func loadGameData(t *testing.T) {
 		gameDataDone = true
 	})
 	// A parser-level differential may have switched the parser to fresh
-	// mode (SetModCacheKeys(nil), mirroring its dump's wipeTable); re-arm
-	// the shipped cache policy for data-driven tests.
-	modparser.SetModCacheKeys(data.LoadedModCacheKeys)
+	// mode (SetModCache(nil), mirroring its dump's wipeTable); re-arm the
+	// shipped cache for data-driven tests.
+	modparser.SetModCache(data.LoadedModCache)
 	if gameDataSkip != "" {
 		t.Skip(gameDataSkip)
 	}

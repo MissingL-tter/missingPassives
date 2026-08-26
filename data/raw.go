@@ -44,7 +44,11 @@ func RawSources() Sources {
 	rawDoc("uModsToText", &src.Uniques)
 	rawDoc("minions", &src.MinionsDoc)
 	rawDoc("skills", &src.Skills)
-	rawDoc("modCacheKeys", &src.ModCacheKeys)
+	mc, err := rawFS.ReadFile("raw/modCache.jsonl")
+	if err != nil {
+		panic("data: raw/modCache.jsonl missing (run tools/dump_modcache.lua): " + err.Error())
+	}
+	src.ModCacheJSONL = mc
 	fb, err := rawFS.ReadFile("raw/ModFoulbornMap.jsonc")
 	if err != nil {
 		panic("data: raw/ModFoulbornMap.jsonc missing (run pobexport): " + err.Error())

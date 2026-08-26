@@ -38,9 +38,10 @@ type Sources struct {
 	StatMapCopies map[string][]string
 	// FoulbornMapJSONC is Data/ModFoulbornMap.jsonc's content.
 	FoulbornMapJSONC []byte
-	// ModCacheKeys is Data/ModCache.lua's key set: the lines whose parse
-	// results PoB serves from the shipped %.14g-round-tripped cache.
-	ModCacheKeys []string
+	// ModCacheJSONL is data/raw/modCache.jsonl: Data/ModCache.lua's
+	// pre-parsed entries, which PoB (and this port) serve instead of
+	// parsing those lines.
+	ModCacheJSONL []byte
 }
 
 // Data mirrors the Lua `data` table (the logic-bearing parts).
@@ -174,10 +175,10 @@ var (
 )
 
 // Scalability is one data.modScalability value entry.
-// LoadedModCacheKeys retains Load's ModCacheKeys so late callers (test
-// helpers re-arming the parser after another policy ran) can re-install
-// them without reloading everything.
-var LoadedModCacheKeys []string
+// LoadedModCache retains Load's ModCacheJSONL so late callers (test
+// helpers re-arming the parser after a fresh-mode differential ran) can
+// re-install it without reloading everything.
+var LoadedModCache []byte
 
 type Scalability struct {
 	IsScalable bool     `lua:"isScalable"`
@@ -206,10 +207,10 @@ type bossStats struct {
 
 // Load assembles the runtime data set.
 func Load(src Sources) {
-	// The shipped mod cache's key set gates %.14g quantization in the
-	// parser (PoB preloads Data/ModCache.lua; modparser/modcache.go).
-	LoadedModCacheKeys = src.ModCacheKeys
-	modparser.SetModCacheKeys(src.ModCacheKeys)
+	// Install the shipped mod cache: PoB preloads Data/ModCache.lua and
+	// serves parses from it (modparser/modcache.go).
+	LoadedModCache = src.ModCacheJSONL
+	modparser.SetModCache(src.ModCacheJSONL)
 	loadMisc(src.Misc)
 	Misc = miscTable(CharacterConstants, MonsterConstants)
 	PowerStatList = buildPowerStatList()

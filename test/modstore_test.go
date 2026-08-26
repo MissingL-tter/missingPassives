@@ -144,7 +144,7 @@ type msQRes struct {
 func TestModStoreAgainstReference(t *testing.T) {
 	// The reference dump for this differential parsed fresh (its tool wipes
 	// the preloaded ModCache); run the parser in the same mode.
-	modparser.SetModCacheKeys(nil)
+	modparser.SetModCache(nil)
 
 	f, err := os.Open("testdata/modstore_archive.jsonl")
 	if err != nil {

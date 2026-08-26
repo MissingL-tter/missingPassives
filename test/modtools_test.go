@@ -31,7 +31,7 @@ type modtoolsRecord struct {
 func TestModToolsAgainstReference(t *testing.T) {
 	// The reference dump for this differential parsed fresh (its tool wipes
 	// the preloaded ModCache); run the parser in the same mode.
-	modparser.SetModCacheKeys(nil)
+	modparser.SetModCache(nil)
 
 	f, err := os.Open("testdata/modtools_archive.jsonl")
 	if err != nil {

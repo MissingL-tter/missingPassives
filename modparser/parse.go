@@ -81,6 +81,15 @@ func (e jewelFuncEntry) tagValue(c caps) Tag {
 func Parse(line string) (mods []any, extra string) {
 	parseCacheMu.Lock()
 	entry, hit := parseCache[line]
+	if !hit {
+		// A line the shipped Data/ModCache.lua covers is served from the
+		// file, never parsed — exactly PoB's preloaded cache (modcache.go).
+		if dec, ok := cacheLookup(line); ok {
+			entry = dec
+			parseCache[line] = entry
+			hit = true
+		}
+	}
 	parseCacheMu.Unlock()
 	if !hit {
 		entry.mods, entry.extra = parseMod(line, 1)
@@ -88,14 +97,6 @@ func Parse(line string) (mods []any, extra string) {
 			entry.mods, entry.extra = parseMod(line, 2)
 		}
 		parseCacheMu.Lock()
-		if _, cached := modCacheKeys[line]; cached && entry.mods != nil {
-			// The shipped Data/ModCache.lua covers this line: store the
-			// %.14g-round-tripped entry PoB would load (modcache.go).
-			entry.mods = copyAnyList(entry.mods)
-			for i, m := range entry.mods {
-				entry.mods[i] = quantizeDeep(m)
-			}
-		}
 		parseCache[line] = entry
 		parseCacheMu.Unlock()
 	}
