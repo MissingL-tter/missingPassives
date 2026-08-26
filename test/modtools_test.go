@@ -29,6 +29,10 @@ type modtoolsRecord struct {
 }
 
 func TestModToolsAgainstReference(t *testing.T) {
+	// The reference dump for this differential parsed fresh (its tool wipes
+	// the preloaded ModCache); run the parser in the same mode.
+	modparser.SetModCacheKeys(nil)
+
 	f, err := os.Open("testdata/modtools_archive.jsonl")
 	if err != nil {
 		t.Fatalf("modtools archive dump not generated (run luajit ../../tools/dump_modtools.lua from .archive/src/): %v", err)

@@ -77,6 +77,10 @@ func loadArchive(t *testing.T) []archiveRecord {
 }
 
 func TestAgainstReference(t *testing.T) {
+	// The reference dump for this differential parsed fresh (its tool wipes
+	// the preloaded ModCache); run the parser in the same mode.
+	modparser.SetModCacheKeys(nil)
+
 	records := loadArchive(t)
 	if len(records) == 0 {
 		t.Fatal("empty archive dump")

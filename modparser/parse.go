@@ -88,6 +88,14 @@ func Parse(line string) (mods []any, extra string) {
 			entry.mods, entry.extra = parseMod(line, 2)
 		}
 		parseCacheMu.Lock()
+		if _, cached := modCacheKeys[line]; cached && entry.mods != nil {
+			// The shipped Data/ModCache.lua covers this line: store the
+			// %.14g-round-tripped entry PoB would load (modcache.go).
+			entry.mods = copyAnyList(entry.mods)
+			for i, m := range entry.mods {
+				entry.mods[i] = quantizeDeep(m)
+			}
+		}
 		parseCache[line] = entry
 		parseCacheMu.Unlock()
 	}

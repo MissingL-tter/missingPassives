@@ -142,6 +142,10 @@ type msQRes struct {
 }
 
 func TestModStoreAgainstReference(t *testing.T) {
+	// The reference dump for this differential parsed fresh (its tool wipes
+	// the preloaded ModCache); run the parser in the same mode.
+	modparser.SetModCacheKeys(nil)
+
 	f, err := os.Open("testdata/modstore_archive.jsonl")
 	if err != nil {
 		t.Fatalf("modstore archive dump not generated (run luajit ../../tools/dump_modstore.lua from .archive/src/): %v", err)

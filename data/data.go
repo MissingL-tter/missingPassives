@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 // Sources carries the gamedata documents Load consumes. It grows as the
@@ -37,6 +38,9 @@ type Sources struct {
 	StatMapCopies map[string][]string
 	// FoulbornMapJSONC is Data/ModFoulbornMap.jsonc's content.
 	FoulbornMapJSONC []byte
+	// ModCacheKeys is Data/ModCache.lua's key set: the lines whose parse
+	// results PoB serves from the shipped %.14g-round-tripped cache.
+	ModCacheKeys []string
 }
 
 // Data mirrors the Lua `data` table (the logic-bearing parts).
@@ -170,6 +174,11 @@ var (
 )
 
 // Scalability is one data.modScalability value entry.
+// LoadedModCacheKeys retains Load's ModCacheKeys so late callers (test
+// helpers re-arming the parser after another policy ran) can re-install
+// them without reloading everything.
+var LoadedModCacheKeys []string
+
 type Scalability struct {
 	IsScalable bool     `lua:"isScalable"`
 	Formats    []string `lua:"formats"` // nil = absent
@@ -197,6 +206,10 @@ type bossStats struct {
 
 // Load assembles the runtime data set.
 func Load(src Sources) {
+	// The shipped mod cache's key set gates %.14g quantization in the
+	// parser (PoB preloads Data/ModCache.lua; modparser/modcache.go).
+	LoadedModCacheKeys = src.ModCacheKeys
+	modparser.SetModCacheKeys(src.ModCacheKeys)
 	loadMisc(src.Misc)
 	Misc = miscTable(CharacterConstants, MonsterConstants)
 	PowerStatList = buildPowerStatList()

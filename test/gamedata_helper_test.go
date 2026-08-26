@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 // readStatMapCopiesHelper parses the skills.statMapKeys fixture record from
@@ -79,6 +80,10 @@ func loadGameData(t *testing.T) {
 		data.Load(src)
 		gameDataDone = true
 	})
+	// A parser-level differential may have switched the parser to fresh
+	// mode (SetModCacheKeys(nil), mirroring its dump's wipeTable); re-arm
+	// the shipped cache policy for data-driven tests.
+	modparser.SetModCacheKeys(data.LoadedModCacheKeys)
 	if gameDataSkip != "" {
 		t.Skip(gameDataSkip)
 	}
