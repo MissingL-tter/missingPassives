@@ -74,8 +74,14 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		}
 	}
 
-	// Second pass: tattoo overrides and conquering (both stage-guarded;
-	// overrides cannot load, conquering cannot arm).
+	// Second pass: tattoo overrides (conquering is stage-guarded and
+	// cannot arm).
+	for _, id := range nodeIDs {
+		node := s.Nodes[id]
+		if ov := s.HashOverrides[node.ID()]; ov != nil {
+			s.replaceNode(node, ov)
+		}
+	}
 
 	// Third pass: mastery effects and the allocation counts.
 	s.AllocatedMasteryCount = 0
@@ -89,8 +95,12 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		if node.Type() == "Mastery" && s.MasterySelections[id] != 0 {
 			effect := s.Tree.MasteryEffects[s.MasterySelections[id]]
 			if effect != nil && s.AllocNodes[id] != nil {
-				node.Stats.Sd = effect.Sd
-				node.sdIdentity = effect
+				if ov := s.HashOverrides[id]; ov != nil {
+					s.replaceNode(node, ov)
+				} else {
+					node.Stats.Sd = effect.Sd
+					node.sdIdentity = effect
+				}
 				node.AllMasteryOptions = false
 				node.ReminderText = []string{"Tip: Right click to select a different effect"}
 				processStats(&node.Stats, strconv.FormatInt(id, 10), 0)
@@ -300,8 +310,8 @@ func (s *Spec) BuildAllDependsAndPaths() {
 }
 
 func (n *SpecNode) nameForCounts() string {
-	if n.Name != nil {
-		return *n.Name
+	if name := n.EffectiveName(); name != nil {
+		return *name
 	}
 	return n.Dn
 }

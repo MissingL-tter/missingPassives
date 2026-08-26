@@ -39,8 +39,14 @@ type xmlSpec struct {
 	Sockets                struct {
 		Sockets []xmlSpecSocket `xml:"Socket"`
 	} `xml:"Sockets"`
-	Overrides struct {
-		Overrides []struct{} `xml:"Override"`
+	ClusterHashFormatVersion string `xml:"clusterHashFormatVersion,attr"`
+	Overrides                struct {
+		Overrides []struct {
+			NodeID            int64  `xml:"nodeId,attr"`
+			Dn                string `xml:"dn,attr"`
+			Icon              string `xml:"icon,attr"`
+			ActiveEffectImage string `xml:"activeEffectImage,attr"`
+		} `xml:"Override"`
 	} `xml:"Overrides"`
 }
 
@@ -69,7 +75,7 @@ func specNodeFixtureOf(n *tree.SpecNode) *specNodeFixture {
 	f := &specNodeFixture{
 		ID:                   float64(n.ID()),
 		Type:                 n.Type(),
-		Name:                 n.Name,
+		Name:                 n.EffectiveName(),
 		Dn:                   strPtr(n.Dn),
 		DistanceToClassStart: n.DistanceToClassStart,
 		ModList:              n.Stats.ModList,
@@ -120,34 +126,35 @@ func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) (*tr
 		}
 		return n
 	}
+	// The reference's version default: an explicit attribute wins; a spec
+	// with a nodes attribute but no version attribute is legacy (1).
+	version := 2
+	if n, err := strconv.Atoi(x.ClusterHashFormatVersion); err == nil {
+		version = n
+	} else if x.Nodes != "" || strings.Contains(string(blob), `nodes="`) {
+		version = 1
+	}
 	saved := &tree.SavedSpec{
-		ClassID:                attr64(x.ClassID),
-		AscendClassID:          attr64(x.AscendClassID),
-		SecondaryAscendClassID: attr64(x.SecondaryAscendClassID),
-		Nodes:                  x.Nodes,
-		MasteryEffects:         x.MasteryEffects,
-		Sockets:                map[int64]int{},
-		HasOverrides:           len(x.Overrides.Overrides) > 0,
+		ClassID:                  attr64(x.ClassID),
+		AscendClassID:            attr64(x.AscendClassID),
+		SecondaryAscendClassID:   attr64(x.SecondaryAscendClassID),
+		Nodes:                    x.Nodes,
+		MasteryEffects:           x.MasteryEffects,
+		Sockets:                  map[int64]int{},
+		ClusterHashFormatVersion: version,
+	}
+	for _, o := range x.Overrides.Overrides {
+		saved.Overrides = append(saved.Overrides, tree.SavedOverride{
+			NodeID: o.NodeID, Dn: o.Dn, Icon: o.Icon, ActiveEffectImage: o.ActiveEffectImage,
+		})
 	}
 	for _, socket := range x.Sockets.Sockets {
 		saved.Sockets[socket.NodeID] = socket.ItemID
 	}
-	// Stage eligibility: cluster ids in the hash list, socketed cluster or
-	// timeless jewels, or tattoo overrides wait on later stages.
-	if saved.HasOverrides {
-		return nil, false
-	}
-	for _, part := range strings.Split(x.Nodes, ",") {
-		if n, err := strconv.ParseInt(strings.TrimSpace(part), 10, 64); err == nil && n >= 65536 {
-			return nil, false
-		}
-	}
+	// Stage eligibility: timeless jewels wait on the algorithm stage.
 	for _, itemID := range saved.Sockets {
 		if it := items[itemID]; it != nil {
 			if it.JewelData != nil && it.JewelData["conqueredBy"] != nil {
-				return nil, false
-			}
-			if it.ClusterJewel != nil {
 				return nil, false
 			}
 		}
@@ -157,6 +164,19 @@ func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) (*tr
 	spec.LoadSaved(saved)
 	spec.PostLoad()
 	return spec, true
+}
+
+// treeNodeFixtureOf projects a bare tree node the way nodeFixture does
+// when no spec node exists (granted ascendancy nodes from other classes).
+func treeNodeFixtureOf(n *tree.Node) *specNodeFixture {
+	return &specNodeFixture{
+		ID:          float64(n.ID),
+		Type:        n.Type,
+		Name:        n.NameStr,
+		Dn:          strPtr(n.Name),
+		ModList:     n.ModList,
+		KeystoneMod: n.KeystoneMod,
+	}
 }
 
 func TestSpecAgainstReference(t *testing.T) {
@@ -179,10 +199,16 @@ func TestSpecAgainstReference(t *testing.T) {
 			continue
 		}
 		xmlPath := filepath.Clean(filepath.Join("..", ".archive", "src", xmlRel))
-		var fixture string
+		var fixture, grantedPassives, grantedAsc string
 		forEachCalcRecord(t, path, func(k, c string) {
 			if strings.HasSuffix(k, ".full.fixture") || (fixture == "" && strings.HasSuffix(k, ".fixture")) {
 				fixture = c
+			}
+			if strings.HasSuffix(k, ".full.grantedPassiveNodes") || (grantedPassives == "" && strings.HasSuffix(k, ".grantedPassiveNodes")) {
+				grantedPassives = c
+			}
+			if strings.HasSuffix(k, ".full.grantedAscendancyNodes") || (grantedAsc == "" && strings.HasSuffix(k, ".grantedAscendancyNodes")) {
+				grantedAsc = c
 			}
 		})
 		var m map[string]any
@@ -282,6 +308,50 @@ func TestSpecAgainstReference(t *testing.T) {
 			if ref.Spec.RadiusNodeData[n] == nil {
 				t.Errorf("%s: extra radius node %s", buildKey, id)
 			}
+		}
+		// Granted passives (anoints): resolve each dumped name through the
+		// tree maps the way CalcSetup does and compare the projections.
+		var gp map[string]any
+		if err := json.Unmarshal([]byte(grantedPassives), &gp); err != nil {
+			t.Fatal(err)
+		}
+		for name, refVal := range gp {
+			node := spec.Tree.NotableMap[name]
+			if node == nil {
+				node = spec.Tree.AscendancyMap[name]
+			}
+			if node == nil {
+				t.Errorf("%s: granted passive %q unresolved", buildKey, name)
+				continue
+			}
+			var got string
+			if specNode := spec.Nodes[node.ID]; specNode != nil {
+				got = luacanon.EncodeExact(specNodeFixtureOf(specNode))
+			} else {
+				got = luacanon.EncodeExact(treeNodeFixtureOf(node))
+			}
+			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
+			if got != want {
+				t.Errorf("%s granted passive %q diverged\n%s", buildKey, name, diffWindow(got, want))
+			}
+			nodesCompared++
+		}
+		var ga map[string]any
+		if err := json.Unmarshal([]byte(grantedAsc), &ga); err != nil {
+			t.Fatal(err)
+		}
+		for name, refVal := range ga {
+			node := spec.Tree.AscendancyMap[name]
+			if node == nil {
+				t.Errorf("%s: granted ascendancy node %q unresolved", buildKey, name)
+				continue
+			}
+			got := luacanon.EncodeExact(treeNodeFixtureOf(node))
+			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
+			if got != want {
+				t.Errorf("%s granted ascendancy %q diverged\n%s", buildKey, name, diffWindow(got, want))
+			}
+			nodesCompared++
 		}
 		comparedBuilds++
 	}

@@ -64,10 +64,16 @@ type Spec struct {
 	Nodes      map[int64]*SpecNode
 	AllocNodes map[int64]*SpecNode
 
-	AllocSubgraphNodes []int64
-	AllocExtendedNodes []int64
-	Jewels             map[int64]int
-	MasterySelections  map[int64]int64
+	AllocSubgraphNodes       []int64
+	AllocExtendedNodes       []int64
+	Jewels                   map[int64]int
+	MasterySelections        map[int64]int64
+	HashOverrides            map[int64]*Node
+	ClusterHashFormatVersion int
+	SubGraphs                map[int64]*SubGraph
+
+	legacyClusterNodeMap        map[int64]int64
+	legacyClusterNodeMapReverse map[int64]int64
 
 	CurClassID                  int64
 	CurClass                    *Class
@@ -93,6 +99,14 @@ type Spec struct {
 	SplitPersonalityPath map[int64]bool
 }
 
+// SavedOverride is one <Override> child (a tattooed node).
+type SavedOverride struct {
+	NodeID            int64
+	Dn                string
+	Icon              string
+	ActiveEffectImage string
+}
+
 // SavedSpec is the decoded <Spec> element.
 type SavedSpec struct {
 	ClassID                int64
@@ -101,7 +115,10 @@ type SavedSpec struct {
 	Nodes                  string // the "nodes" attribute (comma list)
 	MasteryEffects         string // "{node,effect},..."
 	Sockets                map[int64]int
-	HasOverrides           bool
+	Overrides              []SavedOverride
+	// ClusterHashFormatVersion: 2 is current; a nodes attribute without
+	// the version attribute is legacy (1).
+	ClusterHashFormatVersion int
 }
 
 // NewSpec ports PassiveSpecClass:Init for one tree.
@@ -113,6 +130,8 @@ func NewSpec(t *Tree, items map[int]*item.Item) *Spec {
 		AllocNodes:            map[int64]*SpecNode{},
 		Jewels:                map[int64]int{},
 		MasterySelections:     map[int64]int64{},
+		HashOverrides:         map[int64]*Node{},
+		SubGraphs:             map[int64]*SubGraph{},
 		AllocatedMasteryTypes: map[string]float64{},
 		AllocatedTattooTypes:  map[string]float64{},
 		SplitPersonalityPath:  map[int64]bool{},
@@ -144,18 +163,27 @@ func NewSpec(t *Tree, items map[int]*item.Item) *Spec {
 // and mod state at src.
 func (n *SpecNode) resetToSource(src *Node) {
 	n.Dn = src.Name
-	if src.NameStr != nil {
-		n.Name = src.NameStr
-	} else {
-		n.Name = nil
-	}
+	// Name shadows the underlying node's; a source without one (tattoo,
+	// legion) leaves the shadow empty and EffectiveName falls through to
+	// the spec node's own tree name — the reference's metatable behavior.
+	n.Name = src.NameStr
 	n.Stats = src.Stats
 	n.Stats.ModList = append([]*modparser.Mod{}, src.ModList...)
 	n.KeystoneMod = src.KeystoneMod
-	n.IsTattoo = false
-	n.OverrideType = ""
+	n.IsTattoo = src.IsTattooFlag
+	n.OverrideType = src.OverrideTypeStr
 	n.ReminderText = nil
 	n.sdIdentity = src
+}
+
+// EffectiveName is node.name through the reference's metatable: the shadow
+// when set, else the underlying node's own name (nil for synthesized
+// cluster nodes, which have only dn).
+func (n *SpecNode) EffectiveName() *string {
+	if n.Name != nil {
+		return n.Name
+	}
+	return n.T.NameStr
 }
 
 // replaceNode ports PassiveSpecClass:ReplaceNode.
@@ -169,8 +197,25 @@ func (s *Spec) replaceNode(old *SpecNode, src *Node) {
 // LoadSaved ports the Spec-element half of PassiveSpecClass:Load plus
 // ImportFromNodeList.
 func (s *Spec) LoadSaved(saved *SavedSpec) {
-	if saved.HasOverrides {
-		panic("tree: tattoo overrides unported")
+	s.ClusterHashFormatVersion = saved.ClusterHashFormatVersion
+	// Tattoo overrides: resolve each by name, with the reference's
+	// substitution fallback (match by images when the name was renamed,
+	// registering the alias in the shared pool).
+	for _, o := range saved.Overrides {
+		if s.Tree.Tattoo.Nodes[o.Dn] == nil {
+			for _, name := range sortedStringKeys(s.Tree.Tattoo.Nodes) {
+				dataNode := s.Tree.Tattoo.Nodes[name]
+				if str(dataNode.Raw["activeEffectImage"]) == o.ActiveEffectImage && dataNode.Icon == o.Icon {
+					s.Tree.Tattoo.Nodes[o.Dn] = dataNode
+				}
+			}
+		}
+		if src := s.Tree.Tattoo.Nodes[o.Dn]; src != nil {
+			cp := *src // copyTable(..., true): shallow, sharing sd/modList
+			cp.ID = o.NodeID
+			cp.IDStr = strconv.FormatInt(o.NodeID, 10)
+			s.HashOverrides[o.NodeID] = &cp
+		}
 	}
 	for nodeID, itemID := range saved.Sockets {
 		if itemID > 0 {
@@ -225,6 +270,11 @@ func (s *Spec) importFromNodeList(classID, ascendClassID, secondaryAscendClassID
 			s.MasterySelections[mastery] = effect
 		}
 	}
+	for _, id := range sortedNodeIDs(s.HashOverrides) {
+		if node := s.Nodes[id]; node != nil {
+			s.replaceNode(node, s.HashOverrides[id])
+		}
+	}
 	for _, id := range hashList {
 		node := s.Nodes[id]
 		if node != nil {
@@ -245,34 +295,9 @@ func (s *Spec) importFromNodeList(classID, ascendClassID, secondaryAscendClassID
 	s.BuildAllDependsAndPaths()
 }
 
-// PostLoad ports PassiveSpecClass:PostLoad -> BuildClusterJewelGraphs for
-// the no-cluster case: reallocate any deferred subgraph ids and rebuild.
-// A socketed large cluster jewel needs the subgraph stage.
+// PostLoad ports PassiveSpecClass:PostLoad.
 func (s *Spec) PostLoad() {
-	for nodeID := range s.Tree.Sockets {
-		node := s.Tree.Nodes[nodeID]
-		if node == nil {
-			continue
-		}
-		ej, _ := node.Raw["expansionJewel"].(map[string]any)
-		if ej == nil || num(ej["size"]) != 2 {
-			continue
-		}
-		if it := s.jewel(s.Jewels[nodeID]); it != nil && jdTrue(it, "clusterJewelValid") {
-			panic("tree: cluster jewel subgraphs unported")
-		}
-	}
-	for _, nodeID := range s.AllocSubgraphNodes {
-		if node := s.Nodes[nodeID]; node != nil {
-			node.Alloc = true
-			if s.AllocNodes[nodeID] == nil {
-				s.AllocNodes[nodeID] = node
-				s.AllocExtendedNodes = append(s.AllocExtendedNodes, nodeID)
-			}
-		}
-	}
-	s.AllocSubgraphNodes = nil
-	s.BuildAllDependsAndPaths()
+	s.BuildClusterJewelGraphs()
 }
 
 func (s *Spec) resetNodes() {

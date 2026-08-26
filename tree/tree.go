@@ -70,8 +70,11 @@ type Node struct {
 	AscendancyName  string
 	ClassStartIndex *int64
 
-	MasteryEffects         []*MasteryEffectRef
-	PassivePointsGranted   float64
+	MasteryEffects       []*MasteryEffectRef
+	PassivePointsGranted float64
+	// Tattoo override pool fields (false/empty on real tree nodes).
+	IsTattooFlag           bool
+	OverrideTypeStr        string
 	IsProxy                bool
 	IsBlighted             bool
 	IsMultipleChoiceOption bool
@@ -166,6 +169,7 @@ type Tree struct {
 	OrbitAnglesByOrbit [][]float64
 
 	Legion *Legion
+	Tattoo *Tattoo
 
 	MinX, MinY, MaxX, MaxY float64
 	Size                   float64
@@ -372,6 +376,7 @@ func Load(version string) *Tree {
 	}
 
 	t.loadLegion()
+	t.loadTattoo()
 	return t
 }
 
