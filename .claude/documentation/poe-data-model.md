@@ -185,6 +185,19 @@ TimelessJewelSeedMin/Max (Elegant Hubris seeds are ÷20 internally).
 LegionPassives node `oidx` values are PRNG layout junk, not data. Node
 lookups go through binary LUTs (timeless-jewel-data module, unported).
 
+## Node overrides: tattoos and runegrafts
+
+One override system (`spec.hashOverrides`, pool = the committed
+Data/TattooPassives.lua — NOT the GGPK-export document of similar name)
+covers two game mechanics: tattoos (replace small/notable/keystone
+passives) and runegrafts (overrideType `AlternateMastery`, replace
+masteries). Saved as `<Override nodeId dn icon activeEffectImage>`; the
+node keeps its numeric id, only content is replaced. Runegraft entries
+carry their own `name` field; tattoo entries do not, so the original
+node's name shows through (metatable nil-unshadowing). Overridden
+masteries reparse under the numeric node id; other overrides keep the
+pool entry's string id (e.g. Tree:Ramako3) as mod source.
+
 ## Text pipeline
 
 Stat descriptions (Data/StatDescriptions/*.lua ← gamedata.StatDescs): per
