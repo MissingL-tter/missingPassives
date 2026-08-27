@@ -3,10 +3,10 @@
 #   cd .archive/src && while IFS=$'\t' read -r k f; do case $k in \#*|"") continue;; esac; \
 #     luajit ../../tools/dump_calc.lua "$k" "$f"; done < ../../test/corpus/manifest.tsv
 empty	
-coc	Builds/3.29 CoC Blazing Salvo Assassin CI.xml
-cocuser	Builds/3.29 CoC Blazing Salvo Assassin CI - User Edit.xml
-dualstrike	Builds/Dual Strike.xml
-bfbb	Builds/bfbb totem.xml
+coc	../../test/corpus/3.29 CoC Blazing Salvo Assassin CI.xml
+cocuser	../../test/corpus/3.29 CoC Blazing Salvo Assassin CI - User Edit.xml
+dualstrike	../../test/corpus/Dual Strike.xml
+bfbb	../../test/corpus/bfbb totem.xml
 ballista	../../test/corpus/bara_bow_bara.xml
 cyclone	../../test/corpus/COTA_Halbae.xml
 eblade	../../test/corpus/DEE_FOUR_LOH_BAD.xml
@@ -43,7 +43,7 @@ toad	../../test/corpus/SkymindAllflame.xml
 trig1	../../test/corpus/authored_triggers1.xml
 trig2	../../test/corpus/authored_triggers2.xml
 trig3	../../test/corpus/authored_triggers3.xml
-mjolner	Builds/mjolner.xml
+mjolner	../../test/corpus/mjolner.xml
 stages	../../test/corpus/authored_stages.xml
 doomexp	../../test/corpus/authored_doomexp.xml
 doomhex	../../test/corpus/authored_doomhex.xml
