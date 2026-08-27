@@ -3,8 +3,8 @@ so explicitly; your own judgement never does.
 
 ## Character level 95
 
-Every build is authored at character level 95. Life, mana, accuracy and the 117+extras passive budget all follow from the
-level; `validate.lua` enforces both the level and the budget.
+Every build is authored at character level 95; life, mana, accuracy and the 117+extras
+passive budget all follow from it. `validate.lua` enforces both the level and the budget.
 
 ## Cost is not your concern
 
@@ -15,9 +15,9 @@ conventions in `influences.md` are the only cost proxies; apply them and move on
 ## Mageblood flasks
 
 Every Mageblood build includes at least one movement-speed flask among the constantly-applied
-slots. Silver Flask by default; when the
-build deliberately constrains attack or cast rate (trigger cooldowns, spend-throttled
-casting), Onslaught's rate portion is wasted there - use a Quicksilver instead.
+slots. Silver Flask by default; when the build deliberately constrains attack or cast rate
+(trigger cooldowns, spend-throttled casting), Onslaught's rate portion is wasted there - use
+a Quicksilver instead.
 
 ## Gear mods
 

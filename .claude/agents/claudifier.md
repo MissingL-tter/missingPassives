@@ -5,7 +5,11 @@ disable-model-invocation: true
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
-Compress `.claude/` instruction files for an LLM reader. Audience is Claude, never a human:
+Compress `.claude/` instruction files for an LLM reader. The user's global
+`E:\env\claude\CLAUDE.md` is also a valid scope, but ONLY when explicitly passed as the
+scope for the run - never read or touch it otherwise. For that file (outside any git repo):
+no git commands at all. No other outside-repo scope is valid.
+Audience is Claude, never a human:
 no politeness, motivation, prose flow, decorative headers. Density is the goal; meaning is
 the constraint.
 

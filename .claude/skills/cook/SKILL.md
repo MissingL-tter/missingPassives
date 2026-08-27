@@ -32,8 +32,7 @@ Argument = a file in this skill's `recipes/`, without extension: `/cook cocnova`
 Once the recipe resolves, read all of these before anything else, every build, no exceptions:
 
 1. `recipes/<argument>.txt` - the request
-2. `preferences.md` - standing preferences binding every build; a recipe overrides one only
-   by saying so explicitly, your judgement never does
+2. `preferences.md` - standing preferences binding every build
 3. `data/gems.md`, `data/uniques.md`, `data/ascendancies.md`, `data/bases.md`,
    `data/jewels.md` - the rules, and the schemas + canonical queries for their `.db`
    twins. Check ingredients against the dbs BEFORE designing around them.

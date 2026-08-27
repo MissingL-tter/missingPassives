@@ -1,75 +1,60 @@
 # Module inventory & port tracker
 
-Every unit of Path of Building, as it exists complete in `.archive/` (this
-branch's frozen Lua application). Modules are independently claimable; anything
-with its dependencies met can be picked up at any time.
+Every unit of Path of Building as it exists complete in `.archive/` (this
+branch's frozen Lua application). Modules are independently claimable once
+their dependencies are met.
 
-**Two axes, tracked separately.** Full parity means both are `[x]`:
+Two axes, tracked separately; full parity = both `[x]`:
 
-- **code** — is the module *written*? Every branch of the reference exists in
-  Go. **The reference is the scope, not the corpus**: if it is in `.archive`
-  it belongs here, including its bugs (reproduced faithfully and tagged
-  `#EVAL`). `[x]` means nothing is left behind a "not ported" guard.
-- **archive** — does it *behave* like `.archive`? A differential test that
-  **fails on any disagreement** and passes at 100% over everything the test
-  corpus reaches — the modparser standard (13,173/13,173 corpus lines,
-  8,800/8,800 table entries). `[x]` means the verified surface is the whole
-  module; `[~]` means verified wherever exercised, with the covered fraction
-  stated in the row.
+- **code** — the module is *written*: every branch of the reference exists in
+  Go. The reference is the scope, not the corpus: if it is in `.archive` it
+  belongs here, including its bugs (reproduced faithfully, tagged `#EVAL`).
+  `[x]` = nothing left behind a "not ported" guard.
+- **archive** — it *behaves* like `.archive`: a differential test that fails
+  on any disagreement and passes at 100% over everything the test corpus
+  reaches — the modparser standard (13,173/13,173 corpus lines, 8,800/8,800
+  table entries). `[x]` = the verified surface is the whole module; `[~]` =
+  verified wherever exercised, covered fraction stated in the row.
 
 `[ ]` not started · `[~]` partial · `[x]` complete.
 
-Two rules that follow from the split:
+- Coverage is a property of the test corpus, not of the port: written but
+  corpus-unexercised = `code [x] / archive [~]` — the normal state, not a
+  defect, and not a reason to leave a branch unwritten.
+- Panics are not all equal: one mirroring a reference error ("the Lua errors
+  here too") is parity and counts as written; one standing in for unported
+  behaviour is a code gap and must be listed in the row.
+- Reference branches *unreachable in the reference itself* (no caller, a dead
+  `or` arm) count as written when the row says so.
 
-- **Coverage is a property of the test corpus, not of the port.** A branch
-  that is written but no corpus build exercises is `code [x] / archive [~]`.
-  That is the normal state, not a defect — and it is not a reason to leave
-  the branch unwritten.
-- **Panics are not all equal.** A panic that mirrors an error in the
-  reference ("the Lua errors here too") is parity and counts as written. A
-  panic standing in for behaviour nobody has ported yet is a code gap and
-  must be listed in the row.
-
-Reference branches that are *unreachable in the reference itself* (no caller,
-a dead `or` arm) count as written when the row says so — they cannot affect
-behaviour either way.
-
-**Closing a gap moves both axes at once.** The working method for a guarded
-branch is not "port it blind and hope a build turns up later":
+Closing a guarded branch moves both axes at once — never "port it blind and
+hope a build turns up later" (this method grew the corpus 9 → 12 builds,
+cheap per gap):
 
 1. Get an env that reaches it — `mb search` for a real ladder character with
    the mod/skill, or hand-author a throwaway build in `.archive/src/Builds/`
-   with just enough on it to trip the guard. It does not need to be a good
-   build, only a reaching one.
+   with just enough on it to trip the guard.
 2. Dump it (`tools/dump_calc.lua <key> <xml>`), add it to the variant map.
-3. Write the branch, delete the guard, and confirm byte-identical.
-
-That is how the corpus grew from 9 builds to 12; it is cheap per gap and it
-means `code [x]` and `archive [x]` land together instead of drifting apart.
+3. Write the branch, delete the guard, confirm byte-identical.
 
 A module without a runnable Lua archive dump (pure view code) states in its
 row what "verified" meant. Keep the reference files/lines columns untouched —
 they describe the reference, not the port.
 
-**`archive [x]` has a precision floor, and it is not yet reviewed.** Both
-sides serialise compared numbers at `%.14g`, so the differential cannot see a
-disagreement below the 14th significant digit. That is not a rounding
-nicety: such a difference is invisible until some later comparison bound
-flips on it, and then it appears as a whole-percent output error. One already
-did — a 15th-digit difference in a cached source rate ran the trigger
-simulation 1001 times instead of 1000 (`calc-core-plan.md`, harness bug 2) —
-and it was only caught because the amplified result diverged, not because the
-input comparison failed.
-
-So every `archive [x]` below currently means **"agrees to 14 significant
-digits at each checkpoint"**, not "is the same double". Nothing about a green
-run today rules out sub-ulp drift that a future branch amplifies. Three
-things are outstanding, and they are a POST-PARITY REVIEW item — do them once
-the modules are written, not per-gap:
+**`archive [x]` has a precision floor, not yet reviewed.** Both sides
+serialise compared numbers at `%.14g`, so the differential cannot see a
+disagreement below the 14th significant digit. Such a difference is invisible
+until some later comparison bound flips on it, then appears as a whole-percent
+output error — one already did: a 15th-digit difference in a cached source
+rate ran the trigger simulation 1001 times instead of 1000
+(`calc-core-plan.md`, harness bug 2), caught only because the amplified
+result diverged. So every `archive [x]` below means **"agrees to 14
+significant digits at each checkpoint"**, not "is the same double"; a green
+run does not rule out sub-ulp drift a future branch amplifies. Outstanding —
+a POST-PARITY REVIEW item, done once the modules are written, not per-gap:
 
 1. Re-run the whole corpus with the compared canons at `%.17g` on BOTH sides
-   and see what survives. This is the actual review; everything else here is
-   a symptom of not having done it.
+   and see what survives — the actual review.
 2. ~~Five dumps still carried `%.14g` fixtures~~ — closed: their XML lives
    in `.archive/src/Builds/`, `test/corpus/manifest.tsv` maps every dump
    key to its build, and all 38 are re-dumped with exact fixtures (the
@@ -79,7 +64,7 @@ the modules are written, not per-gap:
    which removes the input channel the trigger-sim bug came through.
 3. The sweep for Go's arbitrary-precision constant folding (`1 / 0.033` as a
    constant is one ulp off the reference's runtime division) was a regex over
-   `data/` and `calc/` that checked seven candidates. It is not a proof: a
+   `data/` and `calc/` that checked seven candidates — not a proof: a
    constant expression with non-representable operands can hide in any
    `const` block or literal table entry.
 
@@ -94,8 +79,8 @@ All paths relative to `.archive/src/`. Line counts measured 2026-08-19.
 
 **Deleting `.archive/` is gated on more than the rows below.** Two known
 dependencies on the Lua tree survive a fully-ported checklist, both in the
-data pipeline rather than the runtime, and both need a home in the repo
-proper before the archive can go:
+data pipeline rather than the runtime; both need a home in the repo proper
+first:
 
 - `cmd/pobexport -tpl` defaults to `.archive/src` for the hand-maintained
   `Export/Uniques` and `Export/Skills` templates, so regenerating game data
