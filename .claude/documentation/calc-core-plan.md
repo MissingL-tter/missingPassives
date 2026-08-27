@@ -21,6 +21,12 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
   AffectedByAuraMod (nil-global in the reference).
 - Unwritten: buildOutput's display half (FullDPS roll-up, cost warnings,
   conditions/multipliers discovery), CalcFormat.lua, CALCS mode.
+- Native bridge (2026-08-27): the calc differential feeds calc NATIVELY built
+  spec + item pool (test/calc_native_test.go — tree.Spec/item projections,
+  mods deep-copied at the seam because calc stamps sources in place and the
+  test process shares one cached tree; MP_FIXTURE=1 reverts to pure fixture
+  replay). Slots, skills tab, config remain fixture-fed until their modules.
+  Negative control: dropping one native node mod fails 1,104 comparisons.
 
 ## Setup stage (initEnv)
 
