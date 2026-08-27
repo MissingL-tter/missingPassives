@@ -29,6 +29,12 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
   byte-stable across processes — ALWAYS verify a new or re-dump twice in separate
   processes and cmp; re-running the Go test cannot see a dump that is
   stable-but-wrong.
+- Corpus XMLs live ONLY in `test/corpus/` (manifest.tsv paths all point there,
+  2026-08-27). `.archive/src/Builds/` is the user's LIVE PoB builds directory —
+  it mutates while they play, invisibly to git (untracked). Never point the
+  manifest at it and never dump a fixture from it; freeze a copy into corpus
+  first (cost of learning this: cocuser silently drifted 126→130 alloc nodes
+  mid-session and its differential went red with no code change).
 - `calc/input.go`: BuildInput fixture boundary; `test/calc_test.go` TestCalcFixtureEcho
   decodes + re-canons fixtures byte-identical, with corruption negatives.
 - `calc/tools.go`: CalcTools.lua. `calc/setup.go`: initModDB + initEnv through the
