@@ -896,6 +896,13 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			MirageNodeOrders:       decodeAllocOrders(mirageNodeOrders),
 		}
 		in := decodeCalcFixture(m)
+		// The native bridge: spec and item pool come from the natively
+		// parsed build (MP_FIXTURE=1 reverts to the pure fixture replay
+		// while diagnosing whether a divergence is native- or calc-side).
+		if os.Getenv("MP_FIXTURE") == "" {
+			buildKey := strings.TrimSuffix(strings.TrimPrefix(file, "calc_"), ".jsonl")
+			applyNativeBuild(t, buildKey, in)
+		}
 		// GlobalCache is computed, not fed: calcs.buildOutput runs a whole
 		// perform per active skill, and the reference's own snapshot is the
 		// state that leaves behind. The staged replay below then overwrites
