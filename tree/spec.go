@@ -3,11 +3,10 @@
 // metatables; here explicit copies reset by replaceNode), and
 // BuildAllDependsAndPaths reproduces the dependency/pruning analysis, the
 // radius-jewel rules (intuitive-leap-like, Impossible Escape), mastery
-// effect application and the path/distance rebuilds.
-//
-// Guarded out until their stages: cluster jewel subgraphs
-// (BuildClusterJewelGraphs), timeless jewel conquering (needs the LUT
-// data), and tattoo overrides.
+// effect application, tattoo overrides, timeless conquering
+// (timelessspec.go) and the path/distance rebuilds. Cluster jewel
+// subgraphs live in cluster.go. Abyss-conquering jewels (their own LUT
+// format) stay guarded (guardAbyss).
 package tree
 
 import (
@@ -46,10 +45,30 @@ type SpecNode struct {
 	ReminderText      []string
 	AllMasteryOptions bool
 
+	// TimelessAdditions records the might/legacy-of-the-vaal additions
+	// merge (Glorious Vanity): the raw inserted addition-id sequence and
+	// how many mods each distinct addition prepended, in processing order.
+	// The merge runs in first-seen order while the reference's pairs()
+	// order is LuaJIT hash-slot order; the differential uses this record
+	// to permute the mod list into the reference's order for comparison.
+	TimelessAdditions *TimelessAdditionsRecord
+
 	// sdIdentity tracks which source object the current sd came from, for
 	// replaceNode's identity short-circuit (the reference compares table
 	// identity).
 	sdIdentity any
+}
+
+// TimelessAdditionsRecord — see SpecNode.TimelessAdditions.
+type TimelessAdditionsRecord struct {
+	Inserted []int
+	Blocks   []TimelessAdditionBlock
+}
+
+// TimelessAdditionBlock is one distinct addition's contribution.
+type TimelessAdditionBlock struct {
+	ID       int
+	ModCount int
 }
 
 func (n *SpecNode) ID() int64              { return n.T.ID }
@@ -173,6 +192,7 @@ func (n *SpecNode) resetToSource(src *Node) {
 	n.IsTattoo = src.IsTattooFlag
 	n.OverrideType = src.OverrideTypeStr
 	n.ReminderText = nil
+	n.TimelessAdditions = nil
 	n.sdIdentity = src
 }
 

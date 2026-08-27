@@ -8,13 +8,35 @@ import (
 	"strconv"
 )
 
-// timeless jewel guard: a socketed, allocated, limit-enabled jewel with
-// conqueredBy data would take the conquering branches — the LUT stage.
-func (s *Spec) guardTimeless(socketID int64, itemID int) {
-	it := s.jewel(itemID)
-	if it != nil && jd(it, "conqueredBy") != nil && s.AllocNodes[socketID] != nil && !jdTrue(it, "limitDisabled") {
-		panic("tree: timeless jewel conquering unported (item " + strconv.Itoa(itemID) + ")")
+// collectAbyssConquests ports the abyss pre-pass: read each socketed
+// abyss-conquering jewel's affected nodes before the nodes are reset
+// (Zorath needs the currently allocated path from its socket).
+func (s *Spec) collectAbyssConquests(jewelIDs []int64) map[int64]map[string]any {
+	conquests := map[int64]map[string]any{}
+	for _, socketID := range jewelIDs {
+		it := s.jewel(s.Jewels[socketID])
+		cq := jd(it, "conqueredBy")
+		if cq == nil || s.AllocNodes[socketID] == nil || jdTrue(it, "limitDisabled") {
+			continue
+		}
+		jewelType, ok := timelessJewelTypeByConqueror[conquerorType(cq)]
+		if !ok || jewelType < 7 {
+			continue
+		}
+		var path map[int64]bool
+		if jewelType == 11 {
+			path = s.getShortestPathToClassStart(socketID)
+		}
+		seed := conqueredSeed(cq)
+		for nodeID, modification := range ReadAbyssJewelLUT(int64(seed), socketID, jewelType, path) {
+			conquests[nodeID] = map[string]any{
+				"id":           seed,
+				"conqueror":    conquerorOf(cq),
+				"modification": modification,
+			}
+		}
 	}
+	return conquests
 }
 
 // BuildAllDependsAndPaths ports the same-named method.
@@ -22,9 +44,7 @@ func (s *Spec) BuildAllDependsAndPaths() {
 	var visited []*SpecNode
 
 	jewelIDs := sortedNodeIDs(s.Jewels)
-	for _, socketID := range jewelIDs {
-		s.guardTimeless(socketID, s.Jewels[socketID])
-	}
+	abyssConquests := s.collectAbyssConquests(jewelIDs)
 
 	// First pass: reset every node to its tree state and apply radius-jewel
 	// flags.
@@ -36,6 +56,9 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		node.ConqueredBy = nil
 		if treeNode := s.Tree.Nodes[id]; treeNode != nil {
 			s.replaceNode(node, treeNode)
+		}
+		if cq := abyssConquests[id]; cq != nil {
+			node.ConqueredBy = cq
 		}
 		if node.Type() != "ClassStart" && node.Type() != "Socket" && node.AscendancyName() == "" {
 			for _, socketID := range jewelIDs {
@@ -54,7 +77,12 @@ func (s *Spec) BuildAllDependsAndPaths() {
 							!(jdTrue(it, "intuitiveLeapKeystoneOnly") && node.Type() != "Keystone") {
 							node.IntuitiveLeapLikesAffecting = append(node.IntuitiveLeapLikesAffecting, s.Nodes[socketID])
 						}
-						// conqueredBy handled by the stage guard above.
+						if cq := jd(it, "conqueredBy"); cq != nil {
+							radiusJewelType, known := timelessJewelTypeByConqueror[conquerorType(cq)]
+							if !known || radiusJewelType < 7 {
+								node.ConqueredBy = cq
+							}
+						}
 					}
 				}
 				if jdTrue(it, "impossibleEscapeKeystone") {
@@ -74,13 +102,13 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		}
 	}
 
-	// Second pass: tattoo overrides (conquering is stage-guarded and
-	// cannot arm).
+	// Second pass: tattoo overrides, then timeless conquering.
 	for _, id := range nodeIDs {
 		node := s.Nodes[id]
 		if ov := s.HashOverrides[node.ID()]; ov != nil {
 			s.replaceNode(node, ov)
 		}
+		s.applyConquered(node)
 	}
 
 	// Third pass: mastery effects and the allocation counts.
@@ -511,7 +539,10 @@ func (s *Spec) nodesInIntuitiveLeapLikeRadius(node *SpecNode) []*SpecNode {
 // nodeInKeystoneRadius ports NodeInKeystoneRadius (lowercased names).
 func (s *Spec) nodeInKeystoneRadius(keystoneNames map[string]any, nodeID int64, radiusIndex int) bool {
 	for _, node := range s.Nodes {
-		if node.Type() == "Keystone" && node.Name != nil && truthyVal(keystoneNames[luaLower(*node.Name)]) {
+		// node.name through the metatable: a conquered keystone's shadow name
+		// is nil (legion nodes have only dn) and falls through to the tree's.
+		name := node.EffectiveName()
+		if node.Type() == "Keystone" && name != nil && truthyVal(keystoneNames[luaLower(*name)]) {
 			if node.T.NodesInRadius != nil && node.T.NodesInRadius[radiusIndex-1][nodeID] != nil {
 				return true
 			}

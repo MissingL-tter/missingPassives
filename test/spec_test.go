@@ -1,11 +1,11 @@
 package test
 
-// Stage-2 spec differential: build each corpus spec natively (XML nodes +
-// mastery selections + socketed jewels, over the natively parsed items)
-// and byte-compare the allocated-node projections, the mastery/notable/
+// Spec differential: build each corpus spec natively (XML nodes + mastery
+// selections + socketed jewels, over the natively parsed items) and
+// byte-compare the allocated-node projections, the mastery/notable/
 // keystone counts and the radius-jewel node data against the calc
-// fixtures. Builds needing the unported stages (cluster subgraphs,
-// timeless conquering, tattoo overrides) are skipped and counted.
+// fixtures. Cluster subgraphs, tattoo overrides, timeless conquering and
+// abyss conquering are all live; every corpus build is compared.
 
 import (
 	"encoding/json"
@@ -78,7 +78,7 @@ func specNodeFixtureOf(n *tree.SpecNode) *specNodeFixture {
 		Name:                 n.EffectiveName(),
 		Dn:                   strPtr(n.Dn),
 		DistanceToClassStart: n.DistanceToClassStart,
-		ModList:              n.Stats.ModList,
+		ModList:              referenceOrderModList(n),
 		KeystoneMod:          n.KeystoneMod,
 	}
 	if n.IsTattoo {
@@ -98,7 +98,39 @@ type refNodeProjection struct {
 	in *calc.NodeInput
 }
 
-func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) (*tree.Spec, bool) {
+// referenceOrderModList permutes a might/legacy-of-the-vaal node's mod list
+// into the reference's pairs() order. Production merges the additions in
+// first-seen order and records the blocks; the reference iterates the
+// additions table in LuaJIT hash-slot order (luaPairsIntKeys). Each
+// addition PREPENDS its mods, so the list is the blocks reversed followed
+// by the base node's mods.
+func referenceOrderModList(n *tree.SpecNode) []*modparser.Mod {
+	ta := n.TimelessAdditions
+	if ta == nil || len(ta.Blocks) == 0 {
+		return n.Stats.ModList
+	}
+	list := n.Stats.ModList
+	// Decompose: list = [block_k]...[block_1] ++ base (processing order 1..k).
+	total := 0
+	for _, b := range ta.Blocks {
+		total += b.ModCount
+	}
+	blocks := map[int][]*modparser.Mod{}
+	off := total
+	for _, b := range ta.Blocks {
+		off -= b.ModCount
+		blocks[b.ID] = list[off : off+b.ModCount]
+	}
+	base := list[total:]
+	refOrder := luaPairsIntKeys(ta.Inserted)
+	out := make([]*modparser.Mod, 0, len(list))
+	for i := len(refOrder) - 1; i >= 0; i-- {
+		out = append(out, blocks[refOrder[i]]...)
+	}
+	return append(out, base...)
+}
+
+func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) *tree.Spec {
 	t.Helper()
 	blob, err := os.ReadFile(xmlPath)
 	if err != nil {
@@ -151,19 +183,11 @@ func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) (*tr
 	for _, socket := range x.Sockets.Sockets {
 		saved.Sockets[socket.NodeID] = socket.ItemID
 	}
-	// Stage eligibility: timeless jewels wait on the algorithm stage.
-	for _, itemID := range saved.Sockets {
-		if it := items[itemID]; it != nil {
-			if it.JewelData != nil && it.JewelData["conqueredBy"] != nil {
-				return nil, false
-			}
-		}
-	}
 	tr := loadTree329(t)
 	spec := tree.NewSpec(tr, items)
 	spec.LoadSaved(saved)
 	spec.PostLoad()
-	return spec, true
+	return spec
 }
 
 // treeNodeFixtureOf projects a bare tree node the way nodeFixture does
@@ -188,7 +212,7 @@ func TestSpecAgainstReference(t *testing.T) {
 	}
 	sort.Strings(dumpPaths)
 	only := os.Getenv("MP_ONLY_SPEC")
-	comparedBuilds, skipped, nodesCompared := 0, 0, 0
+	comparedBuilds, nodesCompared := 0, 0
 	for _, path := range dumpPaths {
 		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
 		if only != "" && buildKey != only {
@@ -217,11 +241,7 @@ func TestSpecAgainstReference(t *testing.T) {
 		}
 		ref := decodeCalcFixture(m)
 		items := loadCorpusItems(t, xmlPath)
-		spec, ok := loadCorpusSpec(t, xmlPath, items)
-		if !ok {
-			skipped++
-			continue
-		}
+		spec := loadCorpusSpec(t, xmlPath, items)
 		// Allocated nodes.
 		var refIDs []int
 		for id := range ref.Spec.AllocNodes {
@@ -282,11 +302,13 @@ func TestSpecAgainstReference(t *testing.T) {
 			if it == nil || it.JewelRadiusIndex == nil {
 				continue
 			}
-			socketNode := spec.Tree.Nodes[socketID]
-			if socketNode == nil || socketNode.NodesInRadius == nil {
+			// The reference reads nodesInRadius off the spec's socket node —
+			// nil when a cluster subgraph replaced it.
+			specSocket := spec.Nodes[socketID]
+			if specSocket == nil || specSocket.T.NodesInRadius == nil {
 				continue
 			}
-			for id := range socketNode.NodesInRadius[*it.JewelRadiusIndex-1] {
+			for id := range specSocket.T.NodesInRadius[*it.JewelRadiusIndex-1] {
 				if spec.AllocNodes[id] == nil && spec.Nodes[id] != nil {
 					gotRadius[strconv.FormatInt(id, 10)] = specNodeFixtureOf(spec.Nodes[id])
 				}
@@ -356,8 +378,7 @@ func TestSpecAgainstReference(t *testing.T) {
 		comparedBuilds++
 	}
 	if only == "" && comparedBuilds < 5 {
-		t.Fatalf("expected a healthy eligible set, compared %d (skipped %d)", comparedBuilds, skipped)
+		t.Fatalf("expected a healthy eligible set, compared %d", comparedBuilds)
 	}
-	t.Logf("spec differential: %d nodes byte-identical across %d builds (%d deferred to later stages)",
-		nodesCompared, comparedBuilds, skipped)
+	t.Logf("spec differential: %d nodes byte-identical across %d builds", nodesCompared, comparedBuilds)
 }

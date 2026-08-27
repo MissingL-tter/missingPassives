@@ -10,33 +10,47 @@ import (
 	"github.com/MissingL-tter/missingPassives/data"
 )
 
+// LegionStatDesc is one entry of a legion node's/addition's stats table:
+// the roll range and format the timeless substitution uses.
+type LegionStatDesc struct {
+	ID    string  `json:"id"`
+	Min   float64 `json:"min"`
+	Max   float64 `json:"max"`
+	Fmt   string  `json:"fmt"`
+	Index int     `json:"index"` // 1-based position in the LUT roll list
+}
+
 // LegionAddition is one legion.additions entry (a stat addition a timeless
 // jewel can roll onto a node).
 type LegionAddition struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"dn"`
-	Sd          []string         `json:"sd"`
-	StatDescs   []map[string]any `json:"stats"`
-	SortedStats []string         `json:"sortedStats"`
+	ID          string            `json:"id"`
+	Name        string            `json:"dn"`
+	Sd          []string          `json:"sd"`
+	StatDescs   []*LegionStatDesc `json:"stats"`
+	SortedStats []string          `json:"sortedStats"`
 }
 
 type legionNodeDoc struct {
-	ID          string           `json:"id"`
-	Icon        string           `json:"icon"`
-	Ks          bool             `json:"ks"`
-	Not         bool             `json:"not"`
-	M           bool             `json:"m"`
-	Name        string           `json:"dn"`
-	OrbitIndex  int64            `json:"oidx"`
-	Sd          []string         `json:"sd"`
-	StatDescs   []map[string]any `json:"stats"`
-	SortedStats []string         `json:"sortedStats"`
+	ID          string            `json:"id"`
+	Icon        string            `json:"icon"`
+	Ks          bool              `json:"ks"`
+	Not         bool              `json:"not"`
+	M           bool              `json:"m"`
+	Name        string            `json:"dn"`
+	OrbitIndex  int64             `json:"oidx"`
+	Sd          []string          `json:"sd"`
+	StatDescs   []*LegionStatDesc `json:"stats"`
+	SortedStats []string          `json:"sortedStats"`
 }
 
-// Legion holds the loaded pool.
+// Legion holds the loaded pool. The ordered slices preserve the file's
+// array order — the reference indexes legion.nodes/additions numerically
+// (legionNodes[77], legionAdditions[globalId + 1]).
 type Legion struct {
-	Nodes     map[string]*Node
-	Additions map[string]*LegionAddition
+	Nodes            map[string]*Node
+	Additions        map[string]*LegionAddition
+	NodesOrdered     []*Node
+	AdditionsOrdered []*LegionAddition
 }
 
 var (
@@ -67,6 +81,7 @@ func (t *Tree) loadLegion() {
 			}
 		}
 		t.Legion.Additions[addition.ID] = addition
+		t.Legion.AdditionsOrdered = append(t.Legion.AdditionsOrdered, addition)
 	}
 
 	for _, nd := range doc.Nodes {
@@ -80,6 +95,8 @@ func (t *Tree) loadLegion() {
 			Mastery:    nd.M,
 		}
 		node.Sd = append([]string{}, nd.Sd...)
+		node.SortedStats = nd.SortedStats
+		node.StatDescs = nd.StatDescs
 		switch {
 		case nd.M:
 			node.Type = "Mastery"
@@ -94,7 +111,8 @@ func (t *Tree) loadLegion() {
 		default:
 			node.Type = "Normal"
 		}
-		processStats(&node.Stats, node.IDStr, 0)
+		t.processNodeStats(node)
 		t.Legion.Nodes[nd.ID] = node
+		t.Legion.NodesOrdered = append(t.Legion.NodesOrdered, node)
 	}
 }

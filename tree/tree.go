@@ -72,6 +72,10 @@ type Node struct {
 
 	MasteryEffects       []*MasteryEffectRef
 	PassivePointsGranted float64
+	// Legion pool metadata (nil on real tree nodes): the roll ranges the
+	// timeless substitution reads.
+	SortedStats []string
+	StatDescs   []*LegionStatDesc
 	// Tattoo override pool fields (false/empty on real tree nodes).
 	IsTattooFlag           bool
 	OverrideTypeStr        string
