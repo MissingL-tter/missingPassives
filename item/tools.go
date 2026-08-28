@@ -126,8 +126,10 @@ func trimRawLines(raw string) []string {
 	return out
 }
 
-// sanitiseText ports Common.lua sanitiseText: strip <...> spans and map the
-// unicode hyphen family to "-", but only when a byte 128-255 or '<' occurs.
+// sanitiseText ports Common.lua sanitiseText: strip <...> spans, fold the
+// unicode hyphen family to "-" and a-/o-umlaut to ascii (UTF-8 and cp1252
+// forms), and replace any remaining high byte with "?" — but only when a
+// byte 128-255 or '<' occurs.
 func sanitiseText(text string) string {
 	if !strings.ContainsFunc(text, func(r rune) bool { return r == '<' || r > 127 }) {
 		// The reference returns nil here (the and-chain falls through);
@@ -135,10 +137,23 @@ func sanitiseText(text string) string {
 		return text
 	}
 	text = stripBalanced(text, '<', '>')
-	for _, hyphen := range []string{"‐", "‑", "‒", "–", "—", "―"} {
-		text = strings.ReplaceAll(text, hyphen, "-")
+	for _, rp := range [...][2]string{
+		{"‐", "-"}, {"‑", "-"}, {"‒", "-"}, {"–", "-"},
+		{"—", "-"}, {"―", "-"}, {"−", "-"},
+		{"ä", "a"}, {"ö", "o"},
+		// single-byte: Windows-1252 and similar
+		{"\x96", "-"}, {"\x97", "-"}, {"\xe4", "a"}, {"\xf6", "o"},
+	} {
+		text = strings.ReplaceAll(text, rp[0], rp[1])
 	}
-	return text
+	// unsupported
+	b := []byte(text)
+	for i, c := range b {
+		if c >= 128 {
+			b[i] = '?'
+		}
+	}
+	return string(b)
 }
 
 // stripBalanced is gsub("%b<>", ""): remove balanced open..close spans.

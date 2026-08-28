@@ -219,7 +219,7 @@ func itemInputOf(it *item.Item) *calc.ItemInput {
 
 // TestItemParseAgainstReference is the item-model differential.
 func TestItemParseAgainstReference(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	manifest := readManifest(t)
 	only := os.Getenv("MP_ONLY_ITEM")
 	compared, builds := 0, 0

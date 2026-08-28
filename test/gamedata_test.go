@@ -73,7 +73,7 @@ var _ = func() bool {
 	return true
 }()
 
-// The game-data differential test: builds the gamedata documents over the
+// The game-data differential test: builds the schema documents over the
 // extracted GGPK, assembles the runtime data set with data.Load, and
 // compares each ported subtree canonically against the archive dump
 // (tools/dump_gamedata.lua run over the loaded Lua application). Fails on
@@ -82,8 +82,11 @@ func TestGameDataAgainstReference(t *testing.T) {
 	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
 	// The loaded data set is immutable after Load (calc runs keep their
 	// mutations per-env), so it can be compared regardless of what ran
-	// before this test.
-	loadGameData(t)
+	// before this test — except Uniques["generated"], which a tree load
+	// extends with the tree-dependent uniques; the archive dump captured
+	// the load-time (pre-tree) state.
+	loadData(t)
+	data.TrimTreeDependentUniques()
 
 	checks := map[string]func() any{
 		"monsterEvasionTable":             func() any { return data.MonsterEvasionTable },
@@ -204,7 +207,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"gemVaalGemIdForBaseGemId":       func() any { return data.GemVaalGemIdForBaseGemId },
 		"skills.statMapKeys": func() any {
 			out := map[string][]string{}
-			for id, keys := range readStatMapCopiesHelper(dumpPath) {
+			for id, keys := range readStatMapCopies(dumpPath) {
 				out[id] = keys
 			}
 			return out

@@ -7,7 +7,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -26,7 +26,7 @@ func numCell(v any) float64 {
 }
 
 // otConstants parses an .ot file's wanted blocks the way miscdata.lua does.
-func otConstants(x *Ctx, file string, alsoPathfinding bool) []gamedata.KV {
+func otConstants(x *Ctx, file string, alsoPathfinding bool) []schema.KV {
 	raw := x.GetFile(file)
 	if raw == "" {
 		return nil
@@ -34,7 +34,7 @@ func otConstants(x *Ctx, file string, alsoPathfinding bool) []gamedata.KV {
 	text := convertUTF16to8([]byte(raw), 0)
 	ws := strings.NewReplacer(" ", "", "\t", "", "\v", "", "\f", "")
 	inWantedBlock := false
-	var out []gamedata.KV
+	var out []schema.KV
 	for _, line := range reLine.FindAllString(text, -1) {
 		if strings.HasPrefix(line, "Stats") || (alsoPathfinding && strings.HasPrefix(line, "Pathfinding")) {
 			inWantedBlock = true
@@ -45,7 +45,7 @@ func otConstants(x *Ctx, file string, alsoPathfinding bool) []gamedata.KV {
 			eq := strings.Index(stripped, "=")
 			key, value := stripped[:eq], stripped[eq+1:]
 			if value != "" {
-				out = append(out, gamedata.KV{Key: key, Value: value})
+				out = append(out, schema.KV{Key: key, Value: value})
 			}
 		}
 	}
@@ -53,7 +53,7 @@ func otConstants(x *Ctx, file string, alsoPathfinding bool) []gamedata.KV {
 }
 
 func buildMiscdata(x *Ctx) (any, error) {
-	var d gamedata.MiscData
+	var d schema.MiscData
 	m := &d.Misc
 
 	x.Dat("DefaultMonsterStats").Rows(func(stats *Row) bool {
@@ -76,7 +76,7 @@ func buildMiscdata(x *Ctx) (any, error) {
 	}
 
 	x.Dat("GameConstants").Rows(func(row *Row) bool {
-		m.GameConstants = append(m.GameConstants, gamedata.IdValue{
+		m.GameConstants = append(m.GameConstants, schema.IdValue{
 			Id:    luaStr(row.Get("Id")),
 			Value: float64(row.Get("Value").(int64)) / float64(row.Get("Divisor").(int64)),
 		})
@@ -91,7 +91,7 @@ func buildMiscdata(x *Ctx) (any, error) {
 		st := vr.Get("SkillTotem").(int64)
 		if !totemKeys[st] {
 			totemKeys[st] = true
-			m.TotemLifeMult = append(m.TotemLifeMult, gamedata.IntMult{
+			m.TotemLifeMult = append(m.TotemLifeMult, schema.IntMult{
 				Id:   st,
 				Mult: float64(vr.Get("MonsterVariety").(*Row).Get("LifeMultiplier").(int64)) / 100,
 			})
@@ -105,7 +105,7 @@ func buildMiscdata(x *Ctx) (any, error) {
 			mod := mm.(*Row)
 			name := luaStr(row.Get("Name"))
 			if luaStr(mod.Get("Id")) == "MonsterNecromancerRaisable" && !cachedEntry[name] {
-				m.MonsterVarietyLifeMult = append(m.MonsterVarietyLifeMult, gamedata.NameMult{
+				m.MonsterVarietyLifeMult = append(m.MonsterVarietyLifeMult, schema.NameMult{
 					Name: name,
 					Mult: float64(row.Get("LifeMultiplier").(int64)) / 100,
 				})
@@ -117,7 +117,7 @@ func buildMiscdata(x *Ctx) (any, error) {
 	})
 
 	x.Dat("MonsterMapDifficulty").Rows(func(row *Row) bool {
-		m.MapLevelLifeMult = append(m.MapLevelLifeMult, gamedata.LevelMult{
+		m.MapLevelLifeMult = append(m.MapLevelLifeMult, schema.LevelMult{
 			Level: row.Get("AreaLevel").(int64),
 			Mult:  1 + float64(row.Get("LifePercentIncrease").(int64))/100,
 		})
@@ -125,10 +125,10 @@ func buildMiscdata(x *Ctx) (any, error) {
 	})
 	x.Dat("MonsterMapBossDifficulty").Rows(func(vr *Row) bool {
 		lvl := vr.Get("AreaLevel").(int64)
-		m.MapLevelBossLifeMult = append(m.MapLevelBossLifeMult, gamedata.LevelMult{
+		m.MapLevelBossLifeMult = append(m.MapLevelBossLifeMult, schema.LevelMult{
 			Level: lvl, Mult: 1 + float64(vr.Get("BossLifePercentIncrease").(int64))/100,
 		})
-		m.MapLevelBossAilmentMult = append(m.MapLevelBossAilmentMult, gamedata.LevelMult{
+		m.MapLevelBossAilmentMult = append(m.MapLevelBossAilmentMult, schema.LevelMult{
 			Level: lvl, Mult: (100 + float64(vr.Get("BossAilmentPercentDecrease").(int64))) / 100,
 		})
 		return true
@@ -138,7 +138,7 @@ func buildMiscdata(x *Ctx) (any, error) {
 		return true
 	})
 
-	d.CurrencyNames = gamedata.CurrencyNames{}
+	d.CurrencyNames = schema.CurrencyNames{}
 	nameClean := strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ")
 	x.Dat("CurrencyExchange").Rows(func(row *Row) bool {
 		base := row.Get("BaseItemType").(*Row)

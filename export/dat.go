@@ -230,6 +230,17 @@ func (r *Row) Get(key string) any {
 	return v
 }
 
+// GetAt returns the cell at 0-based column index ci, for columns Get cannot
+// reach by name (duplicate names resolve last-wins, matching the Lua colMap).
+func (r *Row) GetAt(ci int) any {
+	if v, done := r.cells[ci]; done {
+		return v
+	}
+	v := r.File.readCell(r.Index, ci)
+	r.cells[ci] = v
+	return v
+}
+
 // readCell decodes row i (1-based), column ci (0-based).
 func (d *DatFile) readCell(i, ci int) any {
 	spec := d.spec[ci]

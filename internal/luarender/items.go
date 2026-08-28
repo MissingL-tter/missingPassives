@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -41,7 +41,7 @@ func ints(vals []int64, sep string) string {
 	return strings.Join(parts, sep)
 }
 
-func renderEssence(es gamedata.Essences, _ Templates) (map[string]string, error) {
+func renderEssence(es schema.Essences, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
 	for _, e := range es {
@@ -62,7 +62,7 @@ func renderEssence(es gamedata.Essences, _ Templates) (map[string]string, error)
 	return map[string]string{"Data/Essence.lua": b.String()}, nil
 }
 
-func renderModScalability(sc gamedata.ModScalability, _ Templates) (map[string]string, error) {
+func renderModScalability(sc schema.ModScalability, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
 	lines := make([]string, 0, len(sc))
@@ -95,7 +95,7 @@ func renderModScalability(sc gamedata.ModScalability, _ Templates) (map[string]s
 	return map[string]string{"Data/ModScalability.lua": b.String()}, nil
 }
 
-func renderMasters(mc gamedata.MasterCrafts, _ Templates) (map[string]string, error) {
+func renderMasters(mc schema.MasterCrafts, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
 	for _, c := range mc {
@@ -119,7 +119,7 @@ func renderMasters(mc gamedata.MasterCrafts, _ Templates) (map[string]string, er
 	return map[string]string{"Data/ModMaster.lua": b.String()}, nil
 }
 
-func renderCrucible(cn gamedata.CrucibleNodes, _ Templates) (map[string]string, error) {
+func renderCrucible(cn schema.CrucibleNodes, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
 	for _, n := range cn {

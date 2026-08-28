@@ -1,5 +1,5 @@
 // Item-related runtime data: essences, pantheons, crucible, master crafts,
-// flavour text and enchantments, assembled from their gamedata documents the
+// flavour text and enchantments, assembled from their schema documents the
 // way Data.lua loads the generated files.
 
 package data
@@ -7,7 +7,7 @@ package data
 import (
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // Essence is one data.essences entry (keyed by base item id).
@@ -18,7 +18,7 @@ type Essence struct {
 	Mods map[string]string `lua:"mods"`
 }
 
-func loadEssences(src gamedata.Essences) map[string]Essence {
+func loadEssences(src schema.Essences) map[string]Essence {
 	out := map[string]Essence{}
 	for _, e := range src {
 		out[e.BaseId] = Essence{
@@ -47,7 +47,7 @@ type PantheonMod struct {
 	Value []float64 `lua:"value"`
 }
 
-func loadPantheons(src gamedata.Pantheons) map[string]Pantheon {
+func loadPantheons(src schema.Pantheons) map[string]Pantheon {
 	out := map[string]Pantheon{}
 	for _, p := range src {
 		pan := Pantheon{IsMajorGod: p.IsMajorGod, Souls: map[int]PantheonSoul{}}
@@ -84,7 +84,7 @@ type CrucibleNode struct {
 	ModTags             []string  `lua:"modTags"`
 }
 
-func loadCrucible(src gamedata.CrucibleNodes) map[string]CrucibleNode {
+func loadCrucible(src schema.CrucibleNodes) map[string]CrucibleNode {
 	out := map[string]CrucibleNode{}
 	for _, n := range src {
 		c := CrucibleNode{
@@ -124,7 +124,7 @@ type MasterCraft struct {
 	Types     map[string]bool `lua:"types"`
 }
 
-func loadMasterMods(src gamedata.MasterCrafts) []MasterCraft {
+func loadMasterMods(src schema.MasterCrafts) []MasterCraft {
 	out := make([]MasterCraft, 0, len(src))
 	for _, c := range src {
 		types := map[string]bool{}
@@ -152,7 +152,7 @@ type flavourText struct {
 	Text []string `lua:"text"`
 }
 
-func loadFlavourText(src gamedata.FlavourTexts) []flavourText {
+func loadFlavourText(src schema.FlavourTexts) []flavourText {
 	out := make([]flavourText, 0, len(src))
 	for _, ft := range src {
 		out = append(out, flavourText{Id: ft.Id, Name: ft.Name, Text: unescapeAll(ft.Text)})
@@ -162,7 +162,7 @@ func loadFlavourText(src gamedata.FlavourTexts) []flavourText {
 
 // loadEnchantments builds data.enchantments: the seven generated pools plus
 // the Flask alias and the per-weapon-type expansion Data.lua performs.
-func loadEnchantments(src gamedata.Enchants) map[string]map[string][]string {
+func loadEnchantments(src schema.Enchants) map[string]map[string][]string {
 	pool := func(m map[string][][]string) map[string][]string {
 		out := map[string][]string{}
 		for source, mods := range m {
@@ -196,7 +196,7 @@ func loadEnchantments(src gamedata.Enchants) map[string]map[string][]string {
 }
 
 // HelmetEnchants is data.enchantments["Helmet"]: skill -> source -> mods.
-func loadHelmetEnchants(src gamedata.Enchants) map[string]map[string][]string {
+func loadHelmetEnchants(src schema.Enchants) map[string]map[string][]string {
 	out := map[string]map[string][]string{}
 	for skill, bySource := range src.Helmet {
 		m := map[string][]string{}

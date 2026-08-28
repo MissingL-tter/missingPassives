@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -47,31 +47,31 @@ var statFileList = []string{
 
 var reParentInclude = regexp.MustCompile(`include "Metadata/StatDescriptions/(.+)\.txt"$`)
 
-func sdNum(s string) *gamedata.NumOrStr {
+func sdNum(s string) *schema.NumOrStr {
 	if n, err := strconv.ParseFloat(s, 64); err == nil {
-		return &gamedata.NumOrStr{Num: &n}
+		return &schema.NumOrStr{Num: &n}
 	}
-	return &gamedata.NumOrStr{Str: &s}
+	return &schema.NumOrStr{Str: &s}
 }
 
-func sdStr(s string) *gamedata.NumOrStr {
-	return &gamedata.NumOrStr{Str: &s}
+func sdStr(s string) *schema.NumOrStr {
+	return &schema.NumOrStr{Str: &s}
 }
 
 func buildStatdesc(x *Ctx) (any, error) {
-	docs := gamedata.StatDescs{}
+	docs := schema.StatDescs{}
 	for _, name := range statFileList {
 		docs[name] = parseStatFile(x, name)
 	}
 	return docs, nil
 }
 
-func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
-	f := &gamedata.StatDescFile{}
-	var descs []*gamedata.StatDescriptor
+func parseStatFile(x *Ctx, name string) *schema.StatDescFile {
+	f := &schema.StatDescFile{}
+	var descs []*schema.StatDescriptor
 	// curDescriptor starts detached, as in the Lua: lines before the first
 	// description mutate a table never added to the file.
-	curDescriptor := &gamedata.StatDescriptor{Lang: []gamedata.DescLine{}}
+	curDescriptor := &schema.StatDescriptor{Lang: []schema.DescLine{}}
 	inEnglish := false
 	prepend := ""
 
@@ -83,7 +83,7 @@ func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
 			return
 		}
 		if m := reNoDesc.FindStringSubmatch(line); m != nil {
-			descs = append(descs, &gamedata.StatDescriptor{
+			descs = append(descs, &schema.StatDescriptor{
 				NoDesc: true,
 				Stats:  []string{m[1]},
 			})
@@ -91,7 +91,7 @@ func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
 		}
 		if strings.Contains(line, "handed_description") ||
 			(strings.Contains(line, "description") && !strings.Contains(line, "_description")) {
-			curDescriptor = &gamedata.StatDescriptor{Lang: []gamedata.DescLine{}}
+			curDescriptor = &schema.StatDescriptor{Lang: []schema.DescLine{}}
 			inEnglish = true
 			if m := reDescName.FindStringSubmatch(line); m != nil {
 				curDescriptor.Name = m[1]
@@ -122,19 +122,19 @@ func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
 			return
 		}
 		statLimits, quality, text, special := m[1], m[2], m[3], m[4]
-		desc := gamedata.DescLine{Text: escapeGGGString(text), Limits: []gamedata.DescLimit{}}
+		desc := schema.DescLine{Text: escapeGGGString(text), Limits: []schema.DescLimit{}}
 		for _, statLimit := range reLimitTok.FindAllString(statLimits, -1) {
-			var limit gamedata.DescLimit
+			var limit schema.DescLimit
 			if statLimit == "#" {
-				limit = gamedata.DescLimit{Min: sdStr("#"), Max: sdStr("#")}
+				limit = schema.DescLimit{Min: sdStr("#"), Max: sdStr("#")}
 			} else if reLimitNum.MatchString(statLimit) {
 				n, _ := strconv.ParseFloat(statLimit, 64)
-				limit = gamedata.DescLimit{Min: &gamedata.NumOrStr{Num: &n}, Max: &gamedata.NumOrStr{Num: &n}}
+				limit = schema.DescLimit{Min: &schema.NumOrStr{Num: &n}, Max: &schema.NumOrStr{Num: &n}}
 			} else if neg := reLimitNeg.FindStringSubmatch(statLimit); neg != nil {
 				n, _ := strconv.ParseFloat(neg[1], 64)
-				limit = gamedata.DescLimit{Min: sdStr("!"), Max: &gamedata.NumOrStr{Num: &n}}
+				limit = schema.DescLimit{Min: sdStr("!"), Max: &schema.NumOrStr{Num: &n}}
 			} else if r := reLimitRange.FindStringSubmatch(statLimit); r != nil {
-				limit = gamedata.DescLimit{Min: sdNum(r[1]), Max: sdNum(r[2])}
+				limit = schema.DescLimit{Min: sdNum(r[1]), Max: sdNum(r[2])}
 			}
 			desc.Limits = append(desc.Limits, limit)
 		}
@@ -143,10 +143,10 @@ func parseStatFile(x *Ctx, name string) *gamedata.StatDescFile {
 			token := tokens[ti]
 			if token == "canonical_line" {
 				v := true
-				desc.Specials = append(desc.Specials, gamedata.DescSpecial{K: "canonical_line", VBool: &v})
+				desc.Specials = append(desc.Specials, schema.DescSpecial{K: "canonical_line", VBool: &v})
 				ti++
 			} else if ti+1 < len(tokens) {
-				sp := gamedata.DescSpecial{K: token}
+				sp := schema.DescSpecial{K: token}
 				if ns := sdNum(tokens[ti+1]); ns.Num != nil {
 					sp.VNum = ns.Num
 				} else {

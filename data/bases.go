@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // ItemBase is one data.itemBases entry.
@@ -159,7 +159,7 @@ func intPtrToFloat(v *int64) *float64 {
 	return &f
 }
 
-func loadItemBase(b gamedata.ItemBase) *ItemBase {
+func loadItemBase(b schema.ItemBase) *ItemBase {
 	e := &ItemBase{
 		Type:        b.Type,
 		SubType:     b.SubType,
@@ -259,7 +259,7 @@ type ItemBaseEntry struct {
 	Base  *ItemBase `lua:"base"`
 }
 
-func loadBases(src gamedata.BasesData) {
+func loadBases(src schema.BasesData) {
 	ItemBases = map[string]*ItemBase{}
 	for _, typ := range baseItemTypes {
 		for _, event := range src.Types[typ] {

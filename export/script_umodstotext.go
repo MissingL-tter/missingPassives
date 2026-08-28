@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -23,8 +23,8 @@ func init() {
 
 // splitUniqueFile parses the transform's output lines into sections of item
 // blobs; renderUniques inverts it exactly.
-func splitUniqueFile(lines []string) gamedata.UniqueFile {
-	var f gamedata.UniqueFile
+func splitUniqueFile(lines []string) schema.UniqueFile {
+	var f schema.UniqueFile
 	var pending []string
 	var cur []string
 	inItem := false
@@ -32,7 +32,7 @@ func splitUniqueFile(lines []string) gamedata.UniqueFile {
 	for _, line := range lines {
 		switch {
 		case !inItem && line == "[[":
-			f.Sections = append(f.Sections, gamedata.UniqueSection{Pre: pending})
+			f.Sections = append(f.Sections, schema.UniqueSection{Pre: pending})
 			pending = nil
 			sec = len(f.Sections) - 1
 			cur = []string{}
@@ -94,7 +94,7 @@ func buildUModsToText(x *Ctx) (any, error) {
 	x.LoadStatFile("tincture_stat_descriptions.txt")
 	mods := x.Dat("Mods")
 
-	doc := gamedata.Uniques{}
+	doc := schema.Uniques{}
 	for _, name := range uniqueItemTypes {
 		raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", "Uniques", name+".lua"))
 		if err != nil {

@@ -102,7 +102,7 @@ func timelessLocalToGlobal(t *testing.T, jewelType int) func(int) int {
 }
 
 func TestTimelessAgainstBins(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	nodes, sizeNotable := timelessNodeIndex(t)
 
 	type jewelSpec struct {
@@ -191,7 +191,7 @@ func TestTimelessAgainstBins(t *testing.T) {
 					if spec.jt == 5 {
 						callSeed = seed * 20 // the caller passes the raw jewel seed
 					}
-					got := tree.ReadTimelessLUT(callSeed, n.id, spec.jt)
+					got := tree.TimelessPassive(callSeed, n.id, spec.jt)
 					var want []int
 					if spec.jt == 1 {
 						recLen := int(bin[n.index*seedSize+s])

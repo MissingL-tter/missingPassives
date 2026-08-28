@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // BossSkillData is one data.bossSkills entry.
@@ -66,7 +66,7 @@ func statSetValues(vals map[string]string) map[string]any {
 	return out
 }
 
-func loadBossSkills(src gamedata.BossData) (map[string]BossSkillData, []ValLabel) {
+func loadBossSkills(src schema.BossData) (map[string]BossSkillData, []ValLabel) {
 	skills := map[string]BossSkillData{}
 	for _, bs := range src.Skills {
 		e := BossSkillData{

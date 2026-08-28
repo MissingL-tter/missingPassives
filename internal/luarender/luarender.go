@@ -1,4 +1,4 @@
-// Package luarender renders gamedata documents back into the byte-exact
+// Package luarender renders schema documents back into the byte-exact
 // Data/*.lua files the reference Lua exporter produced. It exists only for
 // the differential test against the archive: the runtime never touches Lua,
 // and when the archive comparison stops being the contract this package is

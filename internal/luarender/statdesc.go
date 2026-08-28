@@ -1,4 +1,4 @@
-// Renders gamedata.StatDescs as Data/StatDescriptions/<name>.lua
+// Renders schema.StatDescs as Data/StatDescriptions/<name>.lua
 // (Scripts/statdesc.lua's outputs) by rebuilding the Lua table tree and
 // reproducing Common.lua's writeLuaTable/qFmt.
 
@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("statdesc", renderStatdesc) }
@@ -99,14 +99,14 @@ func writeLuaTable(b *B, t lt, indent int) {
 	b.W("}")
 }
 
-func numOrStrVal(v *gamedata.NumOrStr) any {
+func numOrStrVal(v *schema.NumOrStr) any {
 	if v.Num != nil {
 		return *v.Num
 	}
 	return *v.Str
 }
 
-func renderStatdesc(docs gamedata.StatDescs, _ Templates) (map[string]string, error) {
+func renderStatdesc(docs schema.StatDescs, _ Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for name, f := range docs {
 		root := lt{}

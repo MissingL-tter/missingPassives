@@ -1,4 +1,4 @@
-// Renders gamedata.BossData as Data/BossSkills.lua and Data/Bosses.lua
+// Renders schema.BossData as Data/BossSkills.lua and Data/Bosses.lua
 // (Scripts/bossData.lua's outputs).
 
 package luarender
@@ -6,12 +6,12 @@ package luarender
 import (
 	"sort"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("bossData", renderBossData) }
 
-func renderBossData(d gamedata.BossData, tpl Templates) (map[string]string, error) {
+func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error) {
 	nextSkill, nextList := 0, 0
 	writeStatSet := func(b *B, vals map[string]string) {
 		keys := make([]string, 0, len(vals))

@@ -8,8 +8,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/export"
-	"github.com/MissingL-tter/missingPassives/gamedata"
 	"github.com/MissingL-tter/missingPassives/internal/luarender"
 )
 
@@ -22,7 +23,7 @@ func (t tplFS) Read(rel string) (string, error) {
 	return string(b), err
 }
 
-// The export differential test: builds every script's gamedata document over
+// The export differential test: builds every script's schema document over
 // the extracted GGPK, round-trips it through JSON, renders it back to Lua
 // with internal/luarender, and byte-compares each rendered file against the
 // checked-in copy under .archive/src (which the archive Lua exporter produced
@@ -96,6 +97,21 @@ func TestExportAgainstReference(t *testing.T) {
 	if checked != 123 {
 		t.Errorf("expected 123 files, checked %d", checked)
 	}
+
+	// conquertables.json has no reference Lua file to render against — its
+	// contract is the committed artifact (whose content the historic
+	// differentials prove against the shipped LUT bins).
+	ctDoc, err := export.BuildConquerTables(ctx, data.NodeGraphIDs())
+	if err != nil {
+		t.Fatalf("conquerTables: %v", err)
+	}
+	wantCT, err := os.ReadFile(filepath.Join("..", "data", "raw", "conquertables.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(ctDoc, wantCT) {
+		t.Errorf("conquertables.json does not match BuildConquerTables over the GGPK (%d vs %d bytes)", len(ctDoc), len(wantCT))
+	}
 	if disagree > 0 {
 		t.Fatalf("%d disagreements with the archive", disagree)
 	}
@@ -108,19 +124,19 @@ func TestExportAgainstReference(t *testing.T) {
 		mutate func(t *testing.T, raw json.RawMessage) any
 	}{
 		{"costs", func(t *testing.T, raw json.RawMessage) any {
-			var d gamedata.Costs
+			var d schema.Costs
 			mustUnmarshal(t, raw, &d)
 			d[0].Resource += "X"
 			return d
 		}},
 		{"mods", func(t *testing.T, raw json.RawMessage) any {
-			var d gamedata.ModsData
+			var d schema.ModsData
 			mustUnmarshal(t, raw, &d)
 			d.Pools["ModExplicit"][0].Lines[0] += "!"
 			return d
 		}},
 		{"skills", func(t *testing.T, raw json.RawMessage) any {
-			var d gamedata.SkillsData
+			var d schema.SkillsData
 			mustUnmarshal(t, raw, &d)
 			f := d.Files["act_str"]
 			f.Skills[0].Name += "X"
@@ -128,7 +144,7 @@ func TestExportAgainstReference(t *testing.T) {
 			return d
 		}},
 		{"uModsToText", func(t *testing.T, raw json.RawMessage) any {
-			var d gamedata.Uniques
+			var d schema.Uniques
 			mustUnmarshal(t, raw, &d)
 			f := d["axe"]
 			f.Sections[0].Items[0][0] += "!"

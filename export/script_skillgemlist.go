@@ -10,7 +10,7 @@ package export
 import (
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -18,12 +18,12 @@ func init() {
 }
 
 func buildSkillGemList(x *Ctx) (any, error) {
-	var doc gamedata.SkillGemList
+	var doc schema.SkillGemList
 
 	types := []string{"Strength", "Dexterity", "Intelligence", "Other"}
 
 	for i := 1; i <= len(types); i++ {
-		var active, support []gamedata.SkillGemEntry
+		var active, support []schema.SkillGemEntry
 		x.Dat("SkillGems").Rows(func(skillGem *Row) bool {
 			for _, ge := range skillGem.Get("GemVariants").([]any) {
 				gemEffect := ge.(*Row)
@@ -47,7 +47,7 @@ func buildSkillGemList(x *Ctx) (any, error) {
 						!strings.Contains(gemName, "UNUSED") && !strings.Contains(gemName, "NOT CURRENTLY USED") &&
 						!strings.Contains(gemName, "WIP") && !strings.Contains(gemName, "Unnamed") &&
 						!strings.Contains(desc, "DNT") {
-						e := gamedata.SkillGemEntry{Name: gemName, Effects: []string{luaStr(gemEffect.Get("GrantedEffect").(*Row).Get("Id"))}}
+						e := schema.SkillGemEntry{Name: gemName, Effects: []string{luaStr(gemEffect.Get("GrantedEffect").(*Row).Get("Id"))}}
 						if ge2, ok := gemEffect.Get("GrantedEffect2").(*Row); ok {
 							e.Effects = append(e.Effects, luaStr(ge2.Get("Id")))
 						}
@@ -65,7 +65,7 @@ func buildSkillGemList(x *Ctx) (any, error) {
 						!strings.Contains(luaStr(skillGem.Get("BaseItemType").(*Row).Get("Name")), "DNT") &&
 						!strings.Contains(desc, "DNT") &&
 						!(skillGem.Get("IsVaalGem").(bool) && gemEffect.Get("Variant").(int64) != 5) {
-						e := gamedata.SkillGemEntry{Name: gemName, Effects: []string{luaStr(grantedEffect.Get("Id"))}}
+						e := schema.SkillGemEntry{Name: gemName, Effects: []string{luaStr(grantedEffect.Get("Id"))}}
 						if ge2, ok := gemEffect.Get("GrantedEffect2").(*Row); ok && !skillGem.Get("IsVaalGem").(bool) {
 							e.Effects = append(e.Effects, luaStr(ge2.Get("Id")))
 						}
@@ -75,7 +75,7 @@ func buildSkillGemList(x *Ctx) (any, error) {
 			}
 			return true
 		})
-		doc.Groups = append(doc.Groups, gamedata.SkillGemGroup{
+		doc.Groups = append(doc.Groups, schema.SkillGemGroup{
 			Type:    types[i-1],
 			Active:  active,
 			Support: support,

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 type clusterJewels struct {
@@ -38,7 +38,7 @@ type ClusterSkillData struct {
 	Enchant     []string `lua:"enchant"`
 }
 
-func loadClusterJewels(src gamedata.ClusterJewels) clusterJewels {
+func loadClusterJewels(src schema.ClusterJewels) clusterJewels {
 	out := clusterJewels{
 		Jewels:           map[string]ClusterJewelSize{},
 		NotableSortOrder: map[string]float64{},

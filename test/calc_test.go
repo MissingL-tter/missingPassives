@@ -590,7 +590,7 @@ func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 // post-initEnv state. Variants with items or skills wait on those stages;
 // the variant list below only ever grows.
 func TestCalcInitEnvAgainstReference(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	variants := map[string]string{ // variant -> dump file
 		"empty":                 "calc_empty.jsonl",
 		"coc.treeonly":          "calc_coc.jsonl",
@@ -901,7 +901,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		// while diagnosing whether a divergence is native- or calc-side).
 		if os.Getenv("MP_FIXTURE") == "" {
 			buildKey := strings.TrimSuffix(strings.TrimPrefix(file, "calc_"), ".jsonl")
-			applyNativeBuild(t, buildKey, in)
+			applyNativeBuild(t, buildKey, variant, in)
 		}
 		// GlobalCache is computed, not fed: calcs.buildOutput runs a whole
 		// perform per active skill, and the reference's own snapshot is the

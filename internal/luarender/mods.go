@@ -1,4 +1,4 @@
-// Renders gamedata.ModsData as the twenty Data/Mod*.lua pool files plus
+// Renders schema.ModsData as the twenty Data/Mod*.lua pool files plus
 // Export/Uniques/ModTextMap.lua (Scripts/mods.lua's outputs).
 
 package luarender
@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("mods", renderMods) }
@@ -21,14 +21,14 @@ var modPoolPaths = map[string]string{
 	"ModFlask": "Data/ModFlask.lua", "ModTincture": "Data/ModTincture.lua",
 	"ModJewel": "Data/ModJewel.lua", "ModJewelAbyss": "Data/ModJewelAbyss.lua",
 	"ModJewelCluster": "Data/ModJewelCluster.lua", "ModJewelCharm": "Data/ModJewelCharm.lua",
-	"WatchersEye":   "Data/Uniques/Special/WatchersEye.lua",
+	"WatchersEye":    "Data/Uniques/Special/WatchersEye.lua",
 	"BoundByDestiny": "Data/Uniques/Special/BoundByDestiny.lua",
-	"ModVeiled": "Data/ModVeiled.lua", "ModNecropolis": "Data/ModNecropolis.lua",
+	"ModVeiled":      "Data/ModVeiled.lua", "ModNecropolis": "Data/ModNecropolis.lua",
 	"ModItemExclusive": "Data/ModItemExclusive.lua", "ModGraft": "Data/ModGraft.lua",
 	"BeastCraft": "Data/BeastCraft.lua", "ModFoulborn": "Data/ModFoulborn.lua",
 }
 
-func renderMods(d gamedata.ModsData, _ Templates) (map[string]string, error) {
+func renderMods(d schema.ModsData, _ Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for id, pool := range d.Pools {
 		path, ok := modPoolPaths[id]

@@ -27,7 +27,7 @@ func interiorMeta(pat string) string {
 // with Lua string.find, whose metacharacters differ from Go's — so an edit
 // that introduces one must fail here rather than silently change matching.
 func TestItemTagPatternsAreLiteral(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	checked := 0
 	for table, tbl := range map[string]map[string]map[string][]string{
 		"itemTagSpecial":                 data.ItemTagSpecial,

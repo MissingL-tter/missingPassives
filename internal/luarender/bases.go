@@ -1,4 +1,4 @@
-// Renders gamedata.BasesData as the Data/Bases/<type>.lua files and
+// Renders schema.BasesData as the Data/Bases/<type>.lua files and
 // Data/Rares.lua (Scripts/bases.lua's outputs).
 
 package luarender
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("bases", renderBases) }
@@ -30,7 +30,7 @@ func inlineStrings(list []string) string {
 	return b.String()
 }
 
-func renderItemBase(b *B, ib gamedata.ItemBase) {
+func renderItemBase(b *B, ib schema.ItemBase) {
 	b.W("itemBases[\"", ib.DisplayName, "\"] = {\n")
 	b.W("\ttype = \"", ib.Type, "\",\n")
 	if ib.SubType != "" {
@@ -152,7 +152,7 @@ func renderItemBase(b *B, ib gamedata.ItemBase) {
 	b.W("}\n")
 }
 
-func renderBases(d gamedata.BasesData, tpl Templates) (map[string]string, error) {
+func renderBases(d schema.BasesData, tpl Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for _, name := range basesItemTypes {
 		events := d.Types[name]

@@ -8,12 +8,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/export"
 )
 
@@ -38,48 +38,16 @@ func main() {
 	}
 	ctx := &export.Ctx{Dats: dats, SrcDir: *src, TplDir: *tpl}
 
-	if err := os.MkdirAll(*out, 0o755); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 	want := map[string]bool{}
 	for _, name := range flag.Args() {
 		want[name] = true
 	}
-	for _, s := range export.Scripts {
-		if len(want) > 0 && !want[s.Name] {
-			continue
-		}
-		data, err := s.Build(ctx)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", s.Name, err)
-			os.Exit(1)
-		}
-		raw, err := json.MarshalIndent(data, "", "\t")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", s.Name, err)
-			os.Exit(1)
-		}
-		dest := filepath.Join(*out, s.Name+".json")
-		if err := os.WriteFile(dest, append(raw, '\n'), 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", s.Name, err)
-			os.Exit(1)
-		}
-		fmt.Println(s.Name, "->", s.Name+".json")
+	written, err := export.WriteArtifacts(ctx, *out, want, data.NodeGraphIDs())
+	for _, name := range written {
+		fmt.Println("->", name)
 	}
-
-	// The hand-maintained foulborn map rides along so raw/ is the complete
-	// data artifact.
-	if len(want) == 0 {
-		fb, err := os.ReadFile(filepath.Join(*tpl, "Data", "ModFoulbornMap.jsonc"))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "ModFoulbornMap:", err)
-			os.Exit(1)
-		}
-		if err := os.WriteFile(filepath.Join(*out, "ModFoulbornMap.jsonc"), fb, 0o644); err != nil {
-			fmt.Fprintln(os.Stderr, "ModFoulbornMap:", err)
-			os.Exit(1)
-		}
-		fmt.Println("ModFoulbornMap.jsonc copied")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }

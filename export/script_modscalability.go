@@ -2,7 +2,7 @@
 
 package export
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "modScalability", Build: buildModScalability})
@@ -11,11 +11,11 @@ func init() {
 func buildModScalability(x *Ctx) (any, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
-	sc := gamedata.ModScalability{}
+	sc := schema.ModScalability{}
 	for line, vals := range x.DescribeScalability("stat_descriptions.txt") {
-		list := make([]gamedata.Scalability, len(vals))
+		list := make([]schema.Scalability, len(vals))
 		for i, v := range vals {
-			list[i] = gamedata.Scalability{IsScalable: v.isScalable, Formats: v.formats}
+			list[i] = schema.Scalability{IsScalable: v.isScalable, Formats: v.formats}
 		}
 		sc[line] = list
 	}

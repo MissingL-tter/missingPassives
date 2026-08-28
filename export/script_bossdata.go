@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -70,7 +70,7 @@ var (
 )
 
 func buildBossData(x *Ctx) (any, error) {
-	var doc gamedata.BossData
+	var doc schema.BossData
 	unique := x.Dat("Mods").GetRow("Id", "MonsterUnique5").Get("Stat1Value").(Interval)[0]
 	uniqueAttackPenalty := x.Dat("Mods").GetRow("Id", "MonsterUnique8").Get("Stat1Value").(Interval)[0]
 	rarityDamageMult := map[string]float64{
@@ -663,14 +663,14 @@ func buildBossData(x *Ctx) (any, error) {
 		state.DamageData = map[string]any{}
 		state.DamageType = getDamageType()
 		calcSkillDamage()
-		bs := gamedata.BossSkill{
+		bs := schema.BossSkill{
 			Key:        boss.displayName + " " + displayName,
 			DamageType: state.DamageType,
 		}
 		for _, dt := range bossDamageTypes {
 			if mn, ok := state.DamageData[dt+"DamageMultMin"].(float64); ok {
 				mx := state.DamageData[dt+"DamageMultMax"].(float64)
-				bs.DamageMultipliers = append(bs.DamageMultipliers, gamedata.BossDamageMult{
+				bs.DamageMultipliers = append(bs.DamageMultipliers, schema.BossDamageMult{
 					Type: dt, Min: mn, Spread: (mx - mn) / 100,
 				})
 			}
@@ -679,8 +679,8 @@ func buildBossData(x *Ctx) (any, error) {
 			v := um / 100
 			bs.UberDamageMultiplier = &v
 		}
-		penEntries := func(keys []string, strip bool) []gamedata.PenEntry {
-			var entries []gamedata.PenEntry
+		penEntries := func(keys []string, strip bool) []schema.PenEntry {
+			var entries []schema.PenEntry
 			for _, penType := range keys {
 				v := state.DamageData[penType]
 				if f, ok := v.(float64); ok && f == 0 {
@@ -694,7 +694,7 @@ func buildBossData(x *Ctx) (any, error) {
 				if f, ok := v.(float64); ok {
 					text = luaNum(f)
 				}
-				entries = append(entries, gamedata.PenEntry{Name: name, Text: text})
+				entries = append(entries, schema.PenEntry{Name: name, Text: text})
 			}
 			return entries
 		}
@@ -757,7 +757,7 @@ func buildBossData(x *Ctx) (any, error) {
 			doc.Bosses = append(doc.Bosses, nil) // the Lua prints "Invalid Type"
 			return
 		}
-		doc.Bosses = append(doc.Bosses, &gamedata.BossMonster{
+		doc.Bosses = append(doc.Bosses, &schema.BossMonster{
 			DisplayName: displayName,
 			ArmourMult:  monsterType.Get("Armour").(int64),
 			EvasionMult: monsterType.Get("Evasion").(int64),

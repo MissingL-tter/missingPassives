@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -199,7 +199,7 @@ func buildEnchant(x *Ctx) (any, error) {
 		return byDiff
 	}
 
-	d := gamedata.Enchants{
+	d := schema.Enchants{
 		Boots:  doLabEnchantment("ConditionalBuffEnchantment"),
 		Gloves: doLabEnchantment("TriggerEnchantment"),
 		Belt:   doLabEnchantment("BuffEnchantment"),

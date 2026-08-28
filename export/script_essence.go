@@ -2,7 +2,7 @@
 
 package export
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "essence", Build: buildEssence})
@@ -34,11 +34,11 @@ func buildEssence(x *Ctx) (any, error) {
 		"Two Handed Sword":           "TwoHandSwordMod",
 	}
 
-	var es gamedata.Essences
+	var es schema.Essences
 	x.Dat("Essences").Rows(func(essence *Row) bool {
 		if essence.Get("Tier").(int64) > 0 {
 			base := essence.Get("BaseItemType").(*Row)
-			e := gamedata.Essence{
+			e := schema.Essence{
 				BaseId: luaStr(base.Get("Id")),
 				Name:   luaStr(base.Get("Name")),
 				Type:   essence.Get("Type").(*Row).Index - 1,

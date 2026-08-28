@@ -1,4 +1,4 @@
-// Renders gamedata.Uniques as the Data/Uniques/<type>.lua files
+// Renders schema.Uniques as the Data/Uniques/<type>.lua files
 // (Scripts/uModsToText.lua's outputs).
 //
 // uTextToMods.lua is the inverse tool; its itemTypes list is fully commented
@@ -6,11 +6,11 @@
 
 package luarender
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 func init() { register("uModsToText", renderUniques) }
 
-func renderUniques(d gamedata.Uniques, _ Templates) (map[string]string, error) {
+func renderUniques(d schema.Uniques, _ Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for name, f := range d {
 		var b B

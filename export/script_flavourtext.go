@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -184,11 +184,11 @@ func buildFlavourText(x *Ctx) (any, error) {
 		return true
 	})
 
-	var fts gamedata.FlavourTexts
+	var fts schema.FlavourTexts
 	x.flavourEntries = nil
 	addEntry := func(id, name string, textLines []string) {
 		x.flavourEntries = append(x.flavourEntries, flavourEntry{id: id, name: name})
-		fts = append(fts, gamedata.FlavourText{Id: id, Name: name, Text: textLines})
+		fts = append(fts, schema.FlavourText{Id: id, Name: name, Text: textLines})
 	}
 
 	for _, entry := range forcedNameList {

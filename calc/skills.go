@@ -756,6 +756,10 @@ func (env *Env) buildSkillsStage() bool {
 // pairs(data.gems) -- hash order -- which only affects which two names an
 // ambiguity error cites; the match result is order-independent, and this
 // port scans in sorted id order.
+// FindSkillGem exposes the lookup for the skills-tab load (its
+// pre-1.4.20 nameSpec migration path resolves gems the same way).
+func FindSkillGem(nameSpec string) *data.Gem { return findSkillGem(nameSpec) }
+
 func findSkillGem(nameSpec string) *data.Gem {
 	type matcher func(name string) bool
 	isAlpha := func(c byte) bool { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' }

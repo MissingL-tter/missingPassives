@@ -9,12 +9,16 @@ package test
 // process shares one cached tree across all builds.
 
 import (
+	"encoding/xml"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/skills"
 	"github.com/MissingL-tter/missingPassives/tree"
 )
 
@@ -104,7 +108,7 @@ func nativeSpecInput(spec *tree.Spec, items map[int]*item.Item) *calc.SpecInput 
 
 // applyNativeBuild swaps the fixture's spec and item pool for natively
 // built ones. Loads fresh per call: calc mutates its input in place.
-func applyNativeBuild(t *testing.T, buildKey string, in *calc.BuildInput) {
+func applyNativeBuild(t *testing.T, buildKey, variant string, in *calc.BuildInput) {
 	t.Helper()
 	manifest := readManifest(t)
 	xmlRel := manifest[buildKey]
@@ -129,5 +133,46 @@ func applyNativeBuild(t *testing.T, buildKey string, in *calc.BuildInput) {
 			}
 		}
 		in.ItemsTab.Items = native
+	}
+	// Native skills tab. The dump's reduced variants wiped the XML socket
+	// groups in place — the calc's granted-skill update then recreated the
+	// item/tree-granted ones — and the wipe leaves the imbued map stale, so
+	// the reduced variants keep the full load's map over an empty list.
+	if in.SkillsTab != nil {
+		blob, err := os.ReadFile(xmlPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var doc xmlSkillsDoc
+		if err := xml.Unmarshal(blob, &doc); err != nil {
+			t.Fatal(err)
+		}
+		tab := skills.Load(&doc.Skills, in.CharacterLevel)
+		slotSel := map[string]*item.Item{}
+		for _, slot := range in.ItemsTab.Slots {
+			if slot.ItemID != nil {
+				slotSel[slot.SlotName] = items[int(*slot.ItemID)]
+			}
+		}
+		tab.UpdateSocketGroups(func(slotName string) *item.Item { return slotSel[slotName] })
+		native := &calc.SkillsTabInput{ImbuedSupportBySlot: map[string]string{}}
+		for _, group := range tab.SocketGroupList {
+			g := &calc.SocketGroupInput{KV: group.KV}
+			for _, gem := range group.GemList {
+				g.GemList = append(g.GemList, &calc.SocketGemInput{
+					KV:              gem.KV,
+					GemDataID:       gemDataID(gem),
+					GrantedEffectID: grantedEffectID(gem),
+				})
+			}
+			native.SocketGroups = append(native.SocketGroups, g)
+		}
+		for slot, ge := range tab.ImbuedSupportBySlot {
+			native.ImbuedSupportBySlot[slot] = ge.Id
+		}
+		if strings.HasSuffix(variant, ".noskills") || strings.HasSuffix(variant, ".treeonly") {
+			native.SocketGroups = nil
+		}
+		in.SkillsTab = native
 	}
 }

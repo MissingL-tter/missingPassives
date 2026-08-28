@@ -1,11 +1,13 @@
-// The tattoo override pool: the committed Data/TattooPassives.lua (dumped
-// to data/raw/tattooOverrides.json — NOT the GGPK export pipeline's
-// tattooPassives.json, which differs in shape), loaded and stat-parsed the
-// way the PassiveTree constructor's tattoo loop does.
+// The tattoo override pool, read straight from the export document
+// (data/raw/tattoopassives.json — the same document the export differential
+// proves renders byte-identical to the committed Data/TattooPassives.lua).
+// The document is a row list; the runtime pool keys by display name with
+// later rows overwriting, exactly as the Lua file's keyed constructor did.
 package tree
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // Tattoo holds the override nodes keyed by display name (the Overrides
@@ -15,29 +17,31 @@ type Tattoo struct {
 }
 
 func (t *Tree) loadTattoo() {
-	var raw map[string]any
-	data.RawDoc("tattooOverrides", &raw)
+	var doc schema.TattooPassives
+	data.RawDoc("tattoopassives", &doc)
 	t.Tattoo = &Tattoo{Nodes: map[string]*Node{}}
-	nodes, _ := raw["nodes"].(map[string]any)
-	for name, nv := range nodes {
-		nm := nv.(map[string]any)
+	for i := range doc.Nodes {
+		nd := &doc.Nodes[i]
 		node := &Node{
-			IDStr:           str(nm["id"]),
-			Name:            str(nm["dn"]),
-			Icon:            str(nm["icon"]),
-			Keystone:        boolean(nm["ks"]),
-			Notable:         boolean(nm["not"]),
-			Mastery:         boolean(nm["m"]),
-			IsTattooFlag:    boolean(nm["isTattoo"]),
-			OverrideTypeStr: str(nm["overrideType"]),
-			Raw:             nm,
+			IDStr:           nd.Id,
+			Name:            nd.Name,
+			Icon:            nd.Icon,
+			Keystone:        nd.Ks,
+			Notable:         nd.Not,
+			Mastery:         nd.M,
+			IsTattooFlag:    true,
+			OverrideTypeStr: nd.OverrideType,
+			// Raw carries the fields later stages read by key (the saved-
+			// Overrides resolution matches on activeEffectImage).
+			Raw: map[string]any{"activeEffectImage": nd.ActiveEffectImage},
 		}
-		// A few overrides (the alternate masteries) carry their own name
-		// field; it shadows the tattooed node's original name.
-		if ownName, ok := nm["name"].(string); ok {
+		// The alternate masteries (runegrafts) carry their own name; it
+		// shadows the tattooed node's original name.
+		if nd.OverrideType == "AlternateMastery" {
+			ownName := "Runegraft Mastery"
 			node.NameStr = &ownName
 		}
-		node.Sd = strList(nm["sd"])
+		node.Sd = append([]string{}, nd.Sd...)
 		switch {
 		case node.Mastery:
 			node.Type = "Mastery"
@@ -48,7 +52,11 @@ func (t *Tree) loadTattoo() {
 		default:
 			node.Type = "Normal"
 		}
+		t.Tattoo.Nodes[nd.Name] = node // later rows overwrite, like the Lua keys
+	}
+	// The reference processes stats over the keyed table — after the
+	// duplicate-name collapse — so shadowed rows are never parsed.
+	for _, node := range t.Tattoo.Nodes {
 		processStats(&node.Stats, node.IDStr, 0)
-		t.Tattoo.Nodes[name] = node
 	}
 }

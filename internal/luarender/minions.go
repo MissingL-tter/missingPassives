@@ -1,4 +1,4 @@
-// Renders gamedata.Minions as Data/Spectres.lua and Data/Minions.lua
+// Renders schema.Minions as Data/Spectres.lua and Data/Minions.lua
 // (Scripts/minions.lua's outputs), replaying the templates and emitting one
 // definition per #emit / #spectre directive.
 
@@ -7,16 +7,16 @@ package luarender
 import (
 	"fmt"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("minions", renderMinions) }
 
-func renderMinions(d gamedata.Minions, tpl Templates) (map[string]string, error) {
+func renderMinions(d schema.Minions, tpl Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for _, tf := range []struct {
 		name string
-		defs []gamedata.MinionDef
+		defs []schema.MinionDef
 	}{{"Spectres", d.Spectres}, {"Minions", d.Minions}} {
 		next := 0
 		emit := func(_ string, b *B) {

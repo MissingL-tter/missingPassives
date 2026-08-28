@@ -6,7 +6,7 @@ package data
 import (
 	"sort"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func sortStrings(s []string) { sort.Strings(s) }
@@ -52,7 +52,7 @@ var itemModPools = map[string]string{
 // Lua's merge order (later pools overwrite shared ids).
 var itemModsItemKeys = []string{"Explicit", "ItemExclusive", "Corrupted", "Delve", "Synthesis", "Scourge", "Eldritch"}
 
-func loadModPool(pool []gamedata.ItemMod) map[string]ItemModData {
+func loadModPool(pool []schema.ItemMod) map[string]ItemModData {
 	out := map[string]ItemModData{}
 	for _, m := range pool {
 		e := ItemModData{
@@ -88,7 +88,7 @@ func loadModPool(pool []gamedata.ItemMod) map[string]ItemModData {
 	return out
 }
 
-func loadItemMods(src gamedata.ModsData) {
+func loadItemMods(src schema.ModsData) {
 	ItemMods = map[string]map[string]ItemModData{}
 	for key, poolId := range itemModPools {
 		ItemMods[key] = loadModPool(src.Pools[poolId])

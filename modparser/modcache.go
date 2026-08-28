@@ -2,7 +2,7 @@
 // cache (Main.lua L125), so for its 13,173 lines the parser serves the
 // file's pre-parsed entries — whose numbers round-tripped through %.14g
 // text when PoB wrote the file — and never parses fresh. This port does
-// the same: data/raw/modCache.jsonl (tools/dump_modcache.lua) carries the
+// the same: data/raw/modcache.jsonl (internal/modcachegen) carries the
 // file's entries, SetModCache installs them, and Parse serves a cached
 // line by decoding its entry instead of parsing (~450µs parse vs ~µs
 // decode). Lines outside the file — including the JewelFunc lines
@@ -63,6 +63,20 @@ func SetModCache(jsonl []byte) {
 	}
 	modCache = index
 	parseCache = map[string]parseResult{}
+}
+
+// ParsedLines returns every line Parse has answered since the parse cache
+// was last reset (SetModCache resets it). With the shipped cache removed
+// (SetModCache(nil)) this is the record of what a walk parsed — the mod
+// cache generator's key source.
+func ParsedLines() []string {
+	parseCacheMu.Lock()
+	defer parseCacheMu.Unlock()
+	lines := make([]string, 0, len(parseCache))
+	for line := range parseCache {
+		lines = append(lines, line)
+	}
+	return lines
 }
 
 // cacheLookup decodes the shipped entry for line, if one exists. Called

@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -87,7 +87,7 @@ func strTable(lines []string) lt {
 }
 
 // statsTable rebuilds the per-stat table keyed by stat id.
-func statsTable(stats []gamedata.PassiveStat) lt {
+func statsTable(stats []schema.PassiveStat) lt {
 	t := lt{}
 	for _, s := range stats {
 		e := lt{"min": s.Min, "max": s.Max}
@@ -128,7 +128,7 @@ func passivesFile(data lt) string {
 		"return " + stringifyLua(data)
 }
 
-func renderTattooPassives(d gamedata.TattooPassives, _ Templates) (map[string]string, error) {
+func renderTattooPassives(d schema.TattooPassives, _ Templates) (map[string]string, error) {
 	nodes := lt{}
 	for _, n := range d.Nodes {
 		t := lt{
@@ -166,7 +166,7 @@ func renderTattooPassives(d gamedata.TattooPassives, _ Templates) (map[string]st
 	return map[string]string{"Data/TattooPassives.lua": passivesFile(data)}, nil
 }
 
-func renderLegionPassives(d gamedata.LegionPassives, _ Templates) (map[string]string, error) {
+func renderLegionPassives(d schema.LegionPassives, _ Templates) (map[string]string, error) {
 	nodes := lt{}
 	for i, n := range d.Nodes {
 		o := 3.0

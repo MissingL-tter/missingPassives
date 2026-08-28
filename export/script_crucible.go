@@ -5,7 +5,7 @@ package export
 import (
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -33,7 +33,7 @@ func rowIds(list []any) []string {
 func buildCrucible(x *Ctx) (any, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
-	var cn gamedata.CrucibleNodes
+	var cn schema.CrucibleNodes
 	x.Dat("WeaponPassiveSkills").Rows(func(crucible *Row) bool {
 		mod := crucible.Get("Mod").(*Row)
 		modId := luaStr(mod.Get("Id"))
@@ -45,7 +45,7 @@ func buildCrucible(x *Ctx) (any, error) {
 			// The Lua prints "Mod '...' has no stats".
 			return true
 		}
-		n := gamedata.CrucibleNode{ModId: modId}
+		n := schema.CrucibleNode{ModId: modId}
 		switch mod.Get("GenerationType").(int64) {
 		case 31:
 			n.Type = "Spawn"

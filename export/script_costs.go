@@ -2,16 +2,16 @@
 
 package export
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "costs", Build: buildCosts})
 }
 
 func buildCosts(x *Ctx) (any, error) {
-	var costs gamedata.Costs
+	var costs schema.Costs
 	x.Dat("CostTypes").Rows(func(c *Row) bool {
-		ct := gamedata.CostType{
+		ct := schema.CostType{
 			Resource:       luaStr(c.Get("Resource")),
 			ResourceString: luaStr(c.Get("ResourceString")),
 			Divisor:        c.Get("Divisor").(int64),
@@ -25,7 +25,7 @@ func buildCosts(x *Ctx) (any, error) {
 	})
 	// special case for soul cost
 	soulStat := " "
-	costs = append(costs, gamedata.CostType{
+	costs = append(costs, schema.CostType{
 		Resource:       "Soul",
 		Stat:           &soulStat,
 		ResourceString: "{0} Souls Per Use",

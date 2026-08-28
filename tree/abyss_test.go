@@ -49,7 +49,7 @@ func inflateAbyssBin(t *testing.T, name string) []byte {
 // (identity for ids that fit a byte, overflow ids packed into free slots
 // from 0 upward, both in ascending global order).
 func abyssGlobalToLocal(jewelType int) map[int]byte {
-	tt := timelessData()
+	tt := conquerData()
 	var globals []int
 	for _, a := range tt.Additions {
 		if a.TV == jewelType {
@@ -122,7 +122,7 @@ func skipAbyssModification(data []byte, o int) int {
 
 func TestAbyssSocketBinsAgainstAlgorithm(t *testing.T) {
 	w := abyssData()
-	tt := timelessData()
+	tt := conquerData()
 	names := map[int]string{7: "AbyssTecrod", 8: "AbyssUlaman", 9: "AbyssKurgal", 10: "AbyssAmanamu"}
 	recordsCompared := 0
 	for jt := 7; jt <= 10; jt++ {
@@ -212,7 +212,7 @@ func TestAbyssSocketBinsAgainstAlgorithm(t *testing.T) {
 
 func TestAbyssZorathBinAgainstAlgorithm(t *testing.T) {
 	w := abyssData()
-	tt := timelessData()
+	tt := conquerData()
 	data := inflateAbyssBin(t, "AbyssZorath")
 	seedMin, seedMax, seedInc, off := abyssHeader(t, data, "ABYN", 11)
 	seedCount := (seedMax-seedMin)/seedInc + 1

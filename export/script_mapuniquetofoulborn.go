@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -36,7 +36,7 @@ func buildMapUniqueToFoulborn(x *Ctx) (any, error) {
 	}
 	sort.Strings(foulbornIds)
 
-	fm := gamedata.FoulbornMap{}
+	fm := schema.FoulbornMap{}
 	for _, unique := range x.flavourEntries {
 		re := regexp.MustCompile(regexp.QuoteMeta(unique.id) + "[A-Za-z]+")
 		for _, modId := range foulbornIds {

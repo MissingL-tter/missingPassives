@@ -1,6 +1,6 @@
 // Scaffolding shared by the ported Export/Scripts/*.lua: the execution
 // context (Main.lua's dat()/getFile() environment) and the Lua string/number
-// formatting the builders bake into their gamedata documents.
+// formatting the builders bake into their schema documents.
 
 package export
 
@@ -25,16 +25,20 @@ type Ctx struct {
 	sd               *statDescState
 	modItemExclusive map[string]*modEntry
 	modFoulborn      map[string]*modEntry
-	modsDoc          any // cached mods gamedata document
+	modsDoc          any // cached mods schema document
 	flavourEntries   []flavourEntry
 }
 
-// Script is one ported export script: Build produces its gamedata document
+// Script is one ported export script: Build produces its schema document
 // (serialised as <name>.json). The Lua files the reference produced are
 // reproduced only by internal/luarender in the differential test.
 type Script struct {
-	Name  string // the Lua script's basename, e.g. "costs"
-	Build func(*Ctx) (any, error)
+	Name string // the Lua script's basename, e.g. "costs"
+	// OutName overrides the raw artifact's basename when the honest Go-side
+	// name differs from the reference script's (see
+	// .claude/documentation/lua-go-map.md); empty = Name.
+	OutName string
+	Build   func(*Ctx) (any, error)
 }
 
 // Scripts lists every ported script.

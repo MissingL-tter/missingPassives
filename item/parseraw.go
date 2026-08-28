@@ -151,10 +151,18 @@ func ordOrHuge(p *float64) float64 {
 
 var mathHuge = math.Inf(1)
 
+// New ports the Item constructor: sanitiseText then ParseRaw. Direct
+// ParseRaw callers (the XML load path, BuildAndParseRaw) skip the
+// sanitise, exactly as the reference does.
+func New(raw string, rarity string, highQuality bool) *Item {
+	it := &Item{}
+	it.ParseRaw(sanitiseText(raw), rarity, highQuality)
+	return it
+}
+
 // ParseRaw ports ItemClass:ParseRaw. rarity == "" means the nil argument
 // (the loader path); highQuality mirrors the third argument.
 func (it *Item) ParseRaw(raw string, rarity string, highQuality bool) {
-	raw = sanitiseText(raw)
 	it.Raw = raw
 	it.Name = "?"
 	it.NamePrefix = ""

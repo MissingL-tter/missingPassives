@@ -30,28 +30,28 @@ func RawSources() Sources {
 	var src Sources
 	rawDoc("miscdata", &src.Misc)
 	rawDoc("costs", &src.Costs)
-	rawDoc("bossData", &src.Boss)
-	rawDoc("modScalability", &src.ModScalability)
+	rawDoc("bossdata", &src.Boss)
+	rawDoc("modscalability", &src.ModScalability)
 	rawDoc("essence", &src.Essences)
 	rawDoc("pantheons", &src.Pantheons)
 	rawDoc("crucible", &src.Crucible)
 	rawDoc("masters", &src.Masters)
-	rawDoc("flavourText", &src.FlavourText)
+	rawDoc("flavourtext", &src.FlavourText)
 	rawDoc("enchant", &src.Enchants)
 	rawDoc("mods", &src.Mods)
 	rawDoc("cluster", &src.Cluster)
 	rawDoc("bases", &src.Bases)
-	rawDoc("uModsToText", &src.Uniques)
+	rawDoc("umodstotext", &src.Uniques)
 	rawDoc("minions", &src.MinionsDoc)
 	rawDoc("skills", &src.Skills)
-	mc, err := rawFS.ReadFile("raw/modCache.jsonl")
+	mc, err := rawFS.ReadFile("raw/modcache.jsonl")
 	if err != nil {
-		panic("data: raw/modCache.jsonl missing (run tools/dump_modcache.lua): " + err.Error())
+		panic("data: raw/modcache.jsonl missing (run cmd/sourceupdate -modcache-only): " + err.Error())
 	}
 	src.ModCacheJSONL = mc
-	fb, err := rawFS.ReadFile("raw/ModFoulbornMap.jsonc")
+	fb, err := rawFS.ReadFile("raw/modfoulbornmap.jsonc")
 	if err != nil {
-		panic("data: raw/ModFoulbornMap.jsonc missing (run pobexport): " + err.Error())
+		panic("data: raw/modfoulbornmap.jsonc missing (run pobexport): " + err.Error())
 	}
 	src.FoulbornMapJSONC = fb
 	return src

@@ -1,4 +1,4 @@
-// Renders gamedata.Enchants as the seven Data/Enchantment*.lua files
+// Renders schema.Enchants as the seven Data/Enchantment*.lua files
 // (Scripts/enchant.lua's outputs).
 
 package luarender
@@ -7,14 +7,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("enchant", renderEnchant) }
 
 var enchantSourceOrder = []string{"NORMAL", "CRUEL", "MERCILESS", "ENDGAME", "DEDICATION", "ENKINDLING", "INSTILLING", "HARVEST", "HEIST"}
 
-func renderEnchant(d gamedata.Enchants, _ Templates) (map[string]string, error) {
+func renderEnchant(d schema.Enchants, _ Templates) (map[string]string, error) {
 	byDiff := func(m map[string][][]string) string {
 		var b B
 		b.itemHeader()

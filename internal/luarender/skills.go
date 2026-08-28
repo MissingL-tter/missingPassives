@@ -1,4 +1,4 @@
-// Renders gamedata.SkillsData as the Data/Skills/<name>.lua files and
+// Renders schema.SkillsData as the Data/Skills/<name>.lua files and
 // Data/Gems.lua (Scripts/skills.lua's outputs).
 
 package luarender
@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() { register("skills", renderSkills) }
@@ -16,7 +16,7 @@ func init() { register("skills", renderSkills) }
 var skillTemplateFiles = []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"}
 
 // num renders a float the way luaStrAny rendered the mixed int/float cells.
-func renderSkillHeader(b *B, h gamedata.SkillHeader) {
+func renderSkillHeader(b *B, h schema.SkillHeader) {
 	b.W("skills[\"", h.GrantedId, "\"] = {\n")
 	if h.Invalid {
 		return
@@ -113,7 +113,7 @@ func renderSkillHeader(b *B, h gamedata.SkillHeader) {
 	}
 }
 
-func renderSkillTail(b *B, t gamedata.SkillTail, args string) {
+func renderSkillTail(b *B, t schema.SkillTail, args string) {
 	if !strings.Contains(args, "noBaseFlags") && !t.Support {
 		b.W("\tbaseFlags = {\n")
 		for _, flag := range t.BaseFlags {
@@ -197,7 +197,7 @@ func renderSkillTail(b *B, t gamedata.SkillTail, args string) {
 	b.W("}")
 }
 
-func renderSkills(d gamedata.SkillsData, tpl Templates) (map[string]string, error) {
+func renderSkills(d schema.SkillsData, tpl Templates) (map[string]string, error) {
 	files := map[string]string{}
 	for _, name := range skillTemplateFiles {
 		f := d.Files[name]

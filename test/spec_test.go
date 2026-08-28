@@ -204,7 +204,7 @@ func treeNodeFixtureOf(n *tree.Node) *specNodeFixture {
 }
 
 func TestSpecAgainstReference(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	manifest := readManifest(t)
 	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {

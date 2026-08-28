@@ -3,10 +3,9 @@
 // metatables; here explicit copies reset by replaceNode), and
 // BuildAllDependsAndPaths reproduces the dependency/pruning analysis, the
 // radius-jewel rules (intuitive-leap-like, Impossible Escape), mastery
-// effect application, tattoo overrides, timeless conquering
-// (timelessspec.go) and the path/distance rebuilds. Cluster jewel
-// subgraphs live in cluster.go. Abyss-conquering jewels (their own LUT
-// format) stay guarded (guardAbyss).
+// effect application, tattoo overrides, jewel conquering (conquer.go,
+// all families) and the path/distance rebuilds. Cluster jewel subgraphs
+// live in cluster.go.
 package tree
 
 import (
@@ -20,7 +19,7 @@ import (
 
 // SpecNode is one node of the spec's local tree copy.
 type SpecNode struct {
-	T *Node // the underlying tree (or override/legion) node
+	T *Node // the underlying tree (or override/alternate) node
 
 	Alloc                       bool
 	Linked                      []*SpecNode
@@ -183,7 +182,7 @@ func NewSpec(t *Tree, items map[int]*item.Item) *Spec {
 func (n *SpecNode) resetToSource(src *Node) {
 	n.Dn = src.Name
 	// Name shadows the underlying node's; a source without one (tattoo,
-	// legion) leaves the shadow empty and EffectiveName falls through to
+	// alternate) leaves the shadow empty and EffectiveName falls through to
 	// the spec node's own tree name — the reference's metatable behavior.
 	n.Name = src.NameStr
 	n.Stats = src.Stats

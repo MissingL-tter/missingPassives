@@ -6,7 +6,7 @@ package data
 import (
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -129,7 +129,7 @@ func resolveSkillType(s string) any {
 	return nil
 }
 
-func loadSkills(src gamedata.SkillsData, statMapCopies map[string][]string) {
+func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) {
 	Skills = map[string]*GrantedEffect{}
 	for _, name := range []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"} {
 		f := src.Files[name]
@@ -670,7 +670,7 @@ func deepCopyAny(v any) any {
 	}
 }
 
-func buildGrantedEffect(hdr gamedata.SkillHeader, tail gamedata.SkillTail) *GrantedEffect {
+func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedEffect {
 	ge := &GrantedEffect{
 		Name:                 luaUnescape(hdr.Name),
 		Hidden:               hdr.Hidden,

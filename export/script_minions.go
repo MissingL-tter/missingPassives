@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -178,7 +178,7 @@ func buildMinions(x *Ctx) (any, error) {
 		extraModList, extraSkillList    []string
 	}
 	state := &minionState{}
-	var defs *[]gamedata.MinionDef
+	var defs *[]schema.MinionDef
 
 	directives := map[string]func(args string){}
 	directives["monster"] = func(args string) {
@@ -211,11 +211,11 @@ func buildMinions(x *Ctx) (any, error) {
 		mv := x.Dat("MonsterVarieties").GetRow("Id", state.varietyId)
 		if mv == nil {
 			// The Lua prints "Invalid Variety"; keep the emit sequence aligned.
-			*defs = append(*defs, gamedata.MinionDef{Skip: true})
+			*defs = append(*defs, schema.MinionDef{Skip: true})
 			return
 		}
 		typ := mv.Get("Type").(*Row)
-		d := gamedata.MinionDef{
+		d := schema.MinionDef{
 			Key:  state.name,
 			Name: luaStr(mv.Get("Name")),
 		}
@@ -376,10 +376,10 @@ func buildMinions(x *Ctx) (any, error) {
 		directives["emit"]("")
 	}
 
-	var doc gamedata.Minions
+	var doc schema.Minions
 	for _, tf := range []struct {
 		name string
-		list *[]gamedata.MinionDef
+		list *[]schema.MinionDef
 	}{{"Spectres", &doc.Spectres}, {"Minions", &doc.Minions}} {
 		defs = tf.list
 		if err := x.WalkTemplate(tf.name, "Minions/", directives); err != nil {

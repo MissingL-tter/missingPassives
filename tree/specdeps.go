@@ -19,7 +19,7 @@ func (s *Spec) collectAbyssConquests(jewelIDs []int64) map[int64]map[string]any 
 		if cq == nil || s.AllocNodes[socketID] == nil || jdTrue(it, "limitDisabled") {
 			continue
 		}
-		jewelType, ok := timelessJewelTypeByConqueror[conquerorType(cq)]
+		jewelType, ok := jewelTypeByConqueror[conquerorType(cq)]
 		if !ok || jewelType < 7 {
 			continue
 		}
@@ -28,7 +28,7 @@ func (s *Spec) collectAbyssConquests(jewelIDs []int64) map[int64]map[string]any 
 			path = s.getShortestPathToClassStart(socketID)
 		}
 		seed := conqueredSeed(cq)
-		for nodeID, modification := range ReadAbyssJewelLUT(int64(seed), socketID, jewelType, path) {
+		for nodeID, modification := range AbyssPassive(int64(seed), socketID, jewelType, path) {
 			conquests[nodeID] = map[string]any{
 				"id":           seed,
 				"conqueror":    conquerorOf(cq),
@@ -78,7 +78,7 @@ func (s *Spec) BuildAllDependsAndPaths() {
 							node.IntuitiveLeapLikesAffecting = append(node.IntuitiveLeapLikesAffecting, s.Nodes[socketID])
 						}
 						if cq := jd(it, "conqueredBy"); cq != nil {
-							radiusJewelType, known := timelessJewelTypeByConqueror[conquerorType(cq)]
+							radiusJewelType, known := jewelTypeByConqueror[conquerorType(cq)]
 							if !known || radiusJewelType < 7 {
 								node.ConqueredBy = cq
 							}
@@ -540,7 +540,7 @@ func (s *Spec) nodesInIntuitiveLeapLikeRadius(node *SpecNode) []*SpecNode {
 func (s *Spec) nodeInKeystoneRadius(keystoneNames map[string]any, nodeID int64, radiusIndex int) bool {
 	for _, node := range s.Nodes {
 		// node.name through the metatable: a conquered keystone's shadow name
-		// is nil (legion nodes have only dn) and falls through to the tree's.
+		// is nil (alternate nodes have only dn) and falls through to the tree's.
 		name := node.EffectiveName()
 		if node.Type() == "Keystone" && name != nil && truthyVal(keystoneNames[luaLower(*name)]) {
 			if node.T.NodesInRadius != nil && node.T.NodesInRadius[radiusIndex-1][nodeID] != nil {

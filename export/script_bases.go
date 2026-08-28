@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/internal/luapat"
 )
 
@@ -104,7 +104,7 @@ func buildBases(x *Ctx) (any, error) {
 
 	var state *baseState
 
-	buildBase := func(args string) *gamedata.ItemBase {
+	buildBase := func(args string) *schema.ItemBase {
 		baseTypeId := args
 		displayName := ""
 		if m := reBaseArgs.FindStringSubmatch(args); m != nil {
@@ -127,7 +127,7 @@ func buildBases(x *Ctx) (any, error) {
 				displayName = "Energy Blade Two Handed"
 			}
 		}
-		b := &gamedata.ItemBase{DisplayName: displayName, Type: state.typ}
+		b := &schema.ItemBase{DisplayName: displayName, Type: state.typ}
 		if state.subType != nil && len(*state.subType) > 0 {
 			b.SubType = *state.subType
 		}
@@ -175,7 +175,7 @@ func buildBases(x *Ctx) (any, error) {
 		itemValueSum := int64(0)
 		weaponType := x.Dat("WeaponTypes").GetRow("BaseItemType", baseItemType)
 		if weaponType != nil {
-			b.Weapon = &gamedata.WeaponBase{
+			b.Weapon = &schema.WeaponBase{
 				PhysicalMin:    weaponType.Get("DamageMin").(int64),
 				PhysicalMax:    weaponType.Get("DamageMax").(int64),
 				CritChanceBase: float64(weaponType.Get("CritChance").(int64)) / 100,
@@ -186,7 +186,7 @@ func buildBases(x *Ctx) (any, error) {
 		}
 		armourType := x.Dat("ArmourTypes").GetRow("BaseItemType", baseItemType)
 		if armourType != nil {
-			ab := &gamedata.ArmourBase{}
+			ab := &schema.ArmourBase{}
 			if shield := x.Dat("ShieldTypes").GetRow("BaseItemType", baseItemType); shield != nil {
 				v := shield.Get("Block").(int64)
 				ab.BlockChance = &v
@@ -212,7 +212,7 @@ func buildBases(x *Ctx) (any, error) {
 		flask := x.Dat("Flasks").GetRow("BaseItemType", baseItemType)
 		if flask != nil {
 			compCharges := x.Dat("ComponentCharges").GetRow("BaseItemType", luaStr(baseItemType.Get("Id")))
-			fb := &gamedata.FlaskBase{
+			fb := &schema.FlaskBase{
 				Duration:    float64(flask.Get("RecoveryTime").(int64)) / 10,
 				ChargesUsed: compCharges.Get("PerUse").(int64),
 				ChargesMax:  compCharges.Get("Max").(int64),
@@ -240,7 +240,7 @@ func buildBases(x *Ctx) (any, error) {
 		}
 		tincture := x.Dat("tinctures").GetRow("BaseItemType", baseItemType)
 		if tincture != nil {
-			b.Tincture = &gamedata.TinctureBase{
+			b.Tincture = &schema.TinctureBase{
 				ManaBurn: float64(tincture.Get("ManaBurn").(int64)) / 1000,
 				Cooldown: float64(tincture.Get("CoolDown").(int64)) / 1000,
 			}
@@ -298,8 +298,8 @@ func buildBases(x *Ctx) (any, error) {
 		return b
 	}
 
-	doc := gamedata.BasesData{Types: map[string][][]gamedata.ItemBase{}}
-	var curEvents *[][]gamedata.ItemBase
+	doc := schema.BasesData{Types: map[string][][]schema.ItemBase{}}
+	var curEvents *[][]schema.ItemBase
 
 	// While walking the Rares template, mirror the generated file's line
 	// stream (directive blobs merged with the hand-written passthrough
@@ -333,7 +333,7 @@ func buildBases(x *Ctx) (any, error) {
 		}
 	}
 	directives["base"] = func(args string) {
-		var ev []gamedata.ItemBase
+		var ev []schema.ItemBase
 		if b := buildBase(args); b != nil {
 			ev = append(ev, *b)
 		}
@@ -352,7 +352,7 @@ func buildBases(x *Ctx) (any, error) {
 			panic(fmt.Sprintf("baseMatch: bad pattern %q: %v", value, err))
 		}
 		re := regexp.MustCompile(pat)
-		var ev []gamedata.ItemBase
+		var ev []schema.ItemBase
 		for _, baseItemType := range x.Dat("BaseItemTypes").GetRowListMatch(key, re.MatchString) {
 			id := luaStr(baseItemType.Get("Id"))
 			if !strings.Contains(id, "Royale") {
@@ -394,7 +394,7 @@ func buildBases(x *Ctx) (any, error) {
 		} else if _, ok := baseMods[itemName]; ok {
 			valueLines(&lines, values)
 		}
-		doc.Rares = append(doc.Rares, &gamedata.RareItem{Lines: lines})
+		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
 		streamBlob(lines)
 	}
 	directives["setBase"] = func(args string) {
@@ -444,13 +444,13 @@ func buildBases(x *Ctx) (any, error) {
 		} else if group, ok := baseMods[groupName]; ok {
 			valueLines(&lines, group)
 		}
-		doc.Rares = append(doc.Rares, &gamedata.RareItem{Lines: lines})
+		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
 		streamBlob(lines)
 	}
 
 	for _, name := range append(append([]string{}, basesItemTypes...), "Rares") {
 		state = &baseState{}
-		var events [][]gamedata.ItemBase
+		var events [][]schema.ItemBase
 		curEvents = &events
 		if name == "Rares" {
 			inRares = true

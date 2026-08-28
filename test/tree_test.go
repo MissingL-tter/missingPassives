@@ -28,7 +28,7 @@ var (
 
 func loadTree329(t *testing.T) *tree.Tree {
 	t.Helper()
-	loadGameData(t)
+	loadData(t)
 	treeOnce.Do(func() {
 		treeCached = tree.Load("3_29")
 	})
@@ -121,14 +121,14 @@ func nodeStateOf(n *tree.Node, legion bool) *treeNodeState {
 		st.Mods = mods
 	}
 	if legion {
-		// Legion records carry only the parse state.
+		// ConqueredPassives records carry only the parse state.
 		st.Mods = nil
 	}
 	return st
 }
 
-// legionNodeState mirrors the dump's slimmer legion record.
-type legionNodeState struct {
+// conqueredNodeState mirrors the dump's slimmer legion record.
+type conqueredNodeState struct {
 	ID      string           `lua:"id"`
 	Type    string           `lua:"type"`
 	Dn      *string          `lua:"dn"`
@@ -222,11 +222,11 @@ func TestTreeAgainstReference(t *testing.T) {
 			nodes++
 		case strings.HasPrefix(k, "legion."):
 			id := strings.TrimPrefix(k, "legion.")
-			node := tr.Legion.Nodes[id]
+			node := tr.ConqueredPassives.Nodes[id]
 			if node == nil {
 				t.Fatalf("%s: legion node missing", k)
 			}
-			if got := luacanon.Encode(&legionNodeState{
+			if got := luacanon.Encode(&conqueredNodeState{
 				ID: node.IDStr, Type: node.Type, Dn: strPtr(node.Name),
 				ModKey: strPtr(node.ModKey), ModList: node.ModList,
 				Unknown: truePtr(node.Stats.Unknown), Extra: truePtr(node.Stats.Extra), Sd: node.Sd,

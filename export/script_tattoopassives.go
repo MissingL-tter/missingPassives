@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -18,13 +18,13 @@ var reDotDdsEnd = regexp.MustCompile(`\.dds$`)
 
 // passiveStat converts a describeStats-mutated statVal into its gamedata
 // form.
-func passiveStat(id string, v *statVal) gamedata.PassiveStat {
-	return gamedata.PassiveStat{Id: id, Min: v.min, Max: v.max, Fmt: v.fmt, MinZ: v.minZ, MaxZ: v.maxZ}
+func passiveStat(id string, v *statVal) schema.PassiveStat {
+	return schema.PassiveStat{Id: id, Min: v.min, Max: v.max, Fmt: v.fmt, MinZ: v.minZ, MaxZ: v.maxZ}
 }
 
 // sortStatsById sorts stably by stat id, preserving insertion order for
 // duplicates (the Lua's table overwrite keeps the last).
-func sortStatsById(stats []gamedata.PassiveStat) {
+func sortStatsById(stats []schema.PassiveStat) {
 	sort.SliceStable(stats, func(a, b int) bool { return stats[a].Id < stats[b].Id })
 }
 
@@ -58,7 +58,7 @@ func buildTattooPassives(x *Ctx) (any, error) {
 		sort.Slice(sd, func(a, b int) bool { return descOrders[sd[a]] < descOrders[sd[b]] })
 	}
 
-	parsePassiveStats := func(row *Row) (nodeStats []gamedata.PassiveStat, sd []string) {
+	parsePassiveStats := func(row *Row) (nodeStats []schema.PassiveStat, sd []string) {
 		descOrders := map[string]float64{}
 		for idx, statKey := range listRows(row.Get("Stats")) {
 			statId := luaStr(stats.GetRowByIndex(statKey.Index).Get("Id"))
@@ -83,7 +83,7 @@ func buildTattooPassives(x *Ctx) (any, error) {
 		return nodeStats, sd
 	}
 
-	parseStats := func(rowMap map[string]any) (nodeStats []gamedata.PassiveStat, sd []string) {
+	parseStats := func(rowMap map[string]any) (nodeStats []schema.PassiveStat, sd []string) {
 		descOrders := map[string]float64{}
 		statMap := map[string]*statVal{}
 		values := rowMap["StatValues"].([]any)
@@ -113,7 +113,7 @@ func buildTattooPassives(x *Ctx) (any, error) {
 		return m
 	}
 
-	var doc gamedata.TattooPassives
+	var doc schema.TattooPassives
 
 	tattooDatRows := map[string]map[string]any{}
 	for i := 1; i <= tattoosDat.RowCount; i++ {
@@ -129,7 +129,7 @@ func buildTattooPassives(x *Ctx) (any, error) {
 		if tattooDatRow == nil {
 			tattooDatRow = tattooDatRows["DisplayRandomKeystone"]
 		}
-		node := gamedata.TattooNode{Id: id}
+		node := schema.TattooNode{Id: id}
 
 		overrideType := luaStr(rowMap["OverrideType"].(*Row).Get("Id"))
 		node.OverrideType = overrideType

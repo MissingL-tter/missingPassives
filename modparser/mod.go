@@ -18,8 +18,8 @@ type Mod struct {
 	Source       string
 	SourceSet    bool
 	SourceSlot   string // mod.sourceSlot, set by Item slot mod lists ("" = absent)
-	Replaced     bool // set by ModDB ReplaceMod bookkeeping (mod.replaced)
-	Converted    bool // set by ModDB ConvertMod bookkeeping (mod.converted)
+	Replaced     bool   // set by ModDB ReplaceMod bookkeeping (mod.replaced)
+	Converted    bool   // set by ModDB ConvertMod bookkeeping (mod.converted)
 	Tags         []any
 }
 

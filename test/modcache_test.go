@@ -1,6 +1,6 @@
 package test
 
-// The shipped-mod-cache differential. data/raw/modCache.jsonl carries
+// The shipped-mod-cache differential. data/raw/modcache.jsonl carries
 // Data/ModCache.lua's pre-parsed entries, and modparser serves them for
 // those lines instead of parsing. Two proofs per entry:
 //   1. decode-echo: the served result re-encodes to the file's exact
@@ -59,7 +59,7 @@ func extraOrEmpty(e *string) string {
 }
 
 func TestModCacheAgainstShippedFile(t *testing.T) {
-	loadGameData(t)
+	loadData(t)
 	recs := readModCacheRecs(t)
 
 	// Pass 1: served entries re-encode to the file's bytes.

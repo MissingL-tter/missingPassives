@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -133,7 +133,7 @@ func buildSkills(x *Ctx) (any, error) {
 		skill         *skillInfo
 	}
 	var state *skillsState
-	var curFile *gamedata.SkillFile
+	var curFile *schema.SkillFile
 
 	directives := map[string]func(args string){}
 	directives["noGem"] = func(string) { state.noGem = true }
@@ -146,7 +146,7 @@ func buildSkills(x *Ctx) (any, error) {
 		if m := reSkillHead.FindStringSubmatch(args); m != nil {
 			grantedId, displayName = m[1], m[2]
 		}
-		hdr := gamedata.SkillHeader{GrantedId: grantedId}
+		hdr := schema.SkillHeader{GrantedId: grantedId}
 		granted := x.Dat("GrantedEffects").GetRow("Id", grantedId)
 		if granted == nil {
 			// the Lua ConPrintfs and leaves the previous skill state
@@ -165,7 +165,7 @@ func buildSkills(x *Ctx) (any, error) {
 		var skillGem *Row
 		if gemEffect != nil {
 			gemEffectId := luaStr(gemEffect.Get("Id"))
-		 	x.Dat("SkillGems").Rows(func(gem *Row) bool {
+			x.Dat("SkillGems").Rows(func(gem *Row) bool {
 				for _, variant := range listRows(gem.Get("GemVariants")) {
 					if gemEffectId == luaStr(variant.Get("Id")) {
 						skillGem = gem
@@ -468,7 +468,7 @@ func buildSkills(x *Ctx) (any, error) {
 	}
 	directives["mods"] = func(args string) {
 		skill := state.skill
-		tail := gamedata.SkillTail{
+		tail := schema.SkillTail{
 			ModsArgs:      args,
 			Support:       skill.isSupport,
 			BaseFlags:     append([]string(nil), skill.baseFlags...),
@@ -477,13 +477,13 @@ func buildSkills(x *Ctx) (any, error) {
 			NotMinionStat: append([]string(nil), skill.cannotGrantToMinion...),
 		}
 		for _, stat := range skill.qualityStats {
-			tail.QualityStats = append(tail.QualityStats, gamedata.StatValue{Id: stat[0].(string), Value: stat[1].(float64)})
+			tail.QualityStats = append(tail.QualityStats, schema.StatValue{Id: stat[0].(string), Value: stat[1].(float64)})
 		}
 		for _, stat := range skill.constantStats {
-			tail.ConstantStats = append(tail.ConstantStats, gamedata.StatValue{Id: stat[0].(string), Value: float64(stat[1].(int64))})
+			tail.ConstantStats = append(tail.ConstantStats, schema.StatValue{Id: stat[0].(string), Value: float64(stat[1].(int64))})
 		}
 		for _, level := range skill.levels {
-			l := gamedata.SkillLevel{Level: level.level}
+			l := schema.SkillLevel{Level: level.level}
 			for _, v := range level.values {
 				switch n := v.(type) {
 				case int64:
@@ -518,10 +518,10 @@ func buildSkills(x *Ctx) (any, error) {
 		state.skill = nil
 	}
 
-	doc := gamedata.SkillsData{Files: map[string]gamedata.SkillFile{}}
+	doc := schema.SkillsData{Files: map[string]schema.SkillFile{}}
 	for _, name := range skillTemplateFiles {
 		state = &skillsState{}
-		var f gamedata.SkillFile
+		var f schema.SkillFile
 		curFile = &f
 		if err := x.WalkTemplate(name, "Skills/", directives); err != nil {
 			return nil, err
@@ -540,7 +540,7 @@ func buildSkills(x *Ctx) (any, error) {
 			delete(gems, gemEffectId)
 			base := skillGem.Get("BaseItemType").(*Row)
 			grantedEffect := ge.Get("GrantedEffect").(*Row)
-			g := gamedata.GemDef{VariantId: gemEffectId}
+			g := schema.GemDef{VariantId: gemEffectId}
 			name := luaStr(base.Get("Name"))
 			if !fullNameGems[luaStr(base.Get("Id"))] {
 				if tn, ok := trueGemNames[gemEffectId]; ok {

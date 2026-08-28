@@ -2,7 +2,7 @@
 
 package export
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "masters", Build: buildMasters})
@@ -46,13 +46,13 @@ func buildMasters(x *Ctx) (any, error) {
 		"Jewel":                    "Jewel",
 	}
 
-	var mc gamedata.MasterCrafts
+	var mc schema.MasterCrafts
 	for _, craft := range x.Dat("CraftingBenchOptions").GetRowList("IsDisabled", false) {
 		mod, ok := craft.Get("Mod").(*Row)
 		if !ok {
 			continue
 		}
-		c := gamedata.MasterCraft{Affix: luaStr(mod.Get("Name"))}
+		c := schema.MasterCraft{Affix: luaStr(mod.Get("Name"))}
 		switch mod.Get("GenerationType").(int64) {
 		case 1:
 			c.Type = "Prefix"

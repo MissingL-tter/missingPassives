@@ -8,7 +8,7 @@
 
 package data
 
-import "github.com/MissingL-tter/missingPassives/gamedata"
+import "github.com/MissingL-tter/missingPassives/data/schema"
 
 type Gem struct {
 	Id                       string
@@ -32,7 +32,7 @@ type Gem struct {
 	GrantedEffectList      []*GrantedEffect
 }
 
-func loadGems(src gamedata.SkillsData) {
+func loadGems(src schema.SkillsData) {
 	Gems = map[string]*Gem{}
 	for _, g := range src.Gems {
 		gem := &Gem{

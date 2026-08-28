@@ -25,8 +25,12 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
   spec + item pool (test/calc_native_test.go — tree.Spec/item projections,
   mods deep-copied at the seam because calc stamps sources in place and the
   test process shares one cached tree; MP_FIXTURE=1 reverts to pure fixture
-  replay). Slots, skills tab, config remain fixture-fed until their modules.
-  Negative control: dropping one native node mod fails 1,104 comparisons.
+  replay). Slots and config remain fixture-fed until their modules; the
+  skills tab is NATIVE too (package skills via the bridge,
+  variant-aware: reduced variants feed empty group lists and calc recreates
+  the granted groups; the stale imbued-map semantics of the dump's wipe are
+  kept). Negative controls: dropping one native node mod fails 1,104
+  comparisons; bumping one native gem level fails 319.
 
 ## Setup stage (initEnv)
 
@@ -446,7 +450,7 @@ permutations) multiply coverage cheaply.
   (flags, melee, known) — callers only ever consumed info.Melee and nil-ness. Zero
   exported shape names.
 - `data/raw/` holds pobexport's complete output (21 documents + the hand-maintained
-  ModFoulbornMap.jsonc, ~42MB), COMMITTED and EMBEDDED (//go:embed raw in data/raw.go;
+  modfoulbornmap.jsonc, ~42MB), COMMITTED and EMBEDDED (//go:embed raw in data/raw.go;
   RawSources() builds Load's input). A built binary is self-contained. Regeneration is
   explicit, part of the GGPK-update workflow: `pobexport -src <ggpk>` (default -out
   data/raw). The GGPK is needed ONLY for regeneration and the export differential;

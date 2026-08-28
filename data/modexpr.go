@@ -2,7 +2,7 @@
 // minion templates hand-write: mod(...) / flag(...) / skill(...) calls with
 // literal arguments, table constructors, ModFlag/KeywordFlag/SkillType
 // constants, and bit.bor. The templates' text reaches the runtime through
-// the gamedata documents; this turns it into structured mods with no Lua
+// the schema documents; this turns it into structured mods with no Lua
 // involved. Every evaluated mod is verified against the booted archive by
 // the game-data comparison.
 

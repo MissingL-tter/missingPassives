@@ -25,7 +25,7 @@ func TestProfileRecalc(t *testing.T) {
 	if build == "" {
 		t.Skip("profiling harness; set MP_PROFILE=<dump key> to run")
 	}
-	loadGameData(t)
+	loadData(t)
 
 	path := filepath.Join("testdata", "calc_"+build+".jsonl")
 	if _, err := os.Stat(path); err != nil {

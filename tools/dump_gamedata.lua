@@ -36,7 +36,7 @@ local keys = {
 	"ailmentTypeList", "elementalAilmentTypeList",
 	"nonDamagingAilmentTypeList", "nonElementalAilmentTypeList",
 	"nonDamagingAilment",
-	"defaultHighPrecision", "highPrecisionMods", "modScalability",
+	"defaultHighPrecision", "highPrecisionMods", "modscalability",
 	"weaponTypeInfo", "unarmedWeaponData",
 	"jewelRadii", "jewelRadius", "maxJewelRadius",
 	"enchantmentSource",
@@ -50,7 +50,7 @@ local keys = {
 	"describeStats", "readLUT", "repairLUTs", "readAbyssJewelLUT",
 	"resolveAbyssJewelComponent", "getAbyssJewelComponentRoll",
 	"bosses", "bossStats", "enemyIsBossTooltip",
-	"essences", "pantheons", "crucible", "masterMods", "flavourText",
+	"essences", "pantheons", "crucible", "masterMods", "flavourtext",
 	"enchantments",
 }
 

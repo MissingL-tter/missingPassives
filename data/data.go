@@ -1,6 +1,6 @@
 // Package data assembles the game data the application consumes at runtime:
 // the Go port of .archive/src/Modules/Data.lua. Generated data arrives as
-// gamedata documents (the export pipeline's output); the tables Data.lua
+// schema documents (the export pipeline's output); the tables Data.lua
 // defines inline are ported here. Verified against the archive by
 // test/gamedata_test.go, subtree by subtree.
 package data
@@ -8,37 +8,39 @@ package data
 import (
 	"encoding/json"
 	"math"
+	"sort"
+	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
-// Sources carries the gamedata documents Load consumes. It grows as the
+// Sources carries the schema documents Load consumes. It grows as the
 // port covers more of Data.lua.
 type Sources struct {
-	Misc           gamedata.MiscData
-	Costs          gamedata.Costs
-	Boss           gamedata.BossData
-	ModScalability gamedata.ModScalability
-	Mods           gamedata.ModsData
-	Essences       gamedata.Essences
-	Pantheons      gamedata.Pantheons
-	Crucible       gamedata.CrucibleNodes
-	Masters        gamedata.MasterCrafts
-	FlavourText    gamedata.FlavourTexts
-	Enchants       gamedata.Enchants
-	Cluster        gamedata.ClusterJewels
-	Bases          gamedata.BasesData
-	Uniques        gamedata.Uniques
-	MinionsDoc     gamedata.Minions
-	Skills         gamedata.SkillsData
+	Misc           schema.MiscData
+	Costs          schema.Costs
+	Boss           schema.BossData
+	ModScalability schema.ModScalability
+	Mods           schema.ModsData
+	Essences       schema.Essences
+	Pantheons      schema.Pantheons
+	Crucible       schema.CrucibleNodes
+	Masters        schema.MasterCrafts
+	FlavourText    schema.FlavourTexts
+	Enchants       schema.Enchants
+	Cluster        schema.ClusterJewels
+	Bases          schema.BasesData
+	Uniques        schema.Uniques
+	MinionsDoc     schema.Minions
+	Skills         schema.SkillsData
 	// StatMapCopies lists, per skill, the statMap keys the booted archive's
 	// lazy copies materialised (a replay fixture from the archive dump).
 	StatMapCopies map[string][]string
 	// FoulbornMapJSONC is Data/ModFoulbornMap.jsonc's content.
 	FoulbornMapJSONC []byte
-	// ModCacheJSONL is data/raw/modCache.jsonl: Data/ModCache.lua's
+	// ModCacheJSONL is data/raw/modcache.jsonl: Data/ModCache.lua's
 	// pre-parsed entries, which PoB (and this port) serve instead of
 	// parsing those lines.
 	ModCacheJSONL []byte
@@ -205,6 +207,21 @@ type bossStats struct {
 	UberEvasionMean     float64 `lua:"UberEvasionMean"`
 }
 
+// NodeGraphIDs returns the modifiable-node graph-id set (the shipped
+// NodeIndexMapping keys), sorted. Backed by the Go-maintained table, so it
+// works without Load — the export pipeline uses it to build conquertables.
+func NodeGraphIDs() []int64 {
+	ids := make([]int64, 0, len(nodeIDListTable))
+	for k := range nodeIDListTable {
+		// The table also carries localIdToGlobalId/size/sizeNotable metadata.
+		if n, err := strconv.ParseInt(k, 10, 64); err == nil {
+			ids = append(ids, n)
+		}
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids
+}
+
 // Load assembles the runtime data set.
 func Load(src Sources) {
 	// Install the shipped mod cache: PoB preloads Data/ModCache.lua and
@@ -242,7 +259,7 @@ func Load(src Sources) {
 	TimelessJewelTypes = timelessJewelTypes
 	TimelessJewelSeedMin = timelessJewelSeedMin
 	TimelessJewelSeedMax = timelessJewelSeedMax
-	TimelessJewelAdditions = 337 // #legionAdditions
+	TimelessJewelAdditions = 337 // #conqueredAdditions
 	NodeIDList = nodeIDListTable
 	AbyssNotableNames = abyssNotableNamesTable
 	TimelessJewelTradeIDs = timelessJewelTradeIDsTable
@@ -297,6 +314,7 @@ func Load(src Sources) {
 	// exporter doesn't generate graft uniques yet).
 	Uniques["graft"] = []string{}
 	buildGeneratedUniques()
+	generatedBaseLen = len(Uniques["generated"])
 
 	if len(src.FoulbornMapJSONC) > 0 {
 		FoulbornMap = map[string]any{}
@@ -321,7 +339,7 @@ func stripJSONCComments(b []byte) []byte {
 }
 
 // loadMisc unpacks the Data/Misc.lua document.
-func loadMisc(m gamedata.MiscData) {
+func loadMisc(m schema.MiscData) {
 	MonsterEvasionTable = m.Misc.MonsterEvasion
 	MonsterAccuracyTable = m.Misc.MonsterAccuracy
 	MonsterLifeTable = m.Misc.MonsterLife
@@ -347,7 +365,7 @@ func loadMisc(m gamedata.MiscData) {
 	for _, v := range m.Misc.MonsterVarietyLifeMult {
 		MonsterVarietyLifeMult[v.Name] = v.Mult
 	}
-	levelMap := func(list []gamedata.LevelMult) map[int64]float64 {
+	levelMap := func(list []schema.LevelMult) map[int64]float64 {
 		out := map[int64]float64{}
 		for _, v := range list {
 			out[v.Level] = v.Mult
@@ -361,7 +379,7 @@ func loadMisc(m gamedata.MiscData) {
 }
 
 // otConstantMap evaluates the .ot constants' raw value text as Lua numbers.
-func otConstantMap(kvs []gamedata.KV) map[string]float64 {
+func otConstantMap(kvs []schema.KV) map[string]float64 {
 	out := map[string]float64{}
 	for _, kv := range kvs {
 		out[kv.Key] = luaTonumber(kv.Value)
@@ -392,7 +410,7 @@ func buildMonsterExperienceLevelMap(misc misc) map[int]float64 {
 	return out
 }
 
-func loadBosses(b gamedata.BossData) {
+func loadBosses(b schema.BossData) {
 	Bosses = map[string]Boss{}
 	var count, uberCount float64
 	var armourTotal, evasionTotal float64

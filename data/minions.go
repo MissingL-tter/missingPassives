@@ -7,7 +7,7 @@ package data
 import (
 	"strconv"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -39,7 +39,7 @@ type Minion struct {
 	ModList                      []any    `lua:"modList"` // *modparser.Mod (or *D for flag-slot typos)
 }
 
-func loadMinionDef(m gamedata.MinionDef) *Minion {
+func loadMinionDef(m schema.MinionDef) *Minion {
 	out := &Minion{
 		Name:                         m.Name,
 		MonsterTags:                  emptyIfNil(m.MonsterTags),
@@ -116,8 +116,8 @@ func handMinionsTable() map[string]*Minion {
 	}
 }
 
-func loadMinions(src gamedata.Minions) {
-	load := func(defs []gamedata.MinionDef) map[string]*Minion {
+func loadMinions(src schema.Minions) {
+	load := func(defs []schema.MinionDef) map[string]*Minion {
 		out := map[string]*Minion{}
 		for _, m := range defs {
 			if m.Skip {

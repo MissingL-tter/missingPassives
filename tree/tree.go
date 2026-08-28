@@ -15,7 +15,7 @@ import (
 )
 
 // Stats is the parsed-modifier state ProcessStats maintains on anything
-// carrying stat lines (tree nodes, mastery effects, legion nodes).
+// carrying stat lines (tree nodes, mastery effects, alternate passives).
 type Stats struct {
 	Sd      []string // stat lines (multiline entries split in place)
 	Mods    []*NodeMod
@@ -46,14 +46,14 @@ type MasteryEffect struct {
 }
 
 // Node is one passive tree node, raw fields plus processed state.
-// Legion (timeless jewel) passives are also Nodes; they carry a string id
+// Alternate (conquered-replacement) passives are also Nodes; they carry a string id
 // (IDStr) and no geometry.
 type Node struct {
 	ID    int64
-	IDStr string // mod source id: decimal of ID, or the legion id
+	IDStr string // mod source id: decimal of ID, or the alt passive's string id
 	Name  string // dn (= name in the 3_10+ format)
 	// NameStr is node.name as distinct from dn: tree nodes carry both (the
-	// same string); legion passives have only dn.
+	// same string); alternate passives have only dn.
 	NameStr    *string
 	Icon       string
 	GroupID    int64
@@ -72,10 +72,10 @@ type Node struct {
 
 	MasteryEffects       []*MasteryEffectRef
 	PassivePointsGranted float64
-	// Legion pool metadata (nil on real tree nodes): the roll ranges the
-	// timeless substitution reads.
+	// Alternate-pool metadata (nil on real tree nodes): the roll ranges the
+	// conquering substitution reads.
 	SortedStats []string
-	StatDescs   []*LegionStatDesc
+	StatDescs   []*ConqueredStatDesc
 	// Tattoo override pool fields (false/empty on real tree nodes).
 	IsTattooFlag           bool
 	OverrideTypeStr        string
@@ -172,8 +172,8 @@ type Tree struct {
 	OrbitRadii         []float64
 	OrbitAnglesByOrbit [][]float64
 
-	Legion *Legion
-	Tattoo *Tattoo
+	ConqueredPassives *ConqueredPassives
+	Tattoo            *Tattoo
 
 	MinX, MinY, MaxX, MaxY float64
 	Size                   float64
@@ -379,8 +379,21 @@ func Load(version string) *Tree {
 		}
 	}
 
-	t.loadLegion()
+	t.loadConqueredPassives()
 	t.loadTattoo()
+
+	// Late load the Generated data so we can take advantage of a tree
+	// existing (the reference's buildTreeDependentUniques call).
+	var nativeKeystones []string
+	seen := map[*Node]bool{}
+	for _, name := range sortedStringKeys(t.KeystoneMap) {
+		node := t.KeystoneMap[name]
+		if node.Keystone && !node.IsBlighted && node.HasPosition && !seen[node] {
+			seen[node] = true
+			nativeKeystones = append(nativeKeystones, node.Name)
+		}
+	}
+	data.BuildTreeDependentUniques(t.ClassNotables, nativeKeystones)
 	return t
 }
 

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -102,8 +102,8 @@ func buildMods(x *Ctx) (any, error) {
 	x.modItemExclusive = map[string]*modEntry{}
 	x.modFoulborn = map[string]*modEntry{}
 
-	buildPool := func(outName string) []gamedata.ItemMod {
-		var pool []gamedata.ItemMod
+	buildPool := func(outName string) []schema.ItemMod {
+		var pool []schema.ItemMod
 		condFunc := modPoolConds[outName]
 		x.Dat("Mods").Rows(func(mod *Row) bool {
 			if !condFunc(mod) {
@@ -135,7 +135,7 @@ func buildMods(x *Ctx) (any, error) {
 			}
 			genType := mod.Get("GenerationType").(int64)
 			family := listRows(mod.Get("Family"))
-			m := gamedata.ItemMod{Id: modId}
+			m := schema.ItemMod{Id: modId}
 			switch genType {
 			case genPrefix:
 				m.Type = "Prefix"
@@ -238,7 +238,7 @@ func buildMods(x *Ctx) (any, error) {
 				modIdx++
 			}
 			tradeHashes.Pairs(func(hash float64, v any) {
-				m.TradeHashes = append(m.TradeHashes, gamedata.TradeHash{Hash: int64(hash), Lines: v.([]string)})
+				m.TradeHashes = append(m.TradeHashes, schema.TradeHash{Hash: int64(hash), Lines: v.([]string)})
 			})
 			pool = append(pool, m)
 
@@ -259,7 +259,7 @@ func buildMods(x *Ctx) (any, error) {
 		return pool
 	}
 
-	doc := gamedata.ModsData{Pools: map[string][]gamedata.ItemMod{}}
+	doc := schema.ModsData{Pools: map[string][]schema.ItemMod{}}
 	for _, outName := range modPoolOrder {
 		doc.Pools[poolId(outName)] = buildPool(outName)
 	}

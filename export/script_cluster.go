@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -19,10 +19,10 @@ var reDdsEnd = regexp.MustCompile(`dds$`)
 func buildCluster(x *Ctx) (any, error) {
 	x.LoadStatFile("passive_skill_stat_descriptions.txt")
 
-	var cj gamedata.ClusterJewels
+	var cj schema.ClusterJewels
 	x.Dat("PassiveTreeExpansionJewels").Rows(func(jewel *Row) bool {
 		size := jewel.Get("Size").(*Row)
-		j := gamedata.ClusterJewelSize{
+		j := schema.ClusterJewelSize{
 			Name:            luaStr(jewel.Get("BaseItemType").(*Row).Get("Name")),
 			Size:            luaStr(size.Get("Id")),
 			SizeIndex:       size.Index - 1,
@@ -36,7 +36,7 @@ func buildCluster(x *Ctx) (any, error) {
 		for _, skill := range x.Dat("PassiveTreeExpansionSkills").GetRowList("JewelSize", size) {
 			node := skill.Get("Node").(*Row)
 			tagId := luaStr(skill.Get("Tag").(*Row).Get("Id"))
-			s := gamedata.ClusterSkill{
+			s := schema.ClusterSkill{
 				Id:   luaStr(node.Get("Id")),
 				Name: luaStr(node.Get("Name")),
 				Icon: reDdsEnd.ReplaceAllString(luaStr(node.Get("Icon")), "png"),
@@ -64,7 +64,7 @@ func buildCluster(x *Ctx) (any, error) {
 	x.Dat("PassiveTreeExpansionSpecialSkills").Rows(func(skill *Row) bool {
 		node := skill.Get("Node").(*Row)
 		if node.Get("Notable").(bool) {
-			cj.NotableSortOrder = append(cj.NotableSortOrder, gamedata.NameOrder{
+			cj.NotableSortOrder = append(cj.NotableSortOrder, schema.NameOrder{
 				Name:  luaStr(node.Get("Name")),
 				Order: skill.Get("Stat").(*Row).Index,
 			})
@@ -80,7 +80,7 @@ func buildCluster(x *Ctx) (any, error) {
 	})
 	x.Dat("PassiveJewelSlots").Rows(func(jewelSlot *Row) bool {
 		if _, ok := jewelSlot.Get("ClusterSize").(*Row); ok {
-			cj.OrbitOffsets = append(cj.OrbitOffsets, gamedata.OrbitOffset{
+			cj.OrbitOffsets = append(cj.OrbitOffsets, schema.OrbitOffset{
 				NodeId: jewelSlot.Get("Proxy").(*Row).Get("PassiveSkillNodeId").(int64),
 				Starts: intCells(jewelSlot.Get("StartIndices").([]any)),
 			})

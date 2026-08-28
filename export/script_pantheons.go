@@ -5,7 +5,7 @@ package export
 import (
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/gamedata"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 func init() {
@@ -15,9 +15,9 @@ func init() {
 func buildPantheons(x *Ctx) (any, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
-	var ps gamedata.Pantheons
+	var ps schema.Pantheons
 	for _, p := range x.Dat("PantheonPanelLayout").GetRowList("IsDisabled", false) {
-		pan := gamedata.Pantheon{
+		pan := schema.Pantheon{
 			Id:         luaStr(p.Get("Id")),
 			IsMajorGod: p.Get("IsMajorGod").(bool),
 		}
@@ -36,7 +36,7 @@ func buildPantheons(x *Ctx) (any, error) {
 			if len(g.statKeys) == 0 {
 				continue
 			}
-			pg := gamedata.PantheonGod{Index: gi + 1, Name: g.name}
+			pg := schema.PantheonGod{Index: gi + 1, Name: g.name}
 			for si, key := range g.statKeys {
 				keyRow := key.(*Row)
 				value := g.values[si].(int64)
@@ -44,7 +44,7 @@ func buildPantheons(x *Ctx) (any, error) {
 				stats := map[string]*statVal{
 					id: {min: float64(value), max: float64(value)},
 				}
-				pg.Mods = append(pg.Mods, gamedata.PantheonMod{
+				pg.Mods = append(pg.Mods, schema.PantheonMod{
 					StatId: id,
 					Line:   strings.Join(x.DescribeStats(stats).Lines, " "),
 					Value:  value,
