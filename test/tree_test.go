@@ -1,6 +1,6 @@
 package test
 
-// The tree differential: tools/dump_tree_archive.lua dumps a freshly built
+// The tree differential: tools/dump_tree.lua dumps a freshly built
 // PassiveTree (before any calc can stamp item sources onto shared node mod
 // lists), and the Go tree.Load must reproduce every node's processed state
 // byte-for-byte — positions, links, parsed mod lists, the name lookup
@@ -16,8 +16,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 	"github.com/MissingL-tter/missingPassives/tree"
 )
 

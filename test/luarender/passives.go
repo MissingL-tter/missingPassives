@@ -5,6 +5,7 @@
 package luarender
 
 import (
+	"math"
 	"sort"
 	"strings"
 
@@ -168,10 +169,20 @@ func renderTattooPassives(d schema.TattooPassives, _ Templates) (map[string]stri
 
 func renderLegionPassives(d schema.LegionPassives, _ Templates) (map[string]string, error) {
 	nodes := lt{}
+	// The reference file's layout offsets: keystones count up in threes,
+	// everything else draws from LuaJIT's unseeded math.random stream —
+	// recomputed here, exactly as the reference script drew them.
+	ksCount := int64(-1)
+	prng := newLuaPRNG()
 	for i, n := range d.Nodes {
 		o := 3.0
+		oidx := 0.0
 		if n.Ks {
 			o = 4.0
+			ksCount++
+			oidx = float64(ksCount * 3)
+		} else {
+			oidx = math.Floor(prng.random() * 1e5)
 		}
 		nodes[i+1] = lt{
 			"id":                     n.Id,
@@ -190,7 +201,7 @@ func renderLegionPassives(d schema.LegionPassives, _ Templates) (map[string]stri
 			"sortedStats":            strTable(n.SortedStats),
 			"g":                      float64(1e9),
 			"o":                      o,
-			"oidx":                   n.Oidx,
+			"oidx":                   oidx,
 			"sa":                     0.0,
 			"da":                     0.0,
 			"ia":                     0.0,

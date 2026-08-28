@@ -1,7 +1,7 @@
 // pobexport regenerates the game data from an extracted GGPK directory as
 // structured JSON documents (one per script), standing in for the Lua Export
 // application. The reference's Data/*.lua text is reproduced only inside the
-// differential test (internal/luarender).
+// differential test (test/luarender).
 //
 // Usage: pobexport -src <extracted-ggpk-root> -out <data-dir> [script ...]
 // With no script names, every ported script runs.
@@ -20,7 +20,6 @@ import (
 func main() {
 	src := flag.String("src", "", "extracted GGPK root (holds Data/ and Metadata/)")
 	out := flag.String("out", "data/raw", "output directory for the generated <script>.json documents")
-	tpl := flag.String("tpl", ".archive/src", "source tree holding hand-maintained templates (Export/Uniques, Export/Skills)")
 	flag.Parse()
 	if *src == "" {
 		flag.Usage()
@@ -36,7 +35,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "loading dats:", err)
 		os.Exit(1)
 	}
-	ctx := &export.Ctx{Dats: dats, SrcDir: *src, TplDir: *tpl}
+	ctx := &export.Ctx{Dats: dats, SrcDir: *src}
 
 	want := map[string]bool{}
 	for _, name := range flag.Args() {

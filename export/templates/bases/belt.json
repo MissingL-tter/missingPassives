@@ -1,0 +1,14 @@
+{
+	"directives": [
+		"#type Belt",
+		"#influenceBaseTag belt",
+		"#baseMatch Metadata/Items/Belts/Belt[0-9]+",
+		"#forceShow true",
+		"#baseMatch Metadata/Items/Belts/BeltE[0-9]+",
+		"#forceShow false",
+		"#baseMatch Metadata/Items/Belts/BeltAtlas[0-9]+",
+		"#base Metadata/Items/Belts/BeltAbyss",
+		"#base Metadata/Items/Belts/BeltFaridun",
+		"#base Metadata/Items/Belts/BeltDemigods1"
+	]
+}

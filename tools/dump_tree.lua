@@ -2,7 +2,7 @@
 -- sources onto shared node mod lists — for the tree port's archive
 -- comparison. Run from .archive/src/:
 --
---   luajit ../../tools/dump_tree_archive.lua [version]
+--   luajit ../../tools/dump_tree.lua [version]
 --
 -- version defaults to 3_29. Writes test/testdata/tree_archive.jsonl:
 --   meta        - version, counts, class table

@@ -17,7 +17,7 @@ import (
 
 	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/data/schema"
-	"github.com/MissingL-tter/missingPassives/internal/luarender"
+	"github.com/MissingL-tter/missingPassives/test/luarender"
 )
 
 func TestTattooArtifactMatchesArchive(t *testing.T) {

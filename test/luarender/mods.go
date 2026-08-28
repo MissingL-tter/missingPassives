@@ -68,10 +68,17 @@ func renderMods(d schema.ModsData, _ Templates) (map[string]string, error) {
 				}
 			}
 			b.W("modTags = { ", m.ModTags, " }, ")
-			b.W("tradeHashes = { ")
-			for _, th := range m.TradeHashes {
-				b.W(fmt.Sprintf("[%d] = { %s }, ", th.Hash, "\""+strings.Join(th.Lines, "\", \"")+"\""))
+			// The document carries the mod's stat order; the reference file
+			// wrote pairs() over a hash table — replay the insertions and
+			// walk LuaJIT's iteration order.
+			th := &ljTab{}
+			for _, e := range m.TradeHashes {
+				th.Set(float64(e.Hash), e.Lines)
 			}
+			b.W("tradeHashes = { ")
+			th.Pairs(func(hash float64, v any) {
+				b.W(fmt.Sprintf("[%d] = { %s }, ", int64(hash), "\""+strings.Join(v.([]string), "\", \"")+"\""))
+			})
 			b.W("} ")
 			b.W("},\n")
 		}

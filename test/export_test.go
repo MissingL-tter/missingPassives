@@ -11,7 +11,7 @@ import (
 	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/export"
-	"github.com/MissingL-tter/missingPassives/internal/luarender"
+	"github.com/MissingL-tter/missingPassives/test/luarender"
 )
 
 // tplFS serves the hand-maintained template files to luarender from the
@@ -52,7 +52,7 @@ func TestExportAgainstReference(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loading dats: %v", err)
 	}
-	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir, TplDir: refDir}
+	ctx := &export.Ctx{Dats: dats, SrcDir: srcDir}
 
 	var checked, disagree int
 	rawByName := map[string]json.RawMessage{}

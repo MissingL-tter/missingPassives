@@ -6,7 +6,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Divine Flesh",
-			"oidx": 0,
 			"sd": [
 				"All Damage taken bypasses Energy Shield",
 				"50% of Elemental Damage taken as Chaos Damage",
@@ -32,7 +31,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Eternal Youth",
-			"oidx": 3,
 			"sd": [
 				"50% less Life Regeneration Rate",
 				"50% less maximum Total Life Recovery per Second from Leech",
@@ -58,7 +56,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Immortal Ambition",
-			"oidx": 6,
 			"sd": [
 				"Energy Shield starts at zero",
 				"Cannot Recharge or Regenerate Energy Shield",
@@ -86,7 +83,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Corrupted Soul",
-			"oidx": 9,
 			"sd": [
 				"50% of Non-Chaos Damage taken bypasses Energy Shield",
 				"Gain 15% of Maximum Life as Extra Maximum Energy Shield"
@@ -111,7 +107,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Damage",
-			"oidx": 79420,
 			"sd": [
 				"(7-12)% increased Fire Damage"
 			],
@@ -135,7 +130,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Damage",
-			"oidx": 69885,
 			"sd": [
 				"(7-12)% increased Cold Damage"
 			],
@@ -159,7 +153,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Damage",
-			"oidx": 59010,
 			"sd": [
 				"(7-12)% increased Lightning Damage"
 			],
@@ -183,7 +176,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Physical Damage",
-			"oidx": 75322,
 			"sd": [
 				"(7-12)% increased Physical Damage"
 			],
@@ -207,7 +199,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Damage",
-			"oidx": 8097,
 			"sd": [
 				"(7-12)% increased Chaos Damage"
 			],
@@ -231,7 +222,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Damage",
-			"oidx": 66110,
 			"sd": [
 				"Minions deal (8-13)% increased Damage"
 			],
@@ -255,7 +245,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attack Damage",
-			"oidx": 33933,
 			"sd": [
 				"(7-12)% increased Attack Damage"
 			],
@@ -279,7 +268,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Spell Damage",
-			"oidx": 73573,
 			"sd": [
 				"(7-12)% increased Spell Damage"
 			],
@@ -303,7 +291,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Area Damage",
-			"oidx": 42668,
 			"sd": [
 				"(7-12)% increased Area Damage"
 			],
@@ -327,7 +314,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Projectile Damage",
-			"oidx": 56859,
 			"sd": [
 				"(7-12)% increased Projectile Damage"
 			],
@@ -351,7 +337,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Damage Over Time",
-			"oidx": 11446,
 			"sd": [
 				"(7-12)% increased Damage over Time"
 			],
@@ -375,7 +360,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Area of Effect",
-			"oidx": 5489,
 			"sd": [
 				"(4-7)% increased Area of Effect"
 			],
@@ -399,7 +383,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Projectile Speed",
-			"oidx": 97416,
 			"sd": [
 				"(7-12)% increased Projectile Speed"
 			],
@@ -423,7 +406,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Chance",
-			"oidx": 70539,
 			"sd": [
 				"(7-14)% increased Critical Strike Chance"
 			],
@@ -447,7 +429,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Multiplier",
-			"oidx": 17595,
 			"sd": [
 				"+(6-10)% to Critical Strike Multiplier"
 			],
@@ -471,7 +452,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attack Speed",
-			"oidx": 97479,
 			"sd": [
 				"(3-4)% increased Attack Speed"
 			],
@@ -495,7 +475,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cast Speed",
-			"oidx": 27693,
 			"sd": [
 				"(2-3)% increased Cast Speed"
 			],
@@ -519,7 +498,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Movement Speed",
-			"oidx": 35409,
 			"sd": [
 				"(2-3)% increased Movement Speed"
 			],
@@ -543,7 +521,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Chance",
-			"oidx": 47236,
 			"sd": [
 				"(3-6)% chance to Ignite"
 			],
@@ -567,7 +544,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Chance",
-			"oidx": 67900,
 			"sd": [
 				"(3-6)% chance to Freeze"
 			],
@@ -591,7 +567,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Chance",
-			"oidx": 57514,
 			"sd": [
 				"(3-6)% chance to Shock"
 			],
@@ -615,7 +590,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Skill Duration",
-			"oidx": 79693,
 			"sd": [
 				"(4-7)% increased Skill Effect Duration"
 			],
@@ -639,7 +613,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 45174,
 			"sd": [
 				"(2-4)% increased maximum Life"
 			],
@@ -663,7 +636,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana",
-			"oidx": 18201,
 			"sd": [
 				"(4-6)% increased maximum Mana"
 			],
@@ -687,7 +659,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 65999,
 			"sd": [
 				"(12-17)% increased Mana Regeneration Rate"
 			],
@@ -711,7 +682,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 21117,
 			"sd": [
 				"(7-12)% increased Armour"
 			],
@@ -735,7 +705,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion",
-			"oidx": 59672,
 			"sd": [
 				"(7-12)% increased Evasion Rating"
 			],
@@ -759,7 +728,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 14411,
 			"sd": [
 				"(3-5)% increased maximum Energy Shield"
 			],
@@ -783,7 +751,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Block",
-			"oidx": 82991,
 			"sd": [
 				"+2% Chance to Block Attack Damage"
 			],
@@ -807,7 +774,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Spell Block",
-			"oidx": 58330,
 			"sd": [
 				"2% Chance to Block Spell Damage"
 			],
@@ -831,7 +797,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Avoid Elemental Ailments",
-			"oidx": 2479,
 			"sd": [
 				"3% chance to Avoid Elemental Ailments"
 			],
@@ -855,7 +820,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Spell Suppression",
-			"oidx": 83640,
 			"sd": [
 				"+4% chance to Suppress Spell Damage"
 			],
@@ -879,7 +843,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Aura Effect",
-			"oidx": 4960,
 			"sd": [
 				"(2-4)% increased effect of Non-Curse Auras from your Skills"
 			],
@@ -903,7 +866,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Curse Effect",
-			"oidx": 82957,
 			"sd": [
 				"2% increased Effect of your Curses"
 			],
@@ -927,7 +889,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 62650,
 			"sd": [
 				"+(9-14)% to Fire Resistance"
 			],
@@ -951,7 +912,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 82675,
 			"sd": [
 				"+(9-14)% to Cold Resistance"
 			],
@@ -975,7 +935,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 18075,
 			"sd": [
 				"+(9-14)% to Lightning Resistance"
 			],
@@ -999,7 +958,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 25548,
 			"sd": [
 				"+(6-10)% to Chaos Resistance"
 			],
@@ -1023,7 +981,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Immolation",
-			"oidx": 92114,
 			"sd": [
 				"(25-35)% increased Fire Damage",
 				"Damage Penetrates (2-4)% Fire Resistance"
@@ -1057,7 +1014,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Revitalising Flames",
-			"oidx": 31696,
 			"sd": [
 				"(25-35)% increased Fire Damage",
 				"0.2% of Fire Damage Leeched as Life"
@@ -1091,7 +1047,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Flesh to Flames",
-			"oidx": 7855,
 			"sd": [
 				"(25-35)% increased Fire Damage",
 				"10% of Physical Damage Converted to Fire Damage"
@@ -1125,7 +1080,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Stillness",
-			"oidx": 35484,
 			"sd": [
 				"(25-35)% increased Cold Damage",
 				"Damage Penetrates (2-4)% Cold Resistance"
@@ -1159,7 +1113,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Revitalising Frost",
-			"oidx": 92100,
 			"sd": [
 				"(25-35)% increased Cold Damage",
 				"0.2% of Cold Damage Leeched as Life"
@@ -1193,7 +1146,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Flesh to Frost",
-			"oidx": 2503,
 			"sd": [
 				"(25-35)% increased Cold Damage",
 				"10% of Physical Damage Converted to Cold Damage"
@@ -1227,7 +1179,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Thunder",
-			"oidx": 67692,
 			"sd": [
 				"(25-35)% increased Lightning Damage",
 				"Damage Penetrates (2-4)% Lightning Resistance"
@@ -1261,7 +1212,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Revitalising Lightning",
-			"oidx": 74451,
 			"sd": [
 				"(25-35)% increased Lightning Damage",
 				"0.2% of Lightning Damage Leeched as Life"
@@ -1295,7 +1245,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Flesh to Lightning",
-			"oidx": 55329,
 			"sd": [
 				"(25-35)% increased Lightning Damage",
 				"10% of Physical Damage Converted to Lightning Damage"
@@ -1329,7 +1278,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Might",
-			"oidx": 11777,
 			"sd": [
 				"(2-4)% chance to deal Double Damage",
 				"(25-35)% increased Physical Damage"
@@ -1363,7 +1311,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Revitalising Winds",
-			"oidx": 13357,
 			"sd": [
 				"0.2% of Physical Damage Leeched as Life",
 				"(25-35)% increased Physical Damage"
@@ -1397,7 +1344,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Bloody Savagery",
-			"oidx": 3316,
 			"sd": [
 				"Bleeding you inflict deals Damage 10% faster",
 				"(25-35)% increased Physical Damage"
@@ -1431,7 +1377,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Shadows",
-			"oidx": 49930,
 			"sd": [
 				"(25-35)% increased Chaos Damage",
 				"25% chance to inflict Withered for 2 seconds on Hit"
@@ -1465,7 +1410,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Revitalising Darkness",
-			"oidx": 68927,
 			"sd": [
 				"(25-35)% increased Chaos Damage",
 				"0.2% of Chaos Damage Leeched as Life"
@@ -1499,7 +1443,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Thaumaturgical Aptitude",
-			"oidx": 50654,
 			"sd": [
 				"(25-35)% increased Spell Damage",
 				"(35-50)% increased Spell Critical Strike Chance"
@@ -1533,7 +1476,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Hierarchy",
-			"oidx": 85555,
 			"sd": [
 				"Minions have (15-20)% increased maximum Life",
 				"Minions deal (25-35)% increased Damage"
@@ -1567,7 +1509,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Exquisite Pain",
-			"oidx": 13953,
 			"sd": [
 				"(25-35)% increased Damage over Time",
 				"(7-11)% increased Skill Effect Duration"
@@ -1601,7 +1542,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Flesh",
-			"oidx": 29305,
 			"sd": [
 				"(6-10)% increased maximum Life",
 				"Regenerate (0.7-1.2)% of Life per second"
@@ -1635,7 +1575,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Flesh Worship",
-			"oidx": 87752,
 			"sd": [
 				"(6-10)% increased maximum Life",
 				"0.4% of Attack Damage Leeched as Life"
@@ -1669,7 +1608,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ritual of Memory",
-			"oidx": 76549,
 			"sd": [
 				"(17-23)% increased maximum Mana",
 				"(15-25)% increased Mana Regeneration Rate"
@@ -1703,7 +1641,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Automaton Studies",
-			"oidx": 69557,
 			"sd": [
 				"(30-40)% increased Armour",
 				"(3-4)% additional Physical Damage Reduction"
@@ -1737,7 +1674,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Construct Studies",
-			"oidx": 64898,
 			"sd": [
 				"(30-40)% increased Evasion Rating",
 				"(5-7)% chance to Blind Enemies on Hit"
@@ -1771,7 +1707,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Energy Flow Studies",
-			"oidx": 83885,
 			"sd": [
 				"(8-12)% increased maximum Energy Shield",
 				"(10-15)% increased Energy Shield Recharge Rate"
@@ -1805,7 +1740,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Soul Worship",
-			"oidx": 1049,
 			"sd": [
 				"(8-12)% increased maximum Energy Shield",
 				"0.3% of Spell Damage Leeched as Energy Shield"
@@ -1839,7 +1773,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Blood-Quenched Bulwark",
-			"oidx": 5394,
 			"sd": [
 				"(6-10) Life gained when you Block",
 				"+8% Chance to Block Attack Damage"
@@ -1873,7 +1806,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Thaumaturgical Protection",
-			"oidx": 76907,
 			"sd": [
 				"8% Chance to Block Spell Damage",
 				"(20-30)% increased Defences from Equipped Shield"
@@ -1907,7 +1839,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Jungle Paths",
-			"oidx": 40498,
 			"sd": [
 				"(8-10)% chance to Avoid Elemental Ailments",
 				"(8-10)% chance to Avoid being Stunned"
@@ -1941,7 +1872,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Temple Paths",
-			"oidx": 95964,
 			"sd": [
 				"+6% chance to Suppress Spell Damage",
 				"+(8-10)% to all Elemental Resistances"
@@ -1975,7 +1905,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Commanding Presence",
-			"oidx": 98699,
 			"sd": [
 				"20% increased Area of Effect of Aura Skills",
 				"(7-10)% increased effect of Non-Curse Auras from your Skills"
@@ -2009,7 +1938,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Ancient Hex",
-			"oidx": 38490,
 			"sd": [
 				"(4-6)% increased Effect of your Curses",
 				"Curse Skills have 20% increased Skill Effect Duration"
@@ -2043,7 +1971,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cult of Fire",
-			"oidx": 29481,
 			"sd": [
 				"+1% to maximum Fire Resistance",
 				"+(20-30)% to Fire Resistance"
@@ -2077,7 +2004,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cult of Ice",
-			"oidx": 27195,
 			"sd": [
 				"+1% to maximum Cold Resistance",
 				"+(20-30)% to Cold Resistance"
@@ -2111,7 +2037,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cult of Lightning",
-			"oidx": 88478,
 			"sd": [
 				"+1% to maximum Lightning Resistance",
 				"+(20-30)% to Lightning Resistance"
@@ -2145,7 +2070,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cult of Chaos",
-			"oidx": 95624,
 			"sd": [
 				"+1% to maximum Chaos Resistance",
 				"+(13-19)% to Chaos Resistance"
@@ -2179,7 +2103,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Might of the Vaal",
-			"oidx": 59351,
 			"sd": null,
 			"stats": null,
 			"sortedStats": null
@@ -2190,7 +2113,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Legacy of the Vaal",
-			"oidx": 75827,
 			"sd": null,
 			"stats": null,
 			"sortedStats": null
@@ -2201,7 +2123,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Strength of Blood",
-			"oidx": 12,
 			"sd": [
 				"Life Recovery from Non-Instant Leech is not applied",
 				"2% additional Physical Damage Reduction for every 3% Life Recovery per second from Leech"
@@ -2226,7 +2147,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Tempered by War",
-			"oidx": 15,
 			"sd": [
 				"50% of Cold and Lightning Damage taken as Fire Damage",
 				"50% less Cold Resistance",
@@ -2252,7 +2172,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Glancing Blows",
-			"oidx": 18,
 			"sd": [
 				"Chance to Block Attack Damage is doubled",
 				"Chance to Block Spell Damage is doubled",
@@ -2278,7 +2197,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Chainbreaker",
-			"oidx": 21,
 			"sd": [
 				"Mana Recovery from Regeneration is not applied",
 				"1 Rage Regenerated for every 25 Mana Regeneration per Second",
@@ -2305,7 +2223,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Wind Dancer",
-			"oidx": 24,
 			"sd": [
 				"20% less Attack Damage taken if you haven't been Hit by an Attack Recently",
 				"10% more chance to Evade Attacks if you have been Hit by an Attack Recently",
@@ -2331,7 +2248,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "The Traitor",
-			"oidx": 27,
 			"sd": [
 				"Flasks Gain 4 Charges per empty Flask Slot every 5 seconds"
 			],
@@ -2355,7 +2271,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Dance with Death",
-			"oidx": 30,
 			"sd": [
 				"Can't use Helmets",
 				"Your Critical Strike Chance is Lucky",
@@ -2382,7 +2297,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Second Sight",
-			"oidx": 33,
 			"sd": [
 				"You are Blind",
 				"Blind does not affect your Light Radius",
@@ -2408,7 +2322,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "The Agnostic",
-			"oidx": 36,
 			"sd": [
 				"Removes all Energy Shield",
 				"While not on Full Life, Sacrifice 20% of Mana per Second to Recover that much Life"
@@ -2433,7 +2346,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Transcendence",
-			"oidx": 39,
 			"sd": [
 				"Armour applies to Fire, Cold and Lightning Damage taken from Hits instead of Physical Damage",
 				"-15% to all maximum Elemental Resistances"
@@ -2458,7 +2370,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Inner Conviction",
-			"oidx": 42,
 			"sd": [
 				"3% more Spell Damage per Power Charge",
 				"Gain Power Charges instead of Frenzy Charges"
@@ -2483,7 +2394,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Power of Purpose",
-			"oidx": 45,
 			"sd": [
 				"80% of Maximum Mana is Converted to twice that much Armour"
 			],
@@ -2507,7 +2417,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Devotion",
-			"oidx": 6194,
 			"sd": [
 				"+10 to Devotion"
 			],
@@ -2531,7 +2440,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Heated Devotion",
-			"oidx": 36277,
 			"sd": [
 				"15% of Physical Damage Converted to Fire Damage while you have at least 150 Devotion"
 			],
@@ -2555,7 +2463,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Calming Devotion",
-			"oidx": 64088,
 			"sd": [
 				"15% of Physical Damage Converted to Cold Damage while you have at least 150 Devotion"
 			],
@@ -2579,7 +2486,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Thundrous Devotion",
-			"oidx": 94707,
 			"sd": [
 				"15% of Physical Damage Converted to Lightning Damage while you have at least 150 Devotion"
 			],
@@ -2603,7 +2509,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Thoughts and Prayers",
-			"oidx": 74973,
 			"sd": [
 				"Gain 5% of Maximum Mana as Extra Maximum Energy Shield while you have at least 150 Devotion"
 			],
@@ -2627,7 +2532,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Zealot",
-			"oidx": 10172,
 			"sd": [
 				"Gain Arcane Surge on Hit with Spells if you have at least 150 Devotion"
 			],
@@ -2651,7 +2555,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Enduring Faith",
-			"oidx": 17606,
 			"sd": [
 				"+1 to Minimum Endurance Charges while you have at least 150 Devotion"
 			],
@@ -2675,7 +2578,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Powerful Faith",
-			"oidx": 5178,
 			"sd": [
 				"+1 to Minimum Power Charges while you have at least 150 Devotion"
 			],
@@ -2699,7 +2601,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Frenzied Faith",
-			"oidx": 22257,
 			"sd": [
 				"+1 to Minimum Frenzy Charges while you have at least 150 Devotion"
 			],
@@ -2723,7 +2624,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cloistered",
-			"oidx": 14760,
 			"sd": [
 				"Immune to Elemental Ailments while on Consecrated Ground if you have at least 150 Devotion"
 			],
@@ -2747,7 +2647,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Martyr's Might",
-			"oidx": 42889,
 			"sd": [
 				"5% additional Physical Damage Reduction while you have at least 150 Devotion"
 			],
@@ -2771,7 +2670,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Intolerance of Sin",
-			"oidx": 60270,
 			"sd": [
 				"+1% to all maximum Resistances if you have at least 150 Devotion"
 			],
@@ -2795,7 +2693,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Smite the Wicked",
-			"oidx": 27127,
 			"sd": [
 				"10% chance to inflict Fire Exposure on Hit if you have at least 150 Devotion"
 			],
@@ -2819,7 +2716,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Smite the Ignorant",
-			"oidx": 82503,
 			"sd": [
 				"10% chance to inflict Cold Exposure on Hit if you have at least 150 Devotion"
 			],
@@ -2843,7 +2739,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Smite the Heretical",
-			"oidx": 28525,
 			"sd": [
 				"10% chance to inflict Lightning Exposure on Hit if you have at least 150 Devotion"
 			],
@@ -2867,7 +2762,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Supreme Decadence",
-			"oidx": 48,
 			"sd": [
 				"Life Recovery from Flasks also applies to Energy Shield",
 				"30% less Life Recovery from Flasks"
@@ -2892,7 +2786,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Supreme Grandstanding",
-			"oidx": 51,
 			"sd": [
 				"Nearby Allies and Enemies Share Charges with you",
 				"Enemies Hitting you have 10% chance to gain an Endurance, ",
@@ -2918,7 +2811,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Supreme Ego",
-			"oidx": 54,
 			"sd": [
 				"Auras from your Skills can only affect you",
 				"Aura Skills have 1% more Aura Effect per 2% of maximum Mana they Reserve",
@@ -2944,7 +2836,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Supreme Ostentation",
-			"oidx": 57,
 			"sd": [
 				"Ignore Attribute Requirements",
 				"Gain no inherent bonuses from Attributes"
@@ -2969,7 +2860,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Price of Glory",
-			"oidx": 20196,
 			"sd": null,
 			"stats": null,
 			"sortedStats": null
@@ -2980,7 +2870,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Flawless Execution",
-			"oidx": 14977,
 			"sd": [
 				"80% increased Critical Strike Chance"
 			],
@@ -3004,7 +2893,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Brutal Execution",
-			"oidx": 76777,
 			"sd": [
 				"+40% to Critical Strike Multiplier"
 			],
@@ -3028,7 +2916,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Resilience",
-			"oidx": 5183,
 			"sd": [
 				"Gain 1 Endurance Charge every second if you've been Hit Recently"
 			],
@@ -3052,7 +2939,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Fortitude",
-			"oidx": 80316,
 			"sd": [
 				"8% increased Armour per Endurance Charge"
 			],
@@ -3076,7 +2962,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Dominance",
-			"oidx": 68905,
 			"sd": [
 				"10% increased Damage per Endurance Charge"
 			],
@@ -3100,7 +2985,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Fervour",
-			"oidx": 14480,
 			"sd": [
 				"10% chance to gain a Frenzy Charge on Hit"
 			],
@@ -3124,7 +3008,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Adaptiveness",
-			"oidx": 93682,
 			"sd": [
 				"8% increased Evasion Rating per Frenzy Charge"
 			],
@@ -3148,7 +3031,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Bloodlust",
-			"oidx": 80835,
 			"sd": [
 				"10% increased Damage per Frenzy Charge"
 			],
@@ -3172,7 +3054,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Subjugation",
-			"oidx": 38654,
 			"sd": [
 				"15% chance to gain a Power Charge on Critical Strike"
 			],
@@ -3196,7 +3077,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Separation",
-			"oidx": 79623,
 			"sd": [
 				"4% increased Energy Shield per Power Charge"
 			],
@@ -3220,7 +3100,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Eternal Exploitation",
-			"oidx": 6774,
 			"sd": [
 				"10% increased Damage per Power Charge"
 			],
@@ -3244,7 +3123,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Rites of Lunaris",
-			"oidx": 68329,
 			"sd": [
 				"30% increased Effect of Chill"
 			],
@@ -3268,7 +3146,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Rites of Solaris",
-			"oidx": 52806,
 			"sd": [
 				"80% chance to Avoid being Chilled"
 			],
@@ -3292,7 +3169,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Virtue Gem Surgery",
-			"oidx": 79878,
 			"sd": [
 				"30% increased Effect of Shock"
 			],
@@ -3316,7 +3192,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Rural Life",
-			"oidx": 7265,
 			"sd": [
 				"80% chance to Avoid being Shocked"
 			],
@@ -3340,7 +3215,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "City Walls",
-			"oidx": 51502,
 			"sd": [
 				"+12% Chance to Block Attack Damage"
 			],
@@ -3364,7 +3238,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Sceptre Pinnacle",
-			"oidx": 69709,
 			"sd": [
 				"12% Chance to Block Spell Damage"
 			],
@@ -3388,7 +3261,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Secret Tunnels",
-			"oidx": 54984,
 			"sd": [
 				"20% chance to Avoid Elemental Ailments"
 			],
@@ -3412,7 +3284,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Purity Rebel",
-			"oidx": 9731,
 			"sd": [
 				"+12% chance to Suppress Spell Damage"
 			],
@@ -3436,7 +3307,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Superiority",
-			"oidx": 65124,
 			"sd": [
 				"12% increased effect of Non-Curse Auras from your Skills"
 			],
@@ -3460,7 +3330,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Slum Lord",
-			"oidx": 7309,
 			"sd": [
 				"Minions deal 80% increased Damage"
 			],
@@ -3484,7 +3353,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Axiom Warden",
-			"oidx": 19927,
 			"sd": [
 				"Minions have 80% increased maximum Life"
 			],
@@ -3508,7 +3376,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Gemling Inquisition",
-			"oidx": 80563,
 			"sd": [
 				"80% increased Spell Damage"
 			],
@@ -3532,7 +3399,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Gemling Ambush",
-			"oidx": 68382,
 			"sd": [
 				"80% increased Spell Critical Strike Chance"
 			],
@@ -3556,7 +3422,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Night of a Thousand Ribbons",
-			"oidx": 99311,
 			"sd": [
 				"80% increased Fire Damage with Attack Skills"
 			],
@@ -3580,7 +3445,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Bloody Flowers' Rebellion",
-			"oidx": 67225,
 			"sd": [
 				"80% increased Cold Damage with Attack Skills"
 			],
@@ -3604,7 +3468,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Chitus' Heart",
-			"oidx": 82524,
 			"sd": [
 				"80% increased Lightning Damage with Attack Skills"
 			],
@@ -3628,7 +3491,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Gemling Training",
-			"oidx": 98014,
 			"sd": [
 				"80% increased Physical Damage"
 			],
@@ -3652,7 +3514,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Rigwald's Might",
-			"oidx": 36656,
 			"sd": [
 				"80% increased Melee Physical Damage"
 			],
@@ -3676,7 +3537,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Geofri's End",
-			"oidx": 36158,
 			"sd": [
 				"50% increased Damage with Bleeding",
 				"Bleeding you inflict deals Damage 10% faster"
@@ -3710,7 +3570,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Lioneye's Focus",
-			"oidx": 94297,
 			"sd": [
 				"80% increased Projectile Attack Damage"
 			],
@@ -3734,7 +3593,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Voll's Coup",
-			"oidx": 94732,
 			"sd": [
 				"15% increased Attack Speed"
 			],
@@ -3758,7 +3616,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Dialla's Wit",
-			"oidx": 81833,
 			"sd": [
 				"15% increased Cast Speed"
 			],
@@ -3782,7 +3639,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Discerning Taste",
-			"oidx": 86198,
 			"sd": [
 				"12% increased Mana Reservation Efficiency of Skills"
 			],
@@ -3806,7 +3662,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Gleaming Legion",
-			"oidx": 67997,
 			"sd": [
 				"80% increased Armour"
 			],
@@ -3830,7 +3685,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Shadowy Streets",
-			"oidx": 65414,
 			"sd": [
 				"80% increased Evasion Rating"
 			],
@@ -3854,7 +3708,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Crematorium Worker",
-			"oidx": 54300,
 			"sd": [
 				"+50% to Fire Resistance"
 			],
@@ -3878,7 +3731,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Street Urchin",
-			"oidx": 88577,
 			"sd": [
 				"+50% to Cold Resistance"
 			],
@@ -3902,7 +3754,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Baleful Augmentation",
-			"oidx": 40681,
 			"sd": [
 				"+50% to Lightning Resistance"
 			],
@@ -3926,7 +3777,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "With Eyes Open",
-			"oidx": 5337,
 			"sd": [
 				"+37% to Chaos Resistance"
 			],
@@ -3950,7 +3800,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Robust Diet",
-			"oidx": 35290,
 			"sd": [
 				"10% increased maximum Life"
 			],
@@ -3974,7 +3823,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Pooled Resources",
-			"oidx": 1685,
 			"sd": [
 				"30% increased maximum Mana"
 			],
@@ -3998,7 +3846,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Laureate",
-			"oidx": 9588,
 			"sd": [
 				"50% increased Mana Regeneration Rate"
 			],
@@ -4022,7 +3869,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "War Games",
-			"oidx": 56816,
 			"sd": [
 				"25% increased Accuracy Rating"
 			],
@@ -4046,7 +3892,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Freshly Brewed",
-			"oidx": 66099,
 			"sd": [
 				"20% increased Flask Effect Duration"
 			],
@@ -4070,7 +3915,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Warding Flasks",
-			"oidx": 79440,
 			"sd": [
 				"10% increased Flask Effect Duration",
 				"20% increased Ward during any Flask Effect"
@@ -4104,7 +3948,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Starlight Swig",
-			"oidx": 97049,
 			"sd": [
 				"10% increased Flask Charges gained",
 				"15% chance for Ward to be Restored when you Use a Flask"
@@ -4138,7 +3981,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Enduring Sigil",
-			"oidx": 33869,
 			"sd": [
 				"20% increased Endurance Charge Duration",
 				"Gain 1 Endurance Charge when Ward Breaks"
@@ -4172,7 +4014,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Powering Sigil",
-			"oidx": 20074,
 			"sd": [
 				"20% increased Power Charge Duration",
 				"Gain 1 Power Charge when Ward Breaks"
@@ -4206,7 +4047,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Frenzying Sigil",
-			"oidx": 29349,
 			"sd": [
 				"20% increased Frenzy Charge Duration",
 				"Gain 1 Frenzy Charge when Ward Breaks"
@@ -4240,7 +4080,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Fortified Ward",
-			"oidx": 39254,
 			"sd": [
 				"15% faster Restoration of Ward",
 				"30% increased Armour while you have Unbroken Ward"
@@ -4274,7 +4113,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Elusive Ward",
-			"oidx": 74833,
 			"sd": [
 				"15% faster Restoration of Ward",
 				"30% increased Evasion Rating while you have Unbroken Ward"
@@ -4308,7 +4146,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Crown of Kalguur",
-			"oidx": 56253,
 			"sd": [
 				"+2 to Ward per 10 Armour on Equipped Helmet"
 			],
@@ -4332,7 +4169,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Grip of Kalguur",
-			"oidx": 82715,
 			"sd": [
 				"+4 to Ward per 10 Evasion Rating on Equipped Gloves"
 			],
@@ -4356,7 +4192,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Stride of Kalguur",
-			"oidx": 52436,
 			"sd": [
 				"+8 to Ward per 10 Energy Shield on Equipped Boots"
 			],
@@ -4380,7 +4215,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Persisting Drive",
-			"oidx": 2468,
 			"sd": [
 				"15% faster Restoration of Ward",
 				"30% increased Damage while you have Unbroken Ward"
@@ -4414,7 +4248,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Shattered Piercing ",
-			"oidx": 30208,
 			"sd": [
 				"15% increased Elemental Damage",
 				"Damage Penetrates 8% Elemental Resistances while your Ward is Broken"
@@ -4448,7 +4281,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Vengeful Runes",
-			"oidx": 29546,
 			"sd": [
 				"8% increased Area of Effect of Aura Skills",
 				"12% increased effect of Non-Curse Auras from your skills while your Ward is Broken"
@@ -4482,7 +4314,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Mage's Ward",
-			"oidx": 20764,
 			"sd": [
 				"5% Chance to Block Spell Damage",
 				"10% chance to Restore Ward when you Block"
@@ -4516,7 +4347,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Warrior's Ward",
-			"oidx": 7170,
 			"sd": [
 				"5% Chance to Block Attack Damage",
 				"10% chance to Restore Ward when you Block"
@@ -4550,7 +4380,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Starborn Birth",
-			"oidx": 95734,
 			"sd": [
 				"25% increased Ward"
 			],
@@ -4574,7 +4403,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Pure Faith",
-			"oidx": 81354,
 			"sd": [
 				"12% increased Ward",
 				"+8% to Chaos Resistance"
@@ -4608,7 +4436,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Magic Faith",
-			"oidx": 78304,
 			"sd": [
 				"12% increased Ward",
 				"8% increased maximum Energy Shield"
@@ -4642,7 +4469,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Guile Faith",
-			"oidx": 15373,
 			"sd": [
 				"12% increased Ward",
 				"16% increased Evasion Rating"
@@ -4676,7 +4502,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Resolute Faith",
-			"oidx": 27792,
 			"sd": [
 				"12% increased Ward",
 				"16% increased Armour"
@@ -4710,7 +4535,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Starsoaked Time",
-			"oidx": 27192,
 			"sd": [
 				"20% faster Restoration of Ward",
 				"20% faster start of Energy Shield Recharge"
@@ -4744,7 +4568,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Etched Runes",
-			"oidx": 45680,
 			"sd": [
 				"12% increased Ward",
 				"20% increased Ward from Equipped Armour Items"
@@ -4778,7 +4601,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Cleansing Runes",
-			"oidx": 79160,
 			"sd": [
 				"Remove a random Damaging Ailment when Ward is Restored"
 			],
@@ -4809,7 +4631,6 @@
 			"ks": false,
 			"not": true,
 			"dn": "Regenerative Runes",
-			"oidx": 64617,
 			"sd": [
 				"10% increased Flask Effect Duration",
 				"Iron Flasks gain 2 charges when your Ward Breaks"
@@ -4843,7 +4664,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Black Scythe Training",
-			"oidx": 60,
 			"sd": [
 				"Removes all Energy Shield",
 				"Chance to Evade Hits is based off of 200% of your Ward instead of your Evasion Rating",
@@ -4869,7 +4689,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Celestial Mathematics",
-			"oidx": 63,
 			"sd": [
 				"While you have Unbroken Ward, your next non-channelling Attack you Use yourself breaks your Ward to gain Added Cold Damage equal to 25% of Ward"
 			],
@@ -4893,7 +4712,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "The Unbreaking Circle",
-			"oidx": 66,
 			"sd": [
 				"40% less Ward",
 				"Ward has a 60% chance to not Break"
@@ -4918,7 +4736,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Overwhelming Hate",
-			"oidx": 69,
 			"sd": [
 				"20% less maximum Life",
 				"Increases and reductions to Maximum Life also apply to Maximum Rage at 20% Value"
@@ -4943,7 +4760,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Weighted Exchange",
-			"oidx": 72,
 			"sd": [
 				"Take 15% more damage from Non-Critical Strikes",
 				"Take 30% less damage from Critical Strikes"
@@ -4968,7 +4784,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "Reconstructed Essence",
-			"oidx": 75,
 			"sd": [
 				"Life Recoup also recovers Mana",
 				"50% less recovery from Recoup"
@@ -4993,7 +4808,6 @@
 			"ks": true,
 			"not": false,
 			"dn": "The Loyal Few",
-			"oidx": 78,
 			"sd": [
 				"Minions take 10% less Damage while you have a Zombie",
 				"Minions deal 10% more Damage while you have a Skeleton",
@@ -5020,7 +4834,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Sanguine Bargain",
-			"oidx": 27124,
 			"sd": [
 				"Attacks gain 1% more damage for each 2% of your Maximum Life they cost if Life Cost is not higher than the maximum you could spend",
 				"Attack Skills cost Life instead of Mana"
@@ -5045,7 +4858,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ephemeral Bolts",
-			"oidx": 82620,
 			"sd": [
 				"Projectiles have 5 metres maximum Direct Flight",
 				"40% more Projectile Speed"
@@ -5070,7 +4882,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "From Below",
-			"oidx": 84022,
 			"sd": [
 				"Insufficient Mana doesn't prevent your Spells",
 				"Cannot recover Mana"
@@ -5095,7 +4906,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Spiteful Allies",
-			"oidx": 37694,
 			"sd": [
 				"Minions Impale on Hit"
 			],
@@ -5119,7 +4929,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 88895,
 			"sd": [
 				"+(9-12) to maximum Life"
 			],
@@ -5143,7 +4952,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana ",
-			"oidx": 78681,
 			"sd": [
 				"+(8-11) to maximum Mana"
 			],
@@ -5167,7 +4975,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield Regeneration",
-			"oidx": 55867,
 			"sd": [
 				"Regenerate (9-12) Energy Shield per second"
 			],
@@ -5191,7 +4998,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life Regeneration",
-			"oidx": 79194,
 			"sd": [
 				"Regenerate (4.5-6) Life per second"
 			],
@@ -5215,7 +5021,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 1855,
 			"sd": [
 				"Regenerate (0.6-1) Mana per second"
 			],
@@ -5239,7 +5044,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 55548,
 			"sd": [
 				"+(36-60) to Armour"
 			],
@@ -5263,7 +5067,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion Rating",
-			"oidx": 87796,
 			"sd": [
 				"+(36-60) to Evasion Rating"
 			],
@@ -5287,7 +5090,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 29714,
 			"sd": [
 				"+(9-12) to maximum Energy Shield"
 			],
@@ -5311,7 +5113,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Impale Effect",
-			"oidx": 51555,
 			"sd": [
 				"(2-4)% increased Impale Effect"
 			],
@@ -5335,7 +5136,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Recoup",
-			"oidx": 60518,
 			"sd": [
 				"(2-3)% of Damage taken Recouped as Mana"
 			],
@@ -5359,7 +5159,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Ailment Effect",
-			"oidx": 32845,
 			"sd": [
 				"(10-20)% increased Effect of Cold Ailments"
 			],
@@ -5383,7 +5182,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Ailment Effect",
-			"oidx": 40214,
 			"sd": [
 				"(10-20)% increased Effect of Lightning Ailments"
 			],
@@ -5407,7 +5205,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength",
-			"oidx": 87392,
 			"sd": [
 				"+(8-10) to Strength"
 			],
@@ -5431,7 +5228,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity",
-			"oidx": 88901,
 			"sd": [
 				"+(8-10) to Dexterity"
 			],
@@ -5455,7 +5251,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Intelligence",
-			"oidx": 1088,
 			"sd": [
 				"+(8-10) to Intelligence"
 			],
@@ -5479,7 +5274,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Dexterity",
-			"oidx": 25300,
 			"sd": [
 				"+(6-8) to Strength and Dexterity"
 			],
@@ -5503,7 +5297,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Intelligence",
-			"oidx": 5536,
 			"sd": [
 				"+(6-8) to Strength and Intelligence"
 			],
@@ -5527,7 +5320,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity and Intelligence",
-			"oidx": 40288,
 			"sd": [
 				"+(6-8) to Dexterity and Intelligence"
 			],
@@ -5551,7 +5343,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attributes",
-			"oidx": 50505,
 			"sd": [
 				"+(4-6) to all Attributes"
 			],
@@ -5575,7 +5366,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 94233,
 			"sd": [
 				"+(6-8)% to Fire Resistance"
 			],
@@ -5599,7 +5389,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 33401,
 			"sd": [
 				"+(6-8)% to Cold Resistance"
 			],
@@ -5623,7 +5412,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 93327,
 			"sd": [
 				"+(6-8)% to Lightning Resistance"
 			],
@@ -5647,7 +5435,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Cold Resistance",
-			"oidx": 14140,
 			"sd": [
 				"+(4-6)% to Fire and Cold Resistances"
 			],
@@ -5671,7 +5458,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Lightning Resistance",
-			"oidx": 55075,
 			"sd": [
 				"+(4-6)% to Fire and Lightning Resistances"
 			],
@@ -5695,7 +5481,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold and Lightning Resistance",
-			"oidx": 5174,
 			"sd": [
 				"+(4-6)% to Cold and Lightning Resistances"
 			],
@@ -5719,7 +5504,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Elemental Resistance",
-			"oidx": 29868,
 			"sd": [
 				"+(3-5)% to all Elemental Resistances"
 			],
@@ -5743,7 +5527,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 64578,
 			"sd": [
 				"+(4-6)% to Chaos Resistance"
 			],
@@ -5767,7 +5550,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attack Speed",
-			"oidx": 81826,
 			"sd": [
 				"(2-3)% increased Attack Speed"
 			],
@@ -5791,7 +5573,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Chance",
-			"oidx": 90899,
 			"sd": [
 				"(6-8)% increased Critical Strike Chance"
 			],
@@ -5815,7 +5596,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Multiplier",
-			"oidx": 57536,
 			"sd": [
 				"+(7-9)% to Critical Strike Multiplier"
 			],
@@ -5839,7 +5619,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Blind Chance",
-			"oidx": 55389,
 			"sd": [
 				"(2-3)% chance to Blind Enemies on Hit with Attacks"
 			],
@@ -5863,7 +5642,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Taunt Chance",
-			"oidx": 93616,
 			"sd": [
 				"(2-3)% chance to Taunt Enemies on Hit with Attacks"
 			],
@@ -5887,7 +5665,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Avoidance",
-			"oidx": 99322,
 			"sd": [
 				"(15-20)% chance to Avoid being Ignited"
 			],
@@ -5911,7 +5688,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Avoidance",
-			"oidx": 79942,
 			"sd": [
 				"(15-20)% chance to Avoid being Frozen"
 			],
@@ -5935,7 +5711,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Avoidance",
-			"oidx": 23145,
 			"sd": [
 				"(15-20)% chance to Avoid being Shocked"
 			],
@@ -5959,7 +5734,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Poison Avoidance",
-			"oidx": 33128,
 			"sd": [
 				"(15-20)% chance to Avoid being Poisoned"
 			],
@@ -5983,7 +5757,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Bleed Avoidance",
-			"oidx": 39249,
 			"sd": [
 				"(15-20)% chance to Avoid Bleeding"
 			],
@@ -6007,7 +5780,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Stun Avoidance",
-			"oidx": 35273,
 			"sd": [
 				"(15-20)% chance to Avoid being Stunned"
 			],
@@ -6031,7 +5803,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Accuracy",
-			"oidx": 28021,
 			"sd": [
 				"+(31-60) to Accuracy Rating"
 			],
@@ -6055,7 +5826,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 19644,
 			"sd": [
 				"+(9-12) to maximum Life"
 			],
@@ -6079,7 +5849,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana ",
-			"oidx": 21331,
 			"sd": [
 				"+(8-11) to maximum Mana"
 			],
@@ -6103,7 +5872,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield Regeneration",
-			"oidx": 99442,
 			"sd": [
 				"Regenerate (9-12) Energy Shield per second"
 			],
@@ -6127,7 +5895,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life Regeneration",
-			"oidx": 2420,
 			"sd": [
 				"Regenerate (4.5-6) Life per second"
 			],
@@ -6151,7 +5918,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 20860,
 			"sd": [
 				"Regenerate (0.6-1) Mana per second"
 			],
@@ -6175,7 +5941,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 48261,
 			"sd": [
 				"+(36-60) to Armour"
 			],
@@ -6199,7 +5964,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion Rating",
-			"oidx": 6017,
 			"sd": [
 				"+(36-60) to Evasion Rating"
 			],
@@ -6223,7 +5987,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 50410,
 			"sd": [
 				"+(9-12) to maximum Energy Shield"
 			],
@@ -6247,7 +6010,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Impale Effect",
-			"oidx": 44196,
 			"sd": [
 				"(2-4)% increased Impale Effect"
 			],
@@ -6271,7 +6033,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Recoup",
-			"oidx": 20341,
 			"sd": [
 				"(2-3)% of Damage taken Recouped as Mana"
 			],
@@ -6295,7 +6056,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Ailment Effect",
-			"oidx": 54200,
 			"sd": [
 				"(10-20)% increased Effect of Cold Ailments"
 			],
@@ -6319,7 +6079,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Ailment Effect",
-			"oidx": 2450,
 			"sd": [
 				"(10-20)% increased Effect of Lightning Ailments"
 			],
@@ -6343,7 +6102,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength",
-			"oidx": 91756,
 			"sd": [
 				"+(8-10) to Strength"
 			],
@@ -6367,7 +6125,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity",
-			"oidx": 1205,
 			"sd": [
 				"+(8-10) to Dexterity"
 			],
@@ -6391,7 +6148,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Intelligence",
-			"oidx": 69797,
 			"sd": [
 				"+(8-10) to Intelligence"
 			],
@@ -6415,7 +6171,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Dexterity",
-			"oidx": 50579,
 			"sd": [
 				"+(6-8) to Strength and Dexterity"
 			],
@@ -6439,7 +6194,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Intelligence",
-			"oidx": 93563,
 			"sd": [
 				"+(6-8) to Strength and Intelligence"
 			],
@@ -6463,7 +6217,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity and Intelligence",
-			"oidx": 18807,
 			"sd": [
 				"+(6-8) to Dexterity and Intelligence"
 			],
@@ -6487,7 +6240,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attributes",
-			"oidx": 81217,
 			"sd": [
 				"+(4-6) to all Attributes"
 			],
@@ -6511,7 +6263,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 91332,
 			"sd": [
 				"+(6-8)% to Fire Resistance"
 			],
@@ -6535,7 +6286,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 65329,
 			"sd": [
 				"+(6-8)% to Cold Resistance"
 			],
@@ -6559,7 +6309,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 31284,
 			"sd": [
 				"+(6-8)% to Lightning Resistance"
 			],
@@ -6583,7 +6332,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Cold Resistance",
-			"oidx": 10883,
 			"sd": [
 				"+(4-6)% to Fire and Cold Resistances"
 			],
@@ -6607,7 +6355,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Lightning Resistance",
-			"oidx": 17069,
 			"sd": [
 				"+(4-6)% to Fire and Lightning Resistances"
 			],
@@ -6631,7 +6378,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold and Lightning Resistance",
-			"oidx": 823,
 			"sd": [
 				"+(4-6)% to Cold and Lightning Resistances"
 			],
@@ -6655,7 +6401,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Elemental Resistance",
-			"oidx": 84913,
 			"sd": [
 				"+(3-5)% to all Elemental Resistances"
 			],
@@ -6679,7 +6424,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 21216,
 			"sd": [
 				"+(4-6)% to Chaos Resistance"
 			],
@@ -6703,7 +6447,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attack Speed",
-			"oidx": 27467,
 			"sd": [
 				"(2-3)% increased Attack Speed"
 			],
@@ -6727,7 +6470,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Chance",
-			"oidx": 4261,
 			"sd": [
 				"(6-8)% increased Critical Strike Chance"
 			],
@@ -6751,7 +6493,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Multiplier",
-			"oidx": 72550,
 			"sd": [
 				"+(7-9)% to Critical Strike Multiplier"
 			],
@@ -6775,7 +6516,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Blind Chance",
-			"oidx": 37140,
 			"sd": [
 				"(2-3)% chance to Blind Enemies on Hit with Attacks"
 			],
@@ -6799,7 +6539,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Avoidance",
-			"oidx": 66288,
 			"sd": [
 				"(15-20)% chance to Avoid being Ignited"
 			],
@@ -6823,7 +6562,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Avoidance",
-			"oidx": 64997,
 			"sd": [
 				"(15-20)% chance to Avoid being Frozen"
 			],
@@ -6847,7 +6585,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Avoidance",
-			"oidx": 41353,
 			"sd": [
 				"(15-20)% chance to Avoid being Shocked"
 			],
@@ -6871,7 +6608,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Poison Avoidance",
-			"oidx": 67352,
 			"sd": [
 				"(15-20)% chance to Avoid being Poisoned"
 			],
@@ -6895,7 +6631,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Bleed Avoidance",
-			"oidx": 57033,
 			"sd": [
 				"(15-20)% chance to Avoid Bleeding"
 			],
@@ -6919,7 +6654,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Stun Avoidance",
-			"oidx": 4248,
 			"sd": [
 				"(15-20)% chance to Avoid being Stunned"
 			],
@@ -6943,7 +6677,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Accuracy",
-			"oidx": 67444,
 			"sd": [
 				"+(31-60) to Accuracy Rating"
 			],
@@ -6967,7 +6700,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 7065,
 			"sd": [
 				"+(9-12) to maximum Life"
 			],
@@ -6991,7 +6723,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana ",
-			"oidx": 69156,
 			"sd": [
 				"+(8-11) to maximum Mana"
 			],
@@ -7015,7 +6746,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield Regeneration",
-			"oidx": 95243,
 			"sd": [
 				"Regenerate (9-12) Energy Shield per second"
 			],
@@ -7039,7 +6769,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life Regeneration",
-			"oidx": 11898,
 			"sd": [
 				"Regenerate (4.5-6) Life per second"
 			],
@@ -7063,7 +6792,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 56195,
 			"sd": [
 				"Regenerate (0.6-1) Mana per second"
 			],
@@ -7087,7 +6815,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 21068,
 			"sd": [
 				"+(36-60) to Armour"
 			],
@@ -7111,7 +6838,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion Rating",
-			"oidx": 59069,
 			"sd": [
 				"+(36-60) to Evasion Rating"
 			],
@@ -7135,7 +6861,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 78292,
 			"sd": [
 				"+(9-12) to maximum Energy Shield"
 			],
@@ -7159,7 +6884,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Recoup",
-			"oidx": 28934,
 			"sd": [
 				"(2-3)% of Damage taken Recouped as Mana"
 			],
@@ -7183,7 +6907,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Ailment Effect",
-			"oidx": 11897,
 			"sd": [
 				"(10-20)% increased Effect of Cold Ailments"
 			],
@@ -7207,7 +6930,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Ailment Effect",
-			"oidx": 31734,
 			"sd": [
 				"(10-20)% increased Effect of Lightning Ailments"
 			],
@@ -7231,7 +6953,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength",
-			"oidx": 65592,
 			"sd": [
 				"+(8-10) to Strength"
 			],
@@ -7255,7 +6976,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity",
-			"oidx": 67482,
 			"sd": [
 				"+(8-10) to Dexterity"
 			],
@@ -7279,7 +6999,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Intelligence",
-			"oidx": 9669,
 			"sd": [
 				"+(8-10) to Intelligence"
 			],
@@ -7303,7 +7022,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Dexterity",
-			"oidx": 47823,
 			"sd": [
 				"+(6-8) to Strength and Dexterity"
 			],
@@ -7327,7 +7045,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Intelligence",
-			"oidx": 74980,
 			"sd": [
 				"+(6-8) to Strength and Intelligence"
 			],
@@ -7351,7 +7068,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity and Intelligence",
-			"oidx": 10189,
 			"sd": [
 				"+(6-8) to Dexterity and Intelligence"
 			],
@@ -7375,7 +7091,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attributes",
-			"oidx": 27945,
 			"sd": [
 				"+(4-6) to all Attributes"
 			],
@@ -7399,7 +7114,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 47171,
 			"sd": [
 				"+(6-8)% to Fire Resistance"
 			],
@@ -7423,7 +7137,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 1000,
 			"sd": [
 				"+(6-8)% to Cold Resistance"
 			],
@@ -7447,7 +7160,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 29863,
 			"sd": [
 				"+(6-8)% to Lightning Resistance"
 			],
@@ -7471,7 +7183,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Cold Resistance",
-			"oidx": 38723,
 			"sd": [
 				"+(4-6)% to Fire and Cold Resistances"
 			],
@@ -7495,7 +7206,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Lightning Resistance",
-			"oidx": 56838,
 			"sd": [
 				"+(4-6)% to Fire and Lightning Resistances"
 			],
@@ -7519,7 +7229,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold and Lightning Resistance",
-			"oidx": 60021,
 			"sd": [
 				"+(4-6)% to Cold and Lightning Resistances"
 			],
@@ -7543,7 +7252,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Elemental Resistance",
-			"oidx": 55198,
 			"sd": [
 				"+(3-5)% to all Elemental Resistances"
 			],
@@ -7567,7 +7275,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 32616,
 			"sd": [
 				"+(4-6)% to Chaos Resistance"
 			],
@@ -7591,7 +7298,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cast Speed",
-			"oidx": 49588,
 			"sd": [
 				"(2-3)% increased Cast Speed"
 			],
@@ -7615,7 +7321,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Chance",
-			"oidx": 41934,
 			"sd": [
 				"(6-8)% increased Critical Strike Chance"
 			],
@@ -7639,7 +7344,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Critical Strike Multiplier",
-			"oidx": 22560,
 			"sd": [
 				"+(7-9)% to Critical Strike Multiplier"
 			],
@@ -7663,7 +7367,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Hinder Chance",
-			"oidx": 45308,
 			"sd": [
 				"(2-3)% chance to Hinder Enemies on Hit with Spells"
 			],
@@ -7687,7 +7390,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Avoidance",
-			"oidx": 98220,
 			"sd": [
 				"(15-20)% chance to Avoid being Ignited"
 			],
@@ -7711,7 +7413,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Avoidance",
-			"oidx": 7137,
 			"sd": [
 				"(15-20)% chance to Avoid being Frozen"
 			],
@@ -7735,7 +7436,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Avoidance",
-			"oidx": 13428,
 			"sd": [
 				"(15-20)% chance to Avoid being Shocked"
 			],
@@ -7759,7 +7459,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Poison Avoidance",
-			"oidx": 67816,
 			"sd": [
 				"(15-20)% chance to Avoid being Poisoned"
 			],
@@ -7783,7 +7482,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Bleed Avoidance",
-			"oidx": 62260,
 			"sd": [
 				"(15-20)% chance to Avoid Bleeding"
 			],
@@ -7807,7 +7505,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Stun Avoidance",
-			"oidx": 17537,
 			"sd": [
 				"(15-20)% chance to Avoid being Stunned"
 			],
@@ -7831,7 +7528,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 95064,
 			"sd": [
 				"+(9-12) to maximum Life"
 			],
@@ -7855,7 +7551,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana ",
-			"oidx": 95448,
 			"sd": [
 				"+(8-11) to maximum Mana"
 			],
@@ -7879,7 +7574,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield Regeneration",
-			"oidx": 8122,
 			"sd": [
 				"Regenerate (9-12) Energy Shield per second"
 			],
@@ -7903,7 +7597,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life Regeneration",
-			"oidx": 43980,
 			"sd": [
 				"Regenerate (4.5-6) Life per second"
 			],
@@ -7927,7 +7620,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 46039,
 			"sd": [
 				"Regenerate (0.6-1) Mana per second"
 			],
@@ -7951,7 +7643,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 34853,
 			"sd": [
 				"+(36-60) to Armour"
 			],
@@ -7975,7 +7666,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion Rating",
-			"oidx": 66640,
 			"sd": [
 				"+(36-60) to Evasion Rating"
 			],
@@ -7999,7 +7689,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 94069,
 			"sd": [
 				"+(9-12) to maximum Energy Shield"
 			],
@@ -8023,7 +7712,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Recoup",
-			"oidx": 6640,
 			"sd": [
 				"(2-3)% of Damage taken Recouped as Mana"
 			],
@@ -8047,7 +7735,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength",
-			"oidx": 93998,
 			"sd": [
 				"+(8-10) to Strength"
 			],
@@ -8071,7 +7758,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity",
-			"oidx": 57475,
 			"sd": [
 				"+(8-10) to Dexterity"
 			],
@@ -8095,7 +7781,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Intelligence",
-			"oidx": 40883,
 			"sd": [
 				"+(8-10) to Intelligence"
 			],
@@ -8119,7 +7804,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Dexterity",
-			"oidx": 18380,
 			"sd": [
 				"+(6-8) to Strength and Dexterity"
 			],
@@ -8143,7 +7827,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Intelligence",
-			"oidx": 47407,
 			"sd": [
 				"+(6-8) to Strength and Intelligence"
 			],
@@ -8167,7 +7850,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity and Intelligence",
-			"oidx": 81366,
 			"sd": [
 				"+(6-8) to Dexterity and Intelligence"
 			],
@@ -8191,7 +7873,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attributes",
-			"oidx": 68237,
 			"sd": [
 				"+(4-6) to all Attributes"
 			],
@@ -8215,7 +7896,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 20276,
 			"sd": [
 				"+(6-8)% to Fire Resistance"
 			],
@@ -8239,7 +7919,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 43388,
 			"sd": [
 				"+(6-8)% to Cold Resistance"
 			],
@@ -8263,7 +7942,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 35894,
 			"sd": [
 				"+(6-8)% to Lightning Resistance"
 			],
@@ -8287,7 +7965,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Cold Resistance",
-			"oidx": 34185,
 			"sd": [
 				"+(4-6)% to Fire and Cold Resistances"
 			],
@@ -8311,7 +7988,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Lightning Resistance",
-			"oidx": 19799,
 			"sd": [
 				"+(4-6)% to Fire and Lightning Resistances"
 			],
@@ -8335,7 +8011,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold and Lightning Resistance",
-			"oidx": 16330,
 			"sd": [
 				"+(4-6)% to Cold and Lightning Resistances"
 			],
@@ -8359,7 +8034,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Elemental Resistance",
-			"oidx": 33633,
 			"sd": [
 				"+(3-5)% to all Elemental Resistances"
 			],
@@ -8383,7 +8057,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 35417,
 			"sd": [
 				"+(4-6)% to Chaos Resistance"
 			],
@@ -8407,7 +8080,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cast Speed",
-			"oidx": 94569,
 			"sd": [
 				"(2-3)% increased Cast Speed"
 			],
@@ -8431,7 +8103,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Blind Chance",
-			"oidx": 39288,
 			"sd": [
 				"Minions have (2-3)% chance to Blind on Hit with Attacks"
 			],
@@ -8455,7 +8126,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Taunt Chance",
-			"oidx": 45885,
 			"sd": [
 				"Minions have (2-3)% chance to Taunt on Hit with Attacks"
 			],
@@ -8479,7 +8149,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Hinder Chance",
-			"oidx": 95501,
 			"sd": [
 				"Minions have (2-3)% chance to Hinder Enemies on Hit with Spells"
 			],
@@ -8503,7 +8172,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Avoidance",
-			"oidx": 87649,
 			"sd": [
 				"(15-20)% chance to Avoid being Ignited"
 			],
@@ -8527,7 +8195,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Avoidance",
-			"oidx": 70570,
 			"sd": [
 				"(15-20)% chance to Avoid being Frozen"
 			],
@@ -8551,7 +8218,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Avoidance",
-			"oidx": 17559,
 			"sd": [
 				"(15-20)% chance to Avoid being Shocked"
 			],
@@ -8575,7 +8241,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Poison Avoidance",
-			"oidx": 99956,
 			"sd": [
 				"(15-20)% chance to Avoid being Poisoned"
 			],
@@ -8599,7 +8264,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Bleed Avoidance",
-			"oidx": 52933,
 			"sd": [
 				"(15-20)% chance to Avoid Bleeding"
 			],
@@ -8623,7 +8287,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Stun Avoidance",
-			"oidx": 71887,
 			"sd": [
 				"(15-20)% chance to Avoid being Stunned"
 			],
@@ -8647,7 +8310,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Attack and Cast Speed",
-			"oidx": 29046,
 			"sd": [
 				"Minions have (2-3)% increased Attack Speed",
 				"Minions have (2-3)% increased Cast Speed"
@@ -8681,7 +8343,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life",
-			"oidx": 15916,
 			"sd": [
 				"+(9-12) to maximum Life"
 			],
@@ -8705,7 +8366,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana ",
-			"oidx": 97164,
 			"sd": [
 				"+(8-11) to maximum Mana"
 			],
@@ -8729,7 +8389,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield Regeneration",
-			"oidx": 81535,
 			"sd": [
 				"Regenerate (9-12) Energy Shield per second"
 			],
@@ -8753,7 +8412,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Life Regeneration",
-			"oidx": 60524,
 			"sd": [
 				"Regenerate (4.5-6) Life per second"
 			],
@@ -8777,7 +8435,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Regeneration",
-			"oidx": 75296,
 			"sd": [
 				"Regenerate (0.6-1) Mana per second"
 			],
@@ -8801,7 +8458,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Armour",
-			"oidx": 25942,
 			"sd": [
 				"+(36-60) to Armour"
 			],
@@ -8825,7 +8481,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Evasion Rating",
-			"oidx": 10040,
 			"sd": [
 				"+(36-60) to Evasion Rating"
 			],
@@ -8849,7 +8504,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Energy Shield",
-			"oidx": 30013,
 			"sd": [
 				"+(9-12) to maximum Energy Shield"
 			],
@@ -8873,7 +8527,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Mana Recoup",
-			"oidx": 69758,
 			"sd": [
 				"(2-3)% of Damage taken Recouped as Mana"
 			],
@@ -8897,7 +8550,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength",
-			"oidx": 6256,
 			"sd": [
 				"+(8-10) to Strength"
 			],
@@ -8921,7 +8573,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity",
-			"oidx": 70619,
 			"sd": [
 				"+(8-10) to Dexterity"
 			],
@@ -8945,7 +8596,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Intelligence",
-			"oidx": 89997,
 			"sd": [
 				"+(8-10) to Intelligence"
 			],
@@ -8969,7 +8619,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Dexterity",
-			"oidx": 50380,
 			"sd": [
 				"+(6-8) to Strength and Dexterity"
 			],
@@ -8993,7 +8642,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Strength and Intelligence",
-			"oidx": 2326,
 			"sd": [
 				"+(6-8) to Strength and Intelligence"
 			],
@@ -9017,7 +8665,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Dexterity and Intelligence",
-			"oidx": 47657,
 			"sd": [
 				"+(6-8) to Dexterity and Intelligence"
 			],
@@ -9041,7 +8688,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attributes",
-			"oidx": 41430,
 			"sd": [
 				"+(4-6) to all Attributes"
 			],
@@ -9065,7 +8711,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire Resistance",
-			"oidx": 12334,
 			"sd": [
 				"+(6-8)% to Fire Resistance"
 			],
@@ -9089,7 +8734,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Resistance",
-			"oidx": 66231,
 			"sd": [
 				"+(6-8)% to Cold Resistance"
 			],
@@ -9113,7 +8757,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Resistance",
-			"oidx": 99316,
 			"sd": [
 				"+(6-8)% to Lightning Resistance"
 			],
@@ -9137,7 +8780,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Cold Resistance",
-			"oidx": 86754,
 			"sd": [
 				"+(4-6)% to Fire and Cold Resistances"
 			],
@@ -9161,7 +8803,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Fire and Lightning Resistance",
-			"oidx": 62680,
 			"sd": [
 				"+(4-6)% to Fire and Lightning Resistances"
 			],
@@ -9185,7 +8826,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold and Lightning Resistance",
-			"oidx": 52197,
 			"sd": [
 				"+(4-6)% to Cold and Lightning Resistances"
 			],
@@ -9209,7 +8849,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Elemental Resistance",
-			"oidx": 56626,
 			"sd": [
 				"+(3-5)% to all Elemental Resistances"
 			],
@@ -9233,7 +8872,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Chaos Resistance",
-			"oidx": 76804,
 			"sd": [
 				"+(4-6)% to Chaos Resistance"
 			],
@@ -9257,7 +8895,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cast Speed",
-			"oidx": 68568,
 			"sd": [
 				"(2-3)% increased Cast Speed"
 			],
@@ -9281,7 +8918,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Blind Chance",
-			"oidx": 71976,
 			"sd": [
 				"Minions have (2-3)% chance to Blind on Hit with Attacks"
 			],
@@ -9305,7 +8941,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Taunt Chance",
-			"oidx": 47786,
 			"sd": [
 				"Minions have (2-3)% chance to Taunt on Hit with Attacks"
 			],
@@ -9329,7 +8964,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Hinder Chance",
-			"oidx": 13733,
 			"sd": [
 				"Minions have (2-3)% chance to Hinder Enemies on Hit with Spells"
 			],
@@ -9353,7 +8987,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Ignite Avoidance",
-			"oidx": 43355,
 			"sd": [
 				"(15-20)% chance to Avoid being Ignited"
 			],
@@ -9377,7 +9010,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Freeze Avoidance",
-			"oidx": 22479,
 			"sd": [
 				"(15-20)% chance to Avoid being Frozen"
 			],
@@ -9401,7 +9033,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Shock Avoidance",
-			"oidx": 87047,
 			"sd": [
 				"(15-20)% chance to Avoid being Shocked"
 			],
@@ -9425,7 +9056,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Poison Avoidance",
-			"oidx": 84753,
 			"sd": [
 				"(15-20)% chance to Avoid being Poisoned"
 			],
@@ -9449,7 +9079,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Bleed Avoidance",
-			"oidx": 44440,
 			"sd": [
 				"(15-20)% chance to Avoid Bleeding"
 			],
@@ -9473,7 +9102,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Stun Avoidance",
-			"oidx": 63801,
 			"sd": [
 				"(15-20)% chance to Avoid being Stunned"
 			],
@@ -9497,7 +9125,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Minion Attack and Cast Speed",
-			"oidx": 83058,
 			"sd": [
 				"Minions have (2-3)% increased Attack Speed",
 				"Minions have (2-3)% increased Cast Speed"
@@ -9531,7 +9158,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Hinder Chance",
-			"oidx": 20011,
 			"sd": [
 				"(2-3)% chance to Hinder Enemies on Hit with Spells"
 			],
@@ -9555,7 +9181,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Cold Ailment Effect",
-			"oidx": 22356,
 			"sd": [
 				"(10-20)% increased Effect of Cold Ailments"
 			],
@@ -9579,7 +9204,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Lightning Ailment Effect",
-			"oidx": 82022,
 			"sd": [
 				"(10-20)% increased Effect of Lightning Ailments"
 			],
@@ -9603,7 +9227,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Blind Chance",
-			"oidx": 29871,
 			"sd": [
 				"(2-3)% chance to Blind Enemies on Hit with Attacks"
 			],
@@ -9627,7 +9250,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Accuracy",
-			"oidx": 66167,
 			"sd": [
 				"+(31-60) to Accuracy Rating"
 			],
@@ -9651,7 +9273,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Attack Speed",
-			"oidx": 99369,
 			"sd": [
 				"(2-3)% increased Attack Speed"
 			],
@@ -9675,7 +9296,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Impale Effect",
-			"oidx": 50523,
 			"sd": [
 				"(2-4)% increased Impale Effect"
 			],
@@ -9699,7 +9319,6 @@
 			"ks": false,
 			"not": false,
 			"dn": "Taunt Chance",
-			"oidx": 98702,
 			"sd": [
 				"(2-3)% chance to Taunt Enemies on Hit with Attacks"
 			],

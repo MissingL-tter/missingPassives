@@ -25,7 +25,6 @@ type LegionNode struct {
 	Ks          bool          `json:"ks"`
 	Not         bool          `json:"not"`
 	Dn          string        `json:"dn"`
-	Oidx        float64       `json:"oidx"` // #EVAL: for non-keystones this is a LuaJIT-PRNG layout offset
 	Sd          []string      `json:"sd"`
 	Stats       []PassiveStat `json:"stats"` // sorted by stat id
 	SortedStats []string      `json:"sortedStats"`

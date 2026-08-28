@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -48,7 +47,7 @@ func canonOrNull(mods []any) string {
 	if mods == nil {
 		return "null"
 	}
-	return luacanon.EncodeExact(mods)
+	return string(modparser.EncodeMods(mods))
 }
 
 func extraOrEmpty(e *string) string {

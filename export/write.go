@@ -54,7 +54,7 @@ func WriteArtifacts(x *Ctx, outDir string, want map[string]bool, nodeIDs []int64
 	if len(want) == 0 {
 		// The hand-maintained foulborn map rides along so raw/ is the
 		// complete data artifact.
-		fb, err := os.ReadFile(filepath.Join(x.TplDir, "Data", "ModFoulbornMap.jsonc"))
+		fb, err := FoulbornMap()
 		if err != nil {
 			return written, fmt.Errorf("ModFoulbornMap: %w", err)
 		}

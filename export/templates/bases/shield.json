@@ -1,0 +1,24 @@
+{
+	"directives": [
+		"#type Shield",
+		"#influenceBaseTag shield",
+		"#socketLimit 3",
+		"#subType Armour",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldStr[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldStrE[0-9]+",
+		"#subType Evasion",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldDex[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldDexE[0-9]+",
+		"#subType Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldInt[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldIntE[0-9]+",
+		"#subType Armour/Evasion",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldStrDex[0-9]+",
+		"#subType Armour/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldStrInt[0-9]+",
+		"#subType Evasion/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Shields/ShieldDexInt[0-9]+",
+		"#subType",
+		"#base Metadata/Items/Armours/Shields/ShieldDemigods"
+	]
+}

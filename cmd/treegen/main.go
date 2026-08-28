@@ -17,10 +17,11 @@
 //     its `{(%w+)}` -> `{[0]=%1}` quirk can only fire inside strings
 //     (the python serializer's indent puts real single-element arrays on
 //     multiple lines, so the pattern never matches structure).
-//  3. tools/canon.lua encodeExact (via internal/luacanon).
+//  3. conventional JSON out (the Lua-table shape lives only in tests).
 //
-// Verified byte-identical to the retired dump for 3.29.1 by
-// test/treegen_test.go.
+// The canon-format equivalence to the retired luajit dump was proven when
+// the port landed; test/treegen_test.go pins the current output to the
+// committed artifact and the GGG source.
 package main
 
 import (

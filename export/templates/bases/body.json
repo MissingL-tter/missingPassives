@@ -1,0 +1,23 @@
+{
+	"directives": [
+		"#type Body Armour",
+		"#influenceBaseTag body_armour",
+		"#socketLimit 6",
+		"#subType Armour",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyStr[0-9]+",
+		"#subType Evasion",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyDex[0-9]+",
+		"#subType Energy Shield",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyInt[0-9]+",
+		"#subType Armour/Evasion",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyStrDex[0-9]+",
+		"#subType Armour/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyStrInt[0-9]+",
+		"#subType Evasion/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyDexInt[0-9]+",
+		"#subType Armour/Evasion/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/BodyArmours/BodyStrDexInt[0-9]+",
+		"#forceHide true",
+		"#base Metadata/Items/Armours/BodyArmours/BodyDemigods1"
+	]
+}

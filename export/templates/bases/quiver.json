@@ -1,0 +1,15 @@
+{
+	"directives": [
+		"#type Quiver",
+		"#influenceBaseTag quiver",
+		"#forceHide true",
+		"#baseMatch Metadata/Items/Quivers/Quiver[0-9][0123]?$",
+		"#forceHide false",
+		"#base Metadata/Items/Quivers/Quiver14",
+		"#forceShow true",
+		"#baseMatch Metadata/Items/Quivers/QuiverNew[0-9]+",
+		"#baseMatch Metadata/Items/Quivers/Descent",
+		"#forceShow false",
+		"#baseMatch Metadata/Items/Quivers/QuiverAtlas[0-9]+"
+	]
+}

@@ -6,7 +6,7 @@
 // #EVAL: archive parity only — once the generated data format is Go-owned,
 // random layout offsets in it deserve replacing, and this file goes away.
 
-package export
+package luarender
 
 import "math"
 

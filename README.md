@@ -122,7 +122,7 @@ is deleted. While it still exists they can be regenerated from `.archive/src/`:
 
 ```sh
 luajit ../../tools/dump_parse.lua    # -> test/testdata/parse_archive.jsonl
-luajit ../../tools/dump_tables.lua   # -> test/testdata/tables_archive.jsonl
+luajit ../../tools/dump_modtables.lua   # -> test/testdata/tables_archive.jsonl
 ```
 
 ## Layout

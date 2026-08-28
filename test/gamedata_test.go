@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 func readFile(t *testing.T, path string) []byte {

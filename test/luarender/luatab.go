@@ -9,7 +9,7 @@
 // Only what that use needs is implemented: t[k]=v inserts of non-nil values
 // with number keys into a table created empty, then a full traversal.
 
-package export
+package luarender
 
 import (
 	"math"

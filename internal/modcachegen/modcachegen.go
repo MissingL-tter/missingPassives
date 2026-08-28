@@ -8,8 +8,9 @@
 // loadItemDBs, which parses every unique and rare template, Crafting the
 // crafted templates at affix quality 0.5) and then SaveModCache's walk:
 // every parsed line sorted by key, minus the JewelFunc/ExtraJewelFunc
-// entries, each value re-encoded with %.14g quantization (the file the
-// reference wrote had round-tripped its numbers through %.14g text).
+// entries, each value %.14g-quantized (the reference's file round-tripped
+// its numbers through %.14g text) and serialised in the conventional-JSON
+// entry format modparser.EncodeMods defines.
 //
 // test/modcachegen_test.go proves the output byte-identical to the
 // committed artifact. Requires data.Load to have run.
@@ -17,28 +18,22 @@ package modcachegen
 
 import (
 	"bytes"
+	"encoding/json"
 	"sort"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/tree"
 )
 
-// Structured mods canonicalise via their plain-table shadow (the same
-// adapter the differential tests register; duplicates are harmless).
-func init() {
-	luacanon.RegisterAdapter(func(v any) (any, bool) {
-		switch t := v.(type) {
-		case *modparser.Mod:
-			return data.ModCanon(t), true
-		case *modparser.D:
-			return data.DCanon(t), true
-		}
-		return nil, false
-	})
+func mustJSON(s string) []byte {
+	b, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 // jewelFuncSkipped mirrors SaveModCache's skip: entries whose first mod is
@@ -96,13 +91,13 @@ func Build(treeVersion string) []byte {
 		}
 		m := "null"
 		if mods != nil {
-			m = luacanon.EncodeExact(modparser.Quantize14(mods))
+			m = string(modparser.EncodeMods(modparser.Quantize14(mods)))
 		}
 		e := "null"
 		if extra != "" {
-			e = luacanon.Quote(extra)
+			e = string(mustJSON(extra))
 		}
-		buf.WriteString(`{"k":` + luacanon.Quote(line) + `,"m":` + m + `,"e":` + e + "}\n")
+		buf.WriteString(`{"k":` + string(mustJSON(line)) + `,"m":` + m + `,"e":` + e + "}\n")
 	}
 	return buf.Bytes()
 }

@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/skills"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 type xmlSkillsDoc struct {

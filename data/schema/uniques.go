@@ -7,14 +7,11 @@ type Uniques map[string]UniqueFile
 
 type UniqueFile struct {
 	Sections []UniqueSection `json:"sections"`
-	Post     []string        `json:"post"` // trailing lines after the last item
 }
 
-// UniqueSection is a run of items sharing a passthrough preamble (the
-// header, or a "-- Weapon: ..." category comment). Closer is the literal
-// closing line the template used ("]],", "]]" or "]],}").
+// UniqueSection is a run of items (the template groups them under category
+// comments; the render test reconstructs that passthrough text from the
+// archive template).
 type UniqueSection struct {
-	Pre    []string   `json:"pre"`
-	Items  [][]string `json:"items"`
-	Closer string     `json:"closer"`
+	Items [][]string `json:"items"`
 }

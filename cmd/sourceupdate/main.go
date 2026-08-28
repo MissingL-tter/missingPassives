@@ -53,7 +53,6 @@ func treeVersionFromTag(tag string) string {
 
 func main() {
 	src := flag.String("src", filepath.Join(".archive", "src", "Export", "ggpk"), "extracted GGPK root (holds Data/ and Metadata/)")
-	tpl := flag.String("tpl", filepath.Join(".archive", "src"), "source tree holding hand-maintained templates")
 	out := flag.String("out", filepath.Join("data", "raw"), "artifact output directory")
 	treeTag := flag.String("treetag", "3.29.1", "grindinggear/skilltree-export release tag to fetch data.json from")
 	treeJSON := flag.String("treejson", "", "local GGG tree data.json (skips the fetch)")
@@ -84,7 +83,7 @@ func main() {
 	if err != nil {
 		fail("loading dats:", err)
 	}
-	ctx := &export.Ctx{Dats: dats, SrcDir: *src, TplDir: *tpl}
+	ctx := &export.Ctx{Dats: dats, SrcDir: *src}
 	written, err := export.WriteArtifacts(ctx, *out, nil, data.NodeGraphIDs())
 	for _, name := range written {
 		fmt.Println("->", name)

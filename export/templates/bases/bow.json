@@ -1,0 +1,8 @@
+{
+	"directives": [
+		"#type Bow",
+		"#influenceBaseTag bow",
+		"#socketLimit 6",
+		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/Bows/AbstractBow"
+	]
+}

@@ -131,9 +131,6 @@ func buildLegionPassives(x *Ctx) (any, error) {
 	}
 
 	var doc schema.LegionPassives
-	ksCount := int64(-1)
-	prng := newLuaPRNG()
-
 	for i := 1; i <= altSkills.RowCount; i++ {
 		rowMap := dumpRow(altSkills, i)
 		fixLegionDatErrors(rowMap)
@@ -143,9 +140,6 @@ func buildLegionPassives(x *Ctx) (any, error) {
 			Dn:   luaStr(rowMap["Name"]),
 		}
 		node.Ks = intListContains(rowMap["PassiveType"], 4)
-		if node.Ks {
-			ksCount++
-		}
 		node.Not = intListContains(rowMap["PassiveType"], 3)
 
 		node.Sd, node.Stats, node.SortedStats = parseStats(rowMap)
@@ -160,13 +154,6 @@ func buildLegionPassives(x *Ctx) (any, error) {
 			}
 		}
 
-		if node.Ks {
-			node.Oidx = float64(ksCount * 3)
-		} else {
-			// #EVAL: archive parity — a LuaJIT-PRNG layout offset baked into
-			// the data; deserves a deterministic layout once Go-owned.
-			node.Oidx = math.Floor(prng.random() * 1e5)
-		}
 		doc.Nodes = append(doc.Nodes, node)
 	}
 

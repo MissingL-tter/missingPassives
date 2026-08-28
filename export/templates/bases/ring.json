@@ -1,0 +1,21 @@
+{
+	"directives": [
+		"#type Ring",
+		"#influenceBaseTag ring",
+		"#baseMatch Metadata/Items/Rings/Ring[0-9]+",
+		"#baseMatch Metadata/Items/Rings/RingAtlas[0-9]+",
+		"#forceShow true",
+		"#base Metadata/Items/Rings/Ring12 Two-Stone Ring (Fire/Lightning)",
+		"#base Metadata/Items/Rings/Ring13 Two-Stone Ring (Cold/Lightning)",
+		"#base Metadata/Items/Rings/Ring14 Two-Stone Ring (Fire/Cold)",
+		"#baseMatch Metadata/Items/Rings/RingE[0-9]+",
+		"#baseMatch Metadata/Items/Rings/RingK[0-9]+",
+		"#baseMatch Metadata/Items/Rings/RingR[0-9]+",
+		"#baseMatch Metadata/Items/Rings/RingB[0-9]+",
+		"#baseMatch Metadata/Items/Rings/MirrorRing",
+		"#forceShow false",
+		"#base Metadata/Items/Rings/BreachRing",
+		"#base Metadata/Items/Rings/RingDemigods1",
+		"#base Metadata/Items/Rings/RingVictor1"
+	]
+}

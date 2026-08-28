@@ -1,0 +1,30 @@
+{
+	"directives": [
+		"#type Gloves",
+		"#influenceBaseTag gloves",
+		"#socketLimit 4",
+		"#subType Armour",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesStr[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesStrRitual[0-9]+",
+		"#base Metadata/Items/Armours/Gloves/GlovesAtlasStr",
+		"#subType Evasion",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesDex[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesDexRitual[0-9]+",
+		"#base Metadata/Items/Armours/Gloves/GlovesAtlasDex",
+		"#subType Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesInt[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesIntRitual[0-9]+",
+		"#base Metadata/Items/Armours/Gloves/GlovesAtlasInt",
+		"#subType Armour/Evasion",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesStrDex[0-9]+",
+		"#subType Armour/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesStrInt[0-9]+",
+		"#base Metadata/Items/Armours/Gloves/GlovesAtlasStrInt",
+		"#subType Evasion/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesDexInt[0-9]+",
+		"#subType Ward",
+		"#baseMatch Metadata/Items/Armours/Gloves/GlovesExpedition[0-9]+",
+		"#subType",
+		"#base Metadata/Items/Armours/Gloves/GlovesDemigods1"
+	]
+}

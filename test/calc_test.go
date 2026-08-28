@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 // calcDumpFiles lists the per-corpus archive dumps tools/dump_calc.lua

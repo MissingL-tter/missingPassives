@@ -3,7 +3,6 @@
 package export
 
 import (
-	"fmt"
 	"math"
 	"regexp"
 	"sort"
@@ -11,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
-	"github.com/MissingL-tter/missingPassives/internal/luapat"
 )
 
 func init() {
@@ -347,11 +345,7 @@ func buildBases(x *Ctx) (any, error) {
 			key = args[0]
 			value = args[1]
 		}
-		pat, err := luapat.Convert(value)
-		if err != nil {
-			panic(fmt.Sprintf("baseMatch: bad pattern %q: %v", value, err))
-		}
-		re := regexp.MustCompile(pat)
+		re := regexp.MustCompile(value) // Go regex in the template
 		var ev []schema.ItemBase
 		for _, baseItemType := range x.Dat("BaseItemTypes").GetRowListMatch(key, re.MatchString) {
 			id := luaStr(baseItemType.Get("Id"))
@@ -453,10 +447,11 @@ func buildBases(x *Ctx) (any, error) {
 		var events [][]schema.ItemBase
 		curEvents = &events
 		if name == "Rares" {
+			// The rare list is the directive-generated best-base blobs (in
+			// directive order) followed by the template's hand-written
+			// blocks — the same order the generated file carries them.
 			inRares = true
-			err := x.WalkTemplateLines(name, "Bases/", directives, func(line string) {
-				raresStream = append(raresStream, line)
-			})
+			err := x.WalkTemplate(name, "Bases/", directives)
 			inRares = false
 			if err != nil {
 				return nil, err
@@ -465,6 +460,11 @@ func buildBases(x *Ctx) (any, error) {
 			for _, sec := range f.Sections {
 				doc.RareBlobs = append(doc.RareBlobs, sec.Items...)
 			}
+			tpl, err := readTemplate("Bases/", "Rares")
+			if err != nil {
+				return nil, err
+			}
+			doc.RareBlobs = append(doc.RareBlobs, tpl.Items...)
 			continue
 		}
 		if err := x.WalkTemplate(name, "Bases/", directives); err != nil {

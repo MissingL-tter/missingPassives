@@ -1,0 +1,13 @@
+{
+	"directives": [
+		"#type Flask",
+		"#subType Life",
+		"#baseMatch Metadata/Items/Flasks/FlaskLife",
+		"#subType Mana",
+		"#baseMatch Metadata/Items/Flasks/FlaskMana",
+		"#subType Hybrid",
+		"#baseMatch Metadata/Items/Flasks/FlaskHybrid",
+		"#subType Utility",
+		"#baseMatch Metadata/Items/Flasks/FlaskUtility"
+	]
+}

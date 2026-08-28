@@ -206,9 +206,8 @@ func buildMods(x *Ctx) (any, error) {
 
 			// Timeless jewels have special trade ids; see
 			// https://www.pathofexile.com/api/trade/data/stats
-			// #EVAL: the ljTab reproduces LuaJIT's pairs() order over the hash
-			// keys; the resulting entry order is baked into TradeHashes.
-			tradeHashes := &ljTab{}
+			// Entries carry the mod's stat order; the reference file's
+			// LuaJIT hash-iteration order is reproduced in the render test.
 			modIdx := 1
 			for {
 				stat, ok := mod.Get(fmt.Sprintf("Stat%d", modIdx)).(*Row)
@@ -234,12 +233,9 @@ func buildMods(x *Ctx) (any, error) {
 					}
 				}
 				desc := x.DescribeStats(currentStats)
-				tradeHashes.Set(float64(murmurHash2(bytes, 0x02312233)), desc.Lines)
+				m.TradeHashes = append(m.TradeHashes, schema.TradeHash{Hash: int64(murmurHash2(bytes, 0x02312233)), Lines: desc.Lines})
 				modIdx++
 			}
-			tradeHashes.Pairs(func(hash float64, v any) {
-				m.TradeHashes = append(m.TradeHashes, schema.TradeHash{Hash: int64(hash), Lines: v.([]string)})
-			})
 			pool = append(pool, m)
 
 			if outName == "../Data/ModItemExclusive.lua" || outName == "../Data/ModFoulborn.lua" {

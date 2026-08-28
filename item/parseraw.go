@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/internal/luapat"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -90,20 +89,6 @@ func uniqueStatOrder() (map[string]float64, map[string]float64) {
 		uniqueModStatOrder.normalised = normalised
 	})
 	return uniqueModStatOrder.exact, uniqueModStatOrder.normalised
-}
-
-// luaPatternMatch is s:match(pat) truthiness for reference sites that use
-// arbitrary text as a pattern (the trailing name-vs-spec check).
-func luaPatternMatch(s, pat string) bool {
-	converted, err := luapat.Convert(pat)
-	if err != nil {
-		panic("item: unconvertible Lua pattern from item text: " + pat + " (" + err.Error() + ")")
-	}
-	re, err := regexp.Compile(converted)
-	if err != nil {
-		panic("item: bad converted pattern: " + converted)
-	}
-	return re.MatchString(s)
 }
 
 // sortCraftedModLines ports the file-local sortCraftedModLines (stable
@@ -564,7 +549,16 @@ lineLoop:
 					specName == "Critical Strike Chance" || specName == "Physical Damage" || specName == "Elemental Damage" ||
 					specName == "Chaos Damage" || specName == "Chance to Block" || specName == "Block chance":
 					it.HiddenSpecs = true
-				case !(luaPatternMatch(it.Name, specName) && luaPatternMatch(it.Name, specVal)):
+				// The reference writes this containment check with :match(),
+				// so item text with pattern metacharacters is searched with
+				// them interpreted ("20% reduced" looks for "20 reduced").
+				// Deliberate divergence: plain containment ships here. No
+				// shipped or corpus item distinguishes the two — the halves
+				// of an unknown "Name: Value" line either sit verbatim in
+				// the item's name (colon-named bases: "Contract: Repository",
+				// "Maven's Invitation: X" — all metacharacter-free) or are
+				// absent under both readings.
+				case !(strings.Contains(it.Name, specName) && strings.Contains(it.Name, specVal)):
 					foundExplicit = true
 					gameModeStage = "EXPLICIT"
 				}

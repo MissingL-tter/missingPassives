@@ -2,12 +2,6 @@
 	"amulet": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Amulet"
-				],
 				"items": [
 					[
 						"The Anvil",
@@ -239,11 +233,9 @@
 						"(20-25)% chance to lose a Frenzy Charge when you use a Travel Skill",
 						"(20-25)% chance to lose a Power Charge when you gain Elusive"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Replica Badge of the Brotherhood",
@@ -847,11 +839,9 @@
 						"{tags:resource}Mana Flask Effects are not removed when Unreserved Mana is Filled",
 						"{tags:resource}Mana Flask Effects do not Queue"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Khatal's Weeping",
@@ -1546,23 +1536,13 @@
 						"{tags:defences}+(40-60) to maximum Energy Shield",
 						"{tags:resource}+(40-60) to maximum Life"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"axe": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: One Handed Axe"
-				],
 				"items": [
 					[
 						"Actum",
@@ -1758,11 +1738,9 @@
 						"(10-20)% increased Area of Effect",
 						"Gain (40-60)% of Weapon Physical Damage as Extra Damage of a random Element"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Grey Wind",
@@ -1778,13 +1756,9 @@
 						"Nearby Enemies have Fire Exposure while at maximum Rage",
 						"+(-5-5) to Maximum Rage"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Weapon: Two Handed Axe"
-				],
 				"items": [
 					[
 						"Atziri's Disfavour",
@@ -2104,23 +2078,13 @@
 						"{variant:6}Adds (151-199) to (331-401) Chaos Damage in Off Hand",
 						"Counts as Dual Wielding"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"belt": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Belt"
-				],
 				"items": [
 					[
 						"Arn's Anguish",
@@ -2970,11 +2934,9 @@
 						"{tags:attribute}+(23-32) to Intelligence",
 						"{tags:resistance}+(23-37)% to Chaos Resistance"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Solerai's Radiance",
@@ -3235,23 +3197,13 @@
 						"(50-75)% increased Effect of Non-Damaging Ailments inflicted by Summoned Skitterbots",
 						"{tags:speed}(15-25)% increased Trap and Mine Throwing Speed"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"body": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Body: Armour"
-				],
 				"items": [
 					[
 						"Blunderbore",
@@ -3476,13 +3428,9 @@
 						"(30-40)% increased Stun and Block Recovery",
 						"+(700-1000) to maximum Life if there are no Life Modifiers on other Equipped Items"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Evasion"
-				],
 				"items": [
 					[
 						"Ashrend",
@@ -3782,13 +3730,9 @@
 						"{variant:3}Projectiles from Attacks have 20% chance to inflict Bleeding on Hit while you have a Bestial Minion",
 						"{variant:6}Projectiles from Attacks have 100% chance to inflict Bleeding on Hit while you have a Bestial Minion"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Energy Shield"
-				],
 				"items": [
 					[
 						"The Apostate",
@@ -4107,13 +4051,9 @@
 						"+50% to Chaos Resistance",
 						"50% of Maximum Life Converted to Energy Shield"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Armour/Evasion"
-				],
 				"items": [
 					[
 						"Belly of the Beast",
@@ -4249,13 +4189,9 @@
 						"Minions have (6-12)% increased Attack Speed",
 						"Increases and Reductions to Minion Maximum Life also apply to you at 15% of their value"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Armour/Energy Shield"
-				],
 				"items": [
 					[
 						"Ambu's Charge",
@@ -4520,13 +4456,9 @@
 						"2% increased Effect of Shrine Buffs on you for each 5% of Life Reserved",
 						"10% chance to Trigger Explosive Toad when you kill an Enemy"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"Bloodbond",
@@ -4796,13 +4728,9 @@
 						"+(1-7)% to Unarmed Melee Attack Critical Strike Chance",
 						"+(10-77)% to Critical Strike Multiplier with Unarmed Melee Attacks"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Body: Armour/Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"The Admiral",
@@ -4876,23 +4804,13 @@
 						"-(6-4)% to all Resistances for each Corrupted Item Equipped",
 						"Corrupted"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"boots": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Boots: Armour"
-				],
 				"items": [
 					[
 						"Craiceann's Tracks",
@@ -5124,13 +5042,9 @@
 						"{variant:2}(3-5)% of Damage from Hits is taken from your nearest Totem's Life before you",
 						"Ancestral Bond"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Evasion"
-				],
 				"items": [
 					[
 						"Abberath's Hooves",
@@ -5371,13 +5285,9 @@
 						"{variant:3}Quicksilver Flasks you Use also apply to nearby Allies",
 						"{variant:2}10% increased Movement Speed for you and nearby Allies"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Energy Shield"
-				],
 				"items": [
 					[
 						"Bones of Ullr",
@@ -5618,13 +5528,9 @@
 						"Gain Arcane Surge when you use a Movement Skill",
 						"Increases to Cast Speed from Arcane Surge also applies to Movement Speed"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Armour/Evasion"
-				],
 				"items": [
 					[
 						"Beacon of Madness",
@@ -5808,13 +5714,9 @@
 						"Regenerate 100 Life per Second while you have Avian's Flight",
 						"Regenerate 12 Mana per Second while you have Avian's Flight"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Armour/Energy Shield"
-				],
 				"items": [
 					[
 						"Alberon's Warpath",
@@ -5922,13 +5824,9 @@
 						"{variant:1,2}10% chance to Cause Monsters to Flee",
 						"{variant:3}Drops Shocked Ground while moving, lasting 2 seconds"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"Brinerot Whalers",
@@ -6162,13 +6060,9 @@
 						"Projectiles Chain +1 times while you have Phasing",
 						"Celestial Footprints"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Boots: Ward"
-				],
 				"items": [
 					[
 						"Olroth's Charge",
@@ -6180,23 +6074,13 @@
 						"20% increased Movement Speed",
 						"Gain Adrenaline for 3 seconds when Ward Breaks"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"bow": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Bow"
-				],
 				"items": [
 					[
 						"Arborix",
@@ -6825,11 +6709,9 @@
 						"{variant:2}Ignites you inflict spread to other Enemies within 1.5 metres",
 						"Recover (40-60) Life when you Ignite an Enemy"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Wing of the Wyvern",
@@ -6846,23 +6728,13 @@
 						"Your Chaos Damage can Freeze",
 						"Battlemage"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"claw": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Claw"
-				],
 				"items": [
 					[
 						"Advancing Fortress",
@@ -7262,23 +7134,13 @@
 						"15% increased Attack Speed with Movement Skills",
 						"15% reduced Global Accuracy Rating"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"dagger": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Dagger"
-				],
 				"items": [
 					[
 						"Arakaali's Fang",
@@ -7635,11 +7497,9 @@
 						"100% increased Critical Strike Chance against Enemies that are on Full Life",
 						"1% of Attack Damage Leeched as Life on Critical Strike"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Festering Resentment",
@@ -7655,23 +7515,13 @@
 						"Triggered Spells Poison on Hit",
 						"All Damage with Triggered Spells can Poison"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"fishing": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Fishing Rod"
-				],
 				"items": [
 					[
 						"Reefbane",
@@ -7695,23 +7545,13 @@
 						"You can catch Exotic Fish",
 						"(50-40)% reduced Quantity of Fish Caught"
 					]
-				],
-				"closer": "]]"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"flask": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Flask: Life"
-				],
 				"items": [
 					[
 						"Blood of the Karui",
@@ -7730,13 +7570,9 @@
 						"Recover Full Life at the end of the Effect",
 						"{variant:1,2}Cannot gain Life during effect"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Flask: Mana"
-				],
 				"items": [
 					[
 						"Doedre's Elixir",
@@ -7800,13 +7636,9 @@
 						"Starts Energy Shield Recharge when Used",
 						"Energy Shield Recharge is not delayed by Damage during Effect"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Flask: Hybrid"
-				],
 				"items": [
 					[
 						"Divination Distillate",
@@ -7838,13 +7670,9 @@
 						"2 Enemy Writhing Worms escape the Flask when used",
 						"Writhing Worms are destroyed when Hit"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Flask: Utility"
-				],
 				"items": [
 					[
 						"Atziri's Promise",
@@ -8294,13 +8122,9 @@
 						"(20-100)% increased Charges per use",
 						"Grants a random Divination Buff for 20 seconds when Used"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Flask: Ward"
-				],
 				"items": [
 					[
 						"Elixir of the Unbroken Circle",
@@ -8354,23 +8178,13 @@
 						"Effect is removed when Ward Breaks",
 						"Culling Strike during Effect"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"gloves": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Gloves: Armour"
-				],
 				"items": [
 					[
 						"Admiral's Arrogance",
@@ -8603,13 +8417,9 @@
 						"5% less Damage taken per 5 Rage, up to a maximum of 30%",
 						"Maximum Rage is Halved"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Evasion"
-				],
 				"items": [
 					[
 						"Great Old One's Tentacles",
@@ -8727,13 +8537,9 @@
 						"(6-12)% increased Trap Throwing Speed",
 						"Can have up to (3-5) additional Traps placed at a time"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Energy Shield"
-				],
 				"items": [
 					[
 						"Allelopathy",
@@ -8928,13 +8734,9 @@
 						"Gain (15-20) Energy Shield per Enemy Killed",
 						"{variant:4}Lose (40-80) Mana when you use a Skill"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Armour/Evasion"
-				],
 				"items": [
 					[
 						"Aurseize",
@@ -9121,13 +8923,9 @@
 						"10% chance to gain Onslaught for 4 Seconds when Leech is",
 						"removed by Filling Unreserved Life"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Armour/Energy Shield"
-				],
 				"items": [
 					[
 						"Command of the Pit",
@@ -9354,13 +9152,9 @@
 						"Excommunicate Enemies on Melee Hit for 3 seconds",
 						"{variant:2}Melee Attacks have +(0.8-1.6)% to Critical Strike Chance against Excommunicated Enemies"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"Abhorrent Interrogation",
@@ -9625,13 +9419,9 @@
 						"(30-50)% increased Effect of Impales inflicted with Spells",
 						"Critical Strikes with Spells inflict Impale"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Gloves: Ward"
-				],
 				"items": [
 					[
 						"Medved's Challenge",
@@ -9659,21 +9449,13 @@
 						"{variant:3}Gain Added Chaos Damage equal to 10% of Ward",
 						"75% of Damage taken bypasses Ward"
 					]
-				],
-				"closer": "]],}"
+				]
 			}
-		],
-		"post": null
+		]
 	},
 	"helmet": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Helmet: Armour"
-				],
 				"items": [
 					[
 						"Abyssus",
@@ -9858,11 +9640,9 @@
 						"Warcries Cost +15% of Life",
 						"Warcry Skills have (15-25)% increased Area of Effect"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Refuge in Isolation",
@@ -9875,11 +9655,9 @@
 						"(15-30)% of Elemental Damage from Hits taken as Physical Damage",
 						"Physical Damage of Enemies Hitting you is Unlucky"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Hallowed Monarch",
@@ -9893,13 +9671,9 @@
 						"Your Linked Minions take (65-75)% less Damage",
 						"On Killing a Rare monster, a random Linked Minion gains its Modifiers for 60 seconds"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Evasion"
-				],
 				"items": [
 					[
 						"Alpha's Howl",
@@ -10068,13 +9842,9 @@
 						"{variant:1}50% increased Global Evasion Rating when on Low Life",
 						"{variant:2}150% increased Global Evasion Rating when on Low Life"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Energy Shield"
-				],
 				"items": [
 					[
 						"Asenath's Mark",
@@ -10631,13 +10401,9 @@
 						"{variant:15}Maximum number of Holy Armaments is Doubled",
 						"{variant:15}Cannot have Minions other than Holy Armaments"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Armour/Evasion"
-				],
 				"items": [
 					[
 						"Black Sun Crest",
@@ -10816,13 +10582,9 @@
 						"Reflects 100 Lightning Damage to Melee Attackers",
 						"When an Enemy Hit deals Elemental Damage to you, their Resistance to those Elements becomes zero for 4 seconds"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Armour/Energy Shield"
-				],
 				"items": [
 					[
 						"Ahn's Contempt",
@@ -11204,13 +10966,9 @@
 						"{variant:1}Regenerate 100 Life per second if no Equipped Items are Corrupted",
 						"{variant:2}Regenerate 400 Life per second if no Equipped Items are Corrupted"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"Akoya's Gaze",
@@ -11539,13 +11297,9 @@
 						"Gain a Power Charge every Second if you haven't lost Power Charges Recently",
 						"Lose all Power Charges when you Block"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Helmet: Ward"
-				],
 				"items": [
 					[
 						"Faithguard",
@@ -11569,21 +11323,13 @@
 						"Never deal Critical Strikes",
 						"Battlemage"
 					]
-				],
-				"closer": "]],}"
+				]
 			}
-		],
-		"post": null
+		]
 	},
 	"jewel": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Jewel: Drop"
-				],
 				"items": [
 					[
 						"Anatomical Knowledge",
@@ -12516,13 +12262,9 @@
 						"Radius: Medium",
 						"100% increased effect of Tattoos in Radius"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Abyss"
-				],
 				"items": [
 					[
 						"Amanamu's Gaze",
@@ -12562,13 +12304,9 @@
 						"Projectiles have 4% chance to be able to Chain when colliding with terrain per",
 						"Searching Eye Jewel affecting you, up to a maximum of 20%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Threshold"
-				],
 				"items": [
 					[
 						"Combat Focus",
@@ -13014,13 +12752,9 @@
 						"+(5-10) to Dexterity",
 						"Modifiers to Chance to Suppress Spell Damage also apply to Chance to Avoid Elemental Ailments at 50% of their Value"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Corrupted"
-				],
 				"items": [
 					[
 						"Ancient Waystones",
@@ -13431,13 +13165,9 @@
 						"15% reduced Movement Speed",
 						"Corrupted"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Quest rewards"
-				],
 				"items": [
 					[
 						"Assassin's Haste",
@@ -13559,13 +13289,9 @@
 						"{variant:1}(50-150)% increased Effect of Jewel Socket Passive Skills containing Corrupted Magic Jewels",
 						"{variant:2}(0-100)% increased Effect of Jewel Socket Passive Skills containing Corrupted Magic Jewels"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Labyrinth rewards"
-				],
 				"items": [
 					[
 						"Emperor's Cunning",
@@ -13604,13 +13330,9 @@
 						"30% increased Global Critical Strike Chance",
 						"3% increased Character Size"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Jewel: Timeless"
-				],
 				"items": [
 					[
 						"Brutal Restraint",
@@ -13814,23 +13536,13 @@
 						"Passives affected are Conquered by the Abyssal",
 						"Historic"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"mace": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: One Handed Mace"
-				],
 				"items": [
 					[
 						"Brightbeak",
@@ -14125,13 +13837,9 @@
 						"Gain (20-40)% of Physical Damage as Extra Lightning Damage if you've",
 						"used a Topaz Flask Recently"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Weapon: Sceptre"
-				],
 				"items": [
 					[
 						"Augyre",
@@ -14578,13 +14286,9 @@
 						"(40-70)% increased Totem Placement speed",
 						"Battlemage"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Weapon: Two Handed Mace"
-				],
 				"items": [
 					[
 						"Brain Rattler",
@@ -14910,21 +14614,13 @@
 						"(30-50)% reduced Experience gain",
 						"0.4% of Physical Attack Damage Leeched as Mana"
 					]
-				],
-				"closer": "]],}"
+				]
 			}
-		],
-		"post": null
+		]
 	},
 	"quiver": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Quiver"
-				],
 				"items": [
 					[
 						"Ahuana's Bite",
@@ -15363,21 +15059,13 @@
 						"{variant:12}Adds (14-16) to (20-22) Cold Damage",
 						"{variant:12}Adds (14-16) to (20-22) Lightning Damage"
 					]
-				],
-				"closer": "]],}"
+				]
 			}
-		],
-		"post": null
+		]
 	},
 	"ring": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Ring"
-				],
 				"items": [
 					[
 						"Ahkeli's Meadow",
@@ -16090,11 +15778,9 @@
 						"{tags:resource}(30-50)% increased Mana Regeneration Rate",
 						"{tags:resource}(10-15)% of Damage taken Recouped as Life"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Hungry Loop",
@@ -17182,11 +16868,9 @@
 						"{tags:resource}Lose (10-20) Life per Enemy Killed",
 						"{tags:resource}Gain (5-10) Mana per Enemy Killed"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Lost Unity",
@@ -17199,11 +16883,9 @@
 						"{tags:resistance}+(10-20)% to all Elemental Resistances",
 						"{tags:resistance}+(23-37)% to Chaos Resistance"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Sundered Will",
@@ -17221,11 +16903,9 @@
 						"Increases and Reductions to Chaos Damage also apply to Effect of",
 						"Auras from Chaos Skills at (10-15)% of their value, up to a maximum of 150%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Unseen Hue",
@@ -17262,11 +16942,9 @@
 						"Increases and Reductions to Lightning Damage also apply to Effect of",
 						"Auras from Lightning Skills at (10-15)% of their value, up to a maximum of 150%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Will of Tul",
@@ -17284,11 +16962,9 @@
 						"Increases and Reductions to Cold Damage also apply to Effect of",
 						"Auras from Cold Skills at (10-15)% of their value, up to a maximum of 150%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Will of Uul-Netol",
@@ -17306,11 +16982,9 @@
 						"Increases and Reductions to Physical Damage also apply to Effect of",
 						"Auras from Physical Skills at (10-15)% of their value, up to a maximum of 150%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"The Will of Xoph",
@@ -17328,11 +17002,9 @@
 						"Increases and Reductions to Fire Damage also apply to Effect of",
 						"Auras from Fire Skills at (10-15)% of their value, up to a maximum of 150%"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Woespike",
@@ -17351,11 +17023,9 @@
 						"{variant:2}(40-50)% less Impale Duration",
 						"{variant:1}(40-25)% reduced Impale Duration"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Zana's Ingenuity",
@@ -17391,23 +17061,13 @@
 						"{variant:8}{group:2}Monsters cannot steal or remove your Power, Frenzy or Endurance charges on Hit",
 						"{variant:6}{group:2}Monsters cannot Suppress your Spells"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"shield": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Shield: Armour"
-				],
 				"items": [
 					[
 						"Ahn's Heritage",
@@ -17645,13 +17305,9 @@
 						"40% increased Brand Damage",
 						"Blood Magic"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Shield: Evasion"
-				],
 				"items": [
 					[
 						"Atziri's Mirror",
@@ -17799,11 +17455,9 @@
 						"+(3-8)% Chance to Block",
 						"(30-40)% chance for Elemental Resistances to count as being 90% against Enemy Hits"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": null,
 				"items": [
 					[
 						"Mistwall",
@@ -17882,13 +17536,9 @@
 						"Maximum (3-5) Spectral Totems",
 						"Unwavering Stance"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Shield: Energy Shield"
-				],
 				"items": [
 					[
 						"Apep's Slumber",
@@ -18240,13 +17890,9 @@
 						"Curse Enemies with Temporal Chains when you Block their Projectile Attack Damage, ignoring Curse Limit",
 						"Curse Enemies with Elemental Weakness when you Block their Spell Damage, ignoring Curse Limit"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Shield: Armour/Evasion"
-				],
 				"items": [
 					[
 						"The Flawed Refuge",
@@ -18408,13 +18054,9 @@
 						"Damaging Retaliation Skills become Usable every 4 seconds",
 						"Retaliation Skills become Usable for (50-100)% longer"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Shield: Armour/Energy Shield"
-				],
 				"items": [
 					[
 						"Aegis Aurora",
@@ -18668,13 +18310,9 @@
 						"5% chance to grant an Endurance Charge to nearby Allies on Hit",
 						"10% chance to grant a Frenzy Charge to nearby Allies on Kill"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Shield: Evasion/Energy Shield"
-				],
 				"items": [
 					[
 						"Font of Thunder",
@@ -18811,21 +18449,13 @@
 						"Your Lucky or Unlucky effects use the best or",
 						"worst from three rolls instead of two"
 					]
-				],
-				"closer": "]],}"
+				]
 			}
-		],
-		"post": null
+		]
 	},
 	"staff": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Staff"
-				],
 				"items": [
 					[
 						"Agnerod East",
@@ -19678,23 +19308,13 @@
 						"{variant:1,2}20% chance for Energy Shield Recharge to start when you Block",
 						"{variant:3}(25-35)% chance for Energy Shield Recharge to start when you Block"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"sword": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: One Handed Sword"
-				],
 				"items": [
 					[
 						"Ahn's Might",
@@ -20361,13 +19981,9 @@
 						"Grants (2-3) Mana per Enemy Hit",
 						"Counts as all One Handed Melee Weapon Types"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Weapon: Thrusting Sword"
-				],
 				"items": [
 					[
 						"Aurumvorax",
@@ -20497,13 +20113,9 @@
 						"20% reduced Rarity of Items found",
 						"30% increased Movement Speed when on Low Life"
 					]
-				],
-				"closer": "]],"
+				]
 			},
 			{
-				"pre": [
-					"-- Weapon: Two Handed Sword"
-				],
 				"items": [
 					[
 						"The Dancing Dervish",
@@ -20841,22 +20453,13 @@
 						"20% increased Area of Effect for Attacks",
 						"Deal no Non-Elemental Damage"
 					]
-				],
-				"closer": "]]"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"tincture": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {"
-				],
 				"items": [
 					[
 						"The Battle Within",
@@ -20915,23 +20518,13 @@
 						"(15-25)% chance to refresh Ignite Duration on Melee Weapon Hit",
 						"Cover Full Life Enemies in Ash for (4-10) seconds on Melee Weapon Hit"
 					]
-				],
-				"closer": "]]"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	},
 	"wand": {
 		"sections": [
 			{
-				"pre": [
-					"-- Item data (c) Grinding Gear Games",
-					"",
-					"return {",
-					"-- Weapon: Wand"
-				],
 				"items": [
 					[
 						"Abberath's Horn",
@@ -21451,12 +21044,8 @@
 						"{variant:1,2}25% increased Spell Damage per Power Charge",
 						"{variant:3}(10-15)% increased Spell Damage per Power Charge"
 					]
-				],
-				"closer": "]],"
+				]
 			}
-		],
-		"post": [
-			"}"
 		]
 	}
 }

@@ -7,8 +7,6 @@
 package export
 
 import (
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -21,19 +19,18 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "uModsToText", Build: buildUModsToText})
 }
 
-// splitUniqueFile parses the transform's output lines into sections of item
-// blobs; renderUniques inverts it exactly.
+// splitUniqueFile parses a [[..]]-delimited line stream into sections of
+// item blobs. Passthrough text outside blocks is dropped — the render test
+// reconstructs it from the archive template.
 func splitUniqueFile(lines []string) schema.UniqueFile {
 	var f schema.UniqueFile
-	var pending []string
 	var cur []string
 	inItem := false
 	sec := -1
 	for _, line := range lines {
 		switch {
 		case !inItem && line == "[[":
-			f.Sections = append(f.Sections, schema.UniqueSection{Pre: pending})
-			pending = nil
+			f.Sections = append(f.Sections, schema.UniqueSection{})
 			sec = len(f.Sections) - 1
 			cur = []string{}
 			inItem = true
@@ -42,19 +39,15 @@ func splitUniqueFile(lines []string) schema.UniqueFile {
 			cur = []string{}
 		case inItem && (line == "]]," || line == "]]" || line == "]],}"):
 			f.Sections[sec].Items = append(f.Sections[sec].Items, cur)
-			f.Sections[sec].Closer = line
 			cur = nil
 			inItem = false
 		case inItem:
 			cur = append(cur, line)
-		default:
-			pending = append(pending, line)
 		}
 	}
 	if inItem {
 		panic("uModsToText: unterminated item block")
 	}
-	f.Post = pending
 	return f
 }
 
@@ -96,9 +89,23 @@ func buildUModsToText(x *Ctx) (any, error) {
 
 	doc := schema.Uniques{}
 	for _, name := range uniqueItemTypes {
-		raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", "Uniques", name+".lua"))
+		tplDoc, err := readUniqueTemplate(name)
 		if err != nil {
 			return nil, err
+		}
+		// The transform is a line-stream algorithm (block boundaries reset
+		// its per-item state); rebuild the stream from the template blocks.
+		var lines []string
+		for _, sec := range tplDoc.Sections {
+			for i, item := range sec.Items {
+				if i == 0 {
+					lines = append(lines, "[[")
+				} else {
+					lines = append(lines, "]],[[")
+				}
+				lines = append(lines, item...)
+			}
+			lines = append(lines, "]],")
 		}
 		var outLines []string
 		emit := func(line string) { outLines = append(outLines, line) }
@@ -121,13 +128,7 @@ func buildUModsToText(x *Ctx) (any, error) {
 			}
 		}
 
-		// io.lines: split on newlines, no trailing empty line.
-		lines := strings.Split(string(raw), "\n")
-		if len(lines) > 0 && lines[len(lines)-1] == "" {
-			lines = lines[:len(lines)-1]
-		}
 		for _, line := range lines {
-			line = strings.TrimSuffix(line, "\r")
 			if implicits != nil {
 				*implicits--
 			}

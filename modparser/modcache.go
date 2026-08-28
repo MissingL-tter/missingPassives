@@ -88,17 +88,13 @@ func cacheLookup(line string) (parseResult, bool) {
 	}
 	var res parseResult
 	if string(entry.Mods) != "null" {
-		var m map[string]any
-		if err := json.Unmarshal(entry.Mods, &m); err != nil {
+		var arr []any
+		if err := json.Unmarshal(entry.Mods, &arr); err != nil {
 			panic("modparser: bad cached mods for " + line + ": " + err.Error())
 		}
-		res.mods = make([]any, len(m))
-		for i := 1; i <= len(m); i++ {
-			mv, ok := m[strconv.Itoa(i)]
-			if !ok {
-				panic("modparser: cached mod list with a hole for " + line)
-			}
-			res.mods[i-1] = decodeCachedVal(mv)
+		res.mods = make([]any, len(arr))
+		for i, v := range arr {
+			res.mods[i] = decodeCachedVal(v)
 		}
 	}
 	if entry.Extra != nil {
@@ -107,78 +103,124 @@ func cacheLookup(line string) (parseResult, bool) {
 	return res, true
 }
 
-// decodeCachedVal maps one canon-JSON value back to the parse-result
-// shape: mods by their name/type/flags signature, numeric-keyed objects to
-// arrays, other objects to tags.
-func decodeCachedVal(v any) any {
-	m, ok := v.(map[string]any)
-	if !ok {
-		return v
-	}
-	if _, hasName := m["name"]; hasName {
-		if _, hasType := m["type"]; hasType {
-			if _, hasFlags := m["flags"]; hasFlags {
-				return decodeCachedMod(m)
-			}
+// The cache entry value format: conventional JSON. Mods and D tables are
+// discriminated objects ({"_":"mod",...}, {"_":"d",...}); tags are plain
+// objects, lists are arrays. EncodeMods and decodeCachedVal are the two
+// halves; the generator (internal/modcachegen) writes with EncodeMods.
+
+func encodeCachedVal(v any) any {
+	switch t := v.(type) {
+	case float64:
+		// JSON has no Infinity; math.huge appears in tag limits.
+		if math.IsInf(t, 1) {
+			return map[string]any{"_": "inf"}
 		}
-	}
-	numeric := len(m) > 0
-	for i := 1; i <= len(m); i++ {
-		if _, ok := m[strconv.Itoa(i)]; !ok {
-			numeric = false
-			break
+		if math.IsInf(t, -1) {
+			return map[string]any{"_": "-inf"}
 		}
-	}
-	if numeric {
-		out := make([]any, len(m))
-		for i := 1; i <= len(m); i++ {
-			out[i-1] = decodeCachedVal(m[strconv.Itoa(i)])
+		return t
+	case *Mod:
+		m := map[string]any{
+			"_":            "mod",
+			"name":         t.Name,
+			"type":         t.Type,
+			"flags":        t.Flags,
+			"keywordFlags": t.KeywordFlags,
+			"value":        encodeCachedVal(t.Value),
+		}
+		if t.SourceSet {
+			m["source"] = t.Source
+		}
+		tags := make([]any, len(t.Tags))
+		for i, tag := range t.Tags {
+			tags[i] = encodeCachedVal(tag)
+		}
+		m["tags"] = tags
+		return m
+	case *D:
+		arr := make([]any, len(t.Arr))
+		for i, e := range t.Arr {
+			arr[i] = encodeCachedVal(e)
+		}
+		kv := make(map[string]any, len(t.KV))
+		for k, e := range t.KV {
+			kv[k] = encodeCachedVal(e)
+		}
+		return map[string]any{"_": "d", "arr": arr, "kv": kv}
+	case Tag:
+		out := make(map[string]any, len(t))
+		for k, e := range t {
+			out[k] = encodeCachedVal(e)
+		}
+		return out
+	case []any:
+		out := make([]any, len(t))
+		for i, e := range t {
+			out[i] = encodeCachedVal(e)
 		}
 		return out
 	}
-	out := Tag{}
-	for k, e := range m {
-		out[k] = decodeCachedVal(e)
+	return v
+}
+
+// EncodeMods serialises a parse result's mod list in the cache entry
+// format (deterministic: object keys sort under json.Marshal).
+func EncodeMods(mods []any) []byte {
+	out, err := json.Marshal(encodeCachedVal(any(append([]any{}, mods...))))
+	if err != nil {
+		panic("modparser: encoding mods: " + err.Error())
 	}
 	return out
 }
 
-func decodeCachedMod(m map[string]any) *Mod {
-	mod := &Mod{
-		Name:         m["name"].(string),
-		Type:         m["type"].(string),
-		Flags:        int64(m["flags"].(float64)),
-		KeywordFlags: int64(m["keywordFlags"].(float64)),
-		Value:        decodeCachedVal(m["value"]),
-	}
-	if src, ok := m["source"].(string); ok {
-		mod.Source = src
-		mod.SourceSet = true
-	}
-	// Tag arrays can have holes (a second tag with no first); keep them.
-	maxIdx := 0
-	for k := range m {
-		if i, err := strconv.Atoi(k); err == nil && i > maxIdx {
-			maxIdx = i
+func decodeCachedVal(v any) any {
+	switch t := v.(type) {
+	case []any:
+		out := make([]any, len(t))
+		for i, e := range t {
+			out[i] = decodeCachedVal(e)
 		}
-	}
-	for i := 1; i <= maxIdx; i++ {
-		if tv, ok := m[strconv.Itoa(i)]; ok {
-			mod.Tags = append(mod.Tags, decodeCachedVal(tv))
-		} else {
-			mod.Tags = append(mod.Tags, nil)
-		}
-	}
-	for k := range m {
-		switch k {
-		case "name", "type", "flags", "keywordFlags", "value", "source":
-		default:
-			if _, err := strconv.Atoi(k); err != nil {
-				panic("modparser: unexpected cached mod field " + k)
+		return out
+	case map[string]any:
+		switch t["_"] {
+		case "inf":
+			return math.Inf(1)
+		case "-inf":
+			return math.Inf(-1)
+		case "mod":
+			mod := &Mod{
+				Name:         t["name"].(string),
+				Type:         t["type"].(string),
+				Flags:        int64(t["flags"].(float64)),
+				KeywordFlags: int64(t["keywordFlags"].(float64)),
+				Value:        decodeCachedVal(t["value"]),
 			}
+			if src, ok := t["source"].(string); ok {
+				mod.Source = src
+				mod.SourceSet = true
+			}
+			for _, tag := range t["tags"].([]any) {
+				mod.Tags = append(mod.Tags, decodeCachedVal(tag))
+			}
+			return mod
+		case "d":
+			d := &D{KV: map[string]any{}}
+			for _, e := range t["arr"].([]any) {
+				d.Arr = append(d.Arr, decodeCachedVal(e))
+			}
+			for k, e := range t["kv"].(map[string]any) {
+				d.KV[k] = decodeCachedVal(e)
+			}
+			return d
+		default:
+			out := Tag{}
+			for k, e := range t {
+				out[k] = decodeCachedVal(e)
+			}
+			return out
 		}
 	}
-	return mod
+	return v
 }
 
 // quant14 is one number's trip through the cache file: tostring (%.14g)

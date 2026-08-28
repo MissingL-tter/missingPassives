@@ -29,3 +29,8 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | `ItemClass:BuildRaw` / `:BuildAndParseRaw` / `:Craft` | `item.(*Item).BuildRaw/BuildAndParseRaw/Craft` (item/buildraw.go) |
 | Generated.lua `buildTreeDependentUniques` (Forbidden Flame/Flesh, Skin of the Lords, Impossible Escape) | `data.BuildTreeDependentUniques` (called from tree.Load) |
 | whole-source league update (manual multi-step) | `cmd/sourceupdate` (artifacts + tree fetch + modcache + verification) |
+| tools/canon.lua encode (dump format) | `test/luacanon` (test-only; artifacts ship conventional JSON) |
+| the reference's Data/*.lua text (for byte-compares) | `test/luarender` (test-only; dies with the archive) |
+| LuaJIT number-key table pairs() order (mods.lua tradeHashes) | `test/luarender/luatab.go` (artifact carries stat order; render test replays the hash walk) |
+| LuaJIT math.random stream (legionPassives.lua layout offsets) | `test/luarender/luaprng.go` (artifact has no oidx; render test redraws the stream) |
+| Lua patterns (baseMatch specs, table-archive keys) | Go regex in export/templates; `test/luapat` converts test-side only |

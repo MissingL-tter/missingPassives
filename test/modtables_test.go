@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/MissingL-tter/missingPassives/internal/luapat"
+	"github.com/MissingL-tter/missingPassives/test/luapat"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -16,7 +16,7 @@ import (
 // data entries byte for byte, closure entries as agreeing that both sides hold
 // a function there.
 //
-// Regenerate from .archive/src/ with: luajit ../../tools/dump_tables.lua
+// Regenerate from .archive/src/ with: luajit ../../tools/dump_modtables.lua
 
 type tableRecord struct {
 	Table string `json:"table"`
@@ -27,7 +27,7 @@ type tableRecord struct {
 func TestTablesAgainstReference(t *testing.T) {
 	f, err := os.Open("testdata/tables_archive.jsonl")
 	if err != nil {
-		t.Fatalf("table archive dump not generated (run luajit ../../tools/dump_tables.lua from .archive/src/): %v", err)
+		t.Fatalf("table archive dump not generated (run luajit ../../tools/dump_modtables.lua from .archive/src/): %v", err)
 	}
 	defer f.Close()
 

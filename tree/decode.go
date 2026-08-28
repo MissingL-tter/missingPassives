@@ -1,25 +1,16 @@
-// Decoding helpers for data/raw/tree_<version>.json, which is canon-encoded:
-// every Lua table is a JSON object, arrays included ({"1":..., "2":...}).
+// Decoding helpers for data/raw/tree_<version>.json (conventional JSON;
+// arrays are arrays).
 package tree
 
 import "strconv"
 
-// canonArray converts a numeric-keyed object to a slice; returns nil when v
-// is not array-shaped.
+// canonArray returns v as a slice; nil when absent or empty.
 func canonArray(v any) []any {
-	m, ok := v.(map[string]any)
-	if !ok || len(m) == 0 {
+	arr, ok := v.([]any)
+	if !ok || len(arr) == 0 {
 		return nil
 	}
-	out := make([]any, len(m))
-	for i := 1; i <= len(m); i++ {
-		e, ok := m[strconv.Itoa(i)]
-		if !ok {
-			return nil
-		}
-		out[i-1] = e
-	}
-	return out
+	return arr
 }
 
 func str(v any) string {
@@ -55,16 +46,12 @@ func strList(v any) []string {
 
 // idList decodes out/in link lists: ids arrive as strings in the GGG data.
 func idList(v any) []int64 {
-	m, ok := v.(map[string]any)
+	arr, ok := v.([]any)
 	if !ok {
 		return nil
 	}
-	out := make([]int64, 0, len(m))
-	for i := 1; i <= len(m); i++ {
-		e, ok := m[strconv.Itoa(i)]
-		if !ok {
-			break
-		}
+	out := make([]int64, 0, len(arr))
+	for _, e := range arr {
 		switch t := e.(type) {
 		case string:
 			n, err := strconv.ParseInt(t, 10, 64)

@@ -4,8 +4,6 @@ package export
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -125,29 +123,19 @@ func (x *Ctx) getOTStats(otFile string, modList []any) []any {
 	return modList
 }
 
-// WalkTemplate reads a hand-maintained template and calls the handler for
-// each #directive line (the build-side half of processTemplateFile).
+// WalkTemplate reads an in-repo template document (export/templates/) and
+// calls the handler for each #directive line (the build-side half of
+// processTemplateFile).
 func (x *Ctx) WalkTemplate(name, inDir string, directives map[string]func(args string)) error {
-	return x.WalkTemplateLines(name, inDir, directives, nil)
-}
-
-// WalkTemplateLines additionally reports passthrough (non-directive) lines.
-func (x *Ctx) WalkTemplateLines(name, inDir string, directives map[string]func(args string), passthrough func(line string)) error {
-	raw, err := os.ReadFile(filepath.Join(x.TplDir, "Export", filepath.FromSlash(inDir), name+".txt"))
+	doc, err := readTemplate(inDir, name)
 	if err != nil {
 		return err
 	}
-	lines := strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n")
-	if len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-	for _, line := range lines {
+	for _, line := range doc.Directives {
 		if m := reDirective.FindStringSubmatch(line); m != nil {
 			if fn := directives[m[1]]; fn != nil {
 				fn(m[2])
 			}
-		} else if passthrough != nil {
-			passthrough(line)
 		}
 	}
 	return nil

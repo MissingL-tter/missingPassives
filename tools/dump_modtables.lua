@@ -2,7 +2,7 @@
 -- test/testdata/tables_archive.jsonl:
 --   {"table":<name>,"key":<pattern>,"value":<canonical>}
 --
--- Run from .archive/src/:  luajit ../../tools/dump_tables.lua
+-- Run from .archive/src/:  luajit ../../tools/dump_modtables.lua
 --
 -- The differential parse test only reaches entries some corpus line matches;
 -- this dump lets the Go side verify every DATA entry byte for byte, and that

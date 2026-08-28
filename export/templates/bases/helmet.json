@@ -1,0 +1,27 @@
+{
+	"directives": [
+		"#type Helmet",
+		"#influenceBaseTag helmet",
+		"#socketLimit 4",
+		"#subType Armour",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetStr[0-9]+",
+		"#subType Evasion",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetDex[0-9]+",
+		"#subType Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetInt[0-9]+",
+		"#subType Armour/Evasion",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetStrDex[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetStrDexRitual[0-9]+",
+		"#subType Armour/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetStrInt[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetStrIntRitual[0-9]+",
+		"#base Metadata/Items/Armours/Helmets/HelmetAtlas1",
+		"#subType Evasion/Energy Shield",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetDexInt[0-9]+",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetDexIntRitual[0-9]+",
+		"#subType Ward",
+		"#baseMatch Metadata/Items/Armours/Helmets/HelmetExpedition[0-9]+",
+		"#subType",
+		"#base Metadata/Items/Armours/Helmets/HelmetWreath1"
+	]
+}

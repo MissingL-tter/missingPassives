@@ -18,7 +18,6 @@ import (
 type Ctx struct {
 	Dats   *DatSet
 	SrcDir string // extracted GGPK root (holds Data/, Metadata/)
-	TplDir string // the real src/ tree, for reading hand-maintained templates
 
 	txtCache         map[string]string
 	otCache          map[string]string
@@ -31,7 +30,7 @@ type Ctx struct {
 
 // Script is one ported export script: Build produces its schema document
 // (serialised as <name>.json). The Lua files the reference produced are
-// reproduced only by internal/luarender in the differential test.
+// reproduced only by test/luarender in the differential test.
 type Script struct {
 	Name string // the Lua script's basename, e.g. "costs"
 	// OutName overrides the raw artifact's basename when the honest Go-side

@@ -1,9 +1,10 @@
 // treegen converts GGG's published passive-tree JSON
 // (github.com/grindinggear/skilltree-export, per-version tags) into the
-// canon tree document the tree package consumes (data/raw/tree_<v>.json),
-// replacing the retired luajit dump of PoB's TreeData/<v>/tree.lua.
+// conventional-JSON tree document the tree package consumes
+// (data/raw/tree_<v>.json), replacing the retired luajit dump of PoB's
+// TreeData/<v>/tree.lua.
 //
-// It reproduces PoB's whole ingestion pipeline byte-for-byte:
+// It reproduces the SEMANTICS of PoB's whole ingestion pipeline:
 //
 //  1. fix_ascendancy_positions.py (upstream repo root, 3.29.1 state):
 //     GGG keyword-tag stripping on node stats/reminderText, ascendancy
@@ -17,20 +18,21 @@
 //     its `{(%w+)}` -> `{[0]=%1}` quirk can only fire inside strings
 //     (the python serializer's indent puts real single-element arrays on
 //     multiple lines, so the pattern never matches structure).
-//  3. tools/canon.lua encodeExact (via internal/luacanon).
+//  3. conventional JSON out; the Lua-table container shape lives only in
+//     the tests that compare against the archive.
 //
-// Verified byte-identical to the retired dump for 3.29.1 by
-// test/treegen_test.go.
+// The canon-format equivalence to the retired luajit dump was proven
+// byte-for-byte when this port landed; test/treegen_test.go pins the
+// current output to the committed artifact and the GGG source.
 package export
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/MissingL-tter/missingPassives/internal/luacanon"
 )
 
 type point struct{ x, y float64 }
@@ -213,11 +215,13 @@ func luaString(s string) string {
 	return reZeroQuirk.ReplaceAllString(s, "{[0]=$1}")
 }
 
-// toCanon converts the fixed JSON value into the Lua-loaded shape luacanon
-// encodes: numeric-looking object keys become Lua number keys (formatted
-// the way canon.lua's tostring does), arrays become 1-based tables, and
-// every string undergoes the jsonToLua text mangling.
-func toCanon(v any) any {
+// toLoaded applies the jsonToLua pipeline's SEMANTIC effects to the fixed
+// JSON value, leaving the container format conventional (arrays stay
+// arrays): numeric-looking object keys collapse the way Lua number keys
+// do (1.0 and 1 are one key, formatted per tostring), and every string
+// undergoes the jsonToLua text mangling. The Lua-table container shape is
+// reproduced only in tests (tree differential via luacanon).
+func toLoaded(v any) any {
 	switch t := v.(type) {
 	case map[string]any:
 		out := make(map[string]any, len(t))
@@ -232,13 +236,13 @@ func toCanon(v any) any {
 			} else {
 				key = luaString(k)
 			}
-			out[key] = toCanon(val)
+			out[key] = toLoaded(val)
 		}
 		return out
 	case []any:
 		out := make([]any, len(t))
 		for i, val := range t {
-			out[i] = toCanon(val)
+			out[i] = toLoaded(val)
 		}
 		return out
 	case string:
@@ -259,8 +263,8 @@ func numKey(v float64) string {
 	return strconv.FormatFloat(v, 'g', 14, 64)
 }
 
-// BuildTreeDoc runs the whole pipeline: GGG data.json bytes in, canon tree
-// document bytes out (with trailing newline).
+// BuildTreeDoc runs the whole pipeline: GGG data.json bytes in,
+// conventional-JSON tree document bytes out (with trailing newline).
 func BuildTreeDoc(gggJSON []byte) ([]byte, error) {
 	var data map[string]any
 	if err := json.Unmarshal(gggJSON, &data); err != nil {
@@ -269,5 +273,11 @@ func BuildTreeDoc(gggJSON []byte) ([]byte, error) {
 	if err := fixTree(data); err != nil {
 		return nil, err
 	}
-	return []byte(luacanon.EncodeExact(toCanon(data)) + "\n"), nil
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(toLoaded(data)); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
