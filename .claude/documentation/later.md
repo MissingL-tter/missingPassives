@@ -31,9 +31,9 @@ violation.
 | function | what it reproduces |
 |---|---|
 | `internal/util.Tonumber` | Lua `tonumber(string)`: whitespace-trimmed, decimal/exponent forms, `0x` hex integers. Documented divergences in its comment (Go also accepts `inf`/`nan` spellings, hex floats with `p` exponents, underscore digit separators; `TrimSpace` strips Unicode spaces). 13 call sites: game-data `.ot` constants, skill stat text, mod-pattern captures. |
-| `item.FoldText` | `Item.lua sanitiseText`: the accent/hyphen/cp1252 fold applied to item text before matching. Extended 2026-08-29 to fold uppercase accents (`Ö→O`, `Ä→A`) on PoB's own no-two-names-differ-by-an-accent assumption. Note: the folded bytes `\xc4`/`\xd6` are also UTF-8 lead bytes, the same hazard the pre-existing `\xe4`/`\xf6` folds carry. |
+| `util.FoldText` (`internal/util/text.go`) | `Item.lua sanitiseText`: the accent/hyphen/cp1252 fold applied to item text before matching. Extended 2026-08-29 to fold uppercase accents (`Ö→O`, `Ä→A`) on PoB's own no-two-names-differ-by-an-accent assumption. Note: the folded bytes `\xc4`/`\xd6` are also UTF-8 lead bytes, the same hazard the pre-existing `\xe4`/`\xf6` folds carry. Moved out of `item` 2026-08-30 and `data`'s divergent third copy deleted: `item` imports `data`, so the one fold table could only live below both. That unification extends the uppercase superset to gem and granted-effect names, where the reference (`Common.lua:251`) folds only lowercase — free on today's corpus (no `data/raw` file contains `Ä`/`Ö` in any byte spelling) but it is the port's invention that won, not the reference's behaviour. |
 | `item.gsubLimitFunc` | `string.gsub` with a replacement-count limit and capture-array semantics — Lua's limit counts *replacements*, and the `(%d+)([^%.])` pattern consumes the suffix character. |
-| `item.gsubNumberHash`, `item.stripBalanced` | the `#` number substitution and Lua's `%b<>` balanced-delimiter match. |
+| `item.gsubNumberHash`, `util.StripBalanced` | the `#` number substitution and Lua's `%b<>` balanced-delimiter match. `StripBalanced` moved to `internal/util` with `FoldText`; it has a second caller (`item/parseraw.go`) that runs it over `{`/`}` rather than angles, which is why it is exported and takes its delimiters as parameters. |
 | `modparser.firstToUpper` | `str:gsub("^%l", string.upper)`. |
 | `modparser.literalWeight` | **not** a Lua function: a port invention. The `scan` tie-break stands in for the reference's Lua-pattern-length ordering, which the regex conversion destroyed. Any restructuring of the pattern tables must preserve it. |
 
@@ -100,7 +100,7 @@ provenance is Lua `tostring`, but the requirement is real.
 
 Sites: `item/buildraw.go` (the whole `{range:…}` / `Selected Variant` /
 `Item Level` / stat-line reconstruction), `item/applyrange.go` (range
-application and the precision search), `data/uniques_generated2.go` and
+application and the precision search), `data/uniques_watcherseye.go` and
 `data/uniques_treedep.go` (generated unique text blobs and `{variant:N}`
 prefixes), `data/data.go:489,498` (boss penetration description),
 `tree/conquer.go:28,31` (substituting rolls into conquered stat text).
@@ -149,6 +149,23 @@ byte-locked differentials then flag 15th-digit diffs by design).
 Guards: `TestModCacheAgainstShippedFile` (per-entry decode-echo plus a fresh
 parse quantized to the same bytes) and `TestModCacheGeneration` (whole-file
 regeneration). Rounding at 13 digits or at `%.15g` both fail them.
+
+### 1.6 Truthiness — the most load-bearing Lua semantics left
+
+Two functions reproduce Lua's `if x then`, where **only `nil` and `false` are
+falsy** — `0` and `""` are true. Both are load-bearing and both were verified,
+not assumed.
+
+| function | what it reproduces |
+|---|---|
+| `modparser.Truthy(Value)` (`modparser/value.go`) | guards the OVERRIDE/FLAG/LIST queries in `modstore/db.go` and `modstore/list.go` where the reference tests a mod value for truthiness. A Go `!= 0` check would break an OVERRIDE of `0`. On today's tables it happens to equal `v != nil` — the only `Bool(false)` in the pattern tables is nested inside a `DataRef` — but the equality is a property of the data, not of the code. |
+| `modstore.OutValue.Truthy()` (`modstore/output.go`) | `Output.Flag(key)`. **Not** the same as `Has(key)`: the calc genuinely stores `false` at 13+ sites (`calc/ehpguard.go`, `calc/ehppools.go`, `calc/ehp.go`, `calc/defencetail.go`), so absent / present-false / present-truthy are three distinct states the reference distinguishes. |
+
+The open string key set on `modstore.Output` is load-bearing for the same
+reason it looks lazy: `calc` composes ~220 read keys and ~189 write keys at
+runtime (`"Base"+damageType+"DamageReductionWhenHit"`,
+`ailment+"ChanceOnCrit"`) against ~1,168/897 literal ones. A struct cannot
+carry that without generating a key enum.
 
 ---
 

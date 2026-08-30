@@ -19,6 +19,45 @@ two documents it continues; nothing else about the location is intended.
 `map[string]any` across the whole product is down to 31 sites. Every one was
 adjudicated; the ones that are correct are listed in **§5 Do not touch**.
 
+## Status — executed 2026-08-30, seven waves, suite green at every one
+
+Every item below landed with `go test ./...` clean and, where the wave touched
+`export/`, `data/schema` or the modparser codec, `MP_EXPORT=1` at 123 files /
+0 disagreements. `data/raw` was regenerated once (for B2) and re-regenerates
+idempotently.
+
+| item | outcome |
+|---|---|
+| A1 A2 A3 A4 A5 A6 A7 A8 | landed |
+| B1 B2 B4 B5 B6 B7 B8 B10 | landed |
+| B3 | **half withdrawn** — the `ActorType` enum is impossible (see the item); the dead `Others` map was deleted |
+| B9 | modparser half landed (`Tables()` typed); **data half kept by design**, renamed `StatMapCopyFixture` |
+| B11 | **closed as a no-op** — measured 0 divergences between the `!= 0` guess and real key presence across the corpus; the premise was wrong |
+| Tier C | landed, except two `*Internal` methods that must stay exported for the frozen dump-harness transcription |
+| drift 2 3 5 6 | fixed |
+| drift 4 | `SetModCache` now returns `error` (reachable from `RawSourcesFromDir`); `DecodeMods`/`DecodeMod` stay panicking — `Parse`'s signature is parity-frozen and has no error channel |
+
+Net effect: `map[string]any` is **gone from every production package** except
+`modparser/modcache.go` and `export/treegen.go`, both genuine I/O edges listed
+in §5. `getThreshold`'s `any`, `calc.str`, `data.sanitiseText`, the Lua
+`[[ ]]` stream builders, the four jewel `map[string]any` tables, the socket
+bag and the four dead `Extra` bags are all deleted.
+
+**`HostileScale` removed (decided 2026-08-30).** `schema.MinionDef.HostileScale`
+and `data.Minion.HostileScale` are deleted. They captured a numeric `#hostile`
+argument that the reference's export directive would pass through verbatim
+(`minions.lua:128` stores the raw text, `:203` writes it back), but the field
+was dead three ways: `export/template_directives.go` types the directive
+`Value bool` so a number is unexpressible; the only `#hostile` line in the
+archive is `Minions.txt:255 #hostile true`; and no consumer in either the port
+or the reference reads anything but the flag's truthiness — nothing scales by
+the magnitude, so the name promised behaviour that never existed. If a numeric
+spelling ever appears upstream it is a small fix at the directive.
+
+**Note on citations:** several items in this file cite line numbers that were
+already stale when it was written. Treat every citation here as a hint, not an
+address; locate code by name and content.
+
 ## Standing constraints
 
 - `./.archive` is read-only. Never change it, move it, or regenerate it.
@@ -89,7 +128,7 @@ an unexpected type is silently dropped and its mod line stops being recognised
 — plus two bare `v.(jewelNodeFunc)` (`:589`, `:592`) that panic at package init.
 
 **Fix.** The package already has this idiom four times at
-`modparser/pattern.go:207-243`. Copy it:
+`modparser/pattern.go:57-104`. Copy it:
 
 ```go
 type jewelValue interface{ isJewelValue() }
@@ -148,7 +187,8 @@ non-`Str` silently becomes `""` and the keystone is dropped.
 
 ```go
 type SocketInput struct {
-	Color string `lua:"color"`
+	Color string  `lua:"color"`
+	Group float64 `lua:"group"`
 }
 // calc/input.go:209
 Sockets []SocketInput `lua:"sockets"`
@@ -156,18 +196,54 @@ Sockets []SocketInput `lua:"sockets"`
 
 The three colour reads become `socket.Color`. At the two keystone sites:
 `if s, ok := v.(modparser.Str); ok { … }`. `str` deletes.
-`test/luacanon/calccanon.go` builds the typed socket instead of the map.
 
-**Parity.** The `lua:"color"` tag keeps the canon projection byte-identical.
-**Verify.** `CALC SPEC`.
+**`Group` is required even though nothing reads it.** The first draft of this
+item specified `Color` alone, on the evidence that `"color"` is the only key
+any code reads — which is true, and which was checked. It was still wrong:
+`TestCalcFixtureEcho` re-encodes each decoded fixture and compares it to the
+archive dump byte for byte, so a key that is never read still has to survive
+the round trip. Every socket entry in the fixtures is
+`{"color":X,"group":N}`, and `group` is frequently non-zero. A one-field
+struct silently deletes `,"group":N` from the echo output.
+
+The general lesson, which applies to every remaining item in this file:
+**"nothing reads it" does not license dropping a field. The fixture echo
+compares the whole projection.** Enumerate what the canon emits, not what the
+calc consumes.
+
+**Refined 2026-08-30 while doing B5.** "No `lua:` projection emits it" is
+still too crude a test, in the opposite direction — read literally it blocks
+every deletion, because `test/luacanon` walks most of these structures and its
+`setAll` round-trips *unrecognised* fixture keys verbatim. The question is not
+whether a projection exists but whether **the emitted key set is non-empty**,
+and answering it takes two steps a grep cannot do:
+
+1. enumerate the producers — every `mod("<Kind>Data", List, DataRef{Key: …})`
+   in `modparser`, plus the hand-built keys in `item/buildmodlist.go` — and
+   check each against the receiving `Set`'s explicit cases;
+2. scan `test/testdata/*.jsonl` for the actual key set under that structure,
+   remembering that `tools/dump_*.lua` copies *every* scalar key, so the
+   fixture is a complete census of what the reference produced.
+
+A field is safe to delete only when both come back empty.
+
+**Parity.** With both tags present the projection is byte-identical:
+`luacanon` sorts keys, so struct field order is irrelevant, and a whole
+`float64` renders as `0` exactly as the map path did. The construction sites
+are in `test/calc_test.go` and `test/item_test.go` (not
+`test/luacanon/calccanon.go`, which has no socket code).
+**Verify.** `CALC SPEC ITEM`.
 
 ### A6. `evalSocketedIn`'s `match` map is a slice
 
-`modstore/eval.go:923-973`: `match := map[string]bool{}` with four literal keys
-that are never read by name — only `for _, v := range match` at `:971`.
+`modstore/eval.go:918-975` (`evalSocketedIn`): `match := map[string]bool{}` with
+four literal keys that are never read by name — only `for _, v := range match`
+at the end.
 
 **Fix.** `var match []bool` with `append`, or an `ok := true; ok = ok && …`
-accumulator. Same treatment at the sibling loop, `modstore/eval.go:905`.
+accumulator. (The sibling `matches` loop in the `ItemCondition` path above it
+is *already* a slice — an earlier draft of this item wrongly called for the
+"same treatment" there.)
 
 **Parity.** The loop is a pure conjunction with early return under both `Neg`
 polarities, so iteration order cannot matter — this is provable from the loop
@@ -289,22 +365,36 @@ through to `a.Others[actorType]`. `Actor.Others` (`:69`, commented
 *"any other actor types"*) is never written anywhere — it exists only to mirror
 the reference's open table lookup.
 
-**Fix.** Follow `ConquerorKind`/`NodeKind`:
+**Revised 2026-08-30 — the enum half of this item is withdrawn.**
 
-```go
-type ActorType uint8
-const (ActorNone ActorType = iota; ActorPlayer; ActorEnemy; ActorParent)
-func (a ActorType) String() string       // over [...]string{"", "player", "enemy", "parent"}
-var ActorTypeByName map[string]ActorType
-```
+The original fix was an `ActorType uint8` enum over `player`/`enemy`/`parent`,
+and it asserted that `go-remodel-plan.md`'s recorded deviation ("`Actor` stays
+a string") was superseded. That was wrong. The archive fixtures carry a
+**fourth** actor value:
 
-Type `CondTag.Actor`, `StatTag.Actor`, `MultiplierTag.Actor`/`LimitActor`/
-`ThresholdActor` and `Cfg.Actor`. `byType` becomes a total switch with
-`default: return nil`; `Others` deletes. `ActorNone`'s zero value reproduces
-the `""`-means-absent tests at `eval.go:213,226,745,752,769` unchanged.
+| value | count in `test/testdata/*.jsonl` |
+|---|---|
+| `enemy` | 5,093 |
+| `player` | 1,831 |
+| `parent` | 829 |
+| `nonexistent` | 12 |
 
-**Shared type — runs alone**, and lands in `modparser` before `modstore`.
-**Verify.** `PARSE STORE CACHE ITEM CALC DATA EXPORT`.
+`"nonexistent"` is synthesised by `tools/dump_modstore.lua:652,676` to
+exercise the actor-not-found path. It round-trips through `Tag.Params()` into
+`TestModStoreAgainstReference`, so the exact text must survive. An enum would
+have to carry the original string alongside the tag to reproduce it, which
+defeats the purpose. The actor name is a genuinely open string, and the first
+remodel's deviation was correct — it simply did not record why. This is that
+reason.
+
+**Fix (the part that stands).** Delete `Actor.Others` — it is written nowhere
+in the repository, so the fallthrough is unreachable — and make `byType` a
+total switch over the three known names with `default: return nil`, which is
+what the dead map's absence already means. The field stays `string`.
+
+**Parity.** Deleting an unreachable branch moves nothing; `STORE` covers the
+`nonexistent` path directly.
+**Verify.** `STORE CALC`.
 
 ### B4. Skill-type sets keyed by `SkillTypeID`
 
@@ -423,7 +513,7 @@ three empty arguments stop being spelled at all.
 through the same-package test binary. If `test/` must stay a separate package,
 the smaller fix is to type `Tables()`'s return as
 `map[string]map[string]TableEntry` over the `nameValue`/`entryValue` interfaces
-that already exist in `modparser/pattern.go:207-243`, so at least no `any`
+that already exist in `modparser/pattern.go:57-104`, so at least no `any`
 crosses the boundary.
 
 **Verify.** `PARSE DATA`.
@@ -509,7 +599,13 @@ Steps 1–12 and 14 landed as designed — verified directly: `Parse` signature
 exact, `CopyMod`→`Clone()`, `D` internalised, `Combine` gone,
 `Externals`→`Resolver`, `ListInternal` returning, `ColType`/`iter.Seq`/
 `Script.Build(*Ctx) (schema.Document, error)`, typed template directives
-replacing the regex DSL, `tools/` deleted, both `#EVAL` size tags present.
+replacing the regex DSL, both `#EVAL` size tags present, and the two Lua
+generators `tools/gen_skilldata.lua` / `tools/gen_datatables.lua` gone.
+(`tools/` itself remains and must: it holds the nine sanctioned dump
+harnesses — `dump_parse.lua`, `dump_modstore.lua`, `dump_calc.lua`,
+`canon.lua` and the rest — that produce the archive fixtures. An earlier
+draft of this file said "`tools/` deleted", which was a misreading of a
+`find tools -name '*.go'` returning nothing.)
 Undocumented drift, all of which should be added to `go-remodel-plan.md` §7.1's
 Deviations list whether or not the fix is taken:
 
