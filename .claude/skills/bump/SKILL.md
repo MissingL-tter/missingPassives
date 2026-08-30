@@ -26,7 +26,6 @@ Report and stop if any fails. Never `git stash`, reset or force anything to get 
     git -C .archive describe --tags --abbrev=0 --match 'v*'    # BASE, e.g. v2.67.2
     git -C .archive log --oneline -1 upstream/master           # target
 
-`upstream/master` is PoB's release branch. `upstream/dev` is never a bump target.
 If `upstream/master` is already the merge-base with `master`, report "already current" and stop.
 
 ## 2. Tag the outgoing tip
