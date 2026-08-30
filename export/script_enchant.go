@@ -176,7 +176,7 @@ func buildEnchant(x *Ctx) (schema.Document, error) {
 
 	doLabEnchantment := func(group string) (map[string][][]string, error) {
 		byDiff := map[string][][]string{}
-		for _, mod := range mods.GetRowList("GenerationType", 10) {
+		for _, mod := range mods.RowsByInt("GenerationType", 10) {
 			family := mod.Refs("Family")
 			if len(family) > 0 && family[0].Str("Id") == group &&
 				mod.Ints("SpawnWeights")[0] > 0 {
@@ -199,7 +199,7 @@ func buildEnchant(x *Ctx) (schema.Document, error) {
 		}
 		sort.Slice(gens, func(a, b int) bool { return gens[a] < gens[b] })
 		for _, generation := range gens {
-			for _, mod := range mods.GetRowList("GenerationType", generation) {
+			for _, mod := range mods.RowsByInt("GenerationType", generation) {
 				family := mod.Refs("Family")
 				if len(family) > 0 {
 					if diff, ok := groupsList[generation][family[0].Str("Id")]; ok {
@@ -255,7 +255,7 @@ func buildEnchant(x *Ctx) (schema.Document, error) {
 	}
 
 	bySkill := map[string]map[string][][]string{}
-	for _, mod := range mods.GetRowList("GenerationType", 10) {
+	for _, mod := range mods.RowsByInt("GenerationType", 10) {
 		family := mod.Refs("Family")
 		if !(len(family) > 0 && family[0].Str("Id") == "SkillEnchantment" &&
 			mod.Ints("SpawnWeights")[0] > 0) {
@@ -265,7 +265,7 @@ func buildEnchant(x *Ctx) (schema.Document, error) {
 		// Each stat's searches can overwrite an earlier stat's finding, as in
 		// the Lua (no outer break).
 		findSkill := func(col string, stat *Row) {
-			for _, as := range activeSkills.GetRowList(col, stat) {
+			for _, as := range activeSkills.RowsByRef(col, stat) {
 				// #EVAL: archive parity — the Lua compares SkillTypes ROWS
 				// against the number 39, which is always false; only the id
 				// substring check can set isVaal.

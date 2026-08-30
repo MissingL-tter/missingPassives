@@ -149,10 +149,11 @@ func BuildConquerTables(x *Ctx, nodeIDs []int64) ([]byte, error) {
 			TV:    tv,
 			Types: r.Ints("PassiveType"),
 			Stats: len(r.Refs("StatsKeys")),
-			// The spec names two columns "SpawnWeight" (as the reference
-			// spec.lua does); the weight the shipped LUT bins agree with is
-			// the FIRST (column 2), which name lookup (last-wins) misses.
-			W: r.IntAt(2),
+			// AlternatePassiveAdditions carries two weight columns, both
+			// named "SpawnWeight" by the reference spec.lua; the shipped LUT
+			// bins agree with the first, so the spec here keeps that name and
+			// calls the second SpawnWeight2.
+			W: r.Int("SpawnWeight"),
 		}
 		for i, col := range []string{"Stat1", "Stat2"} {
 			iv := r.Ivl(col)

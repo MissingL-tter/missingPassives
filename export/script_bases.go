@@ -116,7 +116,7 @@ func buildBases(x *Ctx) (schema.Document, error) {
 	}
 
 	buildBase := func(baseTypeId, displayName string) (*schema.ItemBase, error) {
-		baseItemType := baseItemTypes.GetRow("Id", baseTypeId)
+		baseItemType := baseItemTypes.RowByStr("Id", baseTypeId)
 		if baseItemType == nil {
 			return nil, nil // the Lua printfs "Invalid Id"
 		}
@@ -185,7 +185,7 @@ func buildBases(x *Ctx) (schema.Document, error) {
 		b.CannotBeAnointed = len(enchantRows) > 0
 
 		itemValueSum := int64(0)
-		weaponType := weaponTypes.GetRow("BaseItemType", baseItemType)
+		weaponType := weaponTypes.RowByRef("BaseItemType", baseItemType)
 		if weaponType != nil {
 			b.Weapon = &schema.WeaponBase{
 				PhysicalMin:    weaponType.Int("DamageMin"),
@@ -196,10 +196,10 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			}
 			itemValueSum = b.Weapon.PhysicalMin + b.Weapon.PhysicalMax
 		}
-		armourType := armourTypes.GetRow("BaseItemType", baseItemType)
+		armourType := armourTypes.RowByRef("BaseItemType", baseItemType)
 		if armourType != nil {
 			ab := &schema.ArmourBase{}
-			if shield := shieldTypes.GetRow("BaseItemType", baseItemType); shield != nil {
+			if shield := shieldTypes.RowByRef("BaseItemType", baseItemType); shield != nil {
 				v := shield.Int("Block")
 				ab.BlockChance = &v
 			}
@@ -221,9 +221,9 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			set(&ab.WardMin, &ab.WardMax, "Ward")
 			b.Armour = ab
 		}
-		flask := flasks.GetRow("BaseItemType", baseItemType)
+		flask := flasks.RowByRef("BaseItemType", baseItemType)
 		if flask != nil {
-			compCharges := componentCharges.GetRow("BaseItemType", baseItemType.Str("Id"))
+			compCharges := componentCharges.RowByStr("BaseItemType", baseItemType.Str("Id"))
 			fb := &schema.FlaskBase{
 				Duration:    float64(flask.Int("RecoveryTime")) / 10,
 				ChargesUsed: compCharges.Int("PerUse"),
@@ -254,7 +254,7 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			}
 			b.Flask = fb
 		}
-		tincture := tinctures.GetRow("BaseItemType", baseItemType)
+		tincture := tinctures.RowByRef("BaseItemType", baseItemType)
 		if tincture != nil {
 			b.Tincture = &schema.TinctureBase{
 				ManaBurn: float64(tincture.Int("ManaBurn")) / 1000,
@@ -282,7 +282,7 @@ func buildBases(x *Ctx) (schema.Document, error) {
 		if reqLevel > 1 {
 			b.ReqLevel = &reqLevel
 		}
-		if compAtt := componentAttributes.GetRow("BaseItemType", baseItemType.Str("Id")); compAtt != nil {
+		if compAtt := componentAttributes.RowByStr("BaseItemType", baseItemType.Str("Id")); compAtt != nil {
 			for _, attr := range []struct {
 				col string
 				dst **int64
@@ -317,23 +317,9 @@ func buildBases(x *Ctx) (schema.Document, error) {
 	doc := schema.BasesData{Types: map[string][][]schema.ItemBase{}}
 	var curEvents *[][]schema.ItemBase
 
-	// While walking the Rares template, mirror the generated file's line
-	// stream (directive blobs merged with the hand-written passthrough
-	// blobs) to recover the complete rare list.
+	// The Rares template is walked like the base templates but yields the
+	// rare list instead of a base-type event list.
 	inRares := false
-	var raresStream []string
-	streamBlob := func(lines []string) {
-		if !inRares {
-			return
-		}
-		if n := len(raresStream); n > 0 && raresStream[n-1] == "]]," {
-			raresStream[n-1] = "]],[["
-		} else {
-			raresStream = append(raresStream, "[[")
-		}
-		raresStream = append(raresStream, lines...)
-		raresStream = append(raresStream, "]],")
-	}
 
 	addBase := func(id, name string) error {
 		var ev []schema.ItemBase
@@ -387,7 +373,6 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			lines = append(lines, "") // the reference re-splits its blank list, not the group
 		}
 		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
-		streamBlob(lines)
 	}
 	setBase := func(d *setBaseDirective) {
 		baseName, itemName := d.Base, d.Name
@@ -432,7 +417,6 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			lines = append(lines, group...)
 		}
 		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
-		streamBlob(lines)
 	}
 
 	for _, name := range append(append([]string{}, basesItemTypes...), "Rares") {
@@ -479,18 +463,10 @@ func buildBases(x *Ctx) (schema.Document, error) {
 			doc.Types[name] = events
 			continue
 		}
-		// The rare list is the directive-generated best-base blobs (in
-		// directive order) followed by the template's hand-written
-		// blocks — the same order the generated file carries them.
-		inRares = false
-		f, err := splitUniqueFile(raresStream)
-		if err != nil {
-			return nil, fmt.Errorf("Rares: %w", err)
-		}
-		for _, sec := range f.Sections {
-			doc.RareBlobs = append(doc.RareBlobs, sec.Items...)
-		}
-		doc.RareBlobs = append(doc.RareBlobs, tpl.Items...)
+		// The generated file carries the directive outputs (already in
+		// doc.Rares, in directive order) followed by the template's
+		// hand-written blocks.
+		doc.ExtraRares = tpl.Items
 	}
 	return doc, nil
 }

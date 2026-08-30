@@ -16,16 +16,6 @@ import (
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
-func str(v any) string {
-	switch t := v.(type) {
-	case string:
-		return t
-	case modparser.Str:
-		return string(t)
-	}
-	return ""
-}
-
 // titleCaseRarity is rarity:gsub("(%a)(%u*)", first..lower(rest)):
 // "MAGIC" -> "Magic", "RARE" -> "Rare".
 func titleCaseRarity(r string) string {
@@ -524,7 +514,7 @@ func (env *Env) buildItems() {
 				}
 			}
 			for i, socket := range item.In.Sockets {
-				color := str(socket["color"])
+				color := socket.Color
 				if color == "R" || color == "B" || color == "G" || color == "W" {
 					slotGemSocketsCount++
 					if i+1 > len(socketedGems) {

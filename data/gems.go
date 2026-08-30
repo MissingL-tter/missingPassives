@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ func loadGems(src schema.SkillsData) error {
 	Gems = map[string]*Gem{}
 	for _, g := range src.Gems {
 		gem := &Gem{
-			Name:            sanitiseText(g.Name),
+			Name:            util.FoldText(g.Name),
 			GameId:          g.GameId,
 			VariantId:       g.VariantId,
 			GrantedEffectId: g.GrantedEffectId,

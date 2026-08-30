@@ -50,7 +50,7 @@ func buildCluster(x *Ctx) (schema.Document, error) {
 			SocketIndicies:  jewel.Ints("SocketIndicies"),
 			TotalIndicies:   jewel.Int("TotalIndicies"),
 		}
-		for _, skill := range expansionSkills.GetRowList("JewelSize", size) {
+		for _, skill := range expansionSkills.RowsByRef("JewelSize", size) {
 			node := skill.Ref("Node")
 			tagId := skill.Ref("Tag").Str("Id")
 			s := schema.ClusterSkill{

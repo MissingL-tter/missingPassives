@@ -757,7 +757,10 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 	for _, ecd := range extraCurseDests {
 		curseDB := ecd.db
 		for _, v := range curseDB.List(nil, "ExtraCurse") {
-			tag, _ := v.(modparser.SkillRef)
+			tag, ok := v.(modparser.SkillRef)
+			if !ok {
+				continue
+			}
 			grantedEffect := data.Skills[tag.SkillID]
 			if grantedEffect == nil {
 				continue
@@ -1027,11 +1030,11 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 
 	// Check for extra auras
 	for _, v := range modDB.List(nil, "ExtraAura") {
-		tag, _ := v.(modparser.ModRef)
-		mod := tag.Mod
-		if mod == nil {
+		tag, ok := v.(modparser.ModRef)
+		if !ok || tag.Mod == nil {
 			continue
 		}
+		mod := tag.Mod
 		modList := []*modparser.Mod{mod}
 		if !tag.OnlyAllies && !(tag.FromAllies && modDB.Flag(nil, "AlliesAurasCannotAffectSelf")) {
 			inc := modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf", "AuraEffectOnSelf")
@@ -1408,7 +1411,11 @@ func (env *Env) performAllyLife() {
 								minion.DB.AddList(env.MinionBuffsOut[name].Mods)
 							}
 							for _, v := range minion.DB.List(nil, "Keystone") {
-								if mods, ok := env.Build.Spec.KeystoneMap[str(v)]; ok {
+								name, ok := v.(modparser.Str)
+								if !ok {
+									continue
+								}
+								if mods, ok := env.Build.Spec.KeystoneMap[string(name)]; ok {
 									minion.DB.AddList(mods)
 								}
 							}
@@ -1540,7 +1547,7 @@ type cachedOutputs struct {
 // into this skill) and reads the stage-count outputs from it.
 func (env *Env) cachedOutputValues(activeSkill *ActiveSkill) cachedOutputs {
 	uuid := env.cacheSkillUUID(activeSkill)
-	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+	if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 		env.BuildActiveSkill(env.Mode, activeSkill, uuid, uuid)
 	}
 	c := env.GlobalCache[uuid]

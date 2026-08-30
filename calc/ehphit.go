@@ -9,7 +9,7 @@ import (
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
-func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
@@ -17,11 +17,11 @@ func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string)
 	output.SetN("totalTakenHit", 0.0)
 
 	impaleFlags := modparser.FlagNone
-	if damageCategoryConfig == "Melee" || damageCategoryConfig == "Projectile" || damageCategoryConfig == "Average" {
+	if damageCategoryConfig == DamageMelee || damageCategoryConfig == DamageProjectile || damageCategoryConfig == DamageAverage {
 		impaleFlags = modparser.FlagAttack
 	}
 	impaleMult := 1.0
-	if damageCategoryConfig == "Average" {
+	if damageCategoryConfig == DamageAverage {
 		impaleMult = 0.5
 	}
 	enemyImpaleChance := enemyDB.Sum(modparser.Base, &modstore.Cfg{Flags: flagp(impaleFlags), KeywordFlags: keywordp(0)}, "ImpaleChance") *
@@ -74,13 +74,13 @@ func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string)
 		resMult := 1 - (resist-enemyPen)/100
 		takenFlat := modDB.Sum(modparser.Base, nil, "DamageTaken", damageType+"DamageTaken", "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
 		switch damageCategoryConfig {
-		case "Melee", "Projectile":
+		case DamageMelee, DamageProjectile:
 			takenFlat += modDB.Sum(modparser.Base, nil, "DamageTakenFromAttacks", damageType+"DamageTakenFromAttacks",
-				damageType+"DamageTakenFrom"+damageCategoryConfig+"Attacks")
-		case "Spell", "SpellProjectile":
+				damageType+"DamageTakenFrom"+string(damageCategoryConfig)+"Attacks")
+		case DamageSpell, DamageSpellProjectile:
 			takenFlat += modDB.Sum(modparser.Base, nil, "DamageTakenFromSpells", damageType+"DamageTakenFromSpells",
 				damageType+"DamageTakenFromSpellProjectiles")
-		case "Average":
+		case DamageAverage:
 			takenFlat += modDB.Sum(modparser.Base, nil, "DamageTakenFromAttacks", damageType+"DamageTakenFromAttacks")/2 +
 				modDB.Sum(modparser.Base, nil, damageType+"DamageTakenFromProjectileAttacks")/4 +
 				modDB.Sum(modparser.Base, nil, "DamageTakenFromSpells", damageType+"DamageTakenFromSpells")/2 +
@@ -105,14 +105,14 @@ func (env *Env) ehpIncomingHit(actor *performActor, damageCategoryConfig string)
 		takenMult := output.N(damageType + "TakenHitMult")
 		spellSuppressMult := 1.0
 		switch damageCategoryConfig {
-		case "Melee", "Projectile":
+		case DamageMelee, DamageProjectile:
 			takenMult = output.N(damageType + "AttackTakenHitMult")
-		case "Spell", "SpellProjectile":
+		case DamageSpell, DamageSpellProjectile:
 			takenMult = output.N(damageType + "SpellTakenHitMult")
 			if output.N("EffectiveSpellSuppressionChance") == 100 {
 				spellSuppressMult = 1 - output.N("SpellSuppressionEffect")/100
 			}
-		case "Average":
+		case DamageAverage:
 			takenMult = (output.N(damageType+"SpellTakenHitMult") + output.N(damageType+"AttackTakenHitMult")) / 2
 			if output.N("EffectiveSpellSuppressionChance") == 100 {
 				spellSuppressMult = 1 - output.N("SpellSuppressionEffect")/100/2

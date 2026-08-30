@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
-	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 func init() {
@@ -83,8 +82,8 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 			return nil, err
 		}
 	}
-	unique := mods.GetRow("Id", "MonsterUnique5").Ivl("Stat1Value")[0]
-	uniqueAttackPenalty := mods.GetRow("Id", "MonsterUnique8").Ivl("Stat1Value")[0]
+	unique := mods.RowByStr("Id", "MonsterUnique5").Ivl("Stat1Value")[0]
+	uniqueAttackPenalty := mods.RowByStr("Id", "MonsterUnique8").Ivl("Stat1Value")[0]
 	rarityDamageMult := map[string]float64{
 		"Unique":       1 + float64(unique)/100,
 		"UniqueAttack": (1 + float64(unique)/100) * (1 - float64(uniqueAttackPenalty)/100),
@@ -584,7 +583,7 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 	}
 
 	openBoss := func(d *bossHeadDirective) {
-		bossData := monsterVarieties.GetRow("Id", d.Monster)
+		bossData := monsterVarieties.RowByStr("Id", d.Monster)
 		b := &bossInfo{
 			displayName: d.Name,
 			damageRange: bossData.Ref("Type").Int("DamageSpread"),
@@ -612,9 +611,9 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 		boss := state.boss
 		state.skillList = append(state.skillList, boss.displayName+" "+displayName)
 		skill := &skillInfo{grantedId: grantedId}
-		skill.skillData = grantedEffects.GetRow("Id", grantedId)
-		skill.statSets = statSetsDat.GetRow("Id", grantedId)
-		skill.statsPerLevel = statSetsPerLevel.GetRowList("GrantedEffect", skill.skillData)
+		skill.skillData = grantedEffects.RowByStr("Id", grantedId)
+		skill.statSets = statSetsDat.RowByStr("Id", grantedId)
+		skill.statsPerLevel = statSetsPerLevel.RowsByRef("GrantedEffect", skill.skillData)
 		state.skill = skill
 		skill.index = 1
 		skill.hasIndex = true
@@ -633,11 +632,11 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 		}
 		if d.Granted2 != "" {
 			skill.grantedId2 = d.Granted2
-			sd2 := grantedEffects.GetRow("Id", d.Granted2)
-			skill.statsPerLevel2 = statSetsPerLevel.GetRowList("GrantedEffect", sd2)
+			sd2 := grantedEffects.RowByStr("Id", d.Granted2)
+			skill.statsPerLevel2 = statSetsPerLevel.RowsByRef("GrantedEffect", sd2)
 		}
 		if d.GrantedUber != "" {
-			skill.skillDataUber = grantedEffects.GetRow("Id", d.GrantedUber)
+			skill.skillDataUber = grantedEffects.RowByStr("Id", d.GrantedUber)
 		}
 		state.SkillExtraDamageMult = 1
 		if d.ExtraDamageMult != nil {
@@ -680,11 +679,12 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 				if strip {
 					name = strings.ReplaceAll(name, "Uber", "")
 				}
-				text := "\"\""
+				e := schema.PenEntry{Name: name}
 				if !v.blank {
-					text = util.FormatG14(v.n)
+					n := v.n
+					e.Value = &n
 				}
-				entries = append(entries, schema.PenEntry{Name: name, Text: text})
+				entries = append(entries, e)
 			}
 			return entries
 		}
@@ -755,7 +755,7 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 	}
 	for _, d := range bossesTpl.Directives {
 		b := d.(*bossMonsterEntry)
-		monsterType := monsterTypes.GetRow("Id", b.Monster)
+		monsterType := monsterTypes.RowByStr("Id", b.Monster)
 		if monsterType == nil {
 			doc.Bosses = append(doc.Bosses, nil) // the Lua prints "Invalid Type"
 			continue

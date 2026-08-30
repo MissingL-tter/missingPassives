@@ -149,8 +149,8 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output modstore.Output
 // addMinionModifiers ports CalcPerform's addMinionModifiers.
 func addMinionModifiers(modList modstore.Store, skillCfg *modstore.Cfg, minion *Minion) {
 	for _, v := range modList.List(skillCfg, "MinionModifier") {
-		tag, _ := v.(modparser.ModRef)
-		if tag.Mod == nil {
+		tag, ok := v.(modparser.ModRef)
+		if !ok || tag.Mod == nil {
 			continue
 		}
 		if tag.MinionType == "" || minion.Type == tag.MinionType {
@@ -173,7 +173,10 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 		}
 	}
 	for _, v := range activeSkill.SkillModList.List(activeSkill.SkillCfg, "ExtraMinionSkill") {
-		tag, _ := v.(modparser.SkillRef)
+		tag, ok := v.(modparser.SkillRef)
+		if !ok {
+			panic("calc: non-SkillRef value in ExtraMinionSkill list (the Lua errors)")
+		}
 		match := true
 		if tag.MinionList != nil {
 			match = false
@@ -223,7 +226,7 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 		skillIndex = v.V
 	}
 	skillIndex = math.Max(math.Min(skillIndex, float64(len(minion.ActiveSkillList))), 1)
-	if env.Mode == "MAIN" {
+	if env.Mode == ModeMain {
 		activeEffect.SrcInstance.SkillMinionSkill = util.Some(skillIndex)
 	}
 	minion.MainSkill = minion.ActiveSkillList[int(skillIndex)-1]

@@ -364,8 +364,8 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		}
 	}
 	if skillData.Flag("gainPercentBaseDaggerDamageToSpells") {
-		weapon1IsDagger := weaponAdded(weaponOf(actor.ms.WeaponData1), "Dagger") || weaponType(weaponOf(actor.ms.WeaponData1)) == "Dagger"
-		weapon2IsDagger := weaponAdded(weaponOf(actor.ms.WeaponData2), "Dagger") || weaponType(weaponOf(actor.ms.WeaponData2)) == "Dagger"
+		weapon1IsDagger := weaponAddedDagger(weaponOf(actor.ms.WeaponData1)) || weaponType(weaponOf(actor.ms.WeaponData1)) == "Dagger"
+		weapon2IsDagger := weaponAddedDagger(weaponOf(actor.ms.WeaponData2)) || weaponType(weaponOf(actor.ms.WeaponData2)) == "Dagger"
 		both := 1.0
 		if weapon1IsDagger && weapon2IsDagger {
 			both = 0.5
@@ -418,7 +418,7 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		}
 	}
 
-	physMode := "AVERAGE"
+	physMode := PhysAverage
 	if v := env.ConfigInput.PhysMode; v != "" {
 		physMode = v
 	}
@@ -439,15 +439,15 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
 			}
 			switch physMode {
-			case "AVERAGE":
+			case PhysAverage:
 				skillModList.AddMod(mk("PhysicalDamageGainAsFire", modparser.Num(effVal)))
 				skillModList.AddMod(mk("PhysicalDamageGainAsCold", modparser.Num(effVal)))
 				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", modparser.Num(effVal)))
-			case "FIRE":
+			case PhysFire:
 				skillModList.AddMod(mk("PhysicalDamageGainAsFire", mod.Value))
-			case "COLD":
+			case PhysCold:
 				skillModList.AddMod(mk("PhysicalDamageGainAsCold", mod.Value))
-			case "LIGHTNING":
+			case PhysLightning:
 				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", mod.Value))
 			}
 		}
@@ -462,15 +462,15 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
 			}
 			switch physMode {
-			case "AVERAGE":
+			case PhysAverage:
 				skillModList.AddMod(mk("PhysicalDamageConvertToFire", modparser.Num(effVal)))
 				skillModList.AddMod(mk("PhysicalDamageConvertToCold", modparser.Num(effVal)))
 				skillModList.AddMod(mk("PhysicalDamageConvertToLightning", modparser.Num(effVal)))
-			case "FIRE":
+			case PhysFire:
 				skillModList.AddMod(mk("PhysicalDamageConvertToFire", mod.Value))
-			case "COLD":
+			case PhysCold:
 				skillModList.AddMod(mk("PhysicalDamageConvertToCold", mod.Value))
-			case "LIGHTNING":
+			case PhysLightning:
 				skillModList.AddMod(mk("PhysicalDamageConvertToLightning", mod.Value))
 			}
 		}
@@ -485,12 +485,12 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
 			}
 			switch physMode {
-			case "AVERAGE", "FIRE":
+			case PhysAverage, PhysFire:
 				skillModList.AddMod(mk("PhysicalDamageGainAsCold", modparser.Num(effVal)))
 				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", modparser.Num(effVal)))
-			case "COLD":
+			case PhysCold:
 				skillModList.AddMod(mk("PhysicalDamageGainAsCold", mod.Value))
-			case "LIGHTNING":
+			case PhysLightning:
 				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", mod.Value))
 			}
 		}
@@ -544,10 +544,10 @@ func (env *Env) offenceRepeats(c *offenceCtx) {
 	output.SetN("RepeatCount", repeats)
 	// handle all the multipliers from Repeats
 	repeatMode := env.ConfigInput.RepeatMode
-	if repeatMode == "NONE" {
+	if repeatMode == RepeatNone {
 		return
 	}
-	average := repeatMode == "AVERAGE"
+	average := repeatMode == RepeatAverage
 
 	for _, value := range skillModList.Tabulate(modparser.Inc, skillCfg, "RepeatFinalAreaOfEffect") {
 		mod := value.Mod

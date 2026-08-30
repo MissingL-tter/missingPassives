@@ -174,7 +174,7 @@ func (env *Env) findTriggerSkill(skill, source *ActiveSkill, triggerRate *float6
 	// A miss is filled on the spot with a whole nested perform, and a
 	// CALCULATOR env rebuilds even on a hit -- its cache bucket belongs to
 	// the sub-environment, not to the build.
-	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+	if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 		env.BuildActiveSkill(env.Mode, skill, uuid)
 	}
 	cached := env.GlobalCache[uuid]

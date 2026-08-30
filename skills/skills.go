@@ -283,7 +283,7 @@ func (t *Tab) loadGem(child *XMLGem) *Gem {
 	attr := func(name string) (string, bool) { return attrOf(child.Attrs, name) }
 
 	nameSpec, _ := attr("nameSpec")
-	gem.NameSpec = item.FoldText(nameSpec)
+	gem.NameSpec = util.FoldText(nameSpec)
 	if gameID, ok := attr("gemId"); ok {
 		var gemData *data.Gem
 		possibleVariants := data.GemsByGameId[gameID]
@@ -321,7 +321,7 @@ func (t *Tab) loadGem(child *XMLGem) *Gem {
 	if v, ok := attr("quality"); ok && isNumber(v) {
 		gem.Quality = num(v)
 	}
-	gem.NameSpec = item.FoldText(gem.NameSpec)
+	gem.NameSpec = util.FoldText(gem.NameSpec)
 	en, hasEn := attr("enabled")
 	gem.Enabled = !hasEn || en == "true"
 	eg1, hasEg1 := attr("enableGlobal1")

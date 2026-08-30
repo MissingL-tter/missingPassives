@@ -154,31 +154,62 @@ func (d *DatFile) Rows() iter.Seq[*Row] {
 	}
 }
 
-// GetRow returns the first row whose cell in the named column equals value.
-func (d *DatFile) GetRow(key string, value any) *Row {
-	ki := d.col(key)
-	for id := 0; id < d.RowCount; id++ {
-		if cellEquals(d.readCell(id, ki), value) {
-			return d.RowByID(id)
-		}
+// RowByStr returns the first row whose String cell in the named column is v.
+func (d *DatFile) RowByStr(key, v string) *Row {
+	return d.getRow(key, func(cell any) bool { return cell == v })
+}
+
+// RowByRef returns the first row whose Key cell in the named column points at
+// v; a nil v matches the null refs, which decode to a nil cell.
+func (d *DatFile) RowByRef(key string, v *Row) *Row {
+	return d.getRow(key, refPred(v))
+}
+
+// RowsByInt returns every row whose Int cell in the named column (or any
+// element of it, for list columns) is v.
+func (d *DatFile) RowsByInt(key string, v int64) []*Row {
+	return d.getRowList(key, func(cell any) bool { return cell == v })
+}
+
+// RowsByBool returns every row whose Bool cell in the named column is v.
+func (d *DatFile) RowsByBool(key string, v bool) []*Row {
+	return d.getRowList(key, func(cell any) bool { return cell == v })
+}
+
+// RowsByRef returns every row whose Key cell in the named column (or any
+// element of it, for list columns) points at v; a nil v matches null refs.
+func (d *DatFile) RowsByRef(key string, v *Row) []*Row {
+	return d.getRowList(key, refPred(v))
+}
+
+// refPred compares a decoded cell against a row reference. A null ref decodes
+// to a nil cell, which a nil v must match and a non-nil v must not: boxing v
+// into the comparison directly would make a nil v a non-nil any.
+func refPred(v *Row) func(any) bool {
+	if v == nil {
+		return func(cell any) bool { return cell == nil }
 	}
-	return nil
+	return func(cell any) bool { return cell == any(v) }
 }
 
-// GetRowList returns every row whose cell in the named column (or any element
-// of it, for list columns) satisfies eq: exact equality here; the Lua
-// pattern-match variant is GetRowListMatch.
-func (d *DatFile) GetRowList(key string, value any) []*Row {
-	return d.getRowList(key, func(v any) bool { return cellEquals(v, value) })
-}
-
-// GetRowListMatch is GetRowList with a predicate over string cells, standing
-// in for the Lua original's pattern match.
+// GetRowListMatch returns every row whose String cell in the named column (or
+// any element of it, for list columns) satisfies match, standing in for the
+// Lua original's pattern match.
 func (d *DatFile) GetRowListMatch(key string, match func(string) bool) []*Row {
 	return d.getRowList(key, func(v any) bool {
 		s, ok := v.(string)
 		return ok && match(s)
 	})
+}
+
+func (d *DatFile) getRow(key string, pred func(any) bool) *Row {
+	ki := d.col(key)
+	for id := 0; id < d.RowCount; id++ {
+		if pred(d.readCell(id, ki)) {
+			return d.RowByID(id)
+		}
+	}
+	return nil
 }
 
 func (d *DatFile) getRowList(key string, pred func(any) bool) []*Row {
@@ -209,33 +240,6 @@ func (d *DatFile) col(key string) int {
 	return ci
 }
 
-func cellEquals(cell, value any) bool {
-	if r, ok := value.(*Row); ok && r == nil {
-		value = nil // a null ref matches null cells
-	}
-	if n, ok := numeric(value); ok {
-		if c, ok2 := numeric(cell); ok2 {
-			return c == n
-		}
-		return false
-	}
-	return cell == value
-}
-
-func numeric(v any) (float64, bool) {
-	switch n := v.(type) {
-	case int:
-		return float64(n), true
-	case int64:
-		return float64(n), true
-	case uint64:
-		return float64(n), true
-	case float64:
-		return n, true
-	}
-	return 0, false
-}
-
 // cell returns the lazily-decoded cell at column index ci, caching it.
 func (r *Row) cell(ci int) any {
 	if v, done := r.cells[ci]; done {
@@ -249,10 +253,6 @@ func (r *Row) cell(ci int) any {
 // Int reads an Int/UInt/UInt16 column, or an Enum column into another table
 // (its raw index).
 func (r *Row) Int(key string) int64 { return r.cell(r.File.col(key)).(int64) }
-
-// IntAt reads an Int column by 0-based column index, for columns a name
-// cannot reach (duplicate names resolve last-wins, matching the Lua colMap).
-func (r *Row) IntAt(ci int) int64 { return r.cell(ci).(int64) }
 
 // Str reads a String column.
 func (r *Row) Str(key string) string { return r.cell(r.File.col(key)).(string) }

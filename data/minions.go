@@ -5,11 +5,7 @@
 package data
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/MissingL-tter/missingPassives/data/schema"
-	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -36,16 +32,14 @@ type Minion struct {
 	WeaponType1                  *string  `lua:"weaponType1"`
 	WeaponType2                  *string  `lua:"weaponType2"`
 	Limit                        string   `lua:"limit,omitempty"`
-	// Hostile marks an enemy minion; HostileScale is the template's numeric
-	// form of the key (no shipped minion uses it; canon renders it as the
-	// number).
-	Hostile      bool `lua:"hostile,omitempty"`
-	HostileScale util.Opt[float64]
-	SkillList    []string         `lua:"skillList"`
-	ModList      []*modparser.Mod `lua:"modList"`
+	// Hostile marks an enemy minion: it picks the monster damage and life
+	// tables over the ally ones, and keeps the player's auras off it.
+	Hostile   bool             `lua:"hostile,omitempty"`
+	SkillList []string         `lua:"skillList"`
+	ModList   []*modparser.Mod `lua:"modList"`
 }
 
-func loadMinionDef(m schema.MinionDef) (*Minion, error) {
+func loadMinionDef(m schema.MinionDef) *Minion {
 	out := &Minion{
 		Name:                         m.Name,
 		MonsterTags:                  emptyIfNil(m.MonsterTags),
@@ -76,18 +70,7 @@ func loadMinionDef(m schema.MinionDef) (*Minion, error) {
 	if len(m.DamageFixups) > 0 {
 		out.DamageFixup = &m.DamageFixups[0]
 	}
-	switch m.Hostile {
-	case "", "false":
-	case "true":
-		out.Hostile = true
-	default:
-		n, err := strconv.ParseFloat(m.Hostile, 64)
-		if err != nil {
-			return nil, fmt.Errorf("data: minion %s: bad hostile value %q", m.Key, m.Hostile)
-		}
-		out.Hostile = true // any number is truthy
-		out.HostileScale = util.Some(n)
-	}
+	out.Hostile = m.Hostile
 	out.ModList = []*modparser.Mod{}
 	for _, entry := range m.ModList {
 		if len(entry.Mods) == 0 {
@@ -95,7 +78,7 @@ func loadMinionDef(m schema.MinionDef) (*Minion, error) {
 		}
 		out.ModList = append(out.ModList, modparser.DecodeMods(entry.Mods)...)
 	}
-	return out, nil
+	return out
 }
 
 // handMinionsTable ports the minion blocks the Minions template hand-writes
@@ -121,34 +104,25 @@ func handMinionsTable() map[string]*Minion {
 	}
 }
 
-func loadMinions(src schema.Minions) error {
-	load := func(defs []schema.MinionDef) (map[string]*Minion, error) {
+func loadMinions(src schema.Minions) {
+	load := func(defs []schema.MinionDef) map[string]*Minion {
 		out := map[string]*Minion{}
 		for _, m := range defs {
 			if m.Skip {
 				continue
 			}
-			def, err := loadMinionDef(m)
-			if err != nil {
-				return nil, err
-			}
-			out[m.Key] = def
+			out[m.Key] = loadMinionDef(m)
 		}
-		return out, nil
+		return out
 	}
 	// Data.lua loads Data/Minions into data.minions and Data/Spectres into
 	// data.spectres, then merges spectres into minions with the spectre
 	// limit applied.
-	var err error
-	if Minions, err = load(src.Minions); err != nil {
-		return err
-	}
+	Minions = load(src.Minions)
 	for name, m := range handMinionsTable() {
 		Minions[name] = m
 	}
-	if Spectres, err = load(src.Spectres); err != nil {
-		return err
-	}
+	Spectres = load(src.Spectres)
 	for name, spectre := range Spectres {
 		spectre.Limit = "ActiveSpectreLimit"
 		Minions[name] = spectre
@@ -159,5 +133,4 @@ func loadMinions(src schema.Minions) error {
 			mod.SourceSet = true
 		}
 	}
-	return nil
 }

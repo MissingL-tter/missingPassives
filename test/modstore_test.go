@@ -198,13 +198,10 @@ func TestModStoreAgainstReference(t *testing.T) {
 	playerActor.WeaponData2 = &msWeapon{}
 	playerActor.MinionData = &modstore.MinionData{MonsterTags: []string{"demon", "humanoid"}}
 	playerActor.ManaEfficiency = 20
-	hasRes := float64(modparser.SkillTypeHasReservation)
-	playerActor.HasReservation = hasRes
-	enemyActor.HasReservation = hasRes
-	parentActor.HasReservation = hasRes
+	hasRes := modparser.SkillTypeHasReservation
 	playerActor.ActiveSkillList = []*modstore.ActiveSkill{
-		{SkillTypes: map[float64]bool{hasRes: true}, SkillData: map[string]float64{"ManaReservedBase": 300, "LifeReservedBase": 960}, BuffNames: []string{"Hatred"}},
-		{SkillTypes: map[float64]bool{hasRes: true}, Disable: true, SkillData: map[string]float64{"ManaReservedBase": 500}, BuffNames: []string{"Wrath"}},
+		{SkillTypes: map[modparser.SkillTypeID]bool{hasRes: true}, SkillData: map[string]float64{"ManaReservedBase": 300, "LifeReservedBase": 960}, BuffNames: []string{"Hatred"}},
+		{SkillTypes: map[modparser.SkillTypeID]bool{hasRes: true}, Disable: true, SkillData: map[string]float64{"ManaReservedBase": 500}, BuffNames: []string{"Wrath"}},
 	}
 	stores := map[string]modstore.Store{
 		"root": rootDB, "mid": midList, "leaf": leafDB, "enemy": enemyDB, "parentDB": parentDB,
@@ -265,13 +262,13 @@ func TestModStoreAgainstReference(t *testing.T) {
 			t.Fatalf("string skill part %q: the config models numeric parts only", *rec.SkillPartStr)
 		}
 		if rec.SkillTypes != nil {
-			cfg.SkillTypes = map[float64]bool{}
+			cfg.SkillTypes = map[modparser.SkillTypeID]bool{}
 			for k, v := range rec.SkillTypes {
-				n, err := strconv.ParseFloat(k, 64)
+				n, err := strconv.ParseInt(k, 10, 64)
 				if err != nil {
 					t.Fatalf("bad skillType key %q", k)
 				}
-				cfg.SkillTypes[n] = v
+				cfg.SkillTypes[modparser.SkillTypeID(n)] = v
 			}
 		}
 		if rec.GeId != nil {

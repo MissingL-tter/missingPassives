@@ -160,9 +160,9 @@ func itemInputOf(it *item.Item) *calc.ItemInput {
 	}
 	in.GrantedSkills = it.GrantedSkills
 	in.Requirements = &it.Requirements
-	sockets := make([]map[string]any, 0, len(it.Sockets))
+	sockets := make([]calc.SocketInput, 0, len(it.Sockets))
 	for _, s := range it.Sockets {
-		sockets = append(sockets, map[string]any{"color": s.Color, "group": s.Group})
+		sockets = append(sockets, calc.SocketInput{Color: s.Color, Group: s.Group})
 	}
 	in.Sockets = sockets
 	in.AbyssalSocketCount = f64Ptr(it.AbyssalSocketCount)

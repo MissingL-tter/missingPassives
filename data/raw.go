@@ -79,8 +79,8 @@ func rawSourcesFrom(read readFn) (Sources, error) {
 }
 
 // RawSources builds Load's input from the embedded raw documents. The one
-// field left empty is StatMapCopies, the archive-dump replay fixture the
-// caller supplies.
+// field left empty is StatMapCopyFixture, which only the game-data
+// differential supplies.
 func RawSources() (Sources, error) { return rawSourcesFrom(embeddedRead) }
 
 // RawSourcesFromDir builds Load's input from the same document set read

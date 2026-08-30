@@ -176,8 +176,8 @@ func renderMinions(d schema.Minions, tpl Templates) (map[string]string, error) {
 			if m.Limit != "" {
 				b.W("\tlimit = \"", m.Limit, "\",\n")
 			}
-			if m.Hostile != "" {
-				b.W("\thostile = ", m.Hostile, ",\n")
+			if m.Hostile {
+				b.W("\thostile = true,\n")
 			}
 			b.W("\tskillList = {\n")
 			for _, skill := range m.SkillList {

@@ -84,7 +84,7 @@ type SkillLevel struct {
 	Level  int64              `json:"level"`
 	Values []float64          `json:"values"`
 	Extra  map[string]float64 `json:"extra,omitempty"`  // rendered sorted by key
-	Interp []string           `json:"interp,omitempty"` // statInterpolation, pre-rendered
+	Interp []int64            `json:"interp,omitempty"` // statInterpolation
 	Cost   map[string]int64   `json:"cost,omitempty"`   // rendered sorted by key
 }
 

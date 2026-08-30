@@ -50,11 +50,11 @@ type BossDamageMult struct {
 	Spread float64 `json:"spread"` // (max-min)/100
 }
 
-// PenEntry is one penetration line; Text is the pre-rendered value
-// (a number or the literal `""`).
+// PenEntry is one penetration line. An absent Value is the reference's `""`
+// placeholder, which it distinguishes from zero.
 type PenEntry struct {
-	Name string `json:"name"`
-	Text string `json:"text"`
+	Name  string   `json:"name"`
+	Value *float64 `json:"value,omitempty"`
 }
 
 type BossMonster struct {

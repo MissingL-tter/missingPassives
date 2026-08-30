@@ -138,7 +138,10 @@ func (env *Env) mergeSkillInstanceMods(modList *modstore.List, skillEffect *Acti
 	stats := BuildSkillInstanceStats(skillEffect, grantedEffect)
 	if len(extraStats) > 0 {
 		for _, sv := range extraStats {
-			tag, _ := sv.(modparser.DataRef)
+			tag, ok := sv.(modparser.DataRef)
+			if !ok {
+				panic("calc: non-DataRef value in ExtraSkillStat list (the Lua errors)")
+			}
 			stats[tag.Key] += valueNum(tag.Value)
 		}
 	}
@@ -435,10 +438,6 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	} else if activeSkill.Weapon2Flags != nil {
 		cfgFlags = skillModFlags | *activeSkill.Weapon2Flags
 	}
-	cfgSkillTypes := map[float64]bool{}
-	for k, v := range activeSkill.SkillTypes {
-		cfgSkillTypes[float64(k)] = v
-	}
 	kf := skillKeywordFlags
 	activeSkill.SkillCfg = &modstore.Cfg{
 		Flags:              &cfgFlags,
@@ -446,8 +445,10 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		SkillName:          strings.TrimPrefix(activeGrantedEffect.Name, "Vaal "),
 		SkillGrantedEffect: &modstore.GrantedEffectRef{Id: activeGrantedEffect.Id, BaseFlags: activeGrantedEffect.BaseFlags},
 		SkillPart:          activeSkill.SkillPart,
-		SkillTypes:         cfgSkillTypes,
-		SkillCond:          map[string]bool{},
+		// aliases the skill's own set, as the reference does: later writers
+		// (the mirage skill types) are meant to be visible through the config
+		SkillTypes: activeSkill.SkillTypes,
+		SkillCond:  map[string]bool{},
 	}
 	if activeEffect.GemData != nil {
 		// typed-nil guard: a nil *data.Gem in the any field would defeat
@@ -569,7 +570,10 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		skillModList.AddMod(newModS("GemSocketQuality", modparser.Base, modparser.Num(data.Misc.MatchingSocketQualityBonus), "Socket Quality"))
 	}
 	for _, supportProperty := range skillModList.Tabulate(modparser.List, activeSkill.SkillCfg, "SupportedGemProperty") {
-		value, _ := supportProperty.Value.(modparser.GemPropertyRef)
+		value, ok := supportProperty.Value.(modparser.GemPropertyRef)
+		if !ok {
+			panic("calc: non-GemPropertyRef value in SupportedGemProperty list (the Lua errors)")
+		}
 		if value.Keyword == "grants_active_skill" && activeEffect.GemData != nil && !activeEffect.GemData.Tags["support"] {
 			key := value.Key
 			v := value.Value.Or(0)
@@ -592,7 +596,10 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	}
 
 	for _, gemProperty := range activeEffect.GemPropertyInfo {
-		value, _ := gemProperty.Value.(modparser.GemPropertyRef)
+		value, ok := gemProperty.Value.(modparser.GemPropertyRef)
+		if !ok {
+			panic("calc: non-GemPropertyRef value in GemPropertyInfo (the Lua errors)")
+		}
 		skillModList.AddMod(newModS("GemItem"+firstUpper(value.Key), modparser.Base, modparser.Num(value.Value.Or(0)), gemProperty.Mod.Source, firstTag(gemProperty.Mod)...))
 	}
 
@@ -711,11 +718,17 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 
 	// Extract skill data
 	for _, v := range env.ModDB.List(activeSkill.SkillCfg, "SkillData") {
-		tag, _ := v.(modparser.DataRef)
+		tag, ok := v.(modparser.DataRef)
+		if !ok {
+			panic("calc: non-DataRef value in SkillData list (the Lua errors)")
+		}
 		activeSkill.SkillData.Set(tag.Key, outValueOf(tag.Value))
 	}
 	for _, v := range skillModList.List(activeSkill.SkillCfg, "SkillData") {
-		tag, _ := v.(modparser.DataRef)
+		tag, ok := v.(modparser.DataRef)
+		if !ok {
+			panic("calc: non-DataRef value in SkillData list (the Lua errors)")
+		}
 		activeSkill.SkillData.Set(tag.Key, outValueOf(tag.Value))
 	}
 

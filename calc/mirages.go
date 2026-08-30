@@ -76,7 +76,7 @@ func (env *Env) calculateMirage(config *mirageConfig) bool {
 	}
 
 	if mirageSkill != nil {
-		newSkill, newEnv := env.copyActiveSkill("CALCULATOR", mirageSkill)
+		newSkill, newEnv := env.copyActiveSkill(ModeCalculator, mirageSkill)
 		if newSkill.SkillCfg.SkillCond == nil {
 			newSkill.SkillCfg.SkillCond = map[string]bool{}
 		}
@@ -111,7 +111,7 @@ func (env *Env) calculateMirage(config *mirageConfig) bool {
 // copyActiveSkill ports calcs.copyActiveSkill (CalcActiveSkill L164): a fresh
 // instance of one skill inside its own environment, so the mirage's copy can
 // be modified without touching the player's.
-func (env *Env) copyActiveSkill(mode string, skill *ActiveSkill) (*ActiveSkill, *Env) {
+func (env *Env) copyActiveSkill(mode CalcMode, skill *ActiveSkill) (*ActiveSkill, *Env) {
 	activeEffect := &ActiveEffect{
 		GrantedEffect: skill.ActiveEffect.GrantedEffect,
 		Level:         skill.ActiveEffect.Level,
@@ -367,7 +367,7 @@ func (env *Env) generalsCryMirage() {
 	main.SkillCfg.SkillCond["usedByMirage"] = true
 	main.SkillTypes[modparser.SkillTypeOtherThingUsesSkill] = true
 
-	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+	if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 		env.BuildActiveSkill(env.Mode, main, uuid, uuid)
 	}
 	mainSkillOutputCache := env.GlobalCache[uuid]
@@ -446,7 +446,7 @@ func (env *Env) tawhoasChosenConfig() *mirageConfig {
 			usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
 			if skill != main && !isTriggered(skill) && !isDisabled && skillTypeMatch && !skillTypeExcludes && !usedByMirage {
 				uuid := env.cacheSkillUUID(skill)
-				if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+				if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 					env.BuildActiveSkill(env.Mode, skill, uuid)
 				}
 				c := env.GlobalCache[uuid]

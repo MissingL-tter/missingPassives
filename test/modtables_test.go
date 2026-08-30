@@ -78,7 +78,7 @@ func TestTablesAgainstReference(t *testing.T) {
 		if accepted, ok := referenceNondeterminism[rec.Table+"|"+goKey]; ok && accepted[rec.Value] {
 			continue
 		}
-		if got := luacanon.CanonMods(goVal); got != luacanon.NormalizeArchiveMods(rec.Value) {
+		if got := luacanon.CanonMods(unboxTableEntry(goVal)); got != luacanon.NormalizeArchiveMods(rec.Value) {
 			mismatched++
 			if shown < 20 {
 				shown++
@@ -122,4 +122,21 @@ var referenceNondeterminism = map[string]map[string]bool{
 		`{"1":{"flags":0,"keywordFlags":0,"name":"JewelData","type":"LIST","value":{"key":"clusterJewelSkill","value":"affliction_curse_effect"}}}`:       true,
 		`{"1":{"flags":0,"keywordFlags":0,"name":"JewelData","type":"LIST","value":{"key":"clusterJewelSkill","value":"affliction_curse_effect_small"}}}`: true,
 	},
+}
+
+// unboxTableEntry recovers the plain value the canon renderer renders from
+// the wrapper types Tables() uses to seal its union over Go builtins; the
+// other TableEntry kinds are the modparser types luacanon already knows.
+func unboxTableEntry(v modparser.TableEntry) any {
+	switch t := v.(type) {
+	case modparser.TableStr:
+		return string(t)
+	case modparser.TableStrs:
+		return []string(t)
+	case modparser.TableBool:
+		return bool(t)
+	case modparser.TableMods:
+		return []*modparser.Mod(t)
+	}
+	return v
 }

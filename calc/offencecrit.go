@@ -69,10 +69,10 @@ func (env *Env) offenceCrit(c *offenceCtx, pass *damagePass) {
 			output.SetN("CritEffect", 1.0)
 		} else if skillModList.Flag(cfg, "SpellSkillsAlwaysDealCriticalStrikesOnFinalRepeat") {
 			switch env.ConfigInput.RepeatMode {
-			case "None":
+			case RepeatNoneMixedCase:
 				output.SetN("PreEffectiveCritChance", 0.0)
 				output.SetN("CritChance", 0.0)
-			case "AVERAGE":
+			case RepeatAverage:
 				output.SetN("PreEffectiveCritChance", 100/repeats)
 				output.SetN("CritChance", 100/repeats)
 			default:

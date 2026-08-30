@@ -500,8 +500,11 @@ func (env *Env) performBody() {
 		if !env.Minion.Hostile {
 			addMinionModifiers(env.PlayerMainSkill.SkillModList, env.PlayerMainSkill.SkillCfg, env.Minion)
 			for _, v := range env.Minion.DB.List(nil, "Keystone") {
-				name := str(v)
-				if mods, ok := env.Build.Spec.KeystoneMap[name]; ok {
+				name, ok := v.(modparser.Str)
+				if !ok {
+					continue
+				}
+				if mods, ok := env.Build.Spec.KeystoneMap[string(name)]; ok {
 					env.Minion.DB.AddList(mods)
 				}
 			}

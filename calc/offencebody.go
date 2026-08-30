@@ -247,7 +247,10 @@ func (env *Env) offencePrologue(c *offenceCtx) {
 
 	// Update skill data
 	for _, v := range skillModList.List(skillCfg, "SkillData") {
-		tag, _ := v.(modparser.DataRef)
+		tag, ok := v.(modparser.DataRef)
+		if !ok {
+			panic("calc: non-DataRef value in SkillData list (the Lua errors)")
+		}
 		key := tag.Key
 		if tag.Merge == "MAX" {
 			skillData.SetN(key, math.Max(valueNum(tag.Value), skillData.N(key)))

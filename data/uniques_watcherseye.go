@@ -1,5 +1,5 @@
-// Generated.lua port, continued: Precursor's Emblem, The Balance of Terror,
-// and the Watcher's Eye family.
+// Port of Generated.lua's Precursor's Emblem, The Balance of Terror and
+// Watcher's Eye family builders.
 
 package data
 

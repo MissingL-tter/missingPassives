@@ -279,12 +279,12 @@ func linkSpecNodes(a, b *SpecNode) {
 func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64, upSize *int64) {
 	parentEJ := parentSocket.T.ExpansionJewel
 	if parentEJ == nil {
-		panic("tree: buildSubgraph on non-expansion socket " + parentSocket.T.IDStr)
+		panic("tree: buildSubgraph on non-expansion socket " + parentSocket.T.IDStr) // the Lua errors (indexes nil expansionJewel)
 	}
 	parentIndex, parentProxy, parentSize := parentEJ.Index, parentEJ.Proxy, parentEJ.Size
 	clusterJewel := jewel.ClusterJewel
 	if clusterJewel == nil {
-		panic("tree: buildSubgraph without cluster jewel data at socket " + parentSocket.T.IDStr)
+		panic("tree: buildSubgraph without cluster jewel data at socket " + parentSocket.T.IDStr) // the Lua errors (indexes nil clusterJewel)
 	}
 
 	subGraph := &SubGraph{
@@ -309,7 +309,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 
 	proxyNode := s.Tree.Nodes[parentProxy]
 	if proxyNode == nil {
-		panic("tree: proxy node " + strconv.FormatInt(parentProxy, 10) + " not found for socket " + parentSocket.T.IDStr)
+		panic("tree: proxy node " + strconv.FormatInt(parentProxy, 10) + " not found for socket " + parentSocket.T.IDStr) // the Lua errors (assert "Proxy node not found")
 	}
 	proxyGroup := proxyNode.Group
 	subGraph.Group.X = proxyGroup.X
@@ -320,7 +320,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	if keystone := jdata.ClusterJewelKeystone; keystone != "" {
 		keystoneNode := s.Tree.ClusterNodeMap[keystone]
 		if keystoneNode == nil {
-			panic("tree: cluster keystone " + keystone + " not found (socket " + parentSocket.T.IDStr + ")")
+			panic("tree: cluster keystone " + keystone + " not found (socket " + parentSocket.T.IDStr + ")") // the Lua errors (assert "Keystone node not found")
 		}
 		raw := &Node{
 			Type:       NodeKeystone,
@@ -360,7 +360,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			return
 		}
 		if _, ok := sortOrder[baseNode.Name]; !ok {
-			panic("tree: cluster notable " + name + " has no sort order (socket " + parentSocket.T.IDStr + ")")
+			panic("tree: cluster notable " + name + " has no sort order (socket " + parentSocket.T.IDStr + ")") // the Lua errors (assert "Cluster notable has no sort order")
 		}
 		notableList = append(notableList, baseNode)
 	}
@@ -408,7 +408,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	makeJewel := func(nodeIndex, jewelIndex int64) {
 		socket := s.findClusterSocket(proxyGroup, jewelIndex)
 		if socket == nil {
-			panic("tree: cluster socket index " + strconv.FormatInt(jewelIndex, 10) + " not found in group " + strconv.FormatInt(proxyGroup.ID, 10))
+			panic("tree: cluster socket index " + strconv.FormatInt(jewelIndex, 10) + " not found in group " + strconv.FormatInt(proxyGroup.ID, 10)) // the Lua errors (assert "Socket not found (ran out of sockets nani?)")
 		}
 		raw := &Node{
 			Type:           NodeSocket,
@@ -436,7 +436,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 		makeJewel(6, 1)
 	} else {
 		if socketCount > len(clusterJewel.SocketIndicies) {
-			panic("tree: " + strconv.Itoa(socketCount) + " cluster sockets exceed the " + clusterJewel.Size + " template (socket " + parentSocket.T.IDStr + ")")
+			panic("tree: " + strconv.Itoa(socketCount) + " cluster sockets exceed the " + clusterJewel.Size + " template (socket " + parentSocket.T.IDStr + ")") // the Lua errors (assert "Too many sockets!")
 		}
 		getJewels := []int64{0, 2, 1}
 		for i := 0; i < socketCount; i++ {
@@ -536,7 +536,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	}
 
 	if indicies[0] == nil {
-		panic("tree: subgraph " + strconv.FormatInt(nodeID, 10) + " has no entrance node")
+		panic("tree: subgraph " + strconv.FormatInt(nodeID, 10) + " has no entrance node") // the Lua errors (assert "No entrance to subgraph")
 	}
 
 	// Convert template index space into tree orbit index space.

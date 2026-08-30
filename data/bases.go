@@ -311,7 +311,16 @@ func loadBases(src schema.BasesData) {
 	// Rare templates: the generated and hand-written [[...]] blobs, in file
 	// order. Long-bracket strings are raw — no escape processing.
 	Rares = nil
-	for _, lines := range src.RareBlobs {
+	addRare := func(lines []string) {
 		Rares = append(Rares, strings.Join(lines, "\n")+"\n")
+	}
+	for _, r := range src.Rares {
+		if r == nil {
+			continue // the directive found no base; the reference emitted nothing
+		}
+		addRare(r.Lines)
+	}
+	for _, lines := range src.ExtraRares {
+		addRare(lines)
 	}
 }

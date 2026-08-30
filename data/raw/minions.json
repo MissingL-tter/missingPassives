@@ -18930,7 +18930,7 @@
 			"attackTime": 1.755,
 			"attackRange": 6,
 			"accuracy": 1,
-			"hostile": "true",
+			"hostile": true,
 			"skillList": [
 				"MPSPhantasmBasicBlood"
 			],

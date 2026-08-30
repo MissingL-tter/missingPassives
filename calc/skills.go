@@ -155,7 +155,7 @@ func (env *Env) buildSkillsStage() bool {
 		env.slotsByName[slot.SlotName] = slot
 	}
 
-	if env.Mode == "MAIN" {
+	if env.Mode == ModeMain {
 		markList := map[*SocketGroupInput]bool{}
 		getNormalizedSkillLevel := func(gs *GrantedSkill) float64 {
 			// Levels in socketGroup.gemList[1].level are normalized
@@ -317,7 +317,10 @@ func (env *Env) buildSkillsStage() bool {
 	// Process supports and put them into the correct buckets
 	env.CrossLinkedSupportGroups = map[string][]string{}
 	for _, entry := range env.ModDB.Tabulate(modparser.List, nil, "LinkedSupport") {
-		v, _ := entry.Value.(modparser.LinkedSupportRef)
+		v, ok := entry.Value.(modparser.LinkedSupportRef)
+		if !ok {
+			panic("calc: non-LinkedSupportRef value in LinkedSupport list (the Lua errors)")
+		}
 		slot := entry.Mod.SourceSlot
 		env.CrossLinkedSupportGroups[slot] = append(env.CrossLinkedSupportGroups[slot], v.TargetSlotName)
 	}
@@ -451,13 +454,13 @@ func (env *Env) buildSkillsStage() bool {
 				}
 				if gem.GemData != nil {
 					socketedItem, _ := env.Player.ItemList[gc.SlotName].(*Item)
-					var socketedIn map[string]any
+					var socketedIn *SocketInput
 					if socketedItem != nil && gemIndex < len(socketedItem.In.Sockets) {
-						socketedIn = socketedItem.In.Sockets[gemIndex]
+						socketedIn = &socketedItem.In.Sockets[gemIndex]
 					}
 					supportEffect.GemCfg = snapshotCfg(&gc.Cfg)
 					if socketedIn != nil {
-						supportEffect.GemCfg.SocketColor = str(socketedIn["color"])
+						supportEffect.GemCfg.SocketColor = socketedIn.Color
 					}
 					sn := float64(gemIndex + 1)
 					supportEffect.GemCfg.SocketNum = &sn
@@ -551,13 +554,13 @@ func (env *Env) buildSkillsStage() bool {
 				}
 				if gem.GemData != nil {
 					socketedItem, _ := env.Player.ItemList[slotName].(*Item)
-					var socketedIn map[string]any
+					var socketedIn *SocketInput
 					if socketedItem != nil && gemIndex < len(socketedItem.In.Sockets) {
-						socketedIn = socketedItem.In.Sockets[gemIndex]
+						socketedIn = &socketedItem.In.Sockets[gemIndex]
 					}
 					activeEffect.GemCfg = snapshotCfg(&gc.Cfg)
 					if socketedIn != nil {
-						activeEffect.GemCfg.SocketColor = str(socketedIn["color"])
+						activeEffect.GemCfg.SocketColor = socketedIn.Color
 					}
 					sn := float64(gemIndex + 1)
 					activeEffect.GemCfg.SocketNum = &sn
@@ -682,7 +685,7 @@ func (env *Env) buildSkillsStage() bool {
 					cur = 1
 				}
 				activeSkillIndex := int(math.Min(float64(len(socketGroupSkillList)), cur))
-				if env.Mode == "MAIN" {
+				if env.Mode == ModeMain {
 					group.MainActiveSkill = util.Some(float64(activeSkillIndex))
 				}
 				env.PlayerMainSkill = socketGroupSkillList[activeSkillIndex-1]

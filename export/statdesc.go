@@ -684,7 +684,7 @@ func (x *Ctx) DescribeScalability(fileName string) (map[string][]scalability, er
 		}
 		var scal []bool
 		for _, s := range statDescription.stats {
-			scal = append(scal, stats.GetRow("Id", s).Bool("IsScalable"))
+			scal = append(scal, stats.RowByStr("Id", s).Bool("IsScalable"))
 		}
 		for _, wordings := range statDescription.lang {
 			wordingFormats := map[int][]string{}

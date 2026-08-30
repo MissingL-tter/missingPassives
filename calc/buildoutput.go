@@ -10,7 +10,7 @@ package calc
 //
 // limitedProcessing carries uuids that must not recurse into another
 // buildActiveSkill; the reference uses it to stop infinite loops.
-func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID string, limitedProcessing ...string) {
+func (env *Env) BuildActiveSkill(mode CalcMode, skill *ActiveSkill, targetUUID string, limitedProcessing ...string) {
 	// Defensive, no reference counterpart: the reference's recursion
 	// breaker is the limitedSkills check at the top of calcs.triggers, and
 	// a bug in porting it once recursed unboundedly, allocating a full
@@ -71,7 +71,7 @@ func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID str
 // The rest of buildOutput is display work -- the FullDPS roll-up, the cost
 // warnings, and the conditions/multipliers discovery the config tab reads --
 // none of which any ported stage consumes.
-func (env *Env) FillGlobalCache(mode string) {
+func (env *Env) FillGlobalCache(mode CalcMode) {
 	if env.GlobalCache == nil {
 		env.GlobalCache = map[string]*CachedSkill{}
 	}
@@ -85,7 +85,7 @@ func (env *Env) FillGlobalCache(mode string) {
 
 // BuildOutput ports the driver itself: one env for the main skill, a full
 // perform on it, then a cache entry for every other active skill.
-func BuildOutput(in *BuildInput, mode string, replay *ReplayInput) *Env {
+func BuildOutput(in *BuildInput, mode CalcMode, replay *ReplayInput) *Env {
 	// The driver computes the cache; anything the fixture carried would
 	// mask that.
 	own := *replay
@@ -93,7 +93,7 @@ func BuildOutput(in *BuildInput, mode string, replay *ReplayInput) *Env {
 	env := InitEnv(in, mode, &own)
 	env.GlobalCache = map[string]*CachedSkill{}
 	env.PerformFull(false)
-	if mode == "MAIN" {
+	if mode == ModeMain {
 		env.FillGlobalCache(mode)
 	}
 	return env

@@ -4,12 +4,12 @@ package calc
 
 import "github.com/MissingL-tter/missingPassives/modparser"
 
-func (env *Env) ehpRecoup(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpRecoup(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	output := actor.output
 
 	// recoup
-	if output.N("anyRecoup") > 0 && damageCategoryConfig != "DamageOverTime" {
+	if output.N("anyRecoup") > 0 && damageCategoryConfig != DamageOverTime {
 		totalDamage := 0.0
 		totalElementalDamage := 0.0
 		totalPhysicalDamageMitigated := output.N("NumberOfMitigatedDamagingHits") *

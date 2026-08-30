@@ -1,8 +1,8 @@
 // The per-kind data an item carries after BuildModList (the reference's
 // weaponData/armourData/flaskData/tinctureData/jewelData tables), granted
 // skills, requirements and affix ranges. Fixed fields are the keys the
-// reference always computes; Extra keeps whatever data-driven LIST
-// modifiers (WeaponData/ArmourData/... {key, value}) add beyond them.
+// reference always computes; WeaponData.Extra keeps whatever data-driven
+// LIST modifiers (WeaponData {key, value}) add beyond them.
 package item
 
 import (
@@ -31,12 +31,42 @@ type WeaponData struct {
 
 	CountsAsAll1H        bool
 	CountsAsDualWielding bool
-	// AddedUsing records, per weapon type a counts-as-all weapon added,
-	// whether the Using<Type> condition was absent before it (calc's
-	// AddedUsing<Type> flags).
-	AddedUsing map[string]bool
+	AddedUsing           AddedUsingFlags
 
 	Extra map[string]modparser.Value
+}
+
+// AddedUsingFlags is the AddedUsing<Type> block CalcPerform.lua L156-164
+// writes onto a counts-as-all-one-handed weapon: per one-handed weapon
+// type, whether the Using<Type> condition was absent before this weapon
+// added it. Written records that the block exists, because the reference
+// reads the entries through a presence test (CalcMods.lua only rejects a
+// negated Using<Type> tag when the key is there), and an absent key is not
+// a false one.
+type AddedUsingFlags struct {
+	Written                        bool
+	Axe, Sword, Dagger, Mace, Claw bool
+}
+
+// Added is weaponData["AddedUsing"..weaponType]: the flag and whether the
+// block holds it at all.
+func (f AddedUsingFlags) Added(weaponType string) (added, present bool) {
+	if !f.Written {
+		return false, false
+	}
+	switch weaponType {
+	case "Axe":
+		return f.Axe, true
+	case "Sword":
+		return f.Sword, true
+	case "Dagger":
+		return f.Dagger, true
+	case "Mace":
+		return f.Mace, true
+	case "Claw":
+		return f.Claw, true
+	}
+	return false, false
 }
 
 // Damage returns the range for a damage type name, nil for an unknown one.
@@ -56,10 +86,9 @@ func (w *WeaponData) Damage(dmgType string) *DamageRange {
 	return nil
 }
 
-// Clone is copyTable(weaponData): the maps are copied, not shared.
+// Clone is copyTable(weaponData): the map is copied, not shared.
 func (w *WeaponData) Clone() *WeaponData {
 	cp := *w
-	cp.AddedUsing = cloneMap(w.AddedUsing)
 	cp.Extra = cloneMap(w.Extra)
 	return &cp
 }
@@ -115,13 +144,6 @@ func (w *WeaponData) Set(key string, v modparser.Value) {
 	case "countsAsDualWielding":
 		w.CountsAsDualWielding = modparser.Truthy(v)
 	default:
-		if strings.HasPrefix(key, "AddedUsing") {
-			if w.AddedUsing == nil {
-				w.AddedUsing = map[string]bool{}
-			}
-			w.AddedUsing[strings.TrimPrefix(key, "AddedUsing")] = modparser.Truthy(v)
-			return
-		}
 		w.Extra = setExtra(w.Extra, key, v)
 	}
 }
@@ -147,7 +169,6 @@ type DefenceStat struct{ Value, BasePercentile util.Opt[float64] }
 type ArmourData struct {
 	Armour, Evasion, EnergyShield, Ward DefenceStat
 	BlockChance                         util.Opt[float64]
-	Extra                               map[string]modparser.Value
 }
 
 // Defence returns the stat by reference name ("Armour", "Evasion",
@@ -167,6 +188,10 @@ func (a *ArmourData) Defence(name string) *DefenceStat {
 }
 
 // Set applies an ArmourData {key, value} entry; a nil value clears the key.
+// Any other key is dropped: the reference stores it on armourData (Item.lua
+// L719 writes every "BasePercentile"-containing spec name) and never reads
+// it back — the percentile readers and the raw-line writer both name the
+// four defence types.
 func (a *ArmourData) Set(key string, v modparser.Value) {
 	if stat := a.Defence(strings.TrimSuffix(key, "BasePercentile")); stat != nil {
 		if strings.HasSuffix(key, "BasePercentile") {
@@ -178,9 +203,7 @@ func (a *ArmourData) Set(key string, v modparser.Value) {
 	}
 	if key == "BlockChance" {
 		a.BlockChance = optNum(v)
-		return
 	}
-	a.Extra = setExtra(a.Extra, key, v)
 }
 
 // FlaskRecovery is one recovery pool's flask numbers (life*/mana* keys).
@@ -196,7 +219,6 @@ type FlaskData struct {
 	Duration, ChargesMax, ChargesUsed, GainMod, EffectInc float64
 	InstantPerc, InstantLowLifePerc                       util.Opt[float64]
 	Life, Mana                                            *FlaskRecovery
-	Extra                                                 map[string]modparser.Value
 }
 
 // Pool returns the "Life"/"Mana" recovery pool, nil when absent.
@@ -211,6 +233,8 @@ func (f *FlaskData) Pool(name string) *FlaskRecovery {
 }
 
 // Set applies a FlaskData {key, value} entry; a nil value clears the key.
+// Any other key is dropped: no FlaskData LIST modifier exists to produce
+// one, and the reference would only store it unread.
 func (f *FlaskData) Set(key string, v modparser.Value) {
 	switch key {
 	case "duration":
@@ -253,22 +277,20 @@ func (f *FlaskData) Set(key string, v modparser.Value) {
 				rec.Additional = optNum(v)
 			case "EffectNotRemoved":
 				rec.EffectNotRemoved = modparser.Truthy(v)
-			default:
-				f.Extra = setExtra(f.Extra, key, v)
 			}
 			return
 		}
-		f.Extra = setExtra(f.Extra, key, v)
 	}
 }
 
 // TinctureData is a tincture's computed state.
 type TinctureData struct {
 	ManaBurn, CooldownInc, Cooldown, EffectInc float64
-	Extra                                      map[string]modparser.Value
 }
 
-// Set applies a TinctureData {key, value} entry.
+// Set applies a TinctureData {key, value} entry. Any other key is dropped:
+// no TinctureData LIST modifier exists to produce one, and the reference
+// would only store it unread.
 func (t *TinctureData) Set(key string, v modparser.Value) {
 	switch key {
 	case "manaBurn":
@@ -279,8 +301,6 @@ func (t *TinctureData) Set(key string, v modparser.Value) {
 		t.Cooldown = num(v)
 	case "effectInc":
 		t.EffectInc = num(v)
-	default:
-		t.Extra = setExtra(t.Extra, key, v)
 	}
 }
 
@@ -315,11 +335,11 @@ type JewelData struct {
 	// keystone, a skill/nothingness layout with a node count, or a
 	// socket-count override with a nothingness count).
 	ClusterJewelValid bool
-
-	Extra map[string]modparser.Value
 }
 
 // Set applies a JewelData {key, value} entry; a nil value clears the key.
+// Any other key is dropped: the JewelData LIST modifiers all name a field
+// above, and the reference would only store an off-list key unread.
 func (j *JewelData) Set(key string, v modparser.Value) {
 	switch key {
 	case "radiusIndex":
@@ -362,8 +382,6 @@ func (j *JewelData) Set(key string, v modparser.Value) {
 		j.ClusterJewelSmallsAreNothingness = modparser.Truthy(v)
 	case "clusterJewelValid":
 		j.ClusterJewelValid = modparser.Truthy(v)
-	default:
-		j.Extra = setExtra(j.Extra, key, v)
 	}
 }
 

@@ -133,13 +133,13 @@ func buildTattooPassives(x *Ctx) (schema.Document, error) {
 		minConn := row.Int("MinimumConnected")
 		maxConn := row.Int("MaximumConnected")
 		if minConn > 0 {
-			text := clientStrings.GetRow("Id", "PassiveSkillTattooAdjacentRequirementLower").Str("Text")
+			text := clientStrings.RowByStr("Id", "PassiveSkillTattooAdjacentRequirementLower").Str("Text")
 			reminder := strings.ReplaceAll(text, "{}", strconv.FormatInt(minConn, 10))
 			node.ReminderText = &reminder
 		}
 		node.MinimumConnected = minConn
 		if maxConn > 0 {
-			text := clientStrings.GetRow("Id", "PassiveSkillTattooAdjacentRequirementUpper").Str("Text")
+			text := clientStrings.RowByStr("Id", "PassiveSkillTattooAdjacentRequirementUpper").Str("Text")
 			reminder := strings.ReplaceAll(text, "{}", strconv.FormatInt(maxConn, 10))
 			node.ReminderText = &reminder
 		}
@@ -153,7 +153,7 @@ func buildTattooPassives(x *Ctx) (schema.Document, error) {
 		var haveLimit bool
 		if limit := row.Ref("Limit"); limit != nil {
 			limitText = strings.ReplaceAll(
-				clientStrings.GetRow("Id", "PassiveSkillTattooLimitReminder").Str("Text"),
+				clientStrings.RowByStr("Id", "PassiveSkillTattooLimitReminder").Str("Text"),
 				"{0}", limit.Str("Description"))
 			haveLimit = true
 		}
@@ -184,8 +184,8 @@ func buildTattooPassives(x *Ctx) (schema.Document, error) {
 
 		node.Name = finalName
 		if finalName != "" && !node.Ks {
-			if bit := baseItemTypes.GetRow("Name", finalName); bit != nil {
-				if ce := currencyExchange.GetRow("BaseItemType", bit); ce != nil {
+			if bit := baseItemTypes.RowByStr("Name", finalName); bit != nil {
+				if ce := currencyExchange.RowByRef("BaseItemType", bit); ce != nil {
 					legacy := !ce.Bool("EnabledInLeague")
 					node.Legacy = &legacy
 				}

@@ -117,9 +117,10 @@ func buildMinions(x *Ctx) (schema.Document, error) {
 	}
 
 	type minionState struct {
-		varietyId, name, limit, hostile string
-		extraSkillList                  []string
-		extraModList                    []json.RawMessage
+		varietyId, name, limit string
+		hostile                bool
+		extraSkillList         []string
+		extraModList           []json.RawMessage
 	}
 	state := &minionState{}
 	var defs *[]schema.MinionDef
@@ -137,7 +138,7 @@ func buildMinions(x *Ctx) (schema.Document, error) {
 		}
 	}
 	emit := func() error {
-		mv := monsterVarieties.GetRow("Id", state.varietyId)
+		mv := monsterVarieties.RowByStr("Id", state.varietyId)
 		if mv == nil {
 			// The Lua prints "Invalid Variety"; keep the emit sequence aligned.
 			*defs = append(*defs, schema.MinionDef{Skip: true})
@@ -278,7 +279,7 @@ func buildMinions(x *Ctx) (schema.Document, error) {
 				state.limit = d.Name
 			case *hostileDirective:
 				if d.Value {
-					state.hostile = "true"
+					state.hostile = true
 				}
 			case *extraSkillDirective:
 				state.extraSkillList = append(state.extraSkillList, d.Name)

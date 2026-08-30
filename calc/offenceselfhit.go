@@ -111,7 +111,10 @@ func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output modstor
 // self-damage mods carry, summing baseDamage across them.
 func selfDamageList(activeSkill *ActiveSkill, name string) (dmgType string, dmgVal float64, ok bool) {
 	for _, value := range activeSkill.SkillModList.List(nil, name) {
-		tag, _ := value.(modparser.SelfDamage)
+		tag, isSelfDamage := value.(modparser.SelfDamage)
+		if !isSelfDamage {
+			panic("calc: non-SelfDamage value in " + name + " list (the Lua errors)")
+		}
 		dmgVal += tag.BaseDamage.Or(0)
 		dmgType = capDamageType(tag.DamageType)
 		ok = true
@@ -122,7 +125,10 @@ func selfDamageList(activeSkill *ActiveSkill, name string) (dmgType string, dmgV
 // selfDamageFirst is the same read but taking only the first entry.
 func selfDamageFirst(activeSkill *ActiveSkill, name, key string) (dmgType string, val float64, ok bool) {
 	for _, value := range activeSkill.SkillModList.List(nil, name) {
-		tag, _ := value.(modparser.SelfDamage)
+		tag, isSelfDamage := value.(modparser.SelfDamage)
+		if !isSelfDamage {
+			panic("calc: non-SelfDamage value in " + name + " list (the Lua errors)")
+		}
 		if key == "dmgMult" {
 			val = tag.DmgMult.Or(0)
 		} else {

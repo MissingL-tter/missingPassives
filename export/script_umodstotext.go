@@ -7,7 +7,6 @@
 package export
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -18,38 +17,6 @@ import (
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "uModsToText", Build: buildUModsToText})
-}
-
-// splitUniqueFile parses a [[..]]-delimited line stream into sections of
-// item blobs. Passthrough text outside blocks is dropped — the render test
-// reconstructs it from the archive template.
-func splitUniqueFile(lines []string) (schema.UniqueFile, error) {
-	var f schema.UniqueFile
-	var cur []string
-	inItem := false
-	sec := -1
-	for _, line := range lines {
-		switch {
-		case !inItem && line == "[[":
-			f.Sections = append(f.Sections, schema.UniqueSection{})
-			sec = len(f.Sections) - 1
-			cur = []string{}
-			inItem = true
-		case inItem && line == "]],[[":
-			f.Sections[sec].Items = append(f.Sections[sec].Items, cur)
-			cur = []string{}
-		case inItem && (line == "]]," || line == "]]" || line == "]],}"):
-			f.Sections[sec].Items = append(f.Sections[sec].Items, cur)
-			cur = nil
-			inItem = false
-		case inItem:
-			cur = append(cur, line)
-		}
-	}
-	if inItem {
-		return f, fmt.Errorf("unterminated item block")
-	}
-	return f, nil
 }
 
 var uniqueItemTypes = []string{
@@ -97,27 +64,17 @@ func buildUModsToText(x *Ctx) (schema.Document, error) {
 		if err != nil {
 			return nil, err
 		}
-		// The transform is a line-stream algorithm (block boundaries reset
-		// its per-item state); rebuild the stream from the template blocks.
-		var lines []string
-		for _, sec := range tplDoc.Sections {
-			for i, item := range sec.Items {
-				if i == 0 {
-					lines = append(lines, "[[")
-				} else {
-					lines = append(lines, "]],[[")
-				}
-				lines = append(lines, item...)
-			}
-			lines = append(lines, "]],")
-		}
-		var outLines []string
-		emit := func(line string) { outLines = append(outLines, line) }
+		var f schema.UniqueFile
+		var cur []string
+		emit := func(line string) { cur = append(cur, line) }
 
 		statOrder := map[float64][]string{}
 		modLines := 0
-		var implicits *int
 		nextOrder := float64(100000)
+		// The per-item reset below clears the stat order but not this
+		// countdown: an "Implicits: n" whose n outruns its item stays live
+		// into the next one, as in the reference.
+		var implicits *int
 
 		writeStatOrder := func() {
 			orders := make([]float64, 0, len(statOrder))
@@ -132,137 +89,145 @@ func buildUModsToText(x *Ctx) (schema.Document, error) {
 			}
 		}
 
-		for _, line := range lines {
-			if implicits != nil {
-				*implicits--
+		for _, tplSec := range tplDoc.Sections {
+			if len(tplSec.Items) == 0 {
+				continue // a section is a run of items; no items, no section
 			}
-			specMatch := reSpecLine.FindStringSubmatch(line)
-			if strings.Contains(line, "]],") { // start new unique
-				writeStatOrder()
-				emit(line)
+			f.Sections = append(f.Sections, schema.UniqueSection{})
+			si := len(f.Sections) - 1
+			for _, item := range tplSec.Items {
+				// One item is one unique; the transform's per-item state
+				// starts over at each item boundary.
+				cur = []string{}
 				statOrder = map[float64][]string{}
 				modLines = 0
 				nextOrder = 100000
-			} else if specMatch == nil {
-				prefix := ""
-				versionString := reVersionTag.FindString(line)
-				variantString := reVariantTag.FindString(line)
-				groupString := reGroupTag.FindString(line)
-				fractured := reFracturedTag.FindString(line)
-				cleanLine := reAnyTag.ReplaceAllString(line, "")
-				var modName string
-				if m := reModIdBrack.FindStringSubmatch(cleanLine); m != nil {
-					modName = m[1]
-				} else if m := reModIdOnly.FindStringSubmatch(cleanLine); m != nil {
-					modName = m[1]
-				}
-				legacy := ""
-				if modName != "" {
-					legacy = cleanLine[len(modName):]
-				}
-				// Legacy ranges must contain actual brackets
-				if legacy != "" && !strings.Contains(legacy, "[") {
-					legacy = ""
-					modName = ""
-				}
-				var mod *modEntry
-				if modName != "" {
-					mod = x.modItemExclusive[modName]
-				}
-				if mod != nil || (modName != "" && legacy != "") {
-					modLines++
-					prefix += versionString + variantString + groupString
-					var tags []string
-					if mod != nil && (name == "amulet" || name == "ring" || name == "belt") {
-						for _, tag := range mod.tags {
-							if catalystTags[tag] {
-								tags = append(tags, tag)
-							}
-						}
+				for _, line := range item {
+					if implicits != nil {
+						*implicits--
 					}
-					if len(tags) > 0 {
-						prefix += "{tags:" + strings.Join(tags, ",") + "}"
-					}
-					prefix += fractured
-					var legacyMod []string
-					legacyFound := false // the Lua's legacyMod is a (possibly empty) table when the mod row exists
-					if legacy != "" {
-						type mm struct{ min, max float64 }
-						var values []mm
-						for _, rng := range reBrackRange.FindAllString(legacy, -1) {
-							if m := reRangePair.FindStringSubmatch(rng); m != nil {
-								mn, _ := strconv.ParseFloat(m[1], 64)
-								mx, _ := strconv.ParseFloat(m[2], 64)
-								values = append(values, mm{mn, mx})
-							}
+					specMatch := reSpecLine.FindStringSubmatch(line)
+					if specMatch == nil {
+						prefix := ""
+						versionString := reVersionTag.FindString(line)
+						variantString := reVariantTag.FindString(line)
+						groupString := reGroupTag.FindString(line)
+						fractured := reFracturedTag.FindString(line)
+						cleanLine := reAnyTag.ReplaceAllString(line, "")
+						var modName string
+						if m := reModIdBrack.FindStringSubmatch(cleanLine); m != nil {
+							modName = m[1]
+						} else if m := reModIdOnly.FindStringSubmatch(cleanLine); m != nil {
+							modName = m[1]
 						}
-						if modRow := mods.GetRow("Id", modName); modRow != nil {
-							stats := map[string]*statVal{}
-							for i := 1; i <= 6; i++ {
-								if sr := modRow.Ref("Stat" + strconv.Itoa(i)); sr != nil && i-1 < len(values) {
-									stats[sr.Str("Id")] = &statVal{min: values[i-1].min, max: values[i-1].max}
+						legacy := ""
+						if modName != "" {
+							legacy = cleanLine[len(modName):]
+						}
+						// Legacy ranges must contain actual brackets
+						if legacy != "" && !strings.Contains(legacy, "[") {
+							legacy = ""
+							modName = ""
+						}
+						var mod *modEntry
+						if modName != "" {
+							mod = x.modItemExclusive[modName]
+						}
+						if mod != nil || (modName != "" && legacy != "") {
+							modLines++
+							prefix += versionString + variantString + groupString
+							var tags []string
+							if mod != nil && (name == "amulet" || name == "ring" || name == "belt") {
+								for _, tag := range mod.tags {
+									if catalystTags[tag] {
+										tags = append(tags, tag)
+									}
 								}
 							}
-							lines, err := x.DescribeStats(stats)
-							if err != nil {
-								return nil, err
+							if len(tags) > 0 {
+								prefix += "{tags:" + strings.Join(tags, ",") + "}"
 							}
-							legacyMod = lines.Lines
-							legacyFound = true
-						}
-					}
-					var modText []string
-					if legacyFound {
-						modText = legacyMod
-					} else if mod != nil {
-						modText = mod.lines
-					}
-					var order float64
-					for i, l := range modText {
-						if i == 0 {
-							if mod != nil && len(mod.orders) > 0 {
-								order = mod.orders[0]
+							prefix += fractured
+							var legacyMod []string
+							legacyFound := false // the Lua's legacyMod is a (possibly empty) table when the mod row exists
+							if legacy != "" {
+								type mm struct{ min, max float64 }
+								var values []mm
+								for _, rng := range reBrackRange.FindAllString(legacy, -1) {
+									if m := reRangePair.FindStringSubmatch(rng); m != nil {
+										mn, _ := strconv.ParseFloat(m[1], 64)
+										mx, _ := strconv.ParseFloat(m[2], 64)
+										values = append(values, mm{mn, mx})
+									}
+								}
+								if modRow := mods.RowByStr("Id", modName); modRow != nil {
+									stats := map[string]*statVal{}
+									for i := 1; i <= 6; i++ {
+										if sr := modRow.Ref("Stat" + strconv.Itoa(i)); sr != nil && i-1 < len(values) {
+											stats[sr.Str("Id")] = &statVal{min: values[i-1].min, max: values[i-1].max}
+										}
+									}
+									lines, err := x.DescribeStats(stats)
+									if err != nil {
+										return nil, err
+									}
+									legacyMod = lines.Lines
+									legacyFound = true
+								}
+							}
+							var modText []string
+							if legacyFound {
+								modText = legacyMod
+							} else if mod != nil {
+								modText = mod.lines
+							}
+							var order float64
+							for i, l := range modText {
+								if i == 0 {
+									if mod != nil && len(mod.orders) > 0 {
+										order = mod.orders[0]
+									} else {
+										order = nextOrder
+									}
+								}
+								nextOrder++
+								statOrder[order] = append(statOrder[order], prefix+l)
+							}
+						} else {
+							if modLines > 0 || implicits != nil {
+								// Unresolved text lines get a sequential order to
+								// preserve position among mods
+								statOrder[nextOrder] = append(statOrder[nextOrder], line)
+								nextOrder++
 							} else {
-								order = nextOrder
+								emit(line)
 							}
 						}
-						nextOrder++
-						statOrder[order] = append(statOrder[order], prefix+l)
+					} else { // spec line
+						if specMatch[1] == "Implicits" {
+							n, _ := strconv.Atoi(specMatch[2])
+							implicits = &n
+						} else {
+							emit(line)
+						}
 					}
-				} else {
-					if modLines > 0 || implicits != nil {
-						// Unresolved text lines get a sequential order to
-						// preserve position among mods
-						statOrder[nextOrder] = append(statOrder[nextOrder], line)
-						nextOrder++
-					} else {
-						emit(line)
+					if implicits != nil && *implicits == 0 {
+						count := 0
+						for _, l := range statOrder {
+							count += len(l)
+						}
+						emit("Implicits: " + strconv.Itoa(count))
+						writeStatOrder()
+						implicits = nil
+						statOrder = map[float64][]string{}
+						modLines = 0
 					}
 				}
-			} else { // spec line
-				if specMatch[1] == "Implicits" {
-					n, _ := strconv.Atoi(specMatch[2])
-					implicits = &n
-				} else {
-					emit(line)
-				}
-			}
-			if implicits != nil && *implicits == 0 {
-				count := 0
-				for _, l := range statOrder {
-					count += len(l)
-				}
-				emit("Implicits: " + strconv.Itoa(count))
 				writeStatOrder()
-				implicits = nil
-				statOrder = map[float64][]string{}
-				modLines = 0
+				f.Sections[si].Items = append(f.Sections[si].Items, cur)
 			}
 		}
-		writeStatOrder()
-		if doc[name], err = splitUniqueFile(outLines); err != nil {
-			return nil, fmt.Errorf("%s: %w", name, err)
-		}
+		doc[name] = f
 	}
 	return doc, nil
 }

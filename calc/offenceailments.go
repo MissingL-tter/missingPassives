@@ -253,11 +253,11 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			}
 		}
 
-		ailmentMode := "AVERAGE"
+		ailmentMode := AilmentAverage
 		if v := env.ConfigInput.AilmentMode; v != "" {
 			ailmentMode = v
 		}
-		if ailmentMode == "CRIT" || modDB.Flag(nil, "AilmentsOnlyFromCrit") {
+		if ailmentMode == AilmentCrit || modDB.Flag(nil, "AilmentsOnlyFromCrit") {
 			for _, ailment := range data.AilmentTypeList {
 				output.SetN(ailment+"ChanceOnHit", 0.0)
 			}
@@ -351,7 +351,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 				continue
 			}
 			// Sets the crit strike condition to match ailment mode.
-			cfg.SkillCond["CriticalStrike"] = ailmentMode == "CRIT" && !modDB.Flag(nil, "AilmentsAreNeverFromCrit")
+			cfg.SkillCond["CriticalStrike"] = ailmentMode == AilmentCrit && !modDB.Flag(nil, "AilmentsAreNeverFromCrit")
 
 			hit, crit := calcAverageSourceDamage(ailment)
 			damage := calcAilmentDamage(ailment, output.N("CritChance"), hit, crit) * skillModList.More(cfg, ailment+"AsThoughDealing")
@@ -451,27 +451,27 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 
 	// Combine secondary effect stats
 	if c.isAttack {
-		env.combineStat(c, "BleedChance", "AVERAGE", "")
-		env.combineStat(c, "BleedDPS", "CHANCE_AILMENT", "BleedChance")
-		env.combineStat(c, "PoisonChance", "AVERAGE", "")
-		env.combineStat(c, "PoisonDPS", "CHANCE", "PoisonChance")
-		env.combineStat(c, "CausticGroundDPS", "CHANCE", "PoisonChance")
-		env.combineStat(c, "TotalPoisonDPS", "DPS", "")
-		env.combineStat(c, "PoisonDamage", "CHANCE", "PoisonChance")
+		env.combineStat(c, "BleedChance", CombineAverage, "")
+		env.combineStat(c, "BleedDPS", CombineChanceAilment, "BleedChance")
+		env.combineStat(c, "PoisonChance", CombineAverage, "")
+		env.combineStat(c, "PoisonDPS", CombineChance, "PoisonChance")
+		env.combineStat(c, "CausticGroundDPS", CombineChance, "PoisonChance")
+		env.combineStat(c, "TotalPoisonDPS", CombineDPS, "")
+		env.combineStat(c, "PoisonDamage", CombineChance, "PoisonChance")
 		if skillData.Flag("showAverage") {
-			env.combineStat(c, "TotalPoisonAverageDamage", "DPS", "")
+			env.combineStat(c, "TotalPoisonAverageDamage", CombineDPS, "")
 		} else {
-			env.combineStat(c, "TotalPoisonStacks", "DPS", "")
+			env.combineStat(c, "TotalPoisonStacks", CombineDPS, "")
 		}
-		env.combineStat(c, "IgniteChance", "AVERAGE", "")
-		env.combineStat(c, "IgniteDPS", "CHANCE_AILMENT", "IgniteChance")
+		env.combineStat(c, "IgniteChance", CombineAverage, "")
+		env.combineStat(c, "IgniteDPS", CombineChanceAilment, "IgniteChance")
 		if skillFlags["igniteCanStack"] {
-			env.combineStat(c, "IgniteDamage", "CHANCE", "IgniteChance")
+			env.combineStat(c, "IgniteDamage", CombineChance, "IgniteChance")
 			if skillData.Flag("showAverage") {
-				env.combineStat(c, "TotalIgniteAverageDamage", "DPS", "")
+				env.combineStat(c, "TotalIgniteAverageDamage", CombineDPS, "")
 			}
-			env.combineStat(c, "IgniteStacksMax", "DPS", "")
-			env.combineStat(c, "TotalIgniteDPS", "DPS", "")
+			env.combineStat(c, "IgniteStacksMax", CombineDPS, "")
+			env.combineStat(c, "TotalIgniteDPS", CombineDPS, "")
 		}
 		for _, stat := range []string{
 			"ChillEffectMod", "ChillDuration", "ShockChance", "ShockDuration", "ShockEffectMod",
@@ -479,9 +479,9 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 			"BrittleChance", "BrittleEffectMod", "BrittleDuration", "SapChance", "SapEffectMod", "SapDuration",
 			"ImpaleChance", "ImpaleStoredDamage",
 		} {
-			env.combineStat(c, stat, "AVERAGE", "")
+			env.combineStat(c, stat, CombineAverage, "")
 		}
-		env.combineStat(c, "ImpaleModifier", "CHANCE", "ImpaleChance")
+		env.combineStat(c, "ImpaleModifier", CombineChance, "ImpaleChance")
 	}
 
 	env.offenceDot(c)

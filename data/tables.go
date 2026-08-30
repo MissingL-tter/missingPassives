@@ -3,8 +3,8 @@
 package data
 
 import (
-	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"strconv"
 	"strings"
 )
 
@@ -171,7 +171,7 @@ type PowerStat struct {
 
 func str(s string) *string { return &s }
 
-func itoa(i int) string { return util.FormatInt(float64(i)) }
+func itoa(i int) string { return strconv.Itoa(i) }
 
 // TransformKind is a powerStatList entry's value transform.
 type TransformKind uint8
@@ -181,22 +181,6 @@ const (
 	TransformNegate                 // damage-taken stats sort inverted
 	TransformStripThe               // item names drop a leading "The "
 )
-
-// Apply runs the transform: TransformNegate over a number, TransformStripThe
-// over a string; other inputs pass through, as the Lua closures do.
-func (k TransformKind) Apply(v any) any {
-	switch k {
-	case TransformNegate:
-		if n, ok := v.(float64); ok {
-			return -n
-		}
-	case TransformStripThe:
-		if s, ok := v.(string); ok && len(s) >= 4 && s[:4] == "The " {
-			return s[4:]
-		}
-	}
-	return v
-}
 
 func buildPowerStatList() []PowerStat {
 	nameField := "Name"

@@ -157,10 +157,21 @@ func listFlagOf(mods []*modparser.Mod, name string) bool {
 	return l.Flag(nil, name)
 }
 
+// CalcMode is the mode argument threaded through initEnv and the output
+// driver, and the key of the reference's GlobalCache.cachedData bucket
+// (Data/Global.lua L356). The reference's third mode, "CALCS", is the calcs
+// tab's own buildOutput; only these two are ported.
+type CalcMode string
+
+const (
+	ModeMain       CalcMode = "MAIN"
+	ModeCalculator CalcMode = "CALCULATOR"
+)
+
 // Env mirrors the slice of the Lua env the ported stages populate.
 type Env struct {
 	Build       *BuildInput
-	Mode        string
+	Mode        CalcMode
 	ConfigInput *ConfigInput
 
 	ModDB     *modstore.DB
@@ -633,7 +644,7 @@ type ReplayInput struct {
 // BuildInput, including the Energy Blade re-entry (the reference restarts
 // initEnv with override.conditions when an enabled Energy Blade gem is
 // found).
-func InitEnv(in *BuildInput, mode string, replay *ReplayInput) *Env {
+func InitEnv(in *BuildInput, mode CalcMode, replay *ReplayInput) *Env {
 	return initEnvOverride(in, mode, replay, nil)
 }
 
@@ -641,7 +652,7 @@ func InitEnv(in *BuildInput, mode string, replay *ReplayInput) *Env {
 // copyActiveSkill passes on from the env it copies (`calcs.initEnv(env.build,
 // mode, env.override)`) so a sub-environment inherits an Energy Blade
 // re-entry instead of rediscovering it.
-func initEnvOverride(in *BuildInput, mode string, replay *ReplayInput, overrideConditions []string) *Env {
+func initEnvOverride(in *BuildInput, mode CalcMode, replay *ReplayInput, overrideConditions []string) *Env {
 	orderStart := 0
 	for {
 		env, restart := initEnvPass(in, mode, replay, orderStart, overrideConditions)
@@ -653,14 +664,14 @@ func initEnvOverride(in *BuildInput, mode string, replay *ReplayInput, overrideC
 	}
 }
 
-func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
+func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
 	// CALCULATOR is what copyActiveSkill's second initEnv uses. It differs
 	// from MAIN only in skipping the write-backs onto the build objects
 	// that exist for the UI (node.finalModList, gemInstance.displayEffect,
 	// group.displayLabel, item.jewelRadiusData, superseded flags,
 	// group.mainActiveSkill) -- of which this port keeps only the ones a
 	// later stage reads.
-	if mode != "MAIN" && mode != "CALCULATOR" {
+	if mode != ModeMain && mode != ModeCalculator {
 		panic("calc: only MAIN and CALCULATOR modes are ported")
 	}
 	if in.ConfigInput == nil {
@@ -688,7 +699,7 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	// collapse holds as long as no ported code reads across modes; the
 	// "shattershard" trigger config, which branches on env.mode, is the one
 	// place that would break it, and it is still guarded.
-	if mode != "MAIN" {
+	if mode != ModeMain {
 		env.GlobalCache = map[string]*CachedSkill{}
 	}
 	for i, seq := range replay.NodeOrders {
@@ -918,7 +929,10 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	}
 	matchedName := map[string]*ascMatch{}
 	for _, v := range modDB.List(nil, "GrantedAscendancyNode") {
-		ascTbl, _ := v.(modparser.AscendancyNodeRef)
+		ascTbl, ok := v.(modparser.AscendancyNodeRef)
+		if !ok {
+			panic("calc: non-AscendancyNodeRef value in GrantedAscendancyNode list (the Lua errors)")
+		}
 		name := ascTbl.Name
 		if m := matchedName[name]; m != nil && m.side != ascTbl.Side && !m.matched {
 			m.matched = true

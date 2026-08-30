@@ -361,7 +361,9 @@ func (ge *GrantedEffect) clone() *GrantedEffect {
 
 // ---- load
 
-func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) error {
+// statMapCopyFixture is Sources.StatMapCopyFixture: nil outside the
+// game-data differential (see the field's comment).
+func loadSkills(src schema.SkillsData, statMapCopyFixture map[string][]string) error {
 	Skills = map[string]*GrantedEffect{}
 	for _, name := range []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"} {
 		f := src.Files[name]
@@ -439,7 +441,7 @@ func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) error 
 	}
 	for _, id := range ids {
 		ge := Skills[id]
-		ge.Name = sanitiseText(ge.Name)
+		ge.Name = util.FoldText(ge.Name)
 		ge.Id = id
 		ge.ModSource = "Skill:" + id
 		// Add sources for skill mods, and check for global effects
@@ -459,7 +461,9 @@ func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) error 
 		}
 		// The boot's lazy statMap copies (replayed from the archive dump's
 		// key lists): copyTable + the metatable's blind processMod pass.
-		for _, key := range statMapCopies[id] {
+		// Nil outside the differential, where LazyStatMapCopy serves the
+		// same copies on demand.
+		for _, key := range statMapCopyFixture[id] {
 			if _, exists := ge.StatMap[key]; exists {
 				continue
 			}
@@ -655,9 +659,10 @@ func decodeTypoMod(kv json.RawMessage, nums []float64) (*TypoMod, error) {
 		return nil, fmt.Errorf("data: bad mixed baseMods record: %w", err)
 	}
 	t := &TypoMod{Name: rec.Name, Type: rec.Type, KeywordFlags: rec.KeywordFlags, StrayNums: nums}
-	// The value and the flags-slot tag decode through the mod codec, as the
-	// value and first tag of a carrier mod (the tag table's "type" key is
-	// the codec's "kind").
+	// The flags slot holds either a number or a tag table. The tag table
+	// keeps the reference's own key spelling, "type", which the exporter
+	// writes through unchanged; the mod codec spells that discriminator
+	// "kind", so the key is renamed before the tag goes to the codec.
 	var tagJSON json.RawMessage
 	if err := json.Unmarshal(rec.Flags, &t.Flags); err != nil {
 		var tag map[string]json.RawMessage
@@ -668,18 +673,16 @@ func decodeTypoMod(kv json.RawMessage, nums []float64) (*TypoMod, error) {
 		delete(tag, "type")
 		tagJSON, _ = json.Marshal(tag)
 	}
-	carrier := map[string]any{"name": "", "type": "BASE", "flags": 0, "keywordFlags": 0, "tags": []json.RawMessage{}}
-	if rec.Value != nil {
-		carrier["value"] = rec.Value
+	// The value and the flags-slot tag are mod-codec shapes, decoded by the
+	// codec's own single-value and single-tag decoders.
+	var err error
+	if t.Value, err = modparser.DecodeValue(rec.Value); err != nil {
+		return nil, fmt.Errorf("data: bad mixed baseMods value: %w", err)
 	}
 	if tagJSON != nil {
-		carrier["tags"] = []json.RawMessage{tagJSON}
-	}
-	raw, _ := json.Marshal(carrier)
-	decoded := modparser.DecodeMod(raw)
-	t.Value = decoded.Value
-	if len(decoded.Tags) > 0 {
-		t.FlagsTag = decoded.Tags[0]
+		if t.FlagsTag, err = modparser.DecodeTag(tagJSON); err != nil {
+			return nil, fmt.Errorf("data: bad mixed baseMods flags tag: %w", err)
+		}
 	}
 	return t, nil
 }
@@ -767,12 +770,8 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) (*Granted
 				lvl.Values = []float64{}
 			}
 			lvl.Extra = l.Extra
-			for _, s := range l.Interp {
-				n, ok := util.Tonumber(s)
-				if !ok {
-					return nil, fmt.Errorf("data: skill %s: bad statInterpolation value %s", hdr.GrantedId, s)
-				}
-				lvl.StatInterpolation = append(lvl.StatInterpolation, n)
+			for _, t := range l.Interp {
+				lvl.StatInterpolation = append(lvl.StatInterpolation, float64(t))
 			}
 			if l.Cost != nil {
 				lvl.Cost = map[string]float64{}
@@ -801,65 +800,4 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) (*Granted
 		}
 	}
 	return ge, nil
-}
-
-// sanitiseText ports Common.lua's sanitiseText.
-func sanitiseText(text string) string {
-	// only bytes 128-255 or '<' trigger the replacements
-	trigger := false
-	for i := 0; i < len(text); i++ {
-		if text[i] >= 128 || text[i] == '<' {
-			trigger = true
-			break
-		}
-	}
-	if !trigger {
-		return text
-	}
-	s := stripBalancedAngles(text)
-	for _, rep := range []struct{ from, to string }{
-		{"\xe2\x80\x90", "-"}, {"\xe2\x80\x91", "-"}, {"\xe2\x80\x92", "-"},
-		{"\xe2\x80\x93", "-"}, {"\xe2\x80\x94", "-"}, {"\xe2\x80\x95", "-"},
-		{"\xe2\x88\x92", "-"},
-		{"\xc3\xa4", "a"}, {"\xc3\xb6", "o"},
-		{"\x96", "-"}, {"\x97", "-"}, {"\xe4", "a"}, {"\xf6", "o"},
-	} {
-		s = strings.ReplaceAll(s, rep.from, rep.to)
-	}
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		if s[i] >= 128 {
-			b.WriteByte('?')
-		} else {
-			b.WriteByte(s[i])
-		}
-	}
-	return b.String()
-}
-
-// stripBalancedAngles is gsub("%b<>", "").
-func stripBalancedAngles(s string) string {
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		if s[i] == '<' {
-			depth := 1
-			j := i + 1
-			for ; j < len(s); j++ {
-				if s[j] == '<' {
-					depth++
-				} else if s[j] == '>' {
-					depth--
-					if depth == 0 {
-						break
-					}
-				}
-			}
-			if j < len(s) {
-				i = j
-				continue
-			}
-		}
-		b.WriteByte(s[i])
-	}
-	return b.String()
 }

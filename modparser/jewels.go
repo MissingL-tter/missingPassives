@@ -1,6 +1,7 @@
 package modparser
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"strings"
@@ -72,6 +73,17 @@ type jewelNodeFunc = JewelNodeFn
 // returns the node function to embed.
 type jewelFactory func(c caps) jewelNodeFunc
 
+// jewelValue is a jewel-table value: a ready node function, a parse-time
+// factory, or — for the one line that applies two independent threshold
+// functions — a sequence of node functions.
+type jewelValue interface{ isJewelValue() }
+
+type jewelFuncSeq []JewelNodeFn
+
+func (JewelNodeFn) isJewelValue()  {}
+func (jewelFactory) isJewelValue() {}
+func (jewelFuncSeq) isJewelValue() {}
+
 // derived builds a mod from another's positional parts, as
 // `mod.source, mod.flags, mod.keywordFlags, unpack(mod)` does.
 func derived(name string, typ ModType, value Value, m *Mod, flags ModFlag, tags []Tag) *Mod {
@@ -130,23 +142,17 @@ func getPerStat(dst string, modType ModType, flags ModFlag, stat string, factor 
 	}
 }
 
-// getThreshold — ModParser.lua:6400. attrib is a string or a []string.
-func getThreshold(attrib any, name string, modType ModType, value Value, tags ...Tag) jewelNodeFunc {
-	return getThresholdF(attrib, name, modType, value, FlagNone, KeywordNone, tags...)
+// getThreshold — ModParser.lua:6400. The threshold is on the sum of the
+// listed attributes.
+func getThreshold(attribs []string, name string, modType ModType, value Value, tags ...Tag) jewelNodeFunc {
+	return getThresholdF(attribs, name, modType, value, FlagNone, KeywordNone, tags...)
 }
 
-func getThresholdF(attrib any, name string, modType ModType, value Value, flags ModFlag, kw KeywordFlag, tags ...Tag) jewelNodeFunc {
+func getThresholdF(attribs []string, name string, modType ModType, value Value, flags ModFlag, kw KeywordFlag, tags ...Tag) jewelNodeFunc {
 	baseMod := modsf(name, modType, value, "", flags, kw, tags...) // source "" exactly as the reference
 	return func(node JewelNodeRef, out JewelStoreWriter, data *JewelFuncTag) {
 		if node != nil {
-			if list, isList := attrib.([]string); isList {
-				for _, att := range list {
-					nodeVal := out.Sum(Base, att)
-					data.AddStat(att, nodeVal)
-					data.AddStat("total", nodeVal)
-				}
-			} else {
-				att := attrib.(string)
+			for _, att := range attribs {
 				nodeVal := out.Sum(Base, att)
 				data.AddStat(att, nodeVal)
 				data.AddStat("total", nodeVal)
@@ -167,7 +173,7 @@ func getThresholdF(attrib any, name string, modType ModType, value Value, flags 
 
 // jewelOtherFuncs — ModParser.lua:6096. Values are either node functions (keys
 // are exact mod text) or parse-time factories (keys are regex).
-var jewelOtherFuncs = map[string]any{
+var jewelOtherFuncs = map[string]jewelValue{
 	"Strength from Passives in Radius is Transformed to Dexterity":                            getSimpleConv([]string{"Str"}, "Dex", Base, true, 0, 0),
 	"Dexterity from Passives in Radius is Transformed to Strength":                            getSimpleConv([]string{"Dex"}, "Str", Base, true, 0, 0),
 	"Strength from Passives in Radius is Transformed to Intelligence":                         getSimpleConv([]string{"Str"}, "Int", Base, true, 0, 0),
@@ -376,7 +382,7 @@ func splitWords(s string) []string     { return strings.Fields(s) }
 
 // jewelSelfFuncs — ModParser.lua:6323: radius jewels that modify the jewel
 // itself based on nearby allocated nodes.
-var jewelSelfFuncs = map[string]any{
+var jewelSelfFuncs = map[string]jewelValue{
 	"Adds 1 to maximum Life per 3 Intelligence in Radius":                                                    getPerStat("Life", Base, 0, "Int", 1.0/3),
 	"Adds 1 to Maximum Life per 3 Intelligence Allocated in Radius":                                          getPerStat("Life", Base, 0, "Int", 1.0/3),
 	"1% increased Evasion Rating per 3 Dexterity Allocated in Radius":                                        getPerStat("Evasion", Inc, 0, "Dex", 1.0/3),
@@ -421,7 +427,7 @@ func sumModList(list []*Mod, typ ModType, name string) float64 {
 }
 
 // jewelSelfUnallocFuncs — ModParser.lua:6354.
-var jewelSelfUnallocFuncs = map[string]any{
+var jewelSelfUnallocFuncs = map[string]jewelValue{
 	"+5% to Critical Strike Multiplier per 10 Strength on Unallocated Passives in Radius":      getPerStat("CritMultiplier", Base, 0, "Str", 5.0/10),
 	"+7% to Critical Strike Multiplier per 10 Strength on Unallocated Passives in Radius":      getPerStat("CritMultiplier", Base, 0, "Str", 7.0/10),
 	"2% reduced Life Recovery Rate per 10 Strength on Unallocated Passives in Radius":          getPerStat("LifeRecoveryRate", Inc, 0, "Str", -2.0/10),
@@ -459,58 +465,58 @@ func grantsUnallocated(nodeType string) jewelNodeFunc {
 }
 
 // jewelThresholdFuncs — ModParser.lua:6425.
-var jewelThresholdFuncs = map[string]any{
-	"With at least 40 Dexterity in Radius, Frost Blades Melee Damage Penetrates 15% Cold Resistance":                      getThresholdF("Dex", "ColdPenetration", Base, Num(15), FlagMelee, KeywordNone, &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
-	"With at least 40 Dexterity in Radius, Melee Damage dealt by Frost Blades Penetrates 15% Cold Resistance":             getThresholdF("Dex", "ColdPenetration", Base, Num(15), FlagMelee, KeywordNone, &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
-	"With at least 40 Dexterity in Radius, Frost Blades has 25% increased Projectile Speed":                               getThreshold("Dex", "ProjectileSpeed", Inc, Num(25), &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
-	"With at least 40 Dexterity in Radius, Ice Shot has 25% increased Area of Effect":                                     getThreshold("Dex", "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Ice Shot"}),
-	"Ice Shot Pierces 5 additional Targets with 40 Dexterity in Radius":                                                   getThreshold("Dex", "PierceCount", Base, Num(5), &SkillNameTag{SkillName: "Ice Shot"}),
-	"With at least 40 Dexterity in Radius, Ice Shot Pierces 3 additional Targets":                                         getThreshold("Dex", "PierceCount", Base, Num(3), &SkillNameTag{SkillName: "Ice Shot"}),
-	"With at least 40 Dexterity in Radius, Ice Shot Pierces 5 additional Targets":                                         getThreshold("Dex", "PierceCount", Base, Num(5), &SkillNameTag{SkillName: "Ice Shot"}),
-	"With at least 40 Intelligence in Radius, Frostbolt fires 2 additional Projectiles":                                   getThreshold("Int", "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Frostbolt"}),
-	"With at least 40 Intelligence in Radius, Rolling Magma fires an additional Projectile":                               getThreshold("Int", "ProjectileCount", Base, Num(1), &SkillNameTag{SkillName: "Rolling Magma"}),
-	"With at least 40 Intelligence in Radius, Rolling Magma has 10% increased Area of Effect per Chain":                   getThreshold("Int", "AreaOfEffect", Inc, Num(10), &SkillNameTag{SkillName: "Rolling Magma"}, &StatTag{StatKind: TagPerStat, Stat: "Chain"}),
-	"With at least 40 Intelligence in Radius, Rolling Magma deals 40% more damage per chain":                              getThreshold("Int", "Damage", More, Num(40), &SkillNameTag{SkillName: "Rolling Magma"}, &StatTag{StatKind: TagPerStat, Stat: "Chain"}),
-	"With at least 40 Intelligence in Radius, Rolling Magma deals 50% less damage":                                        getThreshold("Int", "Damage", More, Num(-50), &SkillNameTag{SkillName: "Rolling Magma"}),
-	"With at least 40 Dexterity in Radius, Shrapnel Shot has 25% increased Area of Effect":                                getThreshold("Dex", "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Shrapnel Shot"}),
-	"With at least 40 Dexterity in Radius, Shrapnel Shot's cone has a 50% chance to deal Double Damage":                   getThreshold("Dex", "DoubleDamageChance", Base, Num(50), &SkillNameTag{SkillName: "Shrapnel Shot"}, &SkillPartTag{Part: opt(2)}),
-	"With at least 40 Dexterity in Radius, Galvanic Arrow deals 50% increased Area Damage":                                getThreshold("Dex", "Damage", Inc, Num(50), &SkillNameTag{SkillName: "Galvanic Arrow", IncludeTransfigured: true}, &SkillPartTag{Part: opt(2)}),
-	"With at least 40 Dexterity in Radius, Galvanic Arrow has 25% increased Area of Effect":                               getThreshold("Dex", "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Galvanic Arrow", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Freezing Pulse fires 2 additional Projectiles":                              getThreshold("Int", "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Freezing Pulse"}),
-	"With at least 40 Intelligence in Radius, 25% increased Freezing Pulse Damage if you've Shattered an Enemy Recently":  getThreshold("Int", "Damage", Inc, Num(25), &SkillNameTag{SkillName: "Freezing Pulse"}, &CondTag{Var: "ShatteredEnemyRecently"}),
-	"With at least 40 Dexterity in Radius, Ethereal Knives fires 10 additional Projectiles":                               getThreshold("Dex", "ProjectileCount", Base, Num(10), &SkillNameTag{SkillName: "Ethereal Knives", IncludeTransfigured: true}),
-	"With at least 40 Dexterity in Radius, Ethereal Knives fires 5 additional Projectiles":                                getThreshold("Dex", "ProjectileCount", Base, Num(5), &SkillNameTag{SkillName: "Ethereal Knives", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Molten Strike fires 2 additional Projectiles":                                   getThreshold("Str", "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Molten Strike has 25% increased Area of Effect":                                 getThreshold("Str", "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Molten Strike Projectiles Chain +1 time":                                        getThreshold("Str", "ChainCountMax", Base, Num(1), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Molten Strike fires 50% less Projectiles":                                       getThreshold("Str", "ProjectileCount", More, Num(-50), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, 25% of Glacial Hammer Physical Damage converted to Cold Damage":                 getThreshold("Str", "SkillPhysicalDamageConvertToCold", Base, Num(25), &SkillNameTag{SkillName: "Glacial Hammer", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Heavy Strike has a 20% chance to deal Double Damage":                            getThreshold("Str", "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Heavy Strike"}),
-	"With at least 40 Strength in Radius, Heavy Strike has a 20% chance to deal Double Damage.":                           getThreshold("Str", "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Heavy Strike"}),
-	"With at least 40 Strength in Radius, Cleave has +1 to Radius per Nearby Enemy, up to +10":                            getThreshold("Str", "AreaOfEffect", Base, Num(1), &MultiplierTag{Var: "NearbyEnemies", Limit: opt(10)}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Cleave has +0.1 metres to Radius per Nearby Enemy, up to a maximum of +1 metre": getThreshold("Str", "AreaOfEffect", Base, Num(1), &MultiplierTag{Var: "NearbyEnemies", Limit: opt(10)}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Cleave grants Fortify on Hit":                                                   getThreshold("Str", "ExtraSkillMod", List, ModRef{Mod: flag("Condition:Fortified")}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
-	"With at least 40 Strength in Radius, Hits with Cleave Fortify":                                                       getThreshold("Str", "ExtraSkillMod", List, ModRef{Mod: flag("Condition:Fortified")}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
-	"With at least 40 Dexterity in Radius, Dual Strike has a 20% chance to deal Double Damage with the Main-Hand Weapon":  getThreshold("Dex", "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "MainHandAttack"}),
+var jewelThresholdFuncs = map[string]jewelValue{
+	"With at least 40 Dexterity in Radius, Frost Blades Melee Damage Penetrates 15% Cold Resistance":                      getThresholdF([]string{"Dex"}, "ColdPenetration", Base, Num(15), FlagMelee, KeywordNone, &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Melee Damage dealt by Frost Blades Penetrates 15% Cold Resistance":             getThresholdF([]string{"Dex"}, "ColdPenetration", Base, Num(15), FlagMelee, KeywordNone, &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Frost Blades has 25% increased Projectile Speed":                               getThreshold([]string{"Dex"}, "ProjectileSpeed", Inc, Num(25), &SkillNameTag{SkillName: "Frost Blades", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Ice Shot has 25% increased Area of Effect":                                     getThreshold([]string{"Dex"}, "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Ice Shot"}),
+	"Ice Shot Pierces 5 additional Targets with 40 Dexterity in Radius":                                                   getThreshold([]string{"Dex"}, "PierceCount", Base, Num(5), &SkillNameTag{SkillName: "Ice Shot"}),
+	"With at least 40 Dexterity in Radius, Ice Shot Pierces 3 additional Targets":                                         getThreshold([]string{"Dex"}, "PierceCount", Base, Num(3), &SkillNameTag{SkillName: "Ice Shot"}),
+	"With at least 40 Dexterity in Radius, Ice Shot Pierces 5 additional Targets":                                         getThreshold([]string{"Dex"}, "PierceCount", Base, Num(5), &SkillNameTag{SkillName: "Ice Shot"}),
+	"With at least 40 Intelligence in Radius, Frostbolt fires 2 additional Projectiles":                                   getThreshold([]string{"Int"}, "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Frostbolt"}),
+	"With at least 40 Intelligence in Radius, Rolling Magma fires an additional Projectile":                               getThreshold([]string{"Int"}, "ProjectileCount", Base, Num(1), &SkillNameTag{SkillName: "Rolling Magma"}),
+	"With at least 40 Intelligence in Radius, Rolling Magma has 10% increased Area of Effect per Chain":                   getThreshold([]string{"Int"}, "AreaOfEffect", Inc, Num(10), &SkillNameTag{SkillName: "Rolling Magma"}, &StatTag{StatKind: TagPerStat, Stat: "Chain"}),
+	"With at least 40 Intelligence in Radius, Rolling Magma deals 40% more damage per chain":                              getThreshold([]string{"Int"}, "Damage", More, Num(40), &SkillNameTag{SkillName: "Rolling Magma"}, &StatTag{StatKind: TagPerStat, Stat: "Chain"}),
+	"With at least 40 Intelligence in Radius, Rolling Magma deals 50% less damage":                                        getThreshold([]string{"Int"}, "Damage", More, Num(-50), &SkillNameTag{SkillName: "Rolling Magma"}),
+	"With at least 40 Dexterity in Radius, Shrapnel Shot has 25% increased Area of Effect":                                getThreshold([]string{"Dex"}, "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Shrapnel Shot"}),
+	"With at least 40 Dexterity in Radius, Shrapnel Shot's cone has a 50% chance to deal Double Damage":                   getThreshold([]string{"Dex"}, "DoubleDamageChance", Base, Num(50), &SkillNameTag{SkillName: "Shrapnel Shot"}, &SkillPartTag{Part: opt(2)}),
+	"With at least 40 Dexterity in Radius, Galvanic Arrow deals 50% increased Area Damage":                                getThreshold([]string{"Dex"}, "Damage", Inc, Num(50), &SkillNameTag{SkillName: "Galvanic Arrow", IncludeTransfigured: true}, &SkillPartTag{Part: opt(2)}),
+	"With at least 40 Dexterity in Radius, Galvanic Arrow has 25% increased Area of Effect":                               getThreshold([]string{"Dex"}, "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Galvanic Arrow", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Freezing Pulse fires 2 additional Projectiles":                              getThreshold([]string{"Int"}, "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Freezing Pulse"}),
+	"With at least 40 Intelligence in Radius, 25% increased Freezing Pulse Damage if you've Shattered an Enemy Recently":  getThreshold([]string{"Int"}, "Damage", Inc, Num(25), &SkillNameTag{SkillName: "Freezing Pulse"}, &CondTag{Var: "ShatteredEnemyRecently"}),
+	"With at least 40 Dexterity in Radius, Ethereal Knives fires 10 additional Projectiles":                               getThreshold([]string{"Dex"}, "ProjectileCount", Base, Num(10), &SkillNameTag{SkillName: "Ethereal Knives", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Ethereal Knives fires 5 additional Projectiles":                                getThreshold([]string{"Dex"}, "ProjectileCount", Base, Num(5), &SkillNameTag{SkillName: "Ethereal Knives", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Molten Strike fires 2 additional Projectiles":                                   getThreshold([]string{"Str"}, "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Molten Strike has 25% increased Area of Effect":                                 getThreshold([]string{"Str"}, "AreaOfEffect", Inc, Num(25), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Molten Strike Projectiles Chain +1 time":                                        getThreshold([]string{"Str"}, "ChainCountMax", Base, Num(1), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Molten Strike fires 50% less Projectiles":                                       getThreshold([]string{"Str"}, "ProjectileCount", More, Num(-50), &SkillNameTag{SkillName: "Molten Strike", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, 25% of Glacial Hammer Physical Damage converted to Cold Damage":                 getThreshold([]string{"Str"}, "SkillPhysicalDamageConvertToCold", Base, Num(25), &SkillNameTag{SkillName: "Glacial Hammer", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Heavy Strike has a 20% chance to deal Double Damage":                            getThreshold([]string{"Str"}, "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Heavy Strike"}),
+	"With at least 40 Strength in Radius, Heavy Strike has a 20% chance to deal Double Damage.":                           getThreshold([]string{"Str"}, "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Heavy Strike"}),
+	"With at least 40 Strength in Radius, Cleave has +1 to Radius per Nearby Enemy, up to +10":                            getThreshold([]string{"Str"}, "AreaOfEffect", Base, Num(1), &MultiplierTag{Var: "NearbyEnemies", Limit: opt(10)}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Cleave has +0.1 metres to Radius per Nearby Enemy, up to a maximum of +1 metre": getThreshold([]string{"Str"}, "AreaOfEffect", Base, Num(1), &MultiplierTag{Var: "NearbyEnemies", Limit: opt(10)}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Cleave grants Fortify on Hit":                                                   getThreshold([]string{"Str"}, "ExtraSkillMod", List, ModRef{Mod: flag("Condition:Fortified")}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
+	"With at least 40 Strength in Radius, Hits with Cleave Fortify":                                                       getThreshold([]string{"Str"}, "ExtraSkillMod", List, ModRef{Mod: flag("Condition:Fortified")}, &SkillNameTag{SkillName: "Cleave", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Dual Strike has a 20% chance to deal Double Damage with the Main-Hand Weapon":  getThreshold([]string{"Dex"}, "DoubleDamageChance", Base, Num(20), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "MainHandAttack"}),
 	`with at least 40 dexterity in radius, dual strike has ([0-9]+)% increased attack speed while wielding a claw`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Dex", "Speed", Inc, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingClaw"})
+		return getThreshold([]string{"Dex"}, "Speed", Inc, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingClaw"})
 	}),
 	`with at least 40 dexterity in radius, dual strike has \+([0-9]+)% to critical strike multiplier while wielding a dagger`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Dex", "CritMultiplier", Base, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingDagger"})
+		return getThreshold([]string{"Dex"}, "CritMultiplier", Base, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingDagger"})
 	}),
 	`with at least 40 dexterity in radius, dual strike has ([0-9]+)% increased accuracy rating while wielding a sword`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Dex", "Accuracy", Inc, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingSword"})
+		return getThreshold([]string{"Dex"}, "Accuracy", Inc, Num(c.n(1)), &SkillNameTag{SkillName: "Dual Strike", IncludeTransfigured: true}, &CondTag{Var: "UsingSword"})
 	}),
-	"With at least 40 Dexterity in Radius, Dual Strike Hits Intimidate Enemies for 4 seconds while wielding an Axe":                  getThreshold("Dex", "EnemyModifier", List, ModRef{Mod: flag("Condition:Intimidated")}, &CondTag{Var: "UsingAxe"}),
-	"With at least 40 Intelligence in Radius, Raised Zombies' Slam Attack has 100% increased Cooldown Recovery Speed":                getThreshold("Int", "MinionModifier", List, ModRef{Mod: mod("CooldownRecovery", Inc, Num(100), &SkillIDTag{SkillID: "ZombieSlam"})}),
-	"With at least 40 Intelligence in Radius, Raised Zombies' Slam Attack deals 30% increased Damage":                                getThreshold("Int", "MinionModifier", List, ModRef{Mod: mod("Damage", Inc, Num(30), &SkillIDTag{SkillID: "ZombieSlam"})}),
-	"With at least 40 Dexterity in Radius, Viper Strike deals 2% increased Attack Damage for each Poison on the Enemy":               getThresholdF("Dex", "Damage", Inc, Num(2), FlagAttack, KeywordNone, &SkillNameTag{SkillName: "Viper Strike", IncludeTransfigured: true}, &MultiplierTag{Actor: "enemy", Var: "PoisonStack"}),
-	"With at least 40 Dexterity in Radius, Viper Strike deals 2% increased Damage with Hits and Poison for each Poison on the Enemy": getThresholdF("Dex", "Damage", Inc, Num(2), FlagNone, KeywordHit|KeywordPoison, &SkillNameTag{SkillName: "Viper Strike", IncludeTransfigured: true}, &MultiplierTag{Actor: "enemy", Var: "PoisonStack"}),
-	"With at least 40 Intelligence in Radius, Spark fires 2 additional Projectiles":                                                  getThreshold("Int", "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Spark", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Blight has 50% increased Hinder Duration":                                              getThreshold("Int", "SecondaryDuration", Inc, Num(50), &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Enemies Hindered by Blight take 25% increased Chaos Damage":                            getThreshold("Int", "ExtraSkillMod", List, ModRef{Mod: mod("ChaosDamageTaken", Inc, Num(25), &GlobalEffectTag{EffectType: "Debuff", EffectName: "Hinder"})}, &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}, &CondTag{IsActor: true, Actor: "enemy", Var: "Hindered"}),
-	"With 40 Intelligence in Radius, 20% of Glacial Cascade Physical Damage Converted to Cold Damage":                                getThreshold("Int", "SkillPhysicalDamageConvertToCold", Base, Num(20), &SkillNameTag{SkillName: "Glacial Cascade", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, 20% of Glacial Cascade Physical Damage Converted to Cold Damage":                       getThreshold("Int", "SkillPhysicalDamageConvertToCold", Base, Num(20), &SkillNameTag{SkillName: "Glacial Cascade", IncludeTransfigured: true}),
+	"With at least 40 Dexterity in Radius, Dual Strike Hits Intimidate Enemies for 4 seconds while wielding an Axe":                  getThreshold([]string{"Dex"}, "EnemyModifier", List, ModRef{Mod: flag("Condition:Intimidated")}, &CondTag{Var: "UsingAxe"}),
+	"With at least 40 Intelligence in Radius, Raised Zombies' Slam Attack has 100% increased Cooldown Recovery Speed":                getThreshold([]string{"Int"}, "MinionModifier", List, ModRef{Mod: mod("CooldownRecovery", Inc, Num(100), &SkillIDTag{SkillID: "ZombieSlam"})}),
+	"With at least 40 Intelligence in Radius, Raised Zombies' Slam Attack deals 30% increased Damage":                                getThreshold([]string{"Int"}, "MinionModifier", List, ModRef{Mod: mod("Damage", Inc, Num(30), &SkillIDTag{SkillID: "ZombieSlam"})}),
+	"With at least 40 Dexterity in Radius, Viper Strike deals 2% increased Attack Damage for each Poison on the Enemy":               getThresholdF([]string{"Dex"}, "Damage", Inc, Num(2), FlagAttack, KeywordNone, &SkillNameTag{SkillName: "Viper Strike", IncludeTransfigured: true}, &MultiplierTag{Actor: "enemy", Var: "PoisonStack"}),
+	"With at least 40 Dexterity in Radius, Viper Strike deals 2% increased Damage with Hits and Poison for each Poison on the Enemy": getThresholdF([]string{"Dex"}, "Damage", Inc, Num(2), FlagNone, KeywordHit|KeywordPoison, &SkillNameTag{SkillName: "Viper Strike", IncludeTransfigured: true}, &MultiplierTag{Actor: "enemy", Var: "PoisonStack"}),
+	"With at least 40 Intelligence in Radius, Spark fires 2 additional Projectiles":                                                  getThreshold([]string{"Int"}, "ProjectileCount", Base, Num(2), &SkillNameTag{SkillName: "Spark", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Blight has 50% increased Hinder Duration":                                              getThreshold([]string{"Int"}, "SecondaryDuration", Inc, Num(50), &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Enemies Hindered by Blight take 25% increased Chaos Damage":                            getThreshold([]string{"Int"}, "ExtraSkillMod", List, ModRef{Mod: mod("ChaosDamageTaken", Inc, Num(25), &GlobalEffectTag{EffectType: "Debuff", EffectName: "Hinder"})}, &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}, &CondTag{IsActor: true, Actor: "enemy", Var: "Hindered"}),
+	"With 40 Intelligence in Radius, 20% of Glacial Cascade Physical Damage Converted to Cold Damage":                                getThreshold([]string{"Int"}, "SkillPhysicalDamageConvertToCold", Base, Num(20), &SkillNameTag{SkillName: "Glacial Cascade", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, 20% of Glacial Cascade Physical Damage Converted to Cold Damage":                       getThreshold([]string{"Int"}, "SkillPhysicalDamageConvertToCold", Base, Num(20), &SkillNameTag{SkillName: "Glacial Cascade", IncludeTransfigured: true}),
 	"With 40 total Intelligence and Dexterity in Radius, Elemental Hit and Wild Strike deal 50% less Fire Damage":                    getThreshold([]string{"Int", "Dex"}, "FireDamage", More, Num(-50), &SkillNameTag{SkillNameList: []string{"Elemental Hit", "Wild Strike"}, IncludeTransfigured: true}),
 	"With 40 total Strength and Intelligence in Radius, Elemental Hit and Wild Strike deal 50% less Cold Damage":                     getThreshold([]string{"Str", "Int"}, "ColdDamage", More, Num(-50), &SkillNameTag{SkillNameList: []string{"Elemental Hit", "Wild Strike"}, IncludeTransfigured: true}),
 	"With 40 total Dexterity and Strength in Radius, Elemental Hit and Wild Strike deal 50% less Lightning Damage":                   getThreshold([]string{"Dex", "Str"}, "LightningDamage", More, Num(-50), &SkillNameTag{SkillNameList: []string{"Elemental Hit", "Wild Strike"}, IncludeTransfigured: true}),
@@ -519,28 +525,28 @@ var jewelThresholdFuncs = map[string]any{
 	"With 40 total Dexterity and Strength in Radius, Prismatic Skills deal 50% less Lightning Damage":                                getThreshold([]string{"Dex", "Str"}, "LightningDamage", More, Num(-50), &SkillTypeTag{SkillType: SkillTypeRandomElement}),
 	"With 40 total Dexterity and Strength in Radius, Spectral Shield Throw Chains +4 times":                                          getThreshold([]string{"Dex", "Str"}, "ChainCountMax", Base, Num(4), &SkillNameTag{SkillName: "Spectral Shield Throw", IncludeTransfigured: true}),
 	"With 40 total Dexterity and Strength in Radius, Spectral Shield Throw fires 75% less Shard Projectiles":                         getThreshold([]string{"Dex", "Str"}, "ProjectileCount", More, Num(-75), &SkillNameTag{SkillName: "Spectral Shield Throw", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Blight inflicts Withered for 2 seconds":                                                getThreshold("Int", "ExtraSkillMod", List, ModRef{Mod: mod("Condition:CanWither", Flag, Bool(true))}, &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Blight has 30% reduced Cast Speed":                                                     getThreshold("Int", "Speed", Inc, Num(-30), &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Fireball cannot ignite":                                                                getThreshold("Int", "ExtraSkillMod", List, ModRef{Mod: flag("CannotIgnite")}, &SkillNameTag{SkillName: "Fireball"}),
+	"With at least 40 Intelligence in Radius, Blight inflicts Withered for 2 seconds":                                                getThreshold([]string{"Int"}, "ExtraSkillMod", List, ModRef{Mod: mod("Condition:CanWither", Flag, Bool(true))}, &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Blight has 30% reduced Cast Speed":                                                     getThreshold([]string{"Int"}, "Speed", Inc, Num(-30), &SkillNameTag{SkillName: "Blight", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Fireball cannot ignite":                                                                getThreshold([]string{"Int"}, "ExtraSkillMod", List, ModRef{Mod: flag("CannotIgnite")}, &SkillNameTag{SkillName: "Fireball"}),
 	`with at least 40 intelligence in radius, fireball has \+([0-9]+)% chance to inflict scorch`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Int", "EnemyScorchChance", Base, Num(c.n(1)), &SkillNameTag{SkillName: "Fireball"})
+		return getThreshold([]string{"Int"}, "EnemyScorchChance", Base, Num(c.n(1)), &SkillNameTag{SkillName: "Fireball"})
 	}),
-	"With at least 40 Intelligence in Radius, Discharge has 60% less Area of Effect": getThreshold("Int", "AreaOfEffect", More, Num(-60), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Discharge Cooldown is 250 ms":          getThreshold("Int", "CooldownRecovery", Override, Num(0.25), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
-	"With at least 40 Intelligence in Radius, Discharge deals 60% less Damage":       getThreshold("Int", "Damage", More, Num(-60), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Discharge has 60% less Area of Effect": getThreshold([]string{"Int"}, "AreaOfEffect", More, Num(-60), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Discharge Cooldown is 250 ms":          getThreshold([]string{"Int"}, "CooldownRecovery", Override, Num(0.25), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
+	"With at least 40 Intelligence in Radius, Discharge deals 60% less Damage":       getThreshold([]string{"Int"}, "Damage", More, Num(-60), &SkillNameTag{SkillName: "Discharge", IncludeTransfigured: true}),
 	`with at least 40 intelligence in radius, ([0-9]+)% of damage taken recouped as mana if you've warcried recently`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Int", "ManaRecoup", Base, Num(c.n(1)), &CondTag{Var: "UsedWarcryRecently"})
+		return getThreshold([]string{"Int"}, "ManaRecoup", Base, Num(c.n(1)), &CondTag{Var: "UsedWarcryRecently"})
 	}),
 	`with at least 40 intelligence in radius, fireball projectiles gain radius as they travel farther, up to \+([0-9]+) radius`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Int", "AreaOfEffect", Base, Num(c.n(1)), &DistanceRampTag{Ramp: Pairs{{0, 0}, {50, 1}}})
+		return getThreshold([]string{"Int"}, "AreaOfEffect", Base, Num(c.n(1)), &DistanceRampTag{Ramp: Pairs{{0, 0}, {50, 1}}})
 	}),
 	`with at least 40 intelligence in radius, projectiles gain radius as they travel farther, up to a maximum of \+([0-9.]+) metres? to radius`: jewelFactory(func(c caps) jewelNodeFunc {
-		return getThreshold("Int", "AreaOfEffect", Base, Num(c.n(1)*10), &DistanceRampTag{Ramp: Pairs{{0, 0}, {50, 1}}})
+		return getThreshold([]string{"Int"}, "AreaOfEffect", Base, Num(c.n(1)*10), &DistanceRampTag{Ramp: Pairs{{0, 0}, {50, 1}}})
 	}),
 	// ModParser.lua:6489 — one line applying two independent threshold funcs.
-	"With at least 40 Intelligence in Radius, Raised Spectres have a 50% chance to gain Soul Eater for 20 seconds on Kill": []jewelNodeFunc{
-		getThreshold("Int", "MinionModifier", List, ModRef{Mod: mod("Condition:CanHaveSoulEater", Flag, Bool(true))}, &SkillNameTag{SkillName: "Raise Spectre", IncludeTransfigured: true}),
-		getThreshold("Int", "Condition:MinionCanHaveSoulEater", Flag, Bool(true)),
+	"With at least 40 Intelligence in Radius, Raised Spectres have a 50% chance to gain Soul Eater for 20 seconds on Kill": jewelFuncSeq{
+		getThreshold([]string{"Int"}, "MinionModifier", List, ModRef{Mod: mod("Condition:CanHaveSoulEater", Flag, Bool(true))}, &SkillNameTag{SkillName: "Raise Spectre", IncludeTransfigured: true}),
+		getThreshold([]string{"Int"}, "Condition:MinionCanHaveSoulEater", Flag, Bool(true)),
 	},
 }
 
@@ -583,13 +589,25 @@ func buildJewelFuncList() map[string]jewelFuncEntry {
 			out[k] = jewelFuncEntry{typ: "Other", re: compileJewelKey(k), factory: func(c caps) jewelNodeFunc {
 				return wrapOther(factory(c))
 			}}
+		default:
+			panic(fmt.Sprintf("modparser: jewelOtherFuncs[%q] holds an unhandled %T", k, v))
 		}
 	}
+	// nodeFn recovers an entry of a table that holds ready node functions
+	// only; like the switch defaults, it can only fire on a new jewelValue
+	// inhabitant.
+	nodeFn := func(table, k string, v jewelValue) jewelNodeFunc {
+		fn, ok := v.(jewelNodeFunc)
+		if !ok {
+			panic(fmt.Sprintf("modparser: %s[%q] is %T, not a node function", table, k, v))
+		}
+		return fn
+	}
 	for k, v := range jewelSelfFuncs {
-		out[strings.ToLower(k)] = jewelFuncEntry{typ: "Self", nodeFn: v.(jewelNodeFunc)}
+		out[strings.ToLower(k)] = jewelFuncEntry{typ: "Self", nodeFn: nodeFn("jewelSelfFuncs", k, v)}
 	}
 	for k, v := range jewelSelfUnallocFuncs {
-		out[strings.ToLower(k)] = jewelFuncEntry{typ: "SelfUnalloc", nodeFn: v.(jewelNodeFunc)}
+		out[strings.ToLower(k)] = jewelFuncEntry{typ: "SelfUnalloc", nodeFn: nodeFn("jewelSelfUnallocFuncs", k, v)}
 	}
 	for k, v := range jewelThresholdFuncs {
 		switch fv := v.(type) {
@@ -597,7 +615,7 @@ func buildJewelFuncList() map[string]jewelFuncEntry {
 			out[strings.ToLower(k)] = jewelFuncEntry{typ: "Threshold", nodeFn: fv}
 		case jewelFactory:
 			out[k] = jewelFuncEntry{typ: "Threshold", re: compileJewelKey(k), factory: fv}
-		case []jewelNodeFunc:
+		case jewelFuncSeq:
 			funcs := fv
 			out[strings.ToLower(k)] = jewelFuncEntry{typ: "Threshold", nodeFn: func(node JewelNodeRef, w JewelStoreWriter, data *JewelFuncTag) {
 				if data.FuncData == nil {
@@ -611,6 +629,8 @@ func buildJewelFuncList() map[string]jewelFuncEntry {
 					f(node, w, data.FuncData[i])
 				}
 			}}
+		default:
+			panic(fmt.Sprintf("modparser: jewelThresholdFuncs[%q] holds an unhandled %T", k, v))
 		}
 	}
 	return out

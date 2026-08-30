@@ -144,7 +144,7 @@ func (env *Env) offenceCombine(c *offenceCtx) {
 		return
 	}
 	for _, stat := range []string{"PreEffectiveCritChance", "CritChance", "CritMultiplier"} {
-		env.combineStat(c, stat, "AVERAGE", "")
+		env.combineStat(c, stat, CombineAverage, "")
 	}
 	for _, stat := range []string{
 		"AverageDamage", "PvpAverageDamage", "TotalDPS", "PvpTotalDPS",
@@ -156,7 +156,7 @@ func (env *Env) offenceCombine(c *offenceCtx) {
 		"ManaOnHit", "ManaOnHitRate", "ManaOnKill",
 		"impaleStoredHitAvg",
 	} {
-		env.combineStat(c, stat, "DPS", "")
+		env.combineStat(c, stat, CombineDPS, "")
 	}
 }
 

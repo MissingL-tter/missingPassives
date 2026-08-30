@@ -8,7 +8,6 @@ import (
 	"math"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
@@ -165,17 +164,17 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 			displayName = grantedId
 		}
 		hdr := schema.SkillHeader{GrantedId: grantedId}
-		granted := grantedEffects.GetRow("Id", grantedId)
+		granted := grantedEffects.RowByStr("Id", grantedId)
 		if granted == nil {
 			// the Lua ConPrintfs and leaves the previous skill state
 			hdr.Invalid = true
 			curFile.Skills = append(curFile.Skills, hdr)
 			return nil
 		}
-		gemEffect := gemEffects.GetRow("GrantedEffect", granted)
+		gemEffect := gemEffects.RowByRef("GrantedEffect", granted)
 		secondaryEffect := false
 		if gemEffect == nil {
-			gemEffect = gemEffects.GetRow("GrantedEffect2", granted)
+			gemEffect = gemEffects.RowByRef("GrantedEffect2", granted)
 			if gemEffect != nil {
 				secondaryEffect = true
 			}
@@ -187,7 +186,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 				for _, variant := range gem.Refs("GemVariants") {
 					if gemEffectId == variant.Str("Id") {
 						skillGem = gem
-						trueGemNameObj := gemEffects.GetRow("Id", gemEffectId)
+						trueGemNameObj := gemEffects.RowByStr("Id", gemEffectId)
 						if name := trueGemNameObj.Str("Name"); name != "" {
 							trueGemNames[gemEffectId] = name
 						}
@@ -335,10 +334,10 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 		}
 		curFile.Skills = append(curFile.Skills, hdr)
 
-		statsPerLevel := statSetsPerLevel.GetRowList("GrantedEffectStatSets", statSets)
+		statsPerLevel := statSetsPerLevel.RowsByRef("GrantedEffectStatSets", statSets)
 		var statMapOrder []string
 		statMap := map[string]bool{}
-		perLevel := perLevelDat.GetRowList("GrantedEffect", granted)
+		perLevel := perLevelDat.RowsByRef("GrantedEffect", granted)
 		n := len(perLevel)
 		if len(statsPerLevel) > n {
 			n = len(statsPerLevel)
@@ -470,7 +469,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 		for i, stat := range constStats {
 			skill.constantStats = append(skill.constantStats, schema.StatValue{Id: stat.Str("Id"), Value: float64(constVals[i])})
 		}
-		for _, qsRow := range qualityStatsDat.GetRowList("GrantedEffect", granted) {
+		for _, qsRow := range qualityStatsDat.RowsByRef("GrantedEffect", granted) {
 			statVals := qsRow.Ints("StatValues")
 			for j, stat := range qsRow.Refs("GrantedStats") {
 				id := stat.Str("Id")
@@ -504,9 +503,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 					l.Extra[k] = v
 				}
 			}
-			for _, t := range level.interp.vals {
-				l.Interp = append(l.Interp, strconv.FormatInt(t, 10))
-			}
+			l.Interp = append(l.Interp, level.interp.vals...)
 			if len(level.cost) > 0 {
 				l.Cost = map[string]int64{}
 				for k, v := range level.cost {
@@ -600,7 +597,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 			g.ReqStr = skillGem.Int("Str")
 			g.ReqDex = skillGem.Int("Dex")
 			g.ReqInt = skillGem.Int("Int")
-			naturalMaxLevel := len(itemExperience.GetRowList("ItemExperienceType", skillGem.Ref("GemLevelProgression")))
+			naturalMaxLevel := len(itemExperience.RowsByRef("ItemExperienceType", skillGem.Ref("GemLevelProgression")))
 			if naturalMaxLevel == 0 {
 				naturalMaxLevel = 1
 			}

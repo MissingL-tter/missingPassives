@@ -32,7 +32,7 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 		}
 		output.SetN("SkillDPSMultiplier", skillDPSMult*output.N("AttachedBrandCount"))
 	}
-	if env.ConfigInput.RepeatMode == "FINAL" || skillModList.Flag(nil, "OnlyFinalRepeat") {
+	if env.ConfigInput.RepeatMode == RepeatFinal || skillModList.Flag(nil, "OnlyFinalRepeat") {
 		repeats := 1.0
 		if output.Has("Repeats") {
 			repeats = output.N("Repeats")
@@ -82,11 +82,11 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 
 	if isAttack {
 		// Combine hit chance and attack speed
-		env.combineStat(c, "AccuracyHitChance", "AVERAGE", "")
-		env.combineStat(c, "HitChance", "AVERAGE", "")
-		env.combineStat(c, "Speed", "HARMONICMEAN", "")
-		env.combineStat(c, "HitSpeed", "OR", "")
-		env.combineStat(c, "HitTime", "OR", "")
+		env.combineStat(c, "AccuracyHitChance", CombineAverage, "")
+		env.combineStat(c, "HitChance", CombineAverage, "")
+		env.combineStat(c, "Speed", CombineHarmonicMean, "")
+		env.combineStat(c, "HitSpeed", CombineOr, "")
+		env.combineStat(c, "HitTime", CombineOr, "")
 		if output.N("Speed") == 0 {
 			output.SetN("Time", 0.0)
 		} else {

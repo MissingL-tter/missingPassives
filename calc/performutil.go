@@ -175,19 +175,19 @@ func (env *Env) doActorAttribsConditions(actor *performActor) {
 		info := data.WeaponTypeInfo[weaponType(weaponData)]
 		condList.Set("Using"+info.Flag, true)
 		if weaponData != nil && weaponData.CountsAsAll1H {
-			if weaponData.AddedUsing == nil {
-				weaponData.AddedUsing = map[string]bool{}
-			}
-			weaponData.AddedUsing["Axe"] = !condList.Get("UsingAxe")
+			// Each flag is read before the condition it then sets, so the
+			// assignments stay in the reference's order.
+			weaponData.AddedUsing.Written = true
+			weaponData.AddedUsing.Axe = !condList.Get("UsingAxe")
 			condList.Set("UsingAxe", true)
 			// Varunastra is a sword
-			weaponData.AddedUsing["Sword"] = strings.Contains(weaponData.Name, "Varunastra") || !condList.Get("UsingSword")
+			weaponData.AddedUsing.Sword = strings.Contains(weaponData.Name, "Varunastra") || !condList.Get("UsingSword")
 			condList.Set("UsingSword", true)
-			weaponData.AddedUsing["Dagger"] = !condList.Get("UsingDagger")
+			weaponData.AddedUsing.Dagger = !condList.Get("UsingDagger")
 			condList.Set("UsingDagger", true)
-			weaponData.AddedUsing["Mace"] = !condList.Get("UsingMace")
+			weaponData.AddedUsing.Mace = !condList.Get("UsingMace")
 			condList.Set("UsingMace", true)
-			weaponData.AddedUsing["Claw"] = !condList.Get("UsingClaw")
+			weaponData.AddedUsing.Claw = !condList.Get("UsingClaw")
 			condList.Set("UsingClaw", true)
 			condList.Set("WieldingDifferentWeaponTypes", true)
 		}

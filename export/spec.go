@@ -106,7 +106,7 @@ var datSpecs = map[string][]Col{
 		{Name: "Stat2", Type: ColInterval},
 		{Name: "Stat3", Type: ColInterval},
 		{Name: "PassiveType", Type: ColInt, List: true},
-		{Name: "SpawnWeight", Type: ColInt},
+		{Name: "SpawnWeight2", Type: ColInt},
 	},
 	"alternatepassiveskills": {
 		{Name: "Id", Type: ColString},

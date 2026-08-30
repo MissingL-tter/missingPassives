@@ -36,9 +36,15 @@ type Sources struct {
 	Uniques        schema.Uniques
 	MinionsDoc     schema.Minions
 	Skills         schema.SkillsData
-	// StatMapCopies lists, per skill, the statMap keys the booted archive's
-	// lazy copies materialised (a replay fixture from the archive dump).
-	StatMapCopies map[string][]string
+	// StatMapCopyFixture is a test-only channel: production always leaves
+	// it nil, and only the game-data differential sets it. It replays, per
+	// skill, the statMap keys the booted archive's lazy copies had
+	// materialised by the time its dump was taken — a boot-order effect of
+	// which stats the reference happened to read, so nothing in the port
+	// can derive it. Left nil, loadSkills materialises no copies and
+	// LazyStatMapCopy serves those keys on demand instead (calc/setup.go),
+	// which is what the application does.
+	StatMapCopyFixture map[string][]string
 	// FoulbornMapJSONC is Data/ModFoulbornMap.jsonc's content.
 	FoulbornMapJSONC []byte
 	// ModCacheJSONL is data/raw/modcache.jsonl: Data/ModCache.lua's
@@ -237,7 +243,9 @@ func Load(src Sources) error {
 	// Install the shipped mod cache: PoB preloads Data/ModCache.lua and
 	// serves parses from it (modparser/modcache.go).
 	LoadedModCache = src.ModCacheJSONL
-	modparser.SetModCache(src.ModCacheJSONL)
+	if err := modparser.SetModCache(src.ModCacheJSONL); err != nil {
+		return err
+	}
 	if err := loadMisc(src.Misc); err != nil {
 		return err
 	}
@@ -304,21 +312,16 @@ func Load(src Sources) error {
 	ClusterJewelInfoForNotable = computeClusterJewelInfo(ItemMods["JewelCluster"], ClusterJewels)
 
 	loadBosses(src.Boss)
-	var err error
-	if BossSkills, BossSkillsList, err = loadBossSkills(src.Boss); err != nil {
-		return err
-	}
+	BossSkills, BossSkillsList = loadBossSkills(src.Boss)
 
 	SkillStatMap = skillStatMap
-	if err := loadSkills(src.Skills, src.StatMapCopies); err != nil {
+	if err := loadSkills(src.Skills, src.StatMapCopyFixture); err != nil {
 		return err
 	}
 	if err := loadGems(src.Skills); err != nil {
 		return err
 	}
-	if err := loadMinions(src.MinionsDoc); err != nil {
-		return err
-	}
+	loadMinions(src.MinionsDoc)
 
 	Uniques = map[string][]string{}
 	for typ, f := range src.Uniques {

@@ -92,25 +92,24 @@ func buildMods(x *Ctx) (schema.Document, error) {
 	x.modItemExclusive = map[string]*modEntry{}
 	x.modFoulborn = map[string]*modEntry{}
 
-	buildPool := func(outName string) ([]schema.ItemMod, error) {
-		var pool []schema.ItemMod
-		condFunc := modPoolConds[outName]
+	buildPool := func(pool modPool) ([]schema.ItemMod, error) {
+		var out []schema.ItemMod
 		for mod := range mods.Rows() {
-			if !condFunc(mod) {
+			if !pool.Cond(mod) {
 				continue
 			}
 			domain := mod.Int("Domain")
 			modId := mod.Str("Id")
-			if domain == domainDelveFossil && strings.Contains(outName, "Item") {
+			if domain == domainDelveFossil && strings.Contains(pool.Out, "Item") {
 				spawnTags := mod.Refs("SpawnTags")
 				if spawnTags[0].Str("Id") == "abyss_jewel" && spawnTags[1].Str("Id") == "jewel" && len(spawnTags) == 3 {
 					continue
 				}
-			} else if domain == domainDelveFossil && strings.Contains(outName, "JewelAbyss") {
+			} else if domain == domainDelveFossil && strings.Contains(pool.Out, "JewelAbyss") {
 				if !tagListContainsId(mod.Refs("SpawnTags"), "abyss_jewel") {
 					continue
 				}
-			} else if domain == domainDelveFossil && strings.Contains(outName, "Jewel") {
+			} else if domain == domainDelveFossil && strings.Contains(pool.Out, "Jewel") {
 				if !tagListContainsId(mod.Refs("SpawnTags"), "jewel") {
 					continue
 				}
@@ -181,7 +180,7 @@ func buildMods(x *Ctx) (schema.Document, error) {
 			genTags := mod.Refs("GenerationWeightTags")
 			if len(genTags) > 0 {
 				modTagRows := mod.Refs("Tags")
-				if genType == genSuffix && len(modTagRows) > 0 && outName == "../Data/ModJewelCluster.lua" &&
+				if genType == genSuffix && len(modTagRows) > 0 && pool.Out == "ModJewelCluster" &&
 					modTagRows[0].Str("Id") == "has_affliction_notable" {
 					// make large clusters only have 1 notable suffix
 					m.WeightMultiplierKey = append([]string{"has_affliction_notable2"}, rowIds(genTags)...)
@@ -232,28 +231,28 @@ func buildMods(x *Ctx) (schema.Document, error) {
 				m.TradeHashes = append(m.TradeHashes, schema.TradeHash{Hash: int64(murmurHash2(bytes, 0x02312233)), Lines: desc.Lines})
 				modIdx++
 			}
-			pool = append(pool, m)
+			out = append(out, m)
 
-			if outName == "../Data/ModItemExclusive.lua" || outName == "../Data/ModFoulborn.lua" {
+			if pool.Out == "ModItemExclusive" || pool.Out == "ModFoulborn" {
 				var tagIds []string
 				for _, t := range mod.Refs("ImplicitTags") {
 					tagIds = append(tagIds, t.Str("Id"))
 				}
 				entry := &modEntry{lines: append([]string(nil), stats.Lines...), orders: stats.Orders, tags: tagIds}
-				if outName == "../Data/ModItemExclusive.lua" {
+				if pool.Out == "ModItemExclusive" {
 					x.modItemExclusive[modId] = entry
 				} else {
 					x.modFoulborn[modId] = entry
 				}
 			}
 		}
-		return pool, nil
+		return out, nil
 	}
 
 	doc := &schema.ModsData{Pools: map[string][]schema.ItemMod{}}
-	for _, outName := range modPoolOrder {
-		if doc.Pools[poolId(outName)], err = buildPool(outName); err != nil {
-			return nil, fmt.Errorf("%s: %w", poolId(outName), err)
+	for _, pool := range modPools {
+		if doc.Pools[pool.Out], err = buildPool(pool); err != nil {
+			return nil, fmt.Errorf("%s: %w", pool.Out, err)
 		}
 	}
 
@@ -284,111 +283,104 @@ func buildMods(x *Ctx) (schema.Document, error) {
 	return doc, nil
 }
 
-// poolId is the output basename: "../Data/ModExplicit.lua" -> "ModExplicit".
-func poolId(outName string) string {
-	base := outName[strings.LastIndex(outName, "/")+1:]
-	return strings.TrimSuffix(base, ".lua")
+// domainOf, genTypeOf and idOf are the three Mods columns the pool conditions
+// select on.
+func domainOf(mod *Row) int64  { return mod.Int("Domain") }
+func genTypeOf(mod *Row) int64 { return mod.Int("GenerationType") }
+func idOf(mod *Row) string     { return mod.Str("Id") }
+
+// modPool is one generated pool: the id it is emitted under (the output
+// file's basename) and the Mods filter that fills it.
+type modPool struct {
+	Out  string
+	Cond func(mod *Row) bool
 }
 
-// modPoolOrder preserves mods.lua's generation order (the dat mutation and
-// cache captures are order-sensitive).
-var modPoolOrder = []string{
-	"../Data/ModExplicit.lua", "../Data/ModCorrupted.lua", "../Data/ModDelve.lua", "../Data/ModSynthesis.lua",
-	"../Data/ModScourge.lua", "../Data/ModEldritch.lua", "../Data/ModFlask.lua", "../Data/ModTincture.lua",
-	"../Data/ModJewel.lua", "../Data/ModJewelAbyss.lua", "../Data/ModJewelCluster.lua", "../Data/ModJewelCharm.lua",
-	"../Data/Uniques/Special/WatchersEye.lua", "../Data/Uniques/Special/BoundByDestiny.lua",
-	"../Data/ModVeiled.lua", "../Data/ModNecropolis.lua", "../Data/ModItemExclusive.lua", "../Data/ModGraft.lua",
-	"../Data/BeastCraft.lua", "../Data/ModFoulborn.lua",
-}
-
-var modPoolConds = map[string]func(mod *Row) bool{}
-
-func init() {
-	dom := func(mod *Row) int64 { return mod.Int("Domain") }
-	gen := func(mod *Row) int64 { return mod.Int("GenerationType") }
-	id := func(mod *Row) string { return mod.Str("Id") }
-	modPoolConds["../Data/ModExplicit.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainItem &&
-			(gen(mod) == genPrefix || gen(mod) == genSuffix) &&
-			!strings.Contains(id(mod), "Royale") &&
-			!strings.Contains(id(mod), "Necropolis") &&
-			!strings.HasPrefix(id(mod), "Synthesis") &&
-			!(gen(mod) == genSearingExarch || gen(mod) == genEaterOfWorlds) &&
+// modPools is in mods.lua's generation order (the dat mutation and the cache
+// captures are order-sensitive).
+var modPools = []modPool{
+	{Out: "ModExplicit", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainItem &&
+			(genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix) &&
+			!strings.Contains(idOf(mod), "Royale") &&
+			!strings.Contains(idOf(mod), "Necropolis") &&
+			!strings.HasPrefix(idOf(mod), "Synthesis") &&
+			!(genTypeOf(mod) == genSearingExarch || genTypeOf(mod) == genEaterOfWorlds) &&
 			len(mod.Refs("AuraFlags")) == 0
-	}
-	modPoolConds["../Data/ModCorrupted.lua"] = func(mod *Row) bool {
-		return gen(mod) == genCorrupted && dom(mod) == domainItem
-	}
-	modPoolConds["../Data/ModDelve.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainDelveFossil
-	}
-	modPoolConds["../Data/ModSynthesis.lua"] = func(mod *Row) bool {
-		return gen(mod) == genIntrinsic && dom(mod) == domainItem && strings.HasPrefix(id(mod), "Synthesis")
-	}
-	modPoolConds["../Data/ModScourge.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainItem &&
-			(gen(mod) == genScourgeBenefit || gen(mod) == genScourgeDownside) &&
-			!reHellscape.MatchString(id(mod))
-	}
-	modPoolConds["../Data/ModEldritch.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainItem && (gen(mod) == genSearingExarch || gen(mod) == genEaterOfWorlds)
-	}
-	modPoolConds["../Data/ModFlask.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainFlask && (gen(mod) == genPrefix || gen(mod) == genSuffix)
-	}
-	modPoolConds["../Data/ModTincture.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainTincture && (gen(mod) == genPrefix || gen(mod) == genSuffix)
-	}
-	modPoolConds["../Data/ModJewel.lua"] = func(mod *Row) bool {
-		return (dom(mod) == domainJewel || dom(mod) == domainDelveFossil) &&
-			(gen(mod) == genPrefix || gen(mod) == genSuffix || gen(mod) == genCorrupted)
-	}
-	modPoolConds["../Data/ModJewelAbyss.lua"] = func(mod *Row) bool {
-		return (dom(mod) == domainAbyssJewel || dom(mod) == domainDelveFossil) &&
-			(gen(mod) == genPrefix || gen(mod) == genSuffix || gen(mod) == genCorrupted)
-	}
-	modPoolConds["../Data/ModJewelCluster.lua"] = func(mod *Row) bool {
-		return (dom(mod) == domainClusterJewel && (gen(mod) == genPrefix || gen(mod) == genSuffix)) ||
-			(dom(mod) == domainJewel && gen(mod) == genCorrupted)
-	}
-	modPoolConds["../Data/ModJewelCharm.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainCharm && (gen(mod) == genPrefix || gen(mod) == genSuffix)
-	}
-	modPoolConds["../Data/Uniques/Special/WatchersEye.lua"] = func(mod *Row) bool {
+	}},
+	{Out: "ModCorrupted", Cond: func(mod *Row) bool {
+		return genTypeOf(mod) == genCorrupted && domainOf(mod) == domainItem
+	}},
+	{Out: "ModDelve", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainDelveFossil
+	}},
+	{Out: "ModSynthesis", Cond: func(mod *Row) bool {
+		return genTypeOf(mod) == genIntrinsic && domainOf(mod) == domainItem && strings.HasPrefix(idOf(mod), "Synthesis")
+	}},
+	{Out: "ModScourge", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainItem &&
+			(genTypeOf(mod) == genScourgeBenefit || genTypeOf(mod) == genScourgeDownside) &&
+			!reHellscape.MatchString(idOf(mod))
+	}},
+	{Out: "ModEldritch", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainItem && (genTypeOf(mod) == genSearingExarch || genTypeOf(mod) == genEaterOfWorlds)
+	}},
+	{Out: "ModFlask", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainFlask && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix)
+	}},
+	{Out: "ModTincture", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainTincture && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix)
+	}},
+	{Out: "ModJewel", Cond: func(mod *Row) bool {
+		return (domainOf(mod) == domainJewel || domainOf(mod) == domainDelveFossil) &&
+			(genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix || genTypeOf(mod) == genCorrupted)
+	}},
+	{Out: "ModJewelAbyss", Cond: func(mod *Row) bool {
+		return (domainOf(mod) == domainAbyssJewel || domainOf(mod) == domainDelveFossil) &&
+			(genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix || genTypeOf(mod) == genCorrupted)
+	}},
+	{Out: "ModJewelCluster", Cond: func(mod *Row) bool {
+		return (domainOf(mod) == domainClusterJewel && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix)) ||
+			(domainOf(mod) == domainJewel && genTypeOf(mod) == genCorrupted)
+	}},
+	{Out: "ModJewelCharm", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainCharm && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix)
+	}},
+	{Out: "WatchersEye", Cond: func(mod *Row) bool {
 		family := mod.Refs("Family")
 		return len(family) > 0 && (family[0].Str("Id") == "AuraBonus" || family[0].Str("Id") == "ArbalestBonus") &&
-			gen(mod) == genIntrinsic && !strings.HasPrefix(id(mod), "Synthesis")
-	}
-	modPoolConds["../Data/Uniques/Special/BoundByDestiny.lua"] = func(mod *Row) bool {
+			genTypeOf(mod) == genIntrinsic && !strings.HasPrefix(idOf(mod), "Synthesis")
+	}},
+	{Out: "BoundByDestiny", Cond: func(mod *Row) bool {
 		family := mod.Refs("Family")
 		return len(family) > 1 && strings.Contains(family[1].Str("Id"), "MatchedInfluencesTier")
-	}
-	modPoolConds["../Data/ModVeiled.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainUnveiled && (gen(mod) == genPrefix || gen(mod) == genSuffix)
-	}
-	modPoolConds["../Data/ModNecropolis.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainItem && strings.HasPrefix(id(mod), "NecropolisCrafting")
-	}
-	modPoolConds["../Data/ModItemExclusive.lua"] = func(mod *Row) bool {
+	}},
+	{Out: "ModVeiled", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainUnveiled && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix)
+	}},
+	{Out: "ModNecropolis", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainItem && strings.HasPrefix(idOf(mod), "NecropolisCrafting")
+	}},
+	{Out: "ModItemExclusive", Cond: func(mod *Row) bool {
 		family := mod.Refs("Family")
-		return (dom(mod) == domainItem || dom(mod) == domainFlask || dom(mod) == domainJewel || dom(mod) == domainClusterJewel || dom(mod) == domainTincture) &&
-			gen(mod) == genIntrinsic &&
+		return (domainOf(mod) == domainItem || domainOf(mod) == domainFlask || domainOf(mod) == domainJewel || domainOf(mod) == domainClusterJewel || domainOf(mod) == domainTincture) &&
+			genTypeOf(mod) == genIntrinsic &&
 			(len(family) > 0 && family[0].Str("Id") != "AuraBonus") &&
-			!strings.HasPrefix(id(mod), "Synthesis") && !strings.Contains(id(mod), "Royale") &&
-			!strings.Contains(id(mod), "Cowards") && !strings.Contains(id(mod), "Map") &&
-			!strings.Contains(id(mod), "Ultimatum") && !strings.HasPrefix(id(mod), "MutatedUnique") &&
-			!strings.Contains(id(mod), "UNUSED")
-	}
-	modPoolConds["../Data/ModGraft.lua"] = func(mod *Row) bool {
-		return dom(mod) == domainGraft && (gen(mod) == genPrefix || gen(mod) == genSuffix || gen(mod) == genCorrupted)
-	}
-	modPoolConds["../Data/BeastCraft.lua"] = func(mod *Row) bool {
-		return strings.Contains(id(mod), "Aspect") && gen(mod) == genSuffix
-	}
-	modPoolConds["../Data/ModFoulborn.lua"] = func(mod *Row) bool {
-		return (dom(mod) == domainItem || dom(mod) == domainJewel) && gen(mod) == genIntrinsic &&
-			strings.HasPrefix(id(mod), "MutatedUnique")
-	}
+			!strings.HasPrefix(idOf(mod), "Synthesis") && !strings.Contains(idOf(mod), "Royale") &&
+			!strings.Contains(idOf(mod), "Cowards") && !strings.Contains(idOf(mod), "Map") &&
+			!strings.Contains(idOf(mod), "Ultimatum") && !strings.HasPrefix(idOf(mod), "MutatedUnique") &&
+			!strings.Contains(idOf(mod), "UNUSED")
+	}},
+	{Out: "ModGraft", Cond: func(mod *Row) bool {
+		return domainOf(mod) == domainGraft && (genTypeOf(mod) == genPrefix || genTypeOf(mod) == genSuffix || genTypeOf(mod) == genCorrupted)
+	}},
+	{Out: "BeastCraft", Cond: func(mod *Row) bool {
+		return strings.Contains(idOf(mod), "Aspect") && genTypeOf(mod) == genSuffix
+	}},
+	{Out: "ModFoulborn", Cond: func(mod *Row) bool {
+		return (domainOf(mod) == domainItem || domainOf(mod) == domainJewel) && genTypeOf(mod) == genIntrinsic &&
+			strings.HasPrefix(idOf(mod), "MutatedUnique")
+	}},
 }
 
 func tagListContainsId(rows []*Row, id string) bool {

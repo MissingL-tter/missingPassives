@@ -77,7 +77,7 @@ func buildMiscdata(x *Ctx) (schema.Document, error) {
 		m.MonsterAilmentThreshold = append(m.MonsterAilmentThreshold, float64(stats.Int("AilmentThreshold")))
 		m.MonsterPhysConversionMulti = append(m.MonsterPhysConversionMulti, float64(stats.Int("MonsterPhysConversionMulti")))
 	}
-	mdri := gameConstants.GetRow("Id", "MonsterDamageReductionImprovement")
+	mdri := gameConstants.RowByStr("Id", "MonsterDamageReductionImprovement")
 	mdriRatio := float64(mdri.Int("Value")) / float64(mdri.Int("Divisor"))
 	for i := 1; i <= 100; i++ {
 		m.MonsterArmour = append(m.MonsterArmour, math.Floor((10+2*float64(i))*math.Pow(1+mdriRatio/100, float64(i))))

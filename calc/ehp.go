@@ -37,13 +37,13 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	enemyDB := actor.enemy.db
 	output := actor.output
 
-	damageCategoryConfig := "Average"
+	damageCategoryConfig := DamageAverage
 	if v := env.ConfigInput.EnemyDamageType; v != "" {
 		damageCategoryConfig = v
 	}
 
 	// chance to not be hit calculations
-	if damageCategoryConfig != "DamageOverTime" {
+	if damageCategoryConfig != DamageOverTime {
 		worstOf := 1.0
 		if v := env.ConfigInput.EHPUnluckyWorstOf; v.Set {
 			worstOf = v.V
@@ -61,8 +61,8 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 		output.SetN("AverageNotHitChance", (output.N("MeleeNotHitChance")+output.N("ProjectileNotHitChance")+
 			output.N("SpellNotHitChance")+output.N("SpellProjectileNotHitChance"))/4)
 		output.SetN("AverageEvadeChance", (output.N("MeleeEvadeChance")+output.N("ProjectileEvadeChance"))/4)
-		output.SetN("ConfiguredNotHitChance", output.N(damageCategoryConfig+"NotHitChance"))
-		output.SetN("ConfiguredEvadeChance", output.N(damageCategoryConfig+"EvadeChance"))
+		output.SetN("ConfiguredNotHitChance", output.N(string(damageCategoryConfig)+"NotHitChance"))
+		output.SetN("ConfiguredEvadeChance", output.N(string(damageCategoryConfig)+"EvadeChance"))
 		// unlucky config to lower the value of block, dodge, evade etc for ehp
 		if worstOf > 1 {
 			output.SetN("ConfiguredNotHitChance", output.N("ConfiguredNotHitChance")/100*output.N("ConfiguredNotHitChance"))
@@ -77,7 +77,7 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	// Enemy damage input and modifications
 	output.SetN("totalEnemyDamage", 0.0)
 	output.SetN("totalEnemyDamageIn", 0.0)
-	if damageCategoryConfig == "DamageOverTime" {
+	if damageCategoryConfig == DamageOverTime {
 		for _, damageType := range dmgTypeList {
 			output.SetN(damageType+"EnemyPen", 0.0)
 			output.SetN(damageType+"EnemyDamageMult", Mod(enemyDB, nil, enemyDamageNames(damageType)...))

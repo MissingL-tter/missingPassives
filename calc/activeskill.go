@@ -275,7 +275,10 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 // result. (effect.gemPropertyInfo is tooltip-only and skipped.)
 func (env *Env) applyGemMods(effect *ActiveEffect, modList []modstore.TabEntry) {
 	for _, entry := range modList {
-		value, _ := entry.Value.(modparser.GemPropertyRef)
+		value, ok := entry.Value.(modparser.GemPropertyRef)
+		if !ok {
+			panic("calc: non-GemPropertyRef value in GemProperty list (the Lua errors)")
+		}
 		match := true
 		if value.KeywordList != nil {
 			for _, kw := range value.KeywordList {
@@ -328,11 +331,11 @@ func (env *Env) applySocketMods(gem *data.Gem, groupCfg *modstore.Cfg, socketNum
 	sn := float64(socketNum)
 	socketCfg.SocketNum = &sn
 	for _, v := range env.ModDB.List(&socketCfg, "SocketProperty") {
-		ref, _ := v.(modparser.PropertyModRef)
-		mod := ref.Mod
-		if mod == nil {
+		ref, ok := v.(modparser.PropertyModRef)
+		if !ok || ref.Mod == nil {
 			continue
 		}
+		mod := ref.Mod
 		src := modSource
 		if src == "" {
 			src = groupCfg.SlotName
@@ -342,14 +345,14 @@ func (env *Env) applySocketMods(gem *data.Gem, groupCfg *modstore.Cfg, socketNum
 }
 
 // addBestSupport ports CalcSetup's addBestSupport.
-func addBestSupport(supportEffect *ActiveEffect, appliedSupportList *[]*ActiveEffect, mode string) {
+func addBestSupport(supportEffect *ActiveEffect, appliedSupportList *[]*ActiveEffect, mode CalcMode) {
 	add := true
 	for index, otherSupport := range *appliedSupportList {
 		// Check if there's another better support already present
 		if supportEffect.GrantedEffect == otherSupport.GrantedEffect {
 			add = false
 			if supportEffect.Level > otherSupport.Level || (supportEffect.Level == otherSupport.Level && supportEffect.Quality > otherSupport.Quality) {
-				if mode == "MAIN" {
+				if mode == ModeMain {
 					otherSupport.Superseded = true
 				}
 				(*appliedSupportList)[index] = supportEffect
@@ -359,7 +362,7 @@ func addBestSupport(supportEffect *ActiveEffect, appliedSupportList *[]*ActiveEf
 			break
 		} else if supportEffect.GrantedEffect.PlusVersionOf != nil && *supportEffect.GrantedEffect.PlusVersionOf == otherSupport.GrantedEffect.Id {
 			add = false
-			if mode == "MAIN" {
+			if mode == ModeMain {
 				otherSupport.Superseded = true
 			}
 			(*appliedSupportList)[index] = supportEffect

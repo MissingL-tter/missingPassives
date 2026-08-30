@@ -125,7 +125,10 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 			if entry.Mod.Source != activeEffectSource {
 				continue
 			}
-			tag, _ := entry.Value.(modparser.ExplodeRef)
+			tag, ok := entry.Value.(modparser.ExplodeRef)
+			if !ok {
+				panic("calc: non-ExplodeRef value in ExplodeMod list (the Lua errors)")
+			}
 			typ := tag.Type
 			amount := tag.Amount
 			if typ == "RandomElement" {
@@ -147,7 +150,10 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 		type amountChance map[float64]float64
 		typeAmountChances := map[string]amountChance{}
 		for _, value := range skillModList.List(skillCfg, "ExplodeMod") {
-			tag, _ := value.(modparser.ExplodeRef)
+			tag, ok := value.(modparser.ExplodeRef)
+			if !ok {
+				panic("calc: non-ExplodeRef value in ExplodeMod list (the Lua errors)")
+			}
 			typ := tag.Type
 			ac := typeAmountChances[typ]
 			if ac == nil {

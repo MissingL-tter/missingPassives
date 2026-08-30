@@ -1,5 +1,5 @@
-// Generated.lua port, continued: That Which Was Taken and Replica
-// Dragonfang's Flight.
+// Port of Generated.lua's That Which Was Taken and Replica Dragonfang's
+// Flight builders.
 
 package data
 

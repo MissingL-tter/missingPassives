@@ -3,9 +3,6 @@
 package data
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/internal/util"
 )
@@ -43,19 +40,6 @@ type ValLabel struct {
 	Label string `lua:"label"`
 }
 
-// penValue resolves a pre-rendered penetration value: a number, or the
-// literal `""` placeholder (absent).
-func penValue(text string) (util.Opt[float64], error) {
-	if text == "\"\"" {
-		return util.Opt[float64]{}, nil
-	}
-	n, err := strconv.ParseFloat(text, 64)
-	if err != nil {
-		return util.Opt[float64]{}, fmt.Errorf("data: bad penetration value %q", text)
-	}
-	return util.Some(n), nil
-}
-
 // statSetValues copies an additional-stat set into the runtime table.
 func statSetValues(vals map[string]schema.BossStatValue) map[string]BossStat {
 	out := map[string]BossStat{}
@@ -65,19 +49,19 @@ func statSetValues(vals map[string]schema.BossStatValue) map[string]BossStat {
 	return out
 }
 
-func penSet(pens []schema.PenEntry) (map[string]util.Opt[float64], error) {
+func penSet(pens []schema.PenEntry) map[string]util.Opt[float64] {
 	out := map[string]util.Opt[float64]{}
 	for _, p := range pens {
-		v, err := penValue(p.Text)
-		if err != nil {
-			return nil, err
+		var v util.Opt[float64]
+		if p.Value != nil {
+			v = util.Some(*p.Value)
 		}
 		out[p.Name] = v
 	}
-	return out, nil
+	return out
 }
 
-func loadBossSkills(src schema.BossData) (map[string]BossSkillData, []ValLabel, error) {
+func loadBossSkills(src schema.BossData) (map[string]BossSkillData, []ValLabel) {
 	skills := map[string]BossSkillData{}
 	for _, bs := range src.Skills {
 		e := BossSkillData{
@@ -89,15 +73,10 @@ func loadBossSkills(src schema.BossData) (map[string]BossSkillData, []ValLabel, 
 			e.DamageMultipliers[dm.Type] = []float64{dm.Min, dm.Spread}
 		}
 		e.UberDamageMultiplier = bs.UberDamageMultiplier
-		var err error
 		if bs.HasPen {
-			if e.DamagePenetrations, err = penSet(bs.Pens); err != nil {
-				return nil, nil, err
-			}
+			e.DamagePenetrations = penSet(bs.Pens)
 			if bs.HasUberPen {
-				if e.UberDamagePenetrations, err = penSet(bs.UberPens); err != nil {
-					return nil, nil, err
-				}
+				e.UberDamagePenetrations = penSet(bs.UberPens)
 			}
 		}
 		if bs.Speed != 700 {
@@ -133,5 +112,5 @@ func loadBossSkills(src schema.BossData) (map[string]BossSkillData, []ValLabel, 
 			list = append(list, ValLabel{Val: name, Label: name})
 		}
 	}
-	return skills, list, nil
+	return skills, list
 }

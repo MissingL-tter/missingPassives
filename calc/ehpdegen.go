@@ -14,7 +14,7 @@ type ailmentDegen struct {
 	sourceTypes []string
 }
 
-func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
@@ -81,7 +81,7 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 	enemyBleedChance := 0.0
 	enemyIgniteChance := 0.0
 	if output.N("SelfIgniteEffect") != 0 && output.N("IgniteAvoidChance") < 100 &&
-		output.N("SelfIgniteDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
+		output.N("SelfIgniteDuration") != 0 && damageCategoryConfig != DamageOverTime {
 		enemyIgniteChance = enemyDB.Sum(modparser.Base, nil, "IgniteChance", "ElementalAilmentChance")
 		enemyCritAilmentChance := 0.0
 		if !modDB.Flag(nil, "CritsOnYouDontAlwaysApplyElementalAilments") &&
@@ -93,13 +93,13 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 	}
 	enemyPoisonChance := 0.0
 	if output.N("SelfPoisonEffect") != 0 && output.N("PoisonAvoidChance") < 100 &&
-		output.N("SelfPoisonDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
+		output.N("SelfPoisonDuration") != 0 && damageCategoryConfig != DamageOverTime {
 		enemyPoisonChance = enemyDB.Sum(modparser.Base, nil, "PoisonChance") * (1 - output.N("PoisonAvoidChance")/100)
 	}
 
-	if damageCategoryConfig == "DamageOverTime" || (enemyIgniteChance+enemyPoisonChance+enemyBleedChance) > 0 {
+	if damageCategoryConfig == DamageOverTime || (enemyIgniteChance+enemyPoisonChance+enemyBleedChance) > 0 {
 		totalDegen := totalBuildDegen
-		if damageCategoryConfig == "DamageOverTime" {
+		if damageCategoryConfig == DamageOverTime {
 			for _, damageType := range dmgTypeList {
 				baseVal := env.configOrPlaceholder(damageType, func(c *ConfigInput) map[string]float64 { return c.EnemyDamage })
 				if baseVal > 0 {

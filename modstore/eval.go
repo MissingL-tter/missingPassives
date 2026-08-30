@@ -47,7 +47,7 @@ type Item interface {
 
 // ActiveSkill carries what GetStat's reservation branches read.
 type ActiveSkill struct {
-	SkillTypes map[float64]bool
+	SkillTypes map[modparser.SkillTypeID]bool
 	Disable    bool // skillFlags.disable
 	SkillData  map[string]float64
 	BuffNames  []string // buffList[i].name
@@ -62,20 +62,21 @@ type MinionData struct {
 
 // Actor is the slice of the calc actor that mod stores touch.
 type Actor struct {
-	Player          *Actor
-	Enemy           *Actor
-	ParentActor     *Actor
-	Level           float64
-	Others          map[string]*Actor // any other actor types
-	DB              Store             // actor.modDB
-	Output          Output            // Lua actor.output
-	ItemList        map[string]Item
-	WeaponData1     WeaponData
-	WeaponData2     WeaponData
+	Player      *Actor
+	Enemy       *Actor
+	ParentActor *Actor
+	Level       float64
+	DB          Store  // actor.modDB
+	Output      Output // Lua actor.output
+	ItemList    map[string]Item
+	WeaponData1 WeaponData
+	WeaponData2 WeaponData
+	// No ported production path populates ActiveSkillList: calc's minion skill
+	// list is calc.Minion's own field, not this one. So the reservation branch
+	// in getStat is exercised only by the modstore differential.
 	ActiveSkillList []*ActiveSkill
 	MinionData      *MinionData
 	ManaEfficiency  float64
-	HasReservation  float64 // the SkillType.HasReservation id the fixtures key on
 	Resolver        Resolver
 }
 
@@ -86,17 +87,19 @@ func (a *Actor) resolver() Resolver {
 	return a.Resolver
 }
 
+// The actor name stays an open string rather than an enum: the reference looks
+// it up in an open table, and the differential exercises an unknown name
+// ("nonexistent") whose exact text has to survive the round trip through the
+// tag. Anything but the three known actors is the not-found path.
 func (a *Actor) byType(actorType string) *Actor {
 	switch actorType {
 	case "enemy":
 		return a.Enemy
 	case "parent":
 		return a.ParentActor
+	default:
+		return nil
 	}
-	if a.Others != nil {
-		return a.Others[actorType]
-	}
-	return nil
 }
 
 // GrantedEffectRef is cfg.skillGrantedEffect.
@@ -116,7 +119,7 @@ type Cfg struct {
 	SummonSkillName    string
 	SkillDist          *float64
 	SkillCond          map[string]bool
-	SkillTypes         map[float64]bool
+	SkillTypes         map[modparser.SkillTypeID]bool
 	SkillPart          util.Opt[float64]
 	SlotName           string
 	SocketColor        string
@@ -155,7 +158,7 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 			return 0
 		}
 		for _, skill := range actor.ActiveSkillList {
-			if skill.SkillTypes[actor.HasReservation] && !skill.Disable && len(skill.BuffNames) > 0 && cfg != nil &&
+			if skill.SkillTypes[modparser.SkillTypeHasReservation] && !skill.Disable && len(skill.BuffNames) > 0 && cfg != nil &&
 				isNameInBuffList(skill, cfg.SkillName, cfg.SummonSkillName) {
 				reserved = math.Floor(skill.SkillData[baseKey] / total * 100)
 				break
@@ -595,13 +598,13 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 			match := false
 			if tag.SkillTypeList != nil {
 				for _, t := range tag.SkillTypeList {
-					if cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[float64(t)] {
+					if cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[t] {
 						match = true
 						break
 					}
 				}
 			} else if tag.SkillType != 0 {
-				match = cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[float64(tag.SkillType)]
+				match = cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[tag.SkillType]
 			}
 			if tag.Neg {
 				match = !match
@@ -920,14 +923,14 @@ func evalSocketedIn(tag *modparser.SlotTag, cfg *Cfg) bool {
 		return false
 	}
 	socketsIsAll := tag.SocketsAll
-	match := map[string]bool{}
+	var match []bool
 	if tag.SlotName != "" {
-		match["slotName"] = tag.SlotName == cfg.SlotName
+		match = append(match, tag.SlotName == cfg.SlotName)
 	}
 	if tag.Keyword != "" {
-		match["keyword"] = cfg.SkillGem != nil && cfg.SkillGem.IsType(tag.Keyword)
+		match = append(match, cfg.SkillGem != nil && cfg.SkillGem.IsType(tag.Keyword))
 	} else if tag.SocketColor != "" && !socketsIsAll {
-		match["socketColor"] = tag.SocketColor == cfg.SocketColor
+		match = append(match, tag.SocketColor == cfg.SocketColor)
 	}
 	if socketsIsAll || tag.Sockets != nil || tag.SocketCount.Set {
 		var count float64
@@ -952,7 +955,7 @@ func evalSocketedIn(tag *modparser.SlotTag, cfg *Cfg) bool {
 					total += *p
 				}
 			}
-			match["sockets"] = total == count && total > 0
+			match = append(match, total == count && total > 0)
 		} else if tag.Sockets != nil {
 			if cfg.SocketNum == nil {
 				return false
@@ -964,9 +967,9 @@ func evalSocketedIn(tag *modparser.SlotTag, cfg *Cfg) bool {
 					break
 				}
 			}
-			match["sockets"] = found
+			match = append(match, found)
 		} else {
-			match["sockets"] = count < tag.SocketCount.V
+			match = append(match, count < tag.SocketCount.V)
 		}
 	}
 	for _, v := range match {

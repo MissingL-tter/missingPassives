@@ -80,7 +80,7 @@ func loadData(t *testing.T) {
 			gameDataFail = err.Error()
 			return
 		}
-		src.StatMapCopies = readStatMapCopies(dumpPath)
+		src.StatMapCopyFixture = readStatMapCopies(dumpPath)
 		if err := data.Load(src); err != nil {
 			gameDataFail = err.Error()
 			return

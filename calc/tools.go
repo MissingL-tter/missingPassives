@@ -370,8 +370,7 @@ type weaponData struct{ wd *item.WeaponData }
 func (w weaponData) CountsAsAll1H() bool { return w.wd.CountsAsAll1H }
 
 func (w weaponData) AddedCond(cond string) (added, present bool) {
-	added, present = w.wd.AddedUsing[strings.TrimPrefix(cond, "Using")]
-	return added, present
+	return w.wd.AddedUsing.Added(strings.TrimPrefix(cond, "Using"))
 }
 
 // weaponRef wraps weapon data for an actor; nil stays nil.
@@ -404,9 +403,9 @@ func weaponCrit(wd *item.WeaponData) float64 {
 	return wd.CritChance.Or(0)
 }
 
-// weaponAdded is the AddedUsing<Type> flag.
-func weaponAdded(wd *item.WeaponData, weaponType string) bool {
-	return wd != nil && wd.AddedUsing[weaponType]
+// weaponAddedDagger is the AddedUsingDagger flag (CalcOffence.lua L900).
+func weaponAddedDagger(wd *item.WeaponData) bool {
+	return wd != nil && wd.AddedUsing.Dagger
 }
 
 // flaskPoolTotal is flaskData.<pool>Total, 0 when the pool is absent.

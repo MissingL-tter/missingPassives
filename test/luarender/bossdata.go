@@ -11,6 +11,15 @@ import (
 
 func init() { register("bossData", renderBossData) }
 
+// penText spells one penetration value the way the reference exporter did:
+// the number, or a Lua empty-string literal for the blank placeholder.
+func penText(p schema.PenEntry) string {
+	if p.Value == nil {
+		return "\"\""
+	}
+	return luaNum(*p.Value)
+}
+
 func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error) {
 	nextSkill, nextList := 0, 0
 	// Numbers spell as %.14g, flags as the quoted "flag" literal.
@@ -58,7 +67,7 @@ func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error)
 					if i > 0 {
 						b.W(",\n")
 					}
-					b.W("			", p.Name, " = ", p.Text)
+					b.W("			", p.Name, " = ", penText(p))
 				}
 				b.W("\n		}")
 				if bs.HasUberPen {
@@ -67,7 +76,7 @@ func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error)
 						if i > 0 {
 							b.W(",\n")
 						}
-						b.W("			", p.Name, " = ", p.Text)
+						b.W("			", p.Name, " = ", penText(p))
 					}
 					b.W("\n		}")
 				}

@@ -33,14 +33,17 @@ type Store interface {
 	GetMultiplier(varName string, cfg *Cfg) float64
 	AddMod(mod *modparser.Mod)
 	AddList(list []*modparser.Mod)
+	// Exported only because the mod-store differential drives these two
+	// directly, mirroring dump_modstore.lua's `replace` case
+	// (`if not db:ReplaceModInternal(m) then db:AddMod(m) end`).
 	ReplaceModInternal(mod *modparser.Mod) bool
 	ConvertModInternal(oldName string, mod *modparser.Mod) bool
-	SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
-	MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
-	FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool
-	OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value
-	ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value
-	TabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry
+	sumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
+	moreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
+	flagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool
+	overrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value
+	listInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value
+	tabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry
 }
 
 // TabEntry is one Tabulate result: { value = ..., mod = ... }.
@@ -300,43 +303,43 @@ func cfgParts(cfg *Cfg) (flags modparser.ModFlag, keywordFlags modparser.Keyword
 
 func (ms *ModStore) Sum(modType modparser.ModType, cfg *Cfg, names ...string) float64 {
 	flags, keywordFlags, source := cfgParts(cfg)
-	return ms.self.SumInternal(ms.self, modType, cfg, flags, keywordFlags, source, names...)
+	return ms.self.sumInternal(ms.self, modType, cfg, flags, keywordFlags, source, names...)
 }
 
 func (ms *ModStore) More(cfg *Cfg, names ...string) float64 {
 	flags, keywordFlags, source := cfgParts(cfg)
-	return ms.self.MoreInternal(ms.self, cfg, flags, keywordFlags, source, names...)
+	return ms.self.moreInternal(ms.self, cfg, flags, keywordFlags, source, names...)
 }
 
 func (ms *ModStore) Flag(cfg *Cfg, names ...string) bool {
 	flags, keywordFlags, source := cfgParts(cfg)
-	return ms.self.FlagInternal(ms.self, cfg, flags, keywordFlags, source, names...)
+	return ms.self.flagInternal(ms.self, cfg, flags, keywordFlags, source, names...)
 }
 
 // Override returns the first truthy OVERRIDE value; ok is false when none.
 func (ms *ModStore) Override(cfg *Cfg, names ...string) (modparser.Value, bool) {
 	flags, keywordFlags, source := cfgParts(cfg)
-	v := ms.self.OverrideInternal(ms.self, cfg, flags, keywordFlags, source, names...)
+	v := ms.self.overrideInternal(ms.self, cfg, flags, keywordFlags, source, names...)
 	return v, v != nil
 }
 
 func (ms *ModStore) List(cfg *Cfg, names ...string) []modparser.Value {
 	flags, keywordFlags, source := cfgParts(cfg)
 	result := []modparser.Value{}
-	return append(result, ms.self.ListInternal(ms.self, cfg, flags, keywordFlags, source, names...)...)
+	return append(result, ms.self.listInternal(ms.self, cfg, flags, keywordFlags, source, names...)...)
 }
 
 func (ms *ModStore) Tabulate(modType modparser.ModType, cfg *Cfg, names ...string) []TabEntry {
 	flags, keywordFlags, source := cfgParts(cfg)
 	result := []TabEntry{}
-	return append(result, ms.self.TabulateInternal(ms.self, modType, modType != 0, cfg, flags, keywordFlags, source, names...)...)
+	return append(result, ms.self.tabulateInternal(ms.self, modType, modType != 0, cfg, flags, keywordFlags, source, names...)...)
 }
 
 // TabulateAll is Tabulate with a nil modType in the Lua (match every type).
 func (ms *ModStore) TabulateAll(cfg *Cfg, names ...string) []TabEntry {
 	flags, keywordFlags, source := cfgParts(cfg)
 	result := []TabEntry{}
-	return append(result, ms.self.TabulateInternal(ms.self, 0, false, cfg, flags, keywordFlags, source, names...)...)
+	return append(result, ms.self.tabulateInternal(ms.self, 0, false, cfg, flags, keywordFlags, source, names...)...)
 }
 
 // Max ports ModStore:Max; ok reports whether any value was found.
@@ -382,7 +385,7 @@ func (ms *ModStore) HasMod(modType modparser.ModType, cfg *Cfg, names ...string)
 	if !ok {
 		panic("modstore: HasMod on a non-DB store (the Lua errors too)")
 	}
-	return db.HasModInternal(modType, flags, keywordFlags, source, names...)
+	return db.hasModInternal(modType, flags, keywordFlags, source, names...)
 }
 
 // GetCondition ports ModStore:GetCondition.

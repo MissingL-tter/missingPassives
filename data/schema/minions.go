@@ -38,7 +38,7 @@ type MinionDef struct {
 	WeaponType1                  *string    `json:"weaponType1,omitempty"`
 	WeaponType2                  *string    `json:"weaponType2,omitempty"`
 	Limit                        string     `json:"limit,omitempty"`
-	Hostile                      string     `json:"hostile,omitempty"` // raw template text
+	Hostile                      bool       `json:"hostile,omitempty"`
 	SkillList                    []string   `json:"skillList"`
 	ModList                      []ModEntry `json:"modList"`
 }

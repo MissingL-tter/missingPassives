@@ -3,8 +3,9 @@ package luacanon
 // The item's typed sub-records (weaponData, armourData, flaskData,
 // tinctureData, jewelData, grantedSkills, requirements) render as the flat
 // scalar tables dump_calc.lua's itemFixture held, and decode back from
-// them. Keys are the reference's; absent fields are absent keys; Extra
-// entries merge in (scalars only, as the fixture's scalar projection kept).
+// them. Keys are the reference's; absent fields are absent keys;
+// weaponData's Extra entries merge in (scalars only, as the fixture's
+// scalar projection kept).
 
 import (
 	"strings"
@@ -97,8 +98,12 @@ func WeaponDataTable(w *item.WeaponData) map[string]any {
 	}
 	t.flag("countsAsAll1H", w.CountsAsAll1H)
 	t.flag("countsAsDualWielding", w.CountsAsDualWielding)
-	for k, v := range w.AddedUsing {
-		t["AddedUsing"+k] = v
+	if a := w.AddedUsing; a.Written {
+		t["AddedUsingAxe"] = a.Axe
+		t["AddedUsingSword"] = a.Sword
+		t["AddedUsingDagger"] = a.Dagger
+		t["AddedUsingMace"] = a.Mace
+		t["AddedUsingClaw"] = a.Claw
 	}
 	t.extra(w.Extra)
 	return t
@@ -113,7 +118,6 @@ func ArmourDataTable(a *item.ArmourData) map[string]any {
 		t.opt(name+"BasePercentile", stat.BasePercentile)
 	}
 	t.opt("BlockChance", a.BlockChance)
-	t.extra(a.Extra)
 	return t
 }
 
@@ -139,14 +143,12 @@ func FlaskDataTable(f *item.FlaskData) map[string]any {
 		t.opt(pool.prefix+"Additional", pool.rec.Additional)
 		t[pool.prefix+"EffectNotRemoved"] = pool.rec.EffectNotRemoved
 	}
-	t.extra(f.Extra)
 	return t
 }
 
 // TinctureDataTable is tinctureData as the reference table.
 func TinctureDataTable(d *item.TinctureData) map[string]any {
 	t := table{"manaBurn": d.ManaBurn, "cooldownInc": d.CooldownInc, "cooldown": d.Cooldown, "effectInc": d.EffectInc}
-	t.extra(d.Extra)
 	return t
 }
 
@@ -182,7 +184,6 @@ func JewelDataTable(j *item.JewelData) map[string]any {
 			t["clusterJewelValid"] = float64(j.ClusterJewelNothingnessCount)
 		}
 	}
-	t.extra(j.Extra)
 	return t
 }
 

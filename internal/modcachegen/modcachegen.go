@@ -64,8 +64,11 @@ func BuildFrom(src data.Sources, treeVersion string) []byte {
 	if err := data.Load(src); err != nil {
 		panic(err)
 	}
-	modparser.SetModCache(nil) // record fresh parses
-	defer modparser.SetModCache(data.LoadedModCache)
+	// Neither install can fail — nil is the removal path, and
+	// LoadedModCache is the document data.Load has just accepted — so the
+	// generator drops the errors explicitly.
+	_ = modparser.SetModCache(nil) // record fresh parses
+	defer func() { _ = modparser.SetModCache(data.LoadedModCache) }()
 
 	if _, err := tree.Load(treeVersion); err != nil {
 		panic(err)

@@ -49,7 +49,7 @@ func buildAllyLifePools(output modstore.Output) map[string]*allyPoolState {
 	return pools
 }
 
-func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	output := actor.output
 
@@ -110,9 +110,9 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
 		mitigation := modDB.Sum(modparser.Base, nil, ally.redirect)
 		if ally.meleeOnly {
 			switch damageCategoryConfig {
-			case "Melee":
+			case DamageMelee:
 				// unchanged
-			case "Average":
+			case DamageAverage:
 				mitigation = mitigation / 4
 			default:
 				mitigation = 0

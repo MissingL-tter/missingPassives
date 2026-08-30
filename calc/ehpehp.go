@@ -9,12 +9,12 @@ import (
 	"math"
 )
 
-func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	enemyDB := actor.enemy.db
 	output := actor.output
 
-	if damageCategoryConfig == "DamageOverTime" {
+	if damageCategoryConfig == DamageOverTime {
 		return
 	}
 
@@ -31,8 +31,8 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 	{
 		in := newDamageIn()
 		blockChance := output.N("EffectiveBlockChance") / 100
-		if damageCategoryConfig != "Melee" && damageCategoryConfig != "Untyped" {
-			blockChance = output.N("Effective"+damageCategoryConfig+"BlockChance") / 100
+		if damageCategoryConfig != DamageMelee && damageCategoryConfig != DamageUntyped {
+			blockChance = output.N("Effective"+string(damageCategoryConfig)+"BlockChance") / 100
 		}
 		if enemyDB.Flag(nil, "CannotBeBlocked") {
 			blockChance = 0
@@ -48,20 +48,20 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 			in.ManaWhenHit = output.N("ManaOnBlock") * blockChance
 			in.EnergyShieldWhenHit = output.N("EnergyShieldOnBlock") * blockChance
 			switch damageCategoryConfig {
-			case "Spell", "SpellProjectile":
+			case DamageSpell, DamageSpellProjectile:
 				in.EnergyShieldWhenHit += output.N("EnergyShieldOnSpellBlock") * blockChance
-			case "Average":
+			case DamageAverage:
 				in.EnergyShieldWhenHit += output.N("EnergyShieldOnSpellBlock") / 2 * blockChance
 			}
 		}
 		// suppression
-		if damageCategoryConfig == "Spell" || damageCategoryConfig == "SpellProjectile" || damageCategoryConfig == "Average" {
+		if damageCategoryConfig == DamageSpell || damageCategoryConfig == DamageSpellProjectile || damageCategoryConfig == DamageAverage {
 			suppressChance = output.N("EffectiveSpellSuppressionChance") / 100
 		}
 		// We include suppression in damage reduction if it is 100%,
 		// otherwise we handle it here.
 		if suppressChance < 1 {
-			if damageCategoryConfig == "Average" {
+			if damageCategoryConfig == DamageAverage {
 				suppressChance = suppressChance / 2
 			}
 			in.EnergyShieldWhenHit += output.N("EnergyShieldOnSuppress") * suppressChance
@@ -69,7 +69,7 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 			suppressionEffect = 1 - suppressChance*output.N("SpellSuppressionEffect")/100
 		} else {
 			half := 1.0
-			if damageCategoryConfig == "Average" {
+			if damageCategoryConfig == DamageAverage {
 				half = 0.5
 			}
 			in.EnergyShieldWhenHit += output.N("EnergyShieldOnSuppress") * half
@@ -77,9 +77,9 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 		}
 		// extra avoid chance
 		switch damageCategoryConfig {
-		case "Projectile", "SpellProjectile":
+		case DamageProjectile, DamageSpellProjectile:
 			extraAvoidChance += output.N("AvoidProjectilesChance")
-		case "Average":
+		case DamageAverage:
 			extraAvoidChance += output.N("AvoidProjectilesChance") / 2
 		}
 		// gain when hit (currently just gain on block/suppress, and

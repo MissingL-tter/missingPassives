@@ -110,7 +110,7 @@ func (db *DB) AddDB(other *DB) {
 	}
 }
 
-func (db *DB) SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
+func (db *DB) sumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 0.0
 	globalLimits := map[string]float64{}
 	for _, name := range names {
@@ -127,12 +127,12 @@ func (db *DB) SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags 
 		}
 	}
 	if db.Parent != nil {
-		result += db.Parent.SumInternal(ctx, modType, cfg, flags, keywordFlags, source, names...)
+		result += db.Parent.sumInternal(ctx, modType, cfg, flags, keywordFlags, source, names...)
 	}
 	return result
 }
 
-func (db *DB) MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
+func (db *DB) moreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 1.0
 	var modPrecision int
 	hasPrecision := false
@@ -161,7 +161,7 @@ func (db *DB) MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keyword
 		result = applyMorePrecision(result, modResult, modPrecision, hasPrecision)
 	}
 	if db.Parent != nil {
-		result *= db.Parent.MoreInternal(ctx, cfg, flags, keywordFlags, source, names...)
+		result *= db.Parent.moreInternal(ctx, cfg, flags, keywordFlags, source, names...)
 	}
 	return result
 }
@@ -174,7 +174,7 @@ func applyMorePrecision(result, modResult float64, modPrecision int, hasPrecisio
 	return result * round(modResult, 2)
 }
 
-func (db *DB) FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
+func (db *DB) flagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
 			if mod.Type == modparser.Flag && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
@@ -189,12 +189,12 @@ func (db *DB) FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keyword
 		}
 	}
 	if db.Parent != nil {
-		return db.Parent.FlagInternal(ctx, cfg, flags, keywordFlags, source, names...)
+		return db.Parent.flagInternal(ctx, cfg, flags, keywordFlags, source, names...)
 	}
 	return false
 }
 
-func (db *DB) OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value {
+func (db *DB) overrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
 			if mod.Type == modparser.Override && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
@@ -209,12 +209,12 @@ func (db *DB) OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, key
 		}
 	}
 	if db.Parent != nil {
-		return db.Parent.OverrideInternal(ctx, cfg, flags, keywordFlags, source, names...)
+		return db.Parent.overrideInternal(ctx, cfg, flags, keywordFlags, source, names...)
 	}
 	return nil
 }
 
-func (db *DB) ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value {
+func (db *DB) listInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value {
 	var result []modparser.Value
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
@@ -232,12 +232,12 @@ func (db *DB) ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keyword
 		}
 	}
 	if db.Parent != nil {
-		result = append(result, db.Parent.ListInternal(ctx, cfg, flags, keywordFlags, source, names...)...)
+		result = append(result, db.Parent.listInternal(ctx, cfg, flags, keywordFlags, source, names...)...)
 	}
 	return result
 }
 
-func (db *DB) TabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry {
+func (db *DB) tabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry {
 	var result []TabEntry
 	globalLimits := map[string]float64{}
 	for _, name := range names {
@@ -256,7 +256,7 @@ func (db *DB) TabulateInternal(ctx Store, modType modparser.ModType, hasType boo
 		}
 	}
 	if db.Parent != nil {
-		result = append(result, db.Parent.TabulateInternal(ctx, modType, hasType, cfg, flags, keywordFlags, source, names...)...)
+		result = append(result, db.Parent.tabulateInternal(ctx, modType, hasType, cfg, flags, keywordFlags, source, names...)...)
 	}
 	return result
 }
@@ -272,8 +272,8 @@ func tabValueKept(value modparser.Value, modType modparser.ModType) bool {
 	return true
 }
 
-// HasModInternal ports ModDB:HasModInternal.
-func (db *DB) HasModInternal(modType modparser.ModType, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
+// hasModInternal ports ModDB:HasModInternal.
+func (db *DB) hasModInternal(modType modparser.ModType, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
 			if mod.Type == modType && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
@@ -283,10 +283,10 @@ func (db *DB) HasModInternal(modType modparser.ModType, flags modparser.ModFlag,
 	}
 	if db.Parent != nil {
 		if parentDB, ok := db.Parent.(*DB); ok {
-			return parentDB.HasModInternal(modType, flags, keywordFlags, source, names...)
+			return parentDB.hasModInternal(modType, flags, keywordFlags, source, names...)
 		}
 		// #EVAL: archive parity — see HasMod.
-		panic("modstore: HasModInternal through a non-DB parent (the Lua errors)")
+		panic("modstore: hasModInternal through a non-DB parent (the Lua errors)")
 	}
 	return false
 }

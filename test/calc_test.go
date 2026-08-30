@@ -103,11 +103,12 @@ func decodeCalcGrantedSkills(v any) []calcitem.GrantedSkill {
 	return out
 }
 
-func decodeCalcScalarMaps(v any) []map[string]any {
+func decodeCalcSockets(v any) []calc.SocketInput {
 	arr := decodeCalcArray(v)
-	out := make([]map[string]any, len(arr))
+	out := make([]calc.SocketInput, len(arr))
 	for i, e := range arr {
-		out[i] = e.(map[string]any)
+		m := e.(map[string]any)
+		out[i] = calc.SocketInput{Color: m["color"].(string), Group: m["group"].(float64)}
 	}
 	return out
 }
@@ -169,7 +170,7 @@ func decodeCalcItem(m map[string]any) *calc.ItemInput {
 		item.Requirements = luacanon.RequirementsFromTable(v.(map[string]any))
 	}
 	if v, ok := m["sockets"]; ok {
-		item.Sockets = decodeCalcScalarMaps(v)
+		item.Sockets = decodeCalcSockets(v)
 	}
 	if v, ok := m["jewelData"]; ok {
 		item.JewelData = luacanon.JewelDataFromTable(v.(map[string]any))

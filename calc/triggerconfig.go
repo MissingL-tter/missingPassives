@@ -656,7 +656,7 @@ func snipeConfig(env *Env, actor *performActor) *triggerConfig {
 		if skill.ActiveEffect.GrantedEffect.Name == "Snipe" && skill.SocketGroup != nil && sameSocketSlot(skill, main) {
 			skill.SkillData.SetN("hitTimeMultiplier", snipeStages-0.5)
 			uuid := env.cacheSkillUUID(skill)
-			if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+			if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 				env.BuildActiveSkill(env.Mode, skill, uuid)
 			}
 			cachedSpeed := env.GlobalCache[uuid].out("HitSpeed")
@@ -1051,7 +1051,7 @@ func shattershardConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
 	main.SkillFlags["globalTrigger"] = true
 	uuid := env.cacheSkillUUID(main)
-	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
+	if env.GlobalCache[uuid] == nil || env.Mode == ModeCalculator {
 		env.BuildActiveSkill(env.Mode, main, uuid, uuid)
 	}
 	main.SkillData.SetN("triggerRateCapOverride", 1/env.GlobalCache[uuid].out("Duration").Num())

@@ -183,10 +183,28 @@ func weaponPassSource(wd *item.WeaponData) *SkillData {
 	return out
 }
 
+// CombineMode selects how combineStat folds a main-hand and an off-hand
+// value into one (CalcOffence.lua L2003-2050). Every mode comes from a calc
+// literal at a combineStat call; none is read from build data or config.
+type CombineMode string
+
+const (
+	CombineOr CombineMode = "OR"
+	// CombineAdd is the reference's second branch (L2007). No call site in
+	// the reference passes it, so the branch is unreached; kept because the
+	// port carries the reference's branch set.
+	CombineAdd           CombineMode = "ADD"
+	CombineAverage       CombineMode = "AVERAGE"
+	CombineHarmonicMean  CombineMode = "HARMONICMEAN"
+	CombineChance        CombineMode = "CHANCE"
+	CombineChanceAilment CombineMode = "CHANCE_AILMENT"
+	CombineDPS           CombineMode = "DPS"
+)
+
 // combineStat ports the local of the same name (L2003): fold the main-hand
 // and off-hand pass results into the actor output. `extra` is the reference's
 // vararg, used by the CHANCE modes.
-func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
+func (env *Env) combineStat(c *offenceCtx, stat string, mode CombineMode, extra string) {
 	output, skillFlags, skillData := c.output, c.skillFlags, c.skillData
 	main, off := c.mainHandStats, c.offHandStats
 	orElse := func() {
@@ -199,19 +217,19 @@ func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
 		}
 	}
 	switch {
-	case mode == "OR" || !skillFlags["bothWeaponAttack"]:
+	case mode == CombineOr || !skillFlags["bothWeaponAttack"]:
 		orElse()
-	case mode == "ADD":
+	case mode == CombineAdd:
 		output.SetN(stat, main.N(stat)+off.N(stat))
-	case mode == "AVERAGE":
+	case mode == CombineAverage:
 		output.SetN(stat, (main.N(stat)+off.N(stat))/2)
-	case mode == "HARMONICMEAN":
+	case mode == CombineHarmonicMean:
 		if main.N(stat) == 0 || off.N(stat) == 0 {
 			output.SetN(stat, 0.0)
 		} else {
 			output.SetN(stat, 2/(1/main.N(stat)+1/off.N(stat)))
 		}
-	case mode == "CHANCE":
+	case mode == CombineChance:
 		if main.Flag(stat) && off.Flag(stat) {
 			mainChance := main.N(extra) * main.N("HitChance")
 			offChance := off.N(extra) * off.N("HitChance")
@@ -227,7 +245,7 @@ func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
 		} else {
 			orElse()
 		}
-	case mode == "CHANCE_AILMENT":
+	case mode == CombineChanceAilment:
 		if main.Flag(stat) && off.Flag(stat) {
 			// The reference computes mainPortion/offPortion here and then
 			// never uses them; only the stack split below matters.
@@ -246,7 +264,7 @@ func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
 		} else {
 			orElse()
 		}
-	case mode == "DPS":
+	case mode == CombineDPS:
 		v := main.N(stat) + off.N(stat)
 		if !skillData.Flag("doubleHitsWhenDualWielding") {
 			v /= 2

@@ -104,7 +104,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	src.StatMapCopies = readStatMapCopies(dumpPath)
+	src.StatMapCopyFixture = readStatMapCopies(dumpPath)
 	src.SkipTreeDependentUniques = true
 	if err := data.Load(src); err != nil {
 		t.Fatal(err)

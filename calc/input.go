@@ -36,6 +36,59 @@ type BuildInput struct {
 	Spec               *SpecInput       `lua:"spec"`
 }
 
+// DamageCategory is configInput.enemyDamageType: which damage the EHP
+// estimation is computed against. The seven values are the enemyDamageType
+// option's list (ConfigOptions.lua L2332-2340); several become output-key
+// prefixes ("Melee" -> "MeleeNotHitChance"), so the text is load-bearing.
+type DamageCategory string
+
+const (
+	DamageAverage         DamageCategory = "Average"
+	DamageUntyped         DamageCategory = "Untyped"
+	DamageOverTime        DamageCategory = "DamageOverTime"
+	DamageMelee           DamageCategory = "Melee"
+	DamageProjectile      DamageCategory = "Projectile"
+	DamageSpell           DamageCategory = "Spell"
+	DamageSpellProjectile DamageCategory = "SpellProjectile"
+)
+
+// AilmentMode is configInput.ailmentMode: whether ailment base damage comes
+// from the average application or from crits only (ConfigOptions.lua L210).
+type AilmentMode string
+
+const (
+	AilmentAverage AilmentMode = "AVERAGE"
+	AilmentCrit    AilmentMode = "CRIT"
+)
+
+// RepeatMode is configInput.repeatMode: how a repeating skill's repeats are
+// counted (ConfigOptions.lua L945-949).
+type RepeatMode string
+
+const (
+	RepeatNone     RepeatMode = "NONE"
+	RepeatAverage  RepeatMode = "AVERAGE"
+	RepeatFinal    RepeatMode = "FINAL"
+	RepeatFinalDPS RepeatMode = "FINAL_DPS"
+	// RepeatNoneMixedCase is the reference's own typo: the crit branch at
+	// CalcOffence.lua L2993 tests "None" where every other site tests
+	// "NONE". The option only ever stores "NONE", so that branch is dead
+	// and its skill falls through to the elseif. Kept because the
+	// fall-through is the observed behaviour.
+	RepeatNoneMixedCase RepeatMode = "None"
+)
+
+// PhysMode is configInput.physMode: which element the "random element" mods
+// pick, or all three at a third each (ConfigOptions.lua L211).
+type PhysMode string
+
+const (
+	PhysAverage   PhysMode = "AVERAGE"
+	PhysFire      PhysMode = "FIRE"
+	PhysCold      PhysMode = "COLD"
+	PhysLightning PhysMode = "LIGHTNING"
+)
+
 // ConfigInput is the slice of build.configInput (and, for the placeholder
 // defaults, build.configPlaceholder) the calc reads. Numbers the reference
 // tests for presence before use are Opt (a present 0 is truthy in Lua);
@@ -44,10 +97,10 @@ type BuildInput struct {
 type ConfigInput struct {
 	Bandit                                         string
 	PantheonMajorGod, PantheonMinorGod             string
-	EnemyDamageType                                string // "Average"/"DamageOverTime"/...
-	AilmentMode                                    string
-	RepeatMode                                     string
-	PhysMode                                       string
+	EnemyDamageType                                DamageCategory
+	AilmentMode                                    AilmentMode
+	RepeatMode                                     RepeatMode
+	PhysMode                                       PhysMode
 	RuthlessSupportMode                            string
 	ChanceToIgnoreEnemyPhysicalDamageReductionMode string
 	DoomBlastSource                                string
@@ -206,7 +259,7 @@ type ItemInput struct {
 	BuffModList                 []*modparser.Mod         `lua:"buffModList"`
 	GrantedSkills               []item.GrantedSkill      `lua:"grantedSkills"`
 	Requirements                *item.Requirements       `lua:"requirements"`
-	Sockets                     []map[string]any         `lua:"sockets"`
+	Sockets                     []SocketInput            `lua:"sockets"`
 	AbyssalSocketCount          *float64                 `lua:"abyssalSocketCount"`
 	SocketedJewelEffectModifier *float64                 `lua:"socketedJewelEffectModifier"`
 	JewelRadiusIndex            *float64                 `lua:"jewelRadiusIndex"`
@@ -218,6 +271,13 @@ type ItemInput struct {
 	WeaponData                  map[int]*item.WeaponData `lua:"weaponData"`
 	ExplicitLines               []string                 `lua:"explicitLines"`
 	OtherLines                  []string                 `lua:"otherLines"`
+}
+
+// SocketInput is one item.sockets entry. Group carries the link group; the
+// calc reads only Color, but the field is part of the item projection.
+type SocketInput struct {
+	Color string  `lua:"color"`
+	Group float64 `lua:"group"`
 }
 
 type ClassStats struct {

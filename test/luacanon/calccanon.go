@@ -61,6 +61,15 @@ func configTruthy(v any) bool {
 	return v != nil && (!isBool || b)
 }
 
+// strMode is the str reader for the config fields the calc gives a defined
+// string type; the table carries the same bytes either way.
+func strMode[T ~string](m map[string]any, used map[string]bool, key string, dst *T) {
+	if v, ok := m[key].(string); ok {
+		*dst = T(v)
+		used[key] = true
+	}
+}
+
 // ConfigInputFromTable decodes build.configInput (or, with placeholder set,
 // build.configPlaceholder, whose enemy<Type>Overwhelm default the reference
 // reads under the doubled key "enemy<Type>enemyOverwhelm"). Keys the calc
@@ -110,10 +119,10 @@ func ConfigInputFromTable(m map[string]any, placeholder bool) *calc.ConfigInput 
 	str("bandit", &c.Bandit)
 	str("pantheonMajorGod", &c.PantheonMajorGod)
 	str("pantheonMinorGod", &c.PantheonMinorGod)
-	str("enemyDamageType", &c.EnemyDamageType)
-	str("ailmentMode", &c.AilmentMode)
-	str("repeatMode", &c.RepeatMode)
-	str("physMode", &c.PhysMode)
+	strMode(m, used, "enemyDamageType", &c.EnemyDamageType)
+	strMode(m, used, "ailmentMode", &c.AilmentMode)
+	strMode(m, used, "repeatMode", &c.RepeatMode)
+	strMode(m, used, "physMode", &c.PhysMode)
 	str("ruthlessSupportMode", &c.RuthlessSupportMode)
 	str("ChanceToIgnoreEnemyPhysicalDamageReductionMode", &c.ChanceToIgnoreEnemyPhysicalDamageReductionMode)
 	str("doomBlastSource", &c.DoomBlastSource)
@@ -178,10 +187,10 @@ func ConfigInputTable(c *calc.ConfigInput) map[string]any {
 	t.str("bandit", c.Bandit)
 	t.str("pantheonMajorGod", c.PantheonMajorGod)
 	t.str("pantheonMinorGod", c.PantheonMinorGod)
-	t.str("enemyDamageType", c.EnemyDamageType)
-	t.str("ailmentMode", c.AilmentMode)
-	t.str("repeatMode", c.RepeatMode)
-	t.str("physMode", c.PhysMode)
+	t.str("enemyDamageType", string(c.EnemyDamageType))
+	t.str("ailmentMode", string(c.AilmentMode))
+	t.str("repeatMode", string(c.RepeatMode))
+	t.str("physMode", string(c.PhysMode))
 	t.str("ruthlessSupportMode", c.RuthlessSupportMode)
 	t.str("ChanceToIgnoreEnemyPhysicalDamageReductionMode", c.ChanceToIgnoreEnemyPhysicalDamageReductionMode)
 	t.str("doomBlastSource", c.DoomBlastSource)

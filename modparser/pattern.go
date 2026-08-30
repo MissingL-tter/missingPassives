@@ -105,3 +105,28 @@ func (FlagTypeMod) isFlagType() {}
 
 // TableFn stands for a pattern-table closure in Tables()' view.
 type TableFn struct{}
+
+// TableEntry is the closed set a Tables() value ranges over: the pattern
+// tables' own entry types (*PatternEntry, FlagTypeMod, JewelFn, the form
+// enum) plus TableFn for every closure and the wrappers below for the
+// tables whose values are Go builtins.
+type TableEntry interface{ isTableEntry() }
+
+// TableStr, TableStrs, TableBool and TableMods carry the builtin-typed
+// table values — a name or FLAG modifier name, a name list, the
+// unsupportedModList marker, and a modifier list — since a builtin cannot
+// carry the marker method itself.
+type TableStr string
+type TableStrs []string
+type TableBool bool
+type TableMods []*Mod
+
+func (TableStr) isTableEntry()      {}
+func (TableStrs) isTableEntry()     {}
+func (TableBool) isTableEntry()     {}
+func (TableMods) isTableEntry()     {}
+func (TableFn) isTableEntry()       {}
+func (*PatternEntry) isTableEntry() {}
+func (FlagTypeMod) isTableEntry()   {}
+func (JewelFn) isTableEntry()       {}
+func (modForm) isTableEntry()       {}

@@ -17,6 +17,8 @@ package modparser
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/internal/util"
@@ -35,16 +37,29 @@ var modCache map[string]modCacheEntry
 // parse cache is dropped whenever the policy changes so entries computed
 // under the other policy cannot leak; the only inputs in play are nil and
 // the one embedded document, so same entry count means same document.
-func SetModCache(jsonl []byte) {
+//
+// It returns an error rather than panicking because the bytes are not
+// always the embedded artifact: data.Sources.ModCacheJSONL is a caller-set
+// field, and data.RawSourcesFromDir fills it from data/raw on disk — the
+// same file cmd/sourceupdate overwrites, so an interrupted regeneration
+// leaves a truncated document that the next run reads back. data.Load
+// promises an error for malformed input and now keeps that promise here.
+// On error the installed cache is left untouched: the index is built whole
+// before it is swapped in, so a bad document cannot half-load.
+//
+// Only the document's record framing is checked here. An entry's mods
+// decode lazily on first Parse of its line, and a fault there stays a
+// panic — Parse's signature carries no error channel (see DecodeMods).
+func SetModCache(jsonl []byte) error {
 	parseCacheMu.Lock()
 	defer parseCacheMu.Unlock()
 	if jsonl == nil {
 		if modCache == nil {
-			return
+			return nil
 		}
 		modCache = nil
 		parseCache = map[string]parseResult{}
-		return
+		return nil
 	}
 	index := make(map[string]modCacheEntry, 16384)
 	dec := json.NewDecoder(bytes.NewReader(jsonl))
@@ -55,15 +70,16 @@ func SetModCache(jsonl []byte) {
 			E *string         `json:"e"`
 		}
 		if err := dec.Decode(&rec); err != nil {
-			panic("modparser: bad modCache.jsonl: " + err.Error())
+			return fmt.Errorf("modparser: bad modCache.jsonl: %w", err)
 		}
 		index[rec.K] = modCacheEntry{Mods: rec.M, Extra: rec.E}
 	}
 	if modCache != nil && len(modCache) == len(index) {
-		return
+		return nil
 	}
 	modCache = index
 	parseCache = map[string]parseResult{}
+	return nil
 }
 
 // ParsedLines returns every line Parse has answered since the parse cache
@@ -162,9 +178,9 @@ func encodeValue(v Value) any {
 	if !ok {
 		panic("modparser: unencodable value")
 	}
-	out := map[string]any{"kind": kind}
+	out := map[string]any{"kind": kind.String()}
 	for _, p := range params {
-		if inner, isValue := p.Value.(Value); isValue && kind == valueKindData && p.Name == "value" {
+		if inner, isValue := p.Value.(Value); isValue && kind == ValueKindData && p.Name == "value" {
 			out[p.Name] = encodeValue(inner) // the nested value, as decodeValue reads it back
 			continue
 		}
@@ -215,8 +231,14 @@ func encodeParam(v ParamValue) any {
 	return v
 }
 
-// DecodeMods is EncodeMods' inverse. A malformed document is a build
-// artifact fault and panics.
+// DecodeMods is EncodeMods' inverse. A malformed entry is a build artifact
+// fault and panics rather than returning an error: the caller that matters
+// is cacheLookup, decoding an installed cache entry lazily inside Parse,
+// and Parse's result is (mods, extra, recognised) with no error channel —
+// an error return here would only move the panic into cacheLookup. The two
+// document callers (data's minion and skill records) are in the same class:
+// an artifact the build produced, malformed. Callers that must report
+// instead of fault use DecodeValue/DecodeTag.
 func DecodeMods(raw []byte) []*Mod {
 	var list []json.RawMessage
 	if err := json.Unmarshal(raw, &list); err != nil {
@@ -229,8 +251,45 @@ func DecodeMods(raw []byte) []*Mod {
 	return out
 }
 
-// DecodeMod decodes one mod object of the cache entry format.
+// DecodeMod decodes one mod object of the cache entry format. It panics on
+// a malformed object for the reason DecodeMods gives.
 func DecodeMod(raw []byte) *Mod { return decodeMod(raw) }
+
+// DecodeValue and DecodeTag decode one value, or one tag, of the cache
+// entry format on its own. They exist for callers outside the embedded
+// artifact — data's mixed baseMods records — where a malformed record is
+// a record to report on, not the build fault DecodeMods treats it as.
+// They wrap the very decoders the artifact path uses, and that path is
+// deliberately panicking (a bad artifact must not be half-loaded), so the
+// fault is turned into an error here at the boundary rather than threaded
+// back through the recursive decoders.
+func DecodeValue(raw json.RawMessage) (v Value, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			v, err = nil, decodeFault(r)
+		}
+	}()
+	return decodeValue(raw), nil
+}
+
+func DecodeTag(raw json.RawMessage) (t Tag, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			t, err = nil, decodeFault(r)
+		}
+	}()
+	return decodeTag(raw), nil
+}
+
+// decodeFault turns a recovered decoder panic into an error. The decoders
+// panic with their own already-prefixed strings; anything else is a
+// runtime fault and gets the prefix here.
+func decodeFault(r any) error {
+	if s, ok := r.(string); ok {
+		return errors.New(s)
+	}
+	return fmt.Errorf("modparser: decode: %v", r)
+}
 
 func decodeObject(raw json.RawMessage) map[string]json.RawMessage {
 	var m map[string]json.RawMessage
@@ -319,22 +378,23 @@ func decodeValue(raw json.RawMessage) Value {
 		panic("modparser: bad structured mods: value")
 	}
 	m := decodeObject(raw)
-	var kind string
-	mustUnmarshal(m["kind"], &kind)
-	switch kind {
+	var kindName string
+	mustUnmarshal(m["kind"], &kindName)
+	switch kindName {
 	case "inf":
 		return Num(math.Inf(1))
 	case "-inf":
 		return Num(math.Inf(-1))
 	}
 	delete(m, "kind")
+	kind := ValueKindByName[kindName]
 	params := make([]Param, 0, len(m))
 	for k, v := range m {
 		var pv ParamValue
 		switch {
-		case k == "mod" || k == "value" && kind == valueKindPropertyMod:
+		case k == "mod" || k == "value" && kind == ValueKindPropertyMod:
 			pv = decodeMod(v)
-		case k == "value" && kind == valueKindData:
+		case k == "value" && kind == ValueKindData:
 			pv = decodeValue(v)
 		case k == "conqueror":
 			c := decodeObject(v)
@@ -350,9 +410,9 @@ func decodeValue(raw json.RawMessage) Value {
 		}
 		params = append(params, Param{k, pv})
 	}
-	v, ok := ValueFromParams(kind, params)
+	v, ok := valueFromParams(kind, params)
 	if !ok {
-		panic("modparser: bad structured mods: value " + kind)
+		panic("modparser: bad structured mods: value " + kindName)
 	}
 	return v
 }
@@ -386,12 +446,22 @@ func quantizeMod(m *Mod) *Mod {
 	return m
 }
 
+// quantizeTag faults on a tag that will not rebuild rather than returning
+// the nil TagFromParams hands back: a nil tag is a hole in Mod.Tags, and a
+// hole encodes as null on both sides of the mod-cache differential — the
+// shipped file (internal/modcachegen) and the fresh-parse comparison
+// (test/modcache_test.go) both run through Quantize14 — so the dropped tag
+// would agree with itself and never surface as a disagreement. Same policy
+// as quantizeValue below.
 func quantizeTag(t Tag) Tag {
 	params := t.Params()
 	for i := range params {
 		params[i].Value = quantizeParam(params[i].Value)
 	}
-	q, _ := TagFromParams(TagTypeName(t), params)
+	q, ok := TagFromParams(TagTypeName(t), params)
+	if !ok {
+		panic("modparser: quantize: " + TagTypeName(t))
+	}
 	return q
 }
 
@@ -406,9 +476,9 @@ func quantizeValue(v Value) Value {
 	for i := range params {
 		params[i].Value = quantizeParam(params[i].Value)
 	}
-	q, ok := ValueFromParams(kind, params)
+	q, ok := valueFromParams(kind, params)
 	if !ok {
-		panic("modparser: quantize: " + kind)
+		panic("modparser: quantize: " + kind.String())
 	}
 	return q
 }

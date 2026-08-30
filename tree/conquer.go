@@ -304,5 +304,5 @@ func conqueredStatDescOf(node *Node, statKey string) *ConqueredStatDesc {
 			return desc
 		}
 	}
-	panic("tree: alt node " + node.IDStr + " missing stat desc " + statKey)
+	panic("tree: alt node " + node.IDStr + " missing stat desc " + statKey) // the Lua errors (indexes nil statMod)
 }

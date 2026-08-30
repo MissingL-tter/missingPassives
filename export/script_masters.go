@@ -51,7 +51,7 @@ func buildMasters(x *Ctx) (schema.Document, error) {
 		return nil, err
 	}
 	var mc schema.MasterCrafts
-	for _, craft := range benchOptions.GetRowList("IsDisabled", false) {
+	for _, craft := range benchOptions.RowsByBool("IsDisabled", false) {
 		mod := craft.Ref("Mod")
 		if mod == nil {
 			continue

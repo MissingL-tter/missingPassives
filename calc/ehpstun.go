@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
+func (env *Env) ehpStun(actor *performActor, damageCategoryConfig DamageCategory) {
 	modDB := actor.db
 	output := actor.output
 
@@ -58,9 +58,9 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 	// #EVAL the reference's second branch is `elseif ~= "Melee"`, which only
 	// runs when the category IS "Average", so the Melee multiplier below can
 	// never apply to a non-melee category.
-	if damageCategoryConfig != "Average" {
+	if damageCategoryConfig != DamageAverage {
 		effectiveEnemyDamage = effectiveEnemyDamage * (1 + data.Misc.StunNotMeleeDamageMult*3) / 4
-	} else if damageCategoryConfig != "Melee" {
+	} else if damageCategoryConfig != DamageMelee {
 		effectiveEnemyDamage = effectiveEnemyDamage * data.Misc.StunNotMeleeDamageMult
 	}
 	baseStunChance := math.Min(data.Misc.StunBaseMult*effectiveEnemyDamage/output.N("StunThreshold"), 100)

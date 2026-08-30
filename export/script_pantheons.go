@@ -20,7 +20,7 @@ func buildPantheons(x *Ctx) (schema.Document, error) {
 		return nil, err
 	}
 	var ps schema.Pantheons
-	for _, p := range layout.GetRowList("IsDisabled", false) {
+	for _, p := range layout.RowsByBool("IsDisabled", false) {
 		pan := schema.Pantheon{
 			Id:         p.Str("Id"),
 			IsMajorGod: p.Bool("IsMajorGod"),

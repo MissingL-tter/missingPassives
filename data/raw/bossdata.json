@@ -15,14 +15,14 @@
 			"pens": [
 				{
 					"name": "FirePen",
-					"text": "8"
+					"value": 8
 				}
 			],
 			"hasUberPen": true,
 			"uberPens": [
 				{
 					"name": "FirePen",
-					"text": "10"
+					"value": 10
 				}
 			],
 			"speed": 25000,
@@ -44,14 +44,14 @@
 			"pens": [
 				{
 					"name": "ColdPen",
-					"text": "25"
+					"value": 25
 				}
 			],
 			"hasUberPen": true,
 			"uberPens": [
 				{
 					"name": "ColdPen",
-					"text": "40"
+					"value": 40
 				}
 			],
 			"speed": 1400,
@@ -235,15 +235,14 @@
 			"hasPen": true,
 			"pens": [
 				{
-					"name": "FirePen",
-					"text": "\"\""
+					"name": "FirePen"
 				}
 			],
 			"hasUberPen": true,
 			"uberPens": [
 				{
 					"name": "FirePen",
-					"text": "30"
+					"value": 30
 				}
 			],
 			"speed": 3000,

@@ -11,8 +11,8 @@ import (
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
-// luaOr returns a when the Lua `a or b` keeps a (a non-nil): here the
-// Override result when truthy, else the fallback.
+// overrideOr is the reference's `modDB:Override(nil, name) or fallback`:
+// the override when the store holds one, else the fallback.
 func overrideOr(db *modstore.DB, name string, fallback float64) float64 {
 	if ov, ok := db.Override(nil, name); ok {
 		return valueNum(ov)

@@ -142,7 +142,7 @@ var mathHuge = math.Inf(1)
 // sanitise, exactly as the reference does.
 func New(raw string, rarity string, highQuality bool) *Item {
 	it := &Item{}
-	it.ParseRaw(FoldText(raw), rarity, highQuality)
+	it.ParseRaw(util.FoldText(raw), rarity, highQuality)
 	return it
 }
 
@@ -850,7 +850,7 @@ lineLoop:
 					}
 				}
 				if (!parsed || extra != "") && l+1 < len(rawLines) && modLine.ModGroup == nextModGroup {
-					nextLine := stripBalanced(rawLines[l+1], '{', '}')
+					nextLine := util.StripBalanced(rawLines[l+1], '{', '}')
 					nextLine = gsubLimitFunc(nextLine, ` ?\(([a-z]+)\)`, -1, func(caps []string) string { return "" })
 					combLine := line + " " + nextLine
 					rangedLine = applyRange(combLine, 1, catalystScalar, corruptedOr1(modLine))
