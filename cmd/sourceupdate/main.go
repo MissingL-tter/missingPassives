@@ -11,7 +11,8 @@
 //     (internal/modcachegen), loaded from the output directory so the
 //     fresh artifacts are used, not the embedded copies.
 //  4. Reports what it cannot regenerate: the .archive reference itself
-//     (shipped LUT bins etc. — replace manually on a version bump; every
+//     (shipped LUT bins etc. — bumped by the /bump skill, which rebases the
+//     .archive submodule onto a newer PathOfBuilding release; every
 //     differential compares against it).
 //  5. Runs the full test suite plus the MP_EXPORT export differential
 //     (-skiptests to skip). After a data change, failures here are the
@@ -147,7 +148,7 @@ func main() {
 	// 4. What this cannot regenerate.
 	fmt.Println()
 	fmt.Println("NOT regenerated (manual):")
-	fmt.Println("  - .archive reference (shipped LUT bins, reference Lua/builds): replace on a version bump;")
+	fmt.Println("  - .archive reference (shipped LUT bins, reference Lua/builds): bump with the /bump skill;")
 	fmt.Println("    all differentials compare against it, so stale reference = failing tests below")
 
 	// 5. Verify.
