@@ -10,38 +10,15 @@ inspect.lua
 *.ggpk
 
 # Application files
-.archive/src/Builds/
 Builds/
 *.cfg
 Settings.xml
 
 # Testing
 luajit/
-.archive/spec/test_results.log
-.archive/spec/test_generation.log
-.archive/src/luacov.stats.out
-
-# Release
-.archive/manifest-updated.xml
-
-# GGPK Export
-.archive/src/Export/ggpk/metadata/
-.archive/src/Export/ggpk/data/
-.archive/src/Export/ggpk/art/
-.archive/src/Export/ggpk/*.exe
-.archive/src/Export/ggpk/*.dll
 
 # PoB Trader
 *_currency_values.json
-
-# Timeless Jewels
-.archive/src/Data/TimelessJewelData/*.bin
-
-# Simplegraphic Debugging
-.archive/runtime/imgui.ini
-.archive/runtime/SimpleGraphic/SimpleGraphic.log
-
-.archive/src/poe_api_response.json
 
 # Build requests are personal; the blank form is not
 .claude/skills/cook/recipes/*
