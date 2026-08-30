@@ -5,6 +5,8 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -14,23 +16,23 @@ func (env *Env) takenHitFromDamage(rawDamage float64, damageType string, actor *
 	modDB := actor.db
 
 	damageMitigationMultiplierForType := func(damage float64, typ string) float64 {
-		totalResistMult := outNum(output, typ+"ResistTakenHitMulti")
-		effectiveAppliedArmour := outNum(output, typ+"EffectiveAppliedArmour")
+		totalResistMult := output.N(typ + "ResistTakenHitMulti")
+		effectiveAppliedArmour := output.N(typ + "EffectiveAppliedArmour")
 		armourDRPercent := armourReductionF(effectiveAppliedArmour, damage*totalResistMult)
 		flatDRPercent := 0.0
 		if !modDB.Flag(nil, "SelfIgnoreBase"+typ+"DamageReduction") {
-			if v, ok := output["Base"+typ+"DamageReductionWhenHit"]; ok && truthy(v) {
-				flatDRPercent = anyNum(v)
+			if v, ok := output["Base"+typ+"DamageReductionWhenHit"]; ok && v.Truthy() {
+				flatDRPercent = v.Num()
 			} else {
-				flatDRPercent = outNum(output, "Base"+typ+"DamageReduction")
+				flatDRPercent = output.N("Base" + typ + "DamageReduction")
 			}
 		}
-		totalDRPercent := math.Min(outNum(output, "DamageReductionMax"), armourDRPercent+flatDRPercent)
+		totalDRPercent := math.Min(output.N("DamageReductionMax"), armourDRPercent+flatDRPercent)
 		enemyOverwhelmPercent := 0.0
 		if !modDB.Flag(nil, "SelfIgnore"+typ+"DamageReduction") {
-			enemyOverwhelmPercent = outNum(output, typ+"EnemyOverwhelm")
+			enemyOverwhelmPercent = output.N(typ + "EnemyOverwhelm")
 		}
-		totalDRMulti := 1 - math.Max(math.Min(outNum(output, "DamageReductionMax"), totalDRPercent-enemyOverwhelmPercent), 0)/100
+		totalDRMulti := 1 - math.Max(math.Min(output.N("DamageReductionMax"), totalDRPercent-enemyOverwhelmPercent), 0)/100
 		return totalResistMult * totalDRMulti
 	}
 
@@ -41,12 +43,12 @@ func (env *Env) takenHitFromDamage(rawDamage float64, damageType string, actor *
 		if !ok {
 			continue
 		}
-		takenFlat := outNum(output, damageConvertedType+"takenFlat")
+		takenFlat := output.N(damageConvertedType + "takenFlat")
 		if convertPercent > 0 || takenFlat != 0 {
 			convertedDamage := rawDamage * convertPercent / 100
-			vaalArctic := math.Min(-modDB.Sum("MORE", nil, "VaalArcticArmourMitigation")/100, 1)
-			reducedDamage := roundDec(math.Max(convertedDamage*damageMitigationMultiplierForType(convertedDamage, damageConvertedType)+takenFlat, 0)*
-				outNum(output, damageConvertedType+"AfterReductionTakenHitMulti"), 0) * (1 - vaalArctic)
+			vaalArctic := math.Min(-modDB.Sum(modparser.More, nil, "VaalArcticArmourMitigation")/100, 1)
+			reducedDamage := util.RoundHalfUp(math.Max(convertedDamage*damageMitigationMultiplierForType(convertedDamage, damageConvertedType)+takenFlat, 0)*
+				output.N(damageConvertedType+"AfterReductionTakenHitMulti"), 0) * (1 - vaalArctic)
 			receivedDamageSum += reducedDamage
 			if reducedDamage > 0 || convertPercent > 0 {
 				damages[damageConvertedType] = reducedDamage
@@ -63,39 +65,39 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 	// fix total pools, as they aren't used anymore
 	for _, damageType := range dmgTypeList {
 		// ward
-		wardBypass := modDB.Sum("BASE", nil, "WardBypass")
+		wardBypass := modDB.Sum(modparser.Base, nil, "WardBypass")
 		if wardBypass > 0 {
-			poolProtected := outNum(output, "Ward") / (1 - wardBypass/100) * (wardBypass / 100)
-			sourcePool := outNum(output, damageType+"TotalHitPool")
+			poolProtected := output.N("Ward") / (1 - wardBypass/100) * (wardBypass / 100)
+			sourcePool := output.N(damageType + "TotalHitPool")
 			sourcePool = math.Max(sourcePool-poolProtected, 0) + math.Min(sourcePool, poolProtected)/(wardBypass/100)
-			output[damageType+"TotalHitPool"] = sourcePool
+			output.SetN(damageType+"TotalHitPool", sourcePool)
 		} else {
-			output[damageType+"TotalHitPool"] = outNum(output, damageType+"TotalHitPool") + outNum(output, "Ward")
+			output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+output.N("Ward"))
 		}
 		// aegis
 		elementalAegis := 0.0
 		if isElementalRes[damageType] {
-			elementalAegis = outNum(output, damageType+"AegisDisplay")
+			elementalAegis = output.N(damageType + "AegisDisplay")
 		}
-		output[damageType+"TotalHitPool"] = outNum(output, damageType+"TotalHitPool") +
-			math.Max(math.Max(outNum(output, damageType+"Aegis"), outNum(output, "sharedAegis")), elementalAegis)
+		output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+
+			math.Max(math.Max(output.N(damageType+"Aegis"), output.N("sharedAegis")), elementalAegis))
 		// guard skill. #EVAL Lua's `a or 0 + b or 0` parses as `a or (0+b) or
 		// 0`, so only the shared value is read here when it is non-nil.
-		guardAbsorbRate := outNum(output, "sharedGuardAbsorbRate")
+		guardAbsorbRate := output.N("sharedGuardAbsorbRate")
 		if guardAbsorbRate == 0 {
-			guardAbsorbRate = outNum(output, damageType+"GuardAbsorbRate")
+			guardAbsorbRate = output.N(damageType + "GuardAbsorbRate")
 		}
 		if guardAbsorbRate > 0 {
-			guardAbsorb := outNum(output, "sharedGuardAbsorb")
+			guardAbsorb := output.N("sharedGuardAbsorb")
 			if guardAbsorb == 0 {
-				guardAbsorb = outNum(output, damageType+"GuardAbsorb")
+				guardAbsorb = output.N(damageType + "GuardAbsorb")
 			}
 			if guardAbsorbRate >= 100 {
-				output[damageType+"TotalHitPool"] = outNum(output, damageType+"TotalHitPool") + guardAbsorb
+				output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+guardAbsorb)
 			} else {
 				poolProtected := guardAbsorb / (guardAbsorbRate / 100) * (1 - guardAbsorbRate/100)
-				output[damageType+"TotalHitPool"] = math.Max(outNum(output, damageType+"TotalHitPool")-poolProtected, 0) +
-					math.Min(outNum(output, damageType+"TotalHitPool"), poolProtected)/(1-guardAbsorbRate/100)
+				output.SetN(damageType+"TotalHitPool", math.Max(output.N(damageType+"TotalHitPool")-poolProtected, 0)+
+					math.Min(output.N(damageType+"TotalHitPool"), poolProtected)/(1-guardAbsorbRate/100))
 			}
 		}
 		// Undo the ally pool drains in reverse order to recover the incoming hit.
@@ -103,14 +105,14 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 			ally := allyLifePoolList[index]
 			life, hasLife := output[ally.life]
 			mitigation, hasMit := output[ally.mitigation]
-			if hasLife && anyNum(life) > 0 && hasMit && anyNum(mitigation) > 0 {
-				mit := math.Min(anyNum(mitigation), 100)
+			if hasLife && life.Num() > 0 && hasMit && mitigation.Num() > 0 {
+				mit := math.Min(mitigation.Num(), 100)
 				if mit == 100 {
-					output[damageType+"TotalHitPool"] = outNum(output, damageType+"TotalHitPool") + anyNum(life)
+					output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+life.Num())
 				} else {
-					poolProtected := anyNum(life) / (mit / 100) * (1 - mit/100)
-					output[damageType+"TotalHitPool"] = math.Max(outNum(output, damageType+"TotalHitPool")-poolProtected, 0) +
-						math.Min(outNum(output, damageType+"TotalHitPool"), poolProtected)/(1-mit/100)
+					poolProtected := life.Num() / (mit / 100) * (1 - mit/100)
+					output.SetN(damageType+"TotalHitPool", math.Max(output.N(damageType+"TotalHitPool")-poolProtected, 0)+
+						math.Min(output.N(damageType+"TotalHitPool"), poolProtected)/(1-mit/100))
 				}
 			}
 		}
@@ -121,13 +123,13 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 		useConversionSmoothing := false
 		for _, damageConvertedType := range dmgTypeList {
 			convertPercent := actor.damageShiftTable[damageType][damageConvertedType]
-			takenFlat := outNum(output, damageConvertedType+"takenFlat")
+			takenFlat := output.N(damageConvertedType + "takenFlat")
 			if convertPercent > 0 || takenFlat != 0 {
 				hitTaken := 0.0
-				effectiveAppliedArmour := outNum(output, damageConvertedType+"EffectiveAppliedArmour")
+				effectiveAppliedArmour := output.N(damageConvertedType + "EffectiveAppliedArmour")
 				damageConvertedMulti := convertPercent / 100
-				totalHitPool := outNum(output, damageConvertedType+"TotalHitPool")
-				totalTakenMulti := outNum(output, damageConvertedType+"AfterReductionTakenHitMulti") * (1 - outNum(output, "VaalArcticArmourMitigation"))
+				totalHitPool := output.N(damageConvertedType + "TotalHitPool")
+				totalTakenMulti := output.N(damageConvertedType+"AfterReductionTakenHitMulti") * (1 - output.N("VaalArcticArmourMitigation"))
 				if damageConvertedMulti <= 0 {
 					takenWithoutIncoming := math.Max(takenFlat, 0) * totalTakenMulti
 					if takenWithoutIncoming >= totalHitPool {
@@ -137,25 +139,25 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 					}
 				} else if effectiveAppliedArmour == 0 && convertPercent == 100 {
 					// simpler calculation for no armour DR
-					totalResistMult := outNum(output, damageConvertedType+"ResistTakenHitMulti")
-					drMulti := totalResistMult * (1 - outNum(output, damageConvertedType+"DamageReduction")/100)
+					totalResistMult := output.N(damageConvertedType + "ResistTakenHitMulti")
+					drMulti := totalResistMult * (1 - output.N(damageConvertedType+"DamageReduction")/100)
 					hitTaken = math.Max(totalHitPool/damageConvertedMulti/drMulti-takenFlat, 0) / totalTakenMulti
 				} else {
 					// Solve the damage chain backwards for the raw hit: see
 					// the reference's derivation, a quadratic in RAW.
-					totalResistMult := outNum(output, damageConvertedType+"ResistTakenHitMulti")
+					totalResistMult := output.N(damageConvertedType + "ResistTakenHitMulti")
 					reductionPercent := 0.0
 					if !modDB.Flag(nil, "SelfIgnoreBase"+damageConvertedType+"DamageReduction") {
-						if v, ok := output["Base"+damageConvertedType+"DamageReductionWhenHit"]; ok && truthy(v) {
-							reductionPercent = anyNum(v)
+						if v, ok := output["Base"+damageConvertedType+"DamageReductionWhenHit"]; ok && v.Truthy() {
+							reductionPercent = v.Num()
 						} else {
-							reductionPercent = outNum(output, "Base"+damageConvertedType+"DamageReduction")
+							reductionPercent = output.N("Base" + damageConvertedType + "DamageReduction")
 						}
 					}
 					flatDR := reductionPercent / 100
 					enemyOverwhelmPercent := 0.0
 					if !modDB.Flag(nil, "SelfIgnore"+damageConvertedType+"DamageReduction") {
-						enemyOverwhelmPercent = outNum(output, damageConvertedType+"EnemyOverwhelm")
+						enemyOverwhelmPercent = output.N(damageConvertedType + "EnemyOverwhelm")
 					}
 
 					resistXConvert := totalResistMult * damageConvertedMulti
@@ -170,7 +172,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 
 					// tack on some caps
 					noDRMaxHit := totalHitPool / damageConvertedMulti / totalResistMult / totalTakenMulti * (1 - takenFlat*totalTakenMulti/totalHitPool)
-					maxDRMaxHit := noDRMaxHit / (1 - (outNum(output, "DamageReductionMax")-enemyOverwhelmPercent)/100)
+					maxDRMaxHit := noDRMaxHit / (1 - (output.N("DamageReductionMax")-enemyOverwhelmPercent)/100)
 					hitTaken = math.Floor(math.Max(math.Min(raw, maxDRMaxHit), noDRMaxHit))
 					useConversionSmoothing = useConversionSmoothing || convertPercent != 100
 				}
@@ -178,7 +180,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 			}
 		}
 
-		enemyDamageMult := outNum(output, damageType+"EnemyDamageMult")
+		enemyDamageMult := output.N(damageType + "EnemyDamageMult")
 
 		var finalMaxHit float64
 		switch {
@@ -194,7 +196,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 				passOverkill := passPools.OverkillDamage - passPools.hitPoolRemaining
 				passRatio := 0.0
 				for partType := range passDamages {
-					partPool := outNum(output, partType+"TotalHitPool")
+					partPool := output.N(partType + "TotalHitPool")
 					if partPool > 0 {
 						passRatio = math.Max(passRatio, (passOverkill+partPool)/partPool)
 					}
@@ -219,12 +221,12 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 					break
 				}
 			}
-			finalMaxHit = roundDec(passIncomingDamage/enemyDamageMult, 0)
+			finalMaxHit = util.RoundHalfUp(passIncomingDamage/enemyDamageMult, 0)
 		default:
-			finalMaxHit = roundDec(partMin/enemyDamageMult, 0)
+			finalMaxHit = util.RoundHalfUp(partMin/enemyDamageMult, 0)
 		}
 
-		output[damageType+"MaximumHitTaken"] = finalMaxHit
+		output.SetN(damageType+"MaximumHitTaken", finalMaxHit)
 	}
 
 	// second minimum used for power calcs, as there are issues using
@@ -232,7 +234,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 	minimum := math.Inf(1)
 	secondMinimum := math.Inf(1)
 	for _, damageType := range dmgTypeList {
-		v := outNum(output, damageType+"MaximumHitTaken")
+		v := output.N(damageType + "MaximumHitTaken")
 		if v < minimum {
 			secondMinimum = minimum
 			minimum = v
@@ -240,10 +242,10 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 			secondMinimum = v
 		}
 	}
-	output["SecondMinimalMaximumHitTaken"] = secondMinimum
+	output.SetN("SecondMinimalMaximumHitTaken", secondMinimum)
 
 	// effective health pool vs dots
 	for _, damageType := range dmgTypeList {
-		output[damageType+"DotEHP"] = outNum(output, damageType+"TotalPool") / outNum(output, damageType+"TakenDotMult")
+		output.SetN(damageType+"DotEHP", output.N(damageType+"TotalPool")/output.N(damageType+"TakenDotMult"))
 	}
 }

@@ -5,8 +5,12 @@
 package calc
 
 import (
-	"github.com/MissingL-tter/missingPassives/data"
+	"strconv"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/skills"
 )
 
 // BuildInput is the fixture boundary: everything initEnv reads from the
@@ -24,12 +28,68 @@ type BuildInput struct {
 	ItemsTab           *ItemsTabInput   `lua:"itemsTab"`
 	SkillsTab          *SkillsTabInput  `lua:"skillsTab"`
 	SpectreList        []string         `lua:"spectreList"`
-	ConfigInput        map[string]any   `lua:"configInput"`
-	ConfigPlaceholder  map[string]any   `lua:"configPlaceholder"`
+	ConfigInput        *ConfigInput     `lua:"configInput"`
+	ConfigPlaceholder  *ConfigInput     `lua:"configPlaceholder"`
 	ConfigModList      []*modparser.Mod `lua:"configModList"`
 	ConfigEnemyModList []*modparser.Mod `lua:"configEnemyModList"`
 	PartyEnemyModList  []*modparser.Mod `lua:"partyEnemyModList"`
 	Spec               *SpecInput       `lua:"spec"`
+}
+
+// ConfigInput is the slice of build.configInput (and, for the placeholder
+// defaults, build.configPlaceholder) the calc reads. Numbers the reference
+// tests for presence before use are Opt (a present 0 is truthy in Lua);
+// numbers read as `x or 0` are plain. Config values that the reference
+// keeps as UI strings are parsed to numbers by the input decoder.
+type ConfigInput struct {
+	Bandit                                         string
+	PantheonMajorGod, PantheonMinorGod             string
+	EnemyDamageType                                string // "Average"/"DamageOverTime"/...
+	AilmentMode                                    string
+	RepeatMode                                     string
+	PhysMode                                       string
+	RuthlessSupportMode                            string
+	ChanceToIgnoreEnemyPhysicalDamageReductionMode string
+	DoomBlastSource                                string
+
+	PvpScaling            bool
+	DisableEHPGainOnBlock bool
+	ConditionLowLife      bool
+	ExcludeCullingDPS     bool
+	EEIgnoreHitDamage     bool
+	IgnoreJewelLimits     bool
+	IgnoreItemDisablers   bool
+	// ConditionLowEnergyShield's raw value is what output.CappingES gets
+	// when neither armour nor evasion caps ES.
+	ConditionLowEnergyShield util.Opt[bool]
+
+	EHPUnluckyWorstOf           util.Opt[float64]
+	EnemyCritChance             util.Opt[float64]
+	EnemyCritDamage             util.Opt[float64]
+	EnemySpeed                  util.Opt[float64]
+	EnemyMultiplierPvpDamage    util.Opt[float64]
+	MultiplierPvpTvalueOverride util.Opt[float64]
+	ResistancePenalty           util.Opt[float64]
+	MeleeDistance               util.Opt[float64]
+	ProjectileDistance          util.Opt[float64]
+	OverrideEmptyRedSockets     util.Opt[float64]
+	OverrideEmptyGreenSockets   util.Opt[float64]
+	OverrideEmptyBlueSockets    util.Opt[float64]
+	OverrideEmptyWhiteSockets   util.Opt[float64]
+
+	MultiplierPoisonOnEnemy  float64
+	MultiplierSummonedMinion float64
+	MultiplierManaBurnStacks float64
+
+	// Per damage type (Physical/Lightning/Cold/Fire/Chaos): enemy<Type>Damage,
+	// enemy<Type>Pen, enemy<Type>Overwhelm, enemy<Type>Resist.
+	EnemyDamage    map[string]float64
+	EnemyPen       map[string]float64
+	EnemyOverwhelm map[string]float64
+	EnemyResist    map[string]float64
+	// BalanceOfTerrorSelfCast is keyed by the curse name without spaces
+	// (balanceOfTerrorSelfCast<Curse>).
+	BalanceOfTerrorSelfCast map[string]bool
 }
 
 // SkillsTabInput carries what the initEnv skills stage reads from
@@ -41,32 +101,36 @@ type SkillsTabInput struct {
 	ImbuedSupportBySlot map[string]string `lua:"imbuedSupportBySlot"`
 }
 
-// SocketGroupInput is one socket group: its scalar fields as a bag (the
-// runtime mutates the same keys the Lua group table holds) plus the gems.
+// SocketGroupInput is one socket group: the skills tab's typed group plus
+// the runtime references the granted-skill update sets. GemList shadows the
+// embedded group's list with the same gems wrapped in their calc state.
 type SocketGroupInput struct {
-	KV      map[string]any    `lua:"kv"`
+	*skills.SocketGroup
 	GemList []*SocketGemInput `lua:"gemList"`
 
-	// runtime references set by the granted-skill group update
 	SourceItem     *Item
 	SourceNode     *NodeInput
-	ExplodeSources []any
+	ExplodeSources []ExplodeSource
 }
 
-// SocketGemInput is one gem instance: scalar bag plus resolution refs.
-// GemData/GrantedEffect are resolved from the ids by InitEnv; ReqOverride
-// is runtime state (gemInstance.reqOverride).
-type SocketGemInput struct {
-	KV                  map[string]any `lua:"kv"`
-	GemDataID           *string        `lua:"gemDataId"`
-	GrantedEffectID     *string        `lua:"grantedEffectId"`
-	ExplodeSourceItemID *float64       `lua:"explodeSourceItemId"`
-	ExplodeSourceNodeID *float64       `lua:"explodeSourceNodeId"`
+// ExplodeSource is what grants an on-kill explosion: an item or a tree
+// node. ExplodeKey is the reference's `modSource or "Tree:"..id`, the mod
+// source the explosion's ExplodeMod entries carry.
+type ExplodeSource interface{ ExplodeKey() string }
 
-	GemData       *data.Gem
-	GrantedEffect *data.GrantedEffect
+// SocketGemInput is one gem instance: the skills tab's typed gem plus
+// resolution ids (the fixture stores ids; InitEnv resolves GemData/
+// GrantedEffect from them) and runtime state (gemInstance.reqOverride,
+// the explode source).
+type SocketGemInput struct {
+	*skills.Gem
+	GemDataID           *string  `lua:"gemDataId"`
+	GrantedEffectID     *string  `lua:"grantedEffectId"`
+	ExplodeSourceItemID *float64 `lua:"explodeSourceItemId"`
+	ExplodeSourceNodeID *float64 `lua:"explodeSourceNodeId"`
+
 	ReqOverride   *float64
-	ExplodeSource any // *Item or *NodeInput
+	ExplodeSource ExplodeSource
 }
 
 // ItemsTabInput carries what the initEnv items stage reads from
@@ -99,8 +163,8 @@ type SlotInput struct {
 	ContainJewelSocket *bool `lua:"containJewelSocket"`
 	// RadiusNodes: for jewel sockets holding a radius jewel, the in-radius
 	// node ids mapped to their node type (spec nodesInRadius[radiusIndex]).
-	RadiusNodes      map[int]string `lua:"radiusNodes"`
-	RadiusAttributes map[string]any `lua:"radiusAttributes"`
+	RadiusNodes      map[int]string     `lua:"radiusNodes"`
+	RadiusAttributes map[string]float64 `lua:"radiusAttributes"`
 }
 
 type ItemBaseInput struct {
@@ -109,16 +173,14 @@ type ItemBaseInput struct {
 	Flask   *FlaskBaseInput `lua:"flask"`
 }
 
-// FlaskBaseInput carries base.flask.life/mana: recovery amounts (numbers)
-// whose presence the calc reads as truthiness.
+// FlaskBaseInput carries base.flask.life/mana: recovery amounts whose
+// presence the calc reads.
 type FlaskBaseInput struct {
-	Life any `lua:"life"`
-	Mana any `lua:"mana"`
+	Life util.Opt[float64] `lua:"life"`
+	Mana util.Opt[float64] `lua:"mana"`
 }
 
 // ItemInput is the per-item slice of Item.lua state the calc stages read.
-// The map-typed fields are scalar bags dumped as-is (flaskData, jewelData,
-// weaponData sides, ...).
 type ItemInput struct {
 	Name                        string                   `lua:"name"`
 	ModSource                   *string                  `lua:"modSource"`
@@ -142,18 +204,18 @@ type ItemInput struct {
 	SlotModList                 map[int][]*modparser.Mod `lua:"slotModList"`
 	BaseModList                 []*modparser.Mod         `lua:"baseModList"`
 	BuffModList                 []*modparser.Mod         `lua:"buffModList"`
-	GrantedSkills               []map[string]any         `lua:"grantedSkills"`
-	Requirements                map[string]float64       `lua:"requirements"`
+	GrantedSkills               []item.GrantedSkill      `lua:"grantedSkills"`
+	Requirements                *item.Requirements       `lua:"requirements"`
 	Sockets                     []map[string]any         `lua:"sockets"`
 	AbyssalSocketCount          *float64                 `lua:"abyssalSocketCount"`
 	SocketedJewelEffectModifier *float64                 `lua:"socketedJewelEffectModifier"`
 	JewelRadiusIndex            *float64                 `lua:"jewelRadiusIndex"`
 	FuncTypes                   []string                 `lua:"funcTypes"`
-	JewelData                   map[string]any           `lua:"jewelData"`
-	FlaskData                   map[string]any           `lua:"flaskData"`
-	TinctureData                map[string]any           `lua:"tinctureData"`
-	ArmourData                  map[string]any           `lua:"armourData"`
-	WeaponData                  map[int]map[string]any   `lua:"weaponData"`
+	JewelData                   *item.JewelData          `lua:"jewelData"`
+	FlaskData                   *item.FlaskData          `lua:"flaskData"`
+	TinctureData                *item.TinctureData       `lua:"tinctureData"`
+	ArmourData                  *item.ArmourData         `lua:"armourData"`
+	WeaponData                  map[int]*item.WeaponData `lua:"weaponData"`
 	ExplicitLines               []string                 `lua:"explicitLines"`
 	OtherLines                  []string                 `lua:"otherLines"`
 }
@@ -197,3 +259,6 @@ type NodeInput struct {
 	// node (untagged: not part of the fixture echo).
 	GrantedSkills []GrantedSkill
 }
+
+// ExplodeKey implements ExplodeSource.
+func (n *NodeInput) ExplodeKey() string { return "Tree:" + strconv.FormatInt(int64(n.ID), 10) }

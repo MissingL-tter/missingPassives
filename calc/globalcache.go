@@ -9,6 +9,8 @@ package calc
 import (
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // CachedSkill is one GlobalCache.cachedData[mode][uuid] entry.
@@ -35,44 +37,54 @@ type CachedSkill struct {
 }
 
 // out reads a cached Env.player.output value, live.
-func (c *CachedSkill) out(key string) any {
+func (c *CachedSkill) out(key string) modstore.OutValue {
 	if c == nil || c.Env == nil || c.Env.Player == nil {
-		return nil
+		return modstore.OutValue{}
 	}
-	return c.Env.Player.Output[key]
+	return c.Env.Player.Output.Get(key)
 }
 
 // outputMainHand / outputOffHand are output.MainHand and output.OffHand of
 // the cached env -- the per-weapon passes a dual-wielding source leaves
 // behind.
-func (c *CachedSkill) outputMainHand(key string) any { return c.outputSub("MainHand", key) }
-func (c *CachedSkill) outputOffHand(key string) any  { return c.outputSub("OffHand", key) }
-
-func (c *CachedSkill) outputSub(table, key string) any {
-	if c == nil || c.Env == nil || c.Env.Player == nil {
-		return nil
+func (c *CachedSkill) outputMainHand(key string) modstore.OutValue {
+	if c == nil || c.Env == nil || c.Env.playerPA == nil {
+		return modstore.OutValue{}
 	}
-	sub, _ := c.Env.Player.Output[table].(map[string]any)
-	return sub[key]
+	return c.Env.playerPA.mainHand.Get(key)
+}
+
+func (c *CachedSkill) outputOffHand(key string) modstore.OutValue {
+	if c == nil || c.Env == nil || c.Env.playerPA == nil {
+		return modstore.OutValue{}
+	}
+	return c.Env.playerPA.offHand.Get(key)
+}
+
+// PlayerWeaponOutputs is the player's output.MainHand / output.OffHand
+// (nil until an attack's offence ran).
+func (env *Env) PlayerWeaponOutputs() (mainHand, offHand modstore.Output) {
+	if env.playerPA == nil {
+		return nil, nil
+	}
+	return env.playerPA.mainHand, env.playerPA.offHand
 }
 
 // mainSkillData is the cached env's CURRENT main skill's data; activeSkillData
 // is that of the skill the entry was cached for. They are the same table
 // unless the env was re-performed for another skill.
-func (c *CachedSkill) mainSkillData(key string) (any, bool) {
+func (c *CachedSkill) mainSkillData(key string) modstore.OutValue {
 	if c == nil || c.Env == nil || c.Env.PlayerMainSkill == nil {
-		return nil, false
+		return modstore.OutValue{}
 	}
-	v, ok := c.Env.PlayerMainSkill.SkillData[key]
-	return v, ok
+	return c.Env.PlayerMainSkill.SkillData.Get(key)
 }
 
-func (c *CachedSkill) activeSkillData(key string) (any, bool) {
+func (c *CachedSkill) activeSkillData(key string) modstore.OutValue {
 	if c == nil || c.ActiveSkill == nil {
-		return nil, false
+		return modstore.OutValue{}
 	}
-	v, ok := c.ActiveSkill.SkillData[key]
-	return v, ok
+	return c.ActiveSkill.SkillData.Get(key)
 }
 
 // speedOrHitSpeed is `cached.HitSpeed or cached.Speed`.
@@ -96,7 +108,7 @@ func (env *Env) cacheSkillUUID(skill *ActiveSkill) string {
 	strName := strip(skill.ActiveEffect.GrantedEffect.Name)
 	strSlotName := "NO_SLOT"
 	if skill.SocketGroup != nil {
-		if slot := str(skill.SocketGroup.KV["slot"]); slot != "" {
+		if slot := skill.SocketGroup.Slot; slot != "" {
 			strSlotName = strip(strings.ToUpper(slot))
 		}
 	}
@@ -134,11 +146,10 @@ func (env *Env) cacheData() {
 	main := env.PlayerMainSkill
 	output := env.Player.Output
 	num := func(key string) *float64 {
-		v, ok := output[key]
-		if !ok || v == nil {
+		if !output.Has(key) {
 			return nil
 		}
-		n := anyNum(v)
+		n := output.N(key)
 		return &n
 	}
 	entry := &CachedSkill{

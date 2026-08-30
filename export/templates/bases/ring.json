@@ -1,21 +1,21 @@
 {
 	"directives": [
-		"#type Ring",
-		"#influenceBaseTag ring",
-		"#baseMatch Metadata/Items/Rings/Ring[0-9]+",
-		"#baseMatch Metadata/Items/Rings/RingAtlas[0-9]+",
-		"#forceShow true",
-		"#base Metadata/Items/Rings/Ring12 Two-Stone Ring (Fire/Lightning)",
-		"#base Metadata/Items/Rings/Ring13 Two-Stone Ring (Cold/Lightning)",
-		"#base Metadata/Items/Rings/Ring14 Two-Stone Ring (Fire/Cold)",
-		"#baseMatch Metadata/Items/Rings/RingE[0-9]+",
-		"#baseMatch Metadata/Items/Rings/RingK[0-9]+",
-		"#baseMatch Metadata/Items/Rings/RingR[0-9]+",
-		"#baseMatch Metadata/Items/Rings/RingB[0-9]+",
-		"#baseMatch Metadata/Items/Rings/MirrorRing",
-		"#forceShow false",
-		"#base Metadata/Items/Rings/BreachRing",
-		"#base Metadata/Items/Rings/RingDemigods1",
-		"#base Metadata/Items/Rings/RingVictor1"
+		{"directive":"type","name":"Ring"},
+		{"directive":"influenceBaseTag","tag":"ring"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/Ring[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/RingAtlas[0-9]+"},
+		{"directive":"forceShow","value":true},
+		{"directive":"base","id":"Metadata/Items/Rings/Ring12","name":"Two-Stone Ring (Fire/Lightning)"},
+		{"directive":"base","id":"Metadata/Items/Rings/Ring13","name":"Two-Stone Ring (Cold/Lightning)"},
+		{"directive":"base","id":"Metadata/Items/Rings/Ring14","name":"Two-Stone Ring (Fire/Cold)"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/RingE[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/RingK[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/RingR[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/RingB[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Rings/MirrorRing"},
+		{"directive":"forceShow","value":false},
+		{"directive":"base","id":"Metadata/Items/Rings/BreachRing"},
+		{"directive":"base","id":"Metadata/Items/Rings/RingDemigods1"},
+		{"directive":"base","id":"Metadata/Items/Rings/RingVictor1"}
 	]
 }

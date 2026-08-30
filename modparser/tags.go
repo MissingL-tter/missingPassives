@@ -1,856 +1,934 @@
 package modparser
 
+import "github.com/MissingL-tter/missingPassives/internal/util"
+
 // List of modifier tags — ModParser.lua:1319.
-var modTagList = map[string]any{
-	`on enemies`:                               d(),
-	`while active`:                             d(),
-	`for ([0-9]+) seconds`:                     d(),
-	`when you hit a unique enemy`:              Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "RareOrUnique"}},
-	` on critical strike`:                      Tag{"tag": Tag{"type": "Condition", "var": "CriticalStrike"}},
-	`from critical strikes`:                    Tag{"tag": Tag{"type": "Condition", "var": "CriticalStrike"}},
-	`with critical strikes`:                    Tag{"tag": Tag{"type": "Condition", "var": "CriticalStrike"}},
-	`by enemies killed with a critical strike`: Tag{"tagList": []any{Tag{"type": "Condition", "var": "CritRecently"}, Tag{"type": "Condition", "var": "KilledRecently"}}},
-	`while affected by auras you cast`:         Tag{"tag": Tag{"type": "Condition", "var": "AffectedByAura"}},
-	`for you and nearby allies`:                Tag{"newAura": true},
-	`to you and allies`:                        Tag{"newAura": true},
+var modTagList = map[string]entryValue{
+	`on enemies`:                               &PatternEntry{},
+	`while active`:                             &PatternEntry{},
+	`for ([0-9]+) seconds`:                     &PatternEntry{},
+	`when you hit a unique enemy`:              &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "RareOrUnique"}},
+	` on critical strike`:                      &PatternEntry{Tag: &CondTag{Var: "CriticalStrike"}},
+	`from critical strikes`:                    &PatternEntry{Tag: &CondTag{Var: "CriticalStrike"}},
+	`with critical strikes`:                    &PatternEntry{Tag: &CondTag{Var: "CriticalStrike"}},
+	`by enemies killed with a critical strike`: &PatternEntry{TagList: []Tag{&CondTag{Var: "CritRecently"}, &CondTag{Var: "KilledRecently"}}},
+	`while affected by auras you cast`:         &PatternEntry{Tag: &CondTag{Var: "AffectedByAura"}},
+	`for you and nearby allies`:                &PatternEntry{NewAura: true},
+	`to you and allies`:                        &PatternEntry{NewAura: true},
 	// Multipliers
-	`per power charge`:         Tag{"tag": Tag{"type": "Multiplier", "var": "PowerCharge"}},
-	`per frenzy charge`:        Tag{"tag": Tag{"type": "Multiplier", "var": "FrenzyCharge"}},
-	`per endurance charge`:     Tag{"tag": Tag{"type": "Multiplier", "var": "EnduranceCharge"}},
-	`per brine charge`:         Tag{"tag": Tag{"type": "Multiplier", "var": "BrineCharge"}},
-	`per siphoning charge`:     Tag{"tag": Tag{"type": "Multiplier", "var": "SiphoningCharge"}},
-	`per spirit charge`:        Tag{"tag": Tag{"type": "Multiplier", "var": "SpiritCharge"}},
-	`per challenger charge`:    Tag{"tag": Tag{"type": "Multiplier", "var": "ChallengerCharge"}},
-	`per maximum power charge`: Tag{"tag": Tag{"type": "Multiplier", "var": "PowerChargeMax"}},
-	`per gale force`:           Tag{"tag": Tag{"type": "Multiplier", "var": "GaleForce"}},
-	`per intensity`:            Tag{"tag": Tag{"type": "Multiplier", "var": "Intensity"}},
-	`per brand`:                Tag{"tag": Tag{"type": "Multiplier", "var": "ActiveBrand"}},
-	`per brand, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ActiveBrand", "globalLimit": c.n(1), "globalLimitKey": "ChipAway"}}
+	`per power charge`:         &PatternEntry{Tag: &MultiplierTag{Var: "PowerCharge"}},
+	`per frenzy charge`:        &PatternEntry{Tag: &MultiplierTag{Var: "FrenzyCharge"}},
+	`per endurance charge`:     &PatternEntry{Tag: &MultiplierTag{Var: "EnduranceCharge"}},
+	`per brine charge`:         &PatternEntry{Tag: &MultiplierTag{Var: "BrineCharge"}},
+	`per siphoning charge`:     &PatternEntry{Tag: &MultiplierTag{Var: "SiphoningCharge"}},
+	`per spirit charge`:        &PatternEntry{Tag: &MultiplierTag{Var: "SpiritCharge"}},
+	`per challenger charge`:    &PatternEntry{Tag: &MultiplierTag{Var: "ChallengerCharge"}},
+	`per maximum power charge`: &PatternEntry{Tag: &MultiplierTag{Var: "PowerChargeMax"}},
+	`per gale force`:           &PatternEntry{Tag: &MultiplierTag{Var: "GaleForce"}},
+	`per intensity`:            &PatternEntry{Tag: &MultiplierTag{Var: "Intensity"}},
+	`per brand`:                &PatternEntry{Tag: &MultiplierTag{Var: "ActiveBrand"}},
+	`per brand, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ActiveBrand", GlobalLimit: opt(c.n(1)), GlobalLimitKey: "ChipAway"}}
 	}),
-	`per blitz charge`:                       Tag{"tag": Tag{"type": "Multiplier", "var": "BlitzCharge"}},
-	`per ghost shroud`:                       Tag{"tag": Tag{"type": "Multiplier", "var": "GhostShroud"}},
-	`per crab barrier`:                       Tag{"tag": Tag{"type": "Multiplier", "var": "CrabBarrier"}},
-	`per rage`:                               Tag{"tag": Tag{"type": "Multiplier", "var": "Rage"}},
-	`per rage while you are not losing rage`: Tag{"tag": Tag{"type": "Multiplier", "var": "Rage"}},
-	`per ([0-9]+) rage`:                      fn(func(c caps) any { return Tag{"tag": Tag{"type": "Multiplier", "var": "Rage", "div": c.n(1)}} }),
-	`per mana burn`:                          Tag{"tag": Tag{"type": "Multiplier", "var": "ManaBurnStacks"}},
-	`per mana burn on you`:                   Tag{"tag": Tag{"type": "Multiplier", "var": "ManaBurnStacks"}},
-	`per mana burn, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ManaBurnStacks", "limit": c.n(1), "limitTotal": true}}
+	`per blitz charge`:                       &PatternEntry{Tag: &MultiplierTag{Var: "BlitzCharge"}},
+	`per ghost shroud`:                       &PatternEntry{Tag: &MultiplierTag{Var: "GhostShroud"}},
+	`per crab barrier`:                       &PatternEntry{Tag: &MultiplierTag{Var: "CrabBarrier"}},
+	`per rage`:                               &PatternEntry{Tag: &MultiplierTag{Var: "Rage"}},
+	`per rage while you are not losing rage`: &PatternEntry{Tag: &MultiplierTag{Var: "Rage"}},
+	`per ([0-9]+) rage`:                      entryFn(func(c caps) *PatternEntry { return &PatternEntry{Tag: &MultiplierTag{Var: "Rage", Div: opt(c.n(1))}} }),
+	`per mana burn`:                          &PatternEntry{Tag: &MultiplierTag{Var: "ManaBurnStacks"}},
+	`per mana burn on you`:                   &PatternEntry{Tag: &MultiplierTag{Var: "ManaBurnStacks"}},
+	`per mana burn, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ManaBurnStacks", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per level`:                  Tag{"tag": Tag{"type": "Multiplier", "var": "Level"}},
-	`per ([0-9]+) player levels`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "Multiplier", "var": "Level", "div": c.n(1)}} }),
-	`per defiance`:               Tag{"tag": Tag{"type": "Multiplier", "var": "Defiance"}},
-	`per ([0-9]+)% ([a-zA-Z]+) effect on enemy`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": firstToUpper(c.s(2)) + "Effect", "div": c.n(1), "actor": "enemy"}}
+	`per level`:                  &PatternEntry{Tag: &MultiplierTag{Var: "Level"}},
+	`per ([0-9]+) player levels`: entryFn(func(c caps) *PatternEntry { return &PatternEntry{Tag: &MultiplierTag{Var: "Level", Div: opt(c.n(1))}} }),
+	`per defiance`:               &PatternEntry{Tag: &MultiplierTag{Var: "Defiance"}},
+	`per ([0-9]+)% ([a-zA-Z]+) effect on enemy`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: firstToUpper(c.s(2)) + "Effect", Div: opt(c.n(1)), Actor: "enemy"}}
 	}),
-	`for each equipped normal item`:          Tag{"tag": Tag{"type": "Multiplier", "var": "NormalItem"}},
-	`for each normal item equipped`:          Tag{"tag": Tag{"type": "Multiplier", "var": "NormalItem"}},
-	`for each normal item you have equipped`: Tag{"tag": Tag{"type": "Multiplier", "var": "NormalItem"}},
-	`for each equipped magic item`:           Tag{"tag": Tag{"type": "Multiplier", "var": "MagicItem"}},
-	`for each magic item equipped`:           Tag{"tag": Tag{"type": "Multiplier", "var": "MagicItem"}},
-	`for each magic item you have equipped`:  Tag{"tag": Tag{"type": "Multiplier", "var": "MagicItem"}},
-	`for each equipped rare item`:            Tag{"tag": Tag{"type": "Multiplier", "var": "RareItem"}},
-	`for each rare item equipped`:            Tag{"tag": Tag{"type": "Multiplier", "var": "RareItem"}},
-	`for each rare item you have equipped`:   Tag{"tag": Tag{"type": "Multiplier", "var": "RareItem"}},
-	`for each equipped unique item`:          Tag{"tag": Tag{"type": "Multiplier", "var": "UniqueItem"}},
-	`for each unique item equipped`:          Tag{"tag": Tag{"type": "Multiplier", "var": "UniqueItem"}},
-	`for each unique item you have equipped`: Tag{"tag": Tag{"type": "Multiplier", "var": "UniqueItem"}},
-	`per elder item equipped`:                Tag{"tag": Tag{"type": "Multiplier", "var": "ElderItem"}},
-	`per shaper item equipped`:               Tag{"tag": Tag{"type": "Multiplier", "var": "ShaperItem"}},
-	`per elder or shaper item equipped`:      Tag{"tag": Tag{"type": "Multiplier", "var": "ShaperOrElderItem"}},
-	`if ([0-9]+) ([a-zA-Z]+) items are equipped`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": firstToUpper(c.s(2)) + "Item", "threshold": c.n(1)}}
+	`for each equipped normal item`:          &PatternEntry{Tag: &MultiplierTag{Var: "NormalItem"}},
+	`for each normal item equipped`:          &PatternEntry{Tag: &MultiplierTag{Var: "NormalItem"}},
+	`for each normal item you have equipped`: &PatternEntry{Tag: &MultiplierTag{Var: "NormalItem"}},
+	`for each equipped magic item`:           &PatternEntry{Tag: &MultiplierTag{Var: "MagicItem"}},
+	`for each magic item equipped`:           &PatternEntry{Tag: &MultiplierTag{Var: "MagicItem"}},
+	`for each magic item you have equipped`:  &PatternEntry{Tag: &MultiplierTag{Var: "MagicItem"}},
+	`for each equipped rare item`:            &PatternEntry{Tag: &MultiplierTag{Var: "RareItem"}},
+	`for each rare item equipped`:            &PatternEntry{Tag: &MultiplierTag{Var: "RareItem"}},
+	`for each rare item you have equipped`:   &PatternEntry{Tag: &MultiplierTag{Var: "RareItem"}},
+	`for each equipped unique item`:          &PatternEntry{Tag: &MultiplierTag{Var: "UniqueItem"}},
+	`for each unique item equipped`:          &PatternEntry{Tag: &MultiplierTag{Var: "UniqueItem"}},
+	`for each unique item you have equipped`: &PatternEntry{Tag: &MultiplierTag{Var: "UniqueItem"}},
+	`per elder item equipped`:                &PatternEntry{Tag: &MultiplierTag{Var: "ElderItem"}},
+	`per shaper item equipped`:               &PatternEntry{Tag: &MultiplierTag{Var: "ShaperItem"}},
+	`per elder or shaper item equipped`:      &PatternEntry{Tag: &MultiplierTag{Var: "ShaperOrElderItem"}},
+	`if ([0-9]+) ([a-zA-Z]+) items are equipped`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: firstToUpper(c.s(2)) + "Item", Threshold: opt(c.n(1))}}
 	}),
-	`for each corrupted item equipped`:   Tag{"tag": Tag{"type": "Multiplier", "var": "CorruptedItem"}},
-	`for each equipped corrupted item`:   Tag{"tag": Tag{"type": "Multiplier", "var": "CorruptedItem"}},
-	`for each uncorrupted item equipped`: Tag{"tag": Tag{"type": "Multiplier", "var": "NonCorruptedItem"}},
-	`per equipped claw`:                  Tag{"tag": Tag{"type": "Multiplier", "var": "ClawItem"}},
-	`per equipped dagger`:                Tag{"tag": Tag{"type": "Multiplier", "var": "DaggerItem"}},
-	`per equipped axe`:                   Tag{"tag": Tag{"type": "Multiplier", "var": "AxeItem"}},
-	`per equipped ring`:                  Tag{"tag": Tag{"type": "Multiplier", "var": "RingItem"}},
-	`per equipped flask`:                 Tag{"tag": Tag{"type": "Multiplier", "var": "FlaskItem"}},
-	`per equipped sword`:                 Tag{"tag": Tag{"type": "Multiplier", "var": "SwordItem"}},
-	`per equipped jewel`:                 Tag{"tag": Tag{"type": "Multiplier", "var": "JewelItem"}},
-	`per equipped mace`:                  Tag{"tag": Tag{"type": "Multiplier", "var": "MaceItem"}},
-	`per equipped sceptre`:               Tag{"tag": Tag{"type": "Multiplier", "var": "SceptreItem"}},
-	`per equipped wand`:                  Tag{"tag": Tag{"type": "Multiplier", "var": "WandItem"}},
-	`per claw`:                           Tag{"tag": Tag{"type": "Multiplier", "var": "ClawItem"}},
-	`per dagger`:                         Tag{"tag": Tag{"type": "Multiplier", "var": "DaggerItem"}},
-	`per axe`:                            Tag{"tag": Tag{"type": "Multiplier", "var": "AxeItem"}},
-	`per ring`:                           Tag{"tag": Tag{"type": "Multiplier", "var": "RingItem"}},
-	`per flask`:                          Tag{"tag": Tag{"type": "Multiplier", "var": "FlaskItem"}},
-	`per sword`:                          Tag{"tag": Tag{"type": "Multiplier", "var": "SwordItem"}},
-	`per jewel`:                          Tag{"tag": Tag{"type": "Multiplier", "var": "JewelItem"}},
-	`per mace`:                           Tag{"tag": Tag{"type": "Multiplier", "var": "MaceItem"}},
-	`per sceptre`:                        Tag{"tag": Tag{"type": "Multiplier", "var": "SceptreItem"}},
-	`per wand`:                           Tag{"tag": Tag{"type": "Multiplier", "var": "WandItem"}},
-	`per abyssa?l? jewel affecting you`:  Tag{"tag": Tag{"type": "Multiplier", "var": "AbyssJewel"}},
-	`for each herald b?u?f?f?s?k?i?l?l? ?affecting you`:    Tag{"tag": Tag{"type": "Multiplier", "var": "Herald"}},
-	`for each of your aura or herald skills affecting you`: Tag{"tag": Tag{"type": "Multiplier", "varList": []any{"Herald", "AuraAffectingSelf"}}},
-	`for each type of abyssa?l? jewel affecting you`:       Tag{"tag": Tag{"type": "Multiplier", "var": "AbyssJewelType"}},
-	`per (.+) eye jewel affecting you, up to a maximum of \+?([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": firstToUpper(c.s(1)) + "EyeJewel", "limit": c.n(2), "limitTotal": true}}
+	`for each corrupted item equipped`:   &PatternEntry{Tag: &MultiplierTag{Var: "CorruptedItem"}},
+	`for each equipped corrupted item`:   &PatternEntry{Tag: &MultiplierTag{Var: "CorruptedItem"}},
+	`for each uncorrupted item equipped`: &PatternEntry{Tag: &MultiplierTag{Var: "NonCorruptedItem"}},
+	`per equipped claw`:                  &PatternEntry{Tag: &MultiplierTag{Var: "ClawItem"}},
+	`per equipped dagger`:                &PatternEntry{Tag: &MultiplierTag{Var: "DaggerItem"}},
+	`per equipped axe`:                   &PatternEntry{Tag: &MultiplierTag{Var: "AxeItem"}},
+	`per equipped ring`:                  &PatternEntry{Tag: &MultiplierTag{Var: "RingItem"}},
+	`per equipped flask`:                 &PatternEntry{Tag: &MultiplierTag{Var: "FlaskItem"}},
+	`per equipped sword`:                 &PatternEntry{Tag: &MultiplierTag{Var: "SwordItem"}},
+	`per equipped jewel`:                 &PatternEntry{Tag: &MultiplierTag{Var: "JewelItem"}},
+	`per equipped mace`:                  &PatternEntry{Tag: &MultiplierTag{Var: "MaceItem"}},
+	`per equipped sceptre`:               &PatternEntry{Tag: &MultiplierTag{Var: "SceptreItem"}},
+	`per equipped wand`:                  &PatternEntry{Tag: &MultiplierTag{Var: "WandItem"}},
+	`per claw`:                           &PatternEntry{Tag: &MultiplierTag{Var: "ClawItem"}},
+	`per dagger`:                         &PatternEntry{Tag: &MultiplierTag{Var: "DaggerItem"}},
+	`per axe`:                            &PatternEntry{Tag: &MultiplierTag{Var: "AxeItem"}},
+	`per ring`:                           &PatternEntry{Tag: &MultiplierTag{Var: "RingItem"}},
+	`per flask`:                          &PatternEntry{Tag: &MultiplierTag{Var: "FlaskItem"}},
+	`per sword`:                          &PatternEntry{Tag: &MultiplierTag{Var: "SwordItem"}},
+	`per jewel`:                          &PatternEntry{Tag: &MultiplierTag{Var: "JewelItem"}},
+	`per mace`:                           &PatternEntry{Tag: &MultiplierTag{Var: "MaceItem"}},
+	`per sceptre`:                        &PatternEntry{Tag: &MultiplierTag{Var: "SceptreItem"}},
+	`per wand`:                           &PatternEntry{Tag: &MultiplierTag{Var: "WandItem"}},
+	`per abyssa?l? jewel affecting you`:  &PatternEntry{Tag: &MultiplierTag{Var: "AbyssJewel"}},
+	`for each herald b?u?f?f?s?k?i?l?l? ?affecting you`:    &PatternEntry{Tag: &MultiplierTag{Var: "Herald"}},
+	`for each of your aura or herald skills affecting you`: &PatternEntry{Tag: &MultiplierTag{VarList: []string{"Herald", "AuraAffectingSelf"}}},
+	`for each type of abyssa?l? jewel affecting you`:       &PatternEntry{Tag: &MultiplierTag{Var: "AbyssJewelType"}},
+	`per (.+) eye jewel affecting you, up to a maximum of \+?([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: firstToUpper(c.s(1)) + "EyeJewel", Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per sextant affecting the area`: Tag{"tag": Tag{"type": "Multiplier", "var": "Sextant"}},
-	`per buff on you`:                Tag{"tag": Tag{"type": "Multiplier", "var": "BuffOnSelf"}},
-	`per hit suppressed recently`:    Tag{"tag": Tag{"type": "Multiplier", "var": "HitsSuppressedRecently"}},
-	`per curse on enemy`:             Tag{"tag": Tag{"type": "Multiplier", "var": "CurseOnEnemy"}},
-	`for each curse on enemy`:        Tag{"tag": Tag{"type": "Multiplier", "var": "CurseOnEnemy"}},
-	`for each curse on the enemy`:    Tag{"tag": Tag{"type": "Multiplier", "var": "CurseOnEnemy"}},
-	`per curse on you`:               Tag{"tag": Tag{"type": "Multiplier", "var": "CurseOnSelf"}},
-	`per poison on you`:              Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonStack"}},
-	`for each poison on you`:         Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonStack"}},
-	`for each poison on you up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonStack", "limit": c.n(1), "limitTotal": true}}
+	`per sextant affecting the area`: &PatternEntry{Tag: &MultiplierTag{Var: "Sextant"}},
+	`per buff on you`:                &PatternEntry{Tag: &MultiplierTag{Var: "BuffOnSelf"}},
+	`per hit suppressed recently`:    &PatternEntry{Tag: &MultiplierTag{Var: "HitsSuppressedRecently"}},
+	`per curse on enemy`:             &PatternEntry{Tag: &MultiplierTag{Var: "CurseOnEnemy"}},
+	`for each curse on enemy`:        &PatternEntry{Tag: &MultiplierTag{Var: "CurseOnEnemy"}},
+	`for each curse on the enemy`:    &PatternEntry{Tag: &MultiplierTag{Var: "CurseOnEnemy"}},
+	`per curse on you`:               &PatternEntry{Tag: &MultiplierTag{Var: "CurseOnSelf"}},
+	`per poison on you`:              &PatternEntry{Tag: &MultiplierTag{Var: "PoisonStack"}},
+	`for each poison on you`:         &PatternEntry{Tag: &MultiplierTag{Var: "PoisonStack"}},
+	`for each poison on you up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "PoisonStack", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per poison on you, up to ([0-9]+) per second`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonStack", "limit": c.n(1), "limitTotal": true}}
+	`per poison on you, up to ([0-9]+) per second`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "PoisonStack", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each poison you have inflicted recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonAppliedRecently"}},
-	`per withered debuff on enemy`:                Tag{"tag": Tag{"type": "Multiplier", "var": "WitheredStack", "actor": "enemy", "limit": 15}},
-	`for each poison you have inflicted recently, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "PoisonAppliedRecently", "globalLimit": c.n(1), "globalLimitKey": "DurationPerPoisonRecently"}}
+	`for each poison you have inflicted recently`: &PatternEntry{Tag: &MultiplierTag{Var: "PoisonAppliedRecently"}},
+	`per withered debuff on enemy`:                &PatternEntry{Tag: &MultiplierTag{Var: "WitheredStack", Actor: "enemy", Limit: opt(15)}},
+	`for each poison you have inflicted recently, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "PoisonAppliedRecently", GlobalLimit: opt(c.n(1)), GlobalLimitKey: "DurationPerPoisonRecently"}}
 	}),
-	`for each time you have shocked a non-shocked enemy recently, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ShockedNonShockedEnemyRecently", "limit": c.n(1), "limitTotal": true}}
+	`for each time you have shocked a non-shocked enemy recently, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ShockedNonShockedEnemyRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each shocked enemy you've killed recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "ShockedEnemyKilledRecently"}},
-	`per enemy killed recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "EnemyKilledRecently", "limit": c.n(1), "limitTotal": true}}
+	`for each shocked enemy you've killed recently`: &PatternEntry{Tag: &MultiplierTag{Var: "ShockedEnemyKilledRecently"}},
+	`per enemy killed recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "EnemyKilledRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per ([0-9]+) rampage kills`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "Rampage", "div": c.n(1), "limit": 1000 / c.n(1), "limitTotal": true}}
+	`per ([0-9]+) rampage kills`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "Rampage", Div: opt(c.n(1)), Limit: opt(1000 / c.n(1)), LimitTotal: true}}
 	}),
-	`per minion, up to ?a? ?m?a?x?i?m?u?m? ?o?f? ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "SummonedMinion", "limit": c.n(1), "limitTotal": true}}
+	`per minion, up to ?a? ?m?a?x?i?m?u?m? ?o?f? ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "SummonedMinion", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per minion from your non-vaal skills`: Tag{"tag": Tag{"type": "Multiplier", "var": "NonVaalSummonedMinion"}},
-	`per minion`:                           Tag{"tag": Tag{"type": "Multiplier", "var": "SummonedMinion"}},
-	`for each enemy you or your minions have killed recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "varList": []any{"EnemyKilledRecently", "EnemyKilledByMinionsRecently"}, "limit": c.n(1), "limitTotal": true}}
+	`per minion from your non-vaal skills`: &PatternEntry{Tag: &MultiplierTag{Var: "NonVaalSummonedMinion"}},
+	`per minion`:                           &PatternEntry{Tag: &MultiplierTag{Var: "SummonedMinion"}},
+	`for each enemy you or your minions have killed recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{VarList: []string{"EnemyKilledRecently", "EnemyKilledByMinionsRecently"}, Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each enemy you or your minions have killed recently, up to ([0-9]+)% per second`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "varList": []any{"EnemyKilledRecently", "EnemyKilledByMinionsRecently"}, "limit": c.n(1), "limitTotal": true}}
+	`for each enemy you or your minions have killed recently, up to ([0-9]+)% per second`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{VarList: []string{"EnemyKilledRecently", "EnemyKilledByMinionsRecently"}, Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each ([0-9]+) total mana y?o?u? ?h?a?v?e? ?spent recently`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ManaSpentRecently", "div": c.n(1)}}
+	`for each ([0-9]+) total mana y?o?u? ?h?a?v?e? ?spent recently`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ManaSpentRecently", Div: opt(c.n(1))}}
 	}),
-	`for each ([0-9]+) total mana you have spent recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ManaSpentRecently", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`for each ([0-9]+) total mana you have spent recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ManaSpentRecently", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per ([0-9]+) mana spent recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "ManaSpentRecently", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`per ([0-9]+) mana spent recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "ManaSpentRecently", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`for each time you've blocked in the past 10 seconds`: Tag{"tag": Tag{"type": "Multiplier", "var": "BlockedPast10Sec"}},
-	`per enemy killed by you or your totems recently`:     Tag{"tag": Tag{"type": "Multiplier", "varList": []any{"EnemyKilledRecently", "EnemyKilledByTotemsRecently"}}},
-	`per nearby enemy, up to \+?([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "NearbyEnemies", "limit": c.n(1), "limitTotal": true}}
+	`for each time you've blocked in the past 10 seconds`: &PatternEntry{Tag: &MultiplierTag{Var: "BlockedPast10Sec"}},
+	`per enemy killed by you or your totems recently`:     &PatternEntry{Tag: &MultiplierTag{VarList: []string{"EnemyKilledRecently", "EnemyKilledByTotemsRecently"}}},
+	`per nearby enemy, up to \+?([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "NearbyEnemies", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per enemy in close range`:                               Tag{"tagList": []any{Tag{"type": "Condition", "var": "AtCloseRange"}, Tag{"type": "Multiplier", "var": "NearbyEnemies"}}},
-	`per red socket`:                                         Tag{"tag": Tag{"type": "Multiplier", "var": "RedSocketIn{SlotName}"}},
-	`per green socket on main hand weapon`:                   Tag{"tag": Tag{"type": "Multiplier", "var": "GreenSocketInWeapon 1"}},
-	`per green socket on`:                                    Tag{"tag": Tag{"type": "Multiplier", "var": "GreenSocketInWeapon 1"}},
-	`per red socket on main hand weapon`:                     Tag{"tag": Tag{"type": "Multiplier", "var": "RedSocketInWeapon 1"}},
-	`per red socket on equipped staff`:                       Tag{"tagList": []any{Tag{"type": "Multiplier", "var": "RedSocketInWeapon 1"}, Tag{"type": "Condition", "var": "UsingStaff"}}},
-	`per blue socket on equipped staff`:                      Tag{"tagList": []any{Tag{"type": "Multiplier", "var": "BlueSocketInWeapon 1"}, Tag{"type": "Condition", "var": "UsingStaff"}}},
-	`per green socket`:                                       Tag{"tag": Tag{"type": "Multiplier", "var": "GreenSocketIn{SlotName}"}},
-	`per blue socket`:                                        Tag{"tag": Tag{"type": "Multiplier", "var": "BlueSocketIn{SlotName}"}},
-	`per white socket`:                                       Tag{"tag": Tag{"type": "Multiplier", "var": "WhiteSocketIn{SlotName}"}},
-	`for each unlinked socket in equipped two handed weapon`: Tag{"tagList": []any{Tag{"type": "Multiplier", "var": "UnlinkedSocketInWeapon 1"}, Tag{"type": "Condition", "var": "UsingTwoHandedWeapon"}}},
-	`for each empty red socket on any equipped item`:         Tag{"tag": Tag{"type": "Multiplier", "var": "EmptyRedSocketsInAnySlot"}},
-	`for each empty green socket on any equipped item`:       Tag{"tag": Tag{"type": "Multiplier", "var": "EmptyGreenSocketsInAnySlot"}},
-	`for each empty blue socket on any equipped item`:        Tag{"tag": Tag{"type": "Multiplier", "var": "EmptyBlueSocketsInAnySlot"}},
-	`for each empty white socket on any equipped item`:       Tag{"tag": Tag{"type": "Multiplier", "var": "EmptyWhiteSocketsInAnySlot"}},
-	`per socketed gem`:                                       Tag{"tag": Tag{"type": "Multiplier", "var": "SocketedGemsIn{SlotName}"}},
-	`per socketed red gem`:                                   Tag{"tag": Tag{"type": "Multiplier", "var": "SocketedRedGemsIn{SlotName}"}},
-	`per socketed green gem`:                                 Tag{"tag": Tag{"type": "Multiplier", "var": "SocketedGreenGemsIn{SlotName}"}},
-	`per socketed blue gem`:                                  Tag{"tag": Tag{"type": "Multiplier", "var": "SocketedBlueGemsIn{SlotName}"}},
-	`per socketed murderous eye jewel`:                       Tag{"tag": Tag{"type": "Multiplier", "var": "MurderousEyeJewelIn{SlotName}"}},
-	`per socketed searching eye jewel`:                       Tag{"tag": Tag{"type": "Multiplier", "var": "SearchingEyeJewelIn{SlotName}"}},
-	`per socketed hypnotic eye jewel`:                        Tag{"tag": Tag{"type": "Multiplier", "var": "HypnoticEyeJewelIn{SlotName}"}},
-	`per socketed ghastly eye jewel`:                         Tag{"tag": Tag{"type": "Multiplier", "var": "GhastlyEyeJewelIn{SlotName}"}},
-	`for each impale on enemy`:                               Tag{"tag": Tag{"type": "Multiplier", "var": "ImpaleStacks", "actor": "enemy"}},
-	`per impale on enemy`:                                    Tag{"tag": Tag{"type": "Multiplier", "var": "ImpaleStacks", "actor": "enemy"}},
-	`per grasping vine`:                                      Tag{"tag": Tag{"type": "Multiplier", "var": "GraspingVinesCount"}},
-	`per fragile regrowth`:                                   Tag{"tag": Tag{"type": "Multiplier", "var": "FragileRegrowthCount"}},
-	`per bark`:                                               Tag{"tag": Tag{"type": "Multiplier", "var": "BarkskinStacks"}},
-	`per bark below maximum`:                                 Tag{"tag": Tag{"type": "Multiplier", "var": "MissingBarkskinStacks"}},
-	`per allocated mastery passive skill`:                    Tag{"tag": Tag{"type": "Multiplier", "var": "AllocatedMastery"}},
-	`per allocated notable passive skill`:                    Tag{"tag": Tag{"type": "Multiplier", "var": "AllocatedNotable"}},
-	`for each different type of mastery you have allocated`:  Tag{"tag": Tag{"type": "Multiplier", "var": "AllocatedMasteryType"}},
-	`per grand spectrum`:                                     Tag{"tag": Tag{"type": "Multiplier", "var": "GrandSpectrum"}},
-	`per second you've been stationary, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "StationarySeconds", "limit": c.n(1), "limitTotal": true}}
+	`per enemy in close range`:                               &PatternEntry{TagList: []Tag{&CondTag{Var: "AtCloseRange"}, &MultiplierTag{Var: "NearbyEnemies"}}},
+	`per red socket`:                                         &PatternEntry{Tag: &MultiplierTag{Var: "RedSocketIn{SlotName}"}},
+	`per green socket on main hand weapon`:                   &PatternEntry{Tag: &MultiplierTag{Var: "GreenSocketInWeapon 1"}},
+	`per green socket on`:                                    &PatternEntry{Tag: &MultiplierTag{Var: "GreenSocketInWeapon 1"}},
+	`per red socket on main hand weapon`:                     &PatternEntry{Tag: &MultiplierTag{Var: "RedSocketInWeapon 1"}},
+	`per red socket on equipped staff`:                       &PatternEntry{TagList: []Tag{&MultiplierTag{Var: "RedSocketInWeapon 1"}, &CondTag{Var: "UsingStaff"}}},
+	`per blue socket on equipped staff`:                      &PatternEntry{TagList: []Tag{&MultiplierTag{Var: "BlueSocketInWeapon 1"}, &CondTag{Var: "UsingStaff"}}},
+	`per green socket`:                                       &PatternEntry{Tag: &MultiplierTag{Var: "GreenSocketIn{SlotName}"}},
+	`per blue socket`:                                        &PatternEntry{Tag: &MultiplierTag{Var: "BlueSocketIn{SlotName}"}},
+	`per white socket`:                                       &PatternEntry{Tag: &MultiplierTag{Var: "WhiteSocketIn{SlotName}"}},
+	`for each unlinked socket in equipped two handed weapon`: &PatternEntry{TagList: []Tag{&MultiplierTag{Var: "UnlinkedSocketInWeapon 1"}, &CondTag{Var: "UsingTwoHandedWeapon"}}},
+	`for each empty red socket on any equipped item`:         &PatternEntry{Tag: &MultiplierTag{Var: "EmptyRedSocketsInAnySlot"}},
+	`for each empty green socket on any equipped item`:       &PatternEntry{Tag: &MultiplierTag{Var: "EmptyGreenSocketsInAnySlot"}},
+	`for each empty blue socket on any equipped item`:        &PatternEntry{Tag: &MultiplierTag{Var: "EmptyBlueSocketsInAnySlot"}},
+	`for each empty white socket on any equipped item`:       &PatternEntry{Tag: &MultiplierTag{Var: "EmptyWhiteSocketsInAnySlot"}},
+	`per socketed gem`:                                       &PatternEntry{Tag: &MultiplierTag{Var: "SocketedGemsIn{SlotName}"}},
+	`per socketed red gem`:                                   &PatternEntry{Tag: &MultiplierTag{Var: "SocketedRedGemsIn{SlotName}"}},
+	`per socketed green gem`:                                 &PatternEntry{Tag: &MultiplierTag{Var: "SocketedGreenGemsIn{SlotName}"}},
+	`per socketed blue gem`:                                  &PatternEntry{Tag: &MultiplierTag{Var: "SocketedBlueGemsIn{SlotName}"}},
+	`per socketed murderous eye jewel`:                       &PatternEntry{Tag: &MultiplierTag{Var: "MurderousEyeJewelIn{SlotName}"}},
+	`per socketed searching eye jewel`:                       &PatternEntry{Tag: &MultiplierTag{Var: "SearchingEyeJewelIn{SlotName}"}},
+	`per socketed hypnotic eye jewel`:                        &PatternEntry{Tag: &MultiplierTag{Var: "HypnoticEyeJewelIn{SlotName}"}},
+	`per socketed ghastly eye jewel`:                         &PatternEntry{Tag: &MultiplierTag{Var: "GhastlyEyeJewelIn{SlotName}"}},
+	`for each impale on enemy`:                               &PatternEntry{Tag: &MultiplierTag{Var: "ImpaleStacks", Actor: "enemy"}},
+	`per impale on enemy`:                                    &PatternEntry{Tag: &MultiplierTag{Var: "ImpaleStacks", Actor: "enemy"}},
+	`per grasping vine`:                                      &PatternEntry{Tag: &MultiplierTag{Var: "GraspingVinesCount"}},
+	`per fragile regrowth`:                                   &PatternEntry{Tag: &MultiplierTag{Var: "FragileRegrowthCount"}},
+	`per bark`:                                               &PatternEntry{Tag: &MultiplierTag{Var: "BarkskinStacks"}},
+	`per bark below maximum`:                                 &PatternEntry{Tag: &MultiplierTag{Var: "MissingBarkskinStacks"}},
+	`per allocated mastery passive skill`:                    &PatternEntry{Tag: &MultiplierTag{Var: "AllocatedMastery"}},
+	`per allocated notable passive skill`:                    &PatternEntry{Tag: &MultiplierTag{Var: "AllocatedNotable"}},
+	`for each different type of mastery you have allocated`:  &PatternEntry{Tag: &MultiplierTag{Var: "AllocatedMasteryType"}},
+	`per grand spectrum`:                                     &PatternEntry{Tag: &MultiplierTag{Var: "GrandSpectrum"}},
+	`per second you've been stationary, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "StationarySeconds", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per elemental ailment you've inflicted recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "AppliedAilmentsRecently"}},
+	`per elemental ailment you've inflicted recently`: &PatternEntry{Tag: &MultiplierTag{Var: "AppliedAilmentsRecently"}},
 	// Per stat
-	`per ([0-9]+)% of maximum mana they reserve`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "ManaReservedPercent", "div": c.n(1)}}
+	`per ([0-9]+)% of maximum mana they reserve`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ManaReservedPercent", Div: opt(c.n(1))}}
 	}),
-	`for each ([0-9]+)% of life reserved`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "LifeReservedPercent", "div": c.n(1)}}
+	`for each ([0-9]+)% of life reserved`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LifeReservedPercent", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) strength`:     fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Str", "div": c.n(1)}} }),
-	`per dexterity`:             Tag{"tag": Tag{"type": "PerStat", "stat": "Dex"}},
-	`per ([0-9]+) dexterity`:    fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Dex", "div": c.n(1)}} }),
-	`per ([0-9]+) intelligence`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Int", "div": c.n(1)}} }),
-	`per ([0-9]+) omniscience`:  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Omni", "div": c.n(1)}} }),
-	`per ([0-9]+) total attributes`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "statList": []any{"Str", "Dex", "Int"}, "div": c.n(1)}}
+	`per ([0-9]+) strength`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Str", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) of your lowest attribute`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "LowestAttribute", "div": c.n(1)}} }),
-	`per ([0-9]+) reserved life`:            fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "LifeReserved", "div": c.n(1)}} }),
-	`per ([0-9]+) unreserved maximum mana`:  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ManaUnreserved", "div": c.n(1)}} }),
-	`per ([0-9]+) unreserved maximum mana, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "ManaUnreserved", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`per dexterity`: &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Dex"}},
+	`per ([0-9]+) dexterity`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Dex", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) armour`:         fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Armour", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion rating`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Evasion", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion rating, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "Evasion", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`per ([0-9]+) intelligence`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Int", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum energy shield`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShield", "div": c.n(1)}} }),
-	`per ([0-9]+) player maximum energy shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShield", "div": c.n(1), "actor": "player"}}
+	`per ([0-9]+) omniscience`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Omni", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum life`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Life", "div": c.n(1)}} }),
-	`per ([0-9]+) of maximum life or maximum mana, whichever is lower`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "LowestOfMaximumLifeAndMaximumMana", "div": c.n(1)}}
+	`per ([0-9]+) total attributes`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, StatList: []string{"Str", "Dex", "Int"}, Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) player maximum life`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "Life", "div": c.n(1), "actor": "player"}}
+	`per ([0-9]+) of your lowest attribute`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LowestAttribute", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum mana`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Mana", "div": c.n(1)}} }),
-	`per ([0-9]+) maximum mana, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "Mana", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`per ([0-9]+) reserved life`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LifeReserved", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum mana, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "Mana", "div": c.n(1), "limit": c.n(2), "limitTotal": true}}
+	`per ([0-9]+) unreserved maximum mana`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ManaUnreserved", Div: opt(c.n(1))}}
 	}),
-	`per soul required`:            Tag{"tag": Tag{"type": "PerStat", "stat": "SoulCost"}},
-	`per ([0-9]+) accuracy rating`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "Accuracy", "div": c.n(1)}} }),
-	`per ([0-9]+)% block chance`:   fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "BlockChance", "div": c.n(1)}} }),
-	`per ([0-9]+)% chance to block on equipped shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "ShieldBlockChance", "div": c.n(1)}}
+	`per ([0-9]+) unreserved maximum mana, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ManaUnreserved", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per ([0-9]+)% chance to block attack damage`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "BlockChance", "div": c.n(1)}} }),
-	`per ([0-9]+)% chance to block spell damage`:  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "SpellBlockChance", "div": c.n(1)}} }),
-	`per ([0-9]+) of the lowest of armour and evasion rating`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "LowestOfArmourAndEvasion", "div": c.n(1)}}
+	`per ([0-9]+) armour`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Armour", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) energy shield on equipped gloves`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnGloves", "div": c.n(1)}}
+	`per ([0-9]+) evasion rating`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Evasion", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum energy shield on helmet`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnHelmet", "div": c.n(1)}}
+	`per ([0-9]+) evasion rating, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Evasion", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per ([0-9]+) maximum energy shield on equipped helmet`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnHelmet", "div": c.n(1)}}
+	`per ([0-9]+) maximum energy shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShield", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) energy shield on equipped helmet`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnHelmet", "div": c.n(1)}}
+	`per ([0-9]+) player maximum energy shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShield", Div: opt(c.n(1)), Actor: "player"}}
 	}),
-	`per ([0-9]+) energy shield on equipped boots`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnBoots", "div": c.n(1)}}
+	`per ([0-9]+) maximum life`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Life", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) energy shield on equipped body armour`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnBody Armour", "div": c.n(1)}}
+	`per ([0-9]+) of maximum life or maximum mana, whichever is lower`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LowestOfMaximumLifeAndMaximumMana", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) maximum energy shield on equipped shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnWeapon 2", "div": c.n(1)}}
+	`per ([0-9]+) player maximum life`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Life", Div: opt(c.n(1)), Actor: "player"}}
 	}),
-	`per ([0-9]+) maximum energy shield on shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EnergyShieldOnWeapon 2", "div": c.n(1)}}
+	`per ([0-9]+) maximum mana`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Mana", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) evasion rating on equipped gloves`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnGloves", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion rating on equipped helmet`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnHelmet", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion on equipped boots`:         fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnBoots", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion on boots`:                  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnBoots", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion rating on equipped boots`:  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnBoots", "div": c.n(1)}} }),
-	`per ([0-9]+) evasion rating on body armour`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnBody Armour", "div": c.n(1)}}
+	`per ([0-9]+) maximum mana, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Mana", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per ([0-9]+) evasion rating on equipped body armour`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnBody Armour", "div": c.n(1)}}
+	`per ([0-9]+) maximum mana, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Mana", Div: opt(c.n(1)), Limit: opt(c.n(2)), LimitTotal: true}}
 	}),
-	`per ([0-9]+) evasion rating on equipped shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "EvasionOnWeapon 2", "div": c.n(1)}}
+	`per soul required`: &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "SoulCost"}},
+	`per ([0-9]+) accuracy rating`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Accuracy", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) armour on gloves`:          fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnGloves", "div": c.n(1)}} }),
-	`per ([0-9]+) armour on equipped gloves`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnGloves", "div": c.n(1)}} }),
-	`per ([0-9]+) armour on equipped helmet`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnHelmet", "div": c.n(1)}} }),
-	`per ([0-9]+) armour on equipped boots`:  fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnBoots", "div": c.n(1)}} }),
-	`per ([0-9]+) armour on equipped body armour`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnBody Armour", "div": c.n(1)}}
+	`per ([0-9]+)% block chance`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "BlockChance", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) armour on equipped shield`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ArmourOnWeapon 2", "div": c.n(1)}} }),
-	`per ([0-9]+) armour or evasion rating on shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "statList": []any{"ArmourOnWeapon 2", "EvasionOnWeapon 2"}, "div": c.n(1)}}
+	`per ([0-9]+)% chance to block on equipped shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ShieldBlockChance", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) armour or evasion rating on equipped shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "statList": []any{"ArmourOnWeapon 2", "EvasionOnWeapon 2"}, "div": c.n(1)}}
+	`per ([0-9]+)% chance to block attack damage`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "BlockChance", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+)% cold resistance`:           fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ColdResist", "div": c.n(1)}} }),
-	`per ([0-9]+)% fire resistance`:           fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "FireResist", "div": c.n(1)}} }),
-	`per ([0-9]+)% lightning resistance`:      fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "LightningResist", "div": c.n(1)}} }),
-	`per ([0-9]+)% chaos resistance`:          fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ChaosResist", "div": c.n(1)}} }),
-	`per ([0-9]+)% cold resistance above 75%`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "ColdResistOver75", "div": c.n(1)}} }),
-	`per ([0-9]+)% lightning resistance above 75%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "LightningResistOver75", "div": c.n(1)}}
+	`per ([0-9]+)% chance to block spell damage`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "SpellBlockChance", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+)% fire resistance above 75%`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "PerStat", "stat": "FireResistOver75", "div": c.n(1)}} }),
-	`per ([0-9]+)% fire, cold, or lightning resistance above 75%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "statList": []any{"FireResistOver75", "ColdResistOver75", "LightningResistOver75"}, "div": c.n(1)}}
+	`per ([0-9]+) of the lowest of armour and evasion rating`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LowestOfArmourAndEvasion", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+) devotion`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "Devotion", "actor": "parent", "div": c.n(1)}}
+	`per ([0-9]+) energy shield on equipped gloves`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnGloves", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+)% missing fire resistance, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "MissingFireResist", "div": c.n(1), "globalLimit": c.n(2), "globalLimitKey": "ReplicaNebulisFire"}}
+	`per ([0-9]+) maximum energy shield on helmet`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnHelmet", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+)% missing cold resistance, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "MissingColdResist", "div": c.n(1), "globalLimit": c.n(2), "globalLimitKey": "ReplicaNebulisCold"}}
+	`per ([0-9]+) maximum energy shield on equipped helmet`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnHelmet", Div: opt(c.n(1))}}
 	}),
-	`per ([0-9]+)% missing fire, cold, or lightning resistance, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "statList": []any{"MissingFireResist", "MissingColdResist", "MissingLightningResist"}, "div": c.n(1), "globalLimit": c.n(2), "globalLimitKey": "ReplicaNebulisCold"}}
+	`per ([0-9]+) energy shield on equipped helmet`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnHelmet", Div: opt(c.n(1))}}
 	}),
-	`per endurance, frenzy or power charge`: Tag{"tag": Tag{"type": "PerStat", "stat": "TotalCharges"}},
-	`per fortification`:                     Tag{"tag": Tag{"type": "PerStat", "stat": "FortificationStacks"}},
-	`per two fortification on you`:          Tag{"tag": Tag{"type": "PerStat", "stat": "FortificationStacks", "div": 2, "actor": "player"}},
-	`per fortification above 20`:            Tag{"tag": Tag{"type": "PerStat", "stat": "FortificationStacksOver20"}},
-	`per totem`:                             Tag{"tag": Tag{"type": "PerStat", "stat": "TotemsSummoned"}},
-	`per summoned totem`:                    Tag{"tag": Tag{"type": "PerStat", "stat": "TotemsSummoned"}},
-	`for each summoned totem`:               Tag{"tag": Tag{"type": "PerStat", "stat": "TotemsSummoned"}},
-	`per maximum number of summoned totems`: Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveTotemLimit"}},
-	`for each time they have chained`:       Tag{"tag": Tag{"type": "PerStat", "stat": "Chain"}},
-	`for each time it has chained`:          Tag{"tag": Tag{"type": "PerStat", "stat": "Chain"}},
-	`for each summoned golem`:               Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveGolemLimit"}},
-	`for each golem you have summoned`:      Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveGolemLimit"}},
-	`per summoned golem`:                    Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveGolemLimit"}},
-	`per summoned sentinel of purity`:       Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveSentinelOfPurityLimit"}},
-	`per summoned void spawn`:               Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveVoidSpawnLimit"}},
-	`per summoned skeleton`:                 Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveSkeletonLimit"}},
-	`per skeleton you own`:                  Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveSkeletonLimit", "actor": "parent"}},
-	`per summoned raging spirit`:            Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveRagingSpiritLimit"}},
-	`per summoned phantasm`:                 Tag{"tag": Tag{"type": "PerStat", "stat": "ActivePhantasmLimit"}},
-	`per animated weapon`:                   Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveAnimatedWeaponLimit", "actor": "parent"}},
-	`for each raised zombie`:                Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveZombieLimit"}},
-	`per zombie you own`:                    Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveZombieLimit", "actor": "parent"}},
-	`per raised zombie`:                     Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveZombieLimit"}},
-	`per raised spectre`:                    Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveSpectreLimit"}},
-	`per spectre you own`:                   Tag{"tag": Tag{"type": "PerStat", "stat": "ActiveSpectreLimit", "actor": "parent"}},
-	`for each remaining chain`:              Tag{"tag": Tag{"type": "PerStat", "stat": "ChainRemaining"}},
-	`for each remaining chain, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "PerStat", "stat": "ChainRemaining", "globalLimit": c.n(1), "globalLimitKey": "FollowThrough"}}
+	`per ([0-9]+) energy shield on equipped boots`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnBoots", Div: opt(c.n(1))}}
 	}),
-	`for each enemy pierced`:        Tag{"tag": Tag{"type": "PerStat", "stat": "PiercedCount"}},
-	`for each time they've pierced`: Tag{"tag": Tag{"type": "PerStat", "stat": "PiercedCount"}},
+	`per ([0-9]+) energy shield on equipped body armour`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnBody Armour", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) maximum energy shield on equipped shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) maximum energy shield on shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on equipped gloves`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnGloves", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on equipped helmet`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnHelmet", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion on equipped boots`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnBoots", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion on boots`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnBoots", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on equipped boots`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnBoots", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on body armour`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnBody Armour", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on equipped body armour`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnBody Armour", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) evasion rating on equipped shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "EvasionOnWeapon 2", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on gloves`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnGloves", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on equipped gloves`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnGloves", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on equipped helmet`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnHelmet", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on equipped boots`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnBoots", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on equipped body armour`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnBody Armour", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour on equipped shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ArmourOnWeapon 2", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour or evasion rating on shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, StatList: []string{"ArmourOnWeapon 2", "EvasionOnWeapon 2"}, Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) armour or evasion rating on equipped shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, StatList: []string{"ArmourOnWeapon 2", "EvasionOnWeapon 2"}, Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% cold resistance`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ColdResist", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% fire resistance`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "FireResist", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% lightning resistance`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LightningResist", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% chaos resistance`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ChaosResist", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% cold resistance above 75%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ColdResistOver75", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% lightning resistance above 75%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "LightningResistOver75", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% fire resistance above 75%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "FireResistOver75", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% fire, cold, or lightning resistance above 75%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, StatList: []string{"FireResistOver75", "ColdResistOver75", "LightningResistOver75"}, Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+) devotion`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Devotion", Actor: "parent", Div: opt(c.n(1))}}
+	}),
+	`per ([0-9]+)% missing fire resistance, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "MissingFireResist", Div: opt(c.n(1)), GlobalLimit: opt(c.n(2)), GlobalLimitKey: "ReplicaNebulisFire"}}
+	}),
+	`per ([0-9]+)% missing cold resistance, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "MissingColdResist", Div: opt(c.n(1)), GlobalLimit: opt(c.n(2)), GlobalLimitKey: "ReplicaNebulisCold"}}
+	}),
+	`per ([0-9]+)% missing fire, cold, or lightning resistance, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, StatList: []string{"MissingFireResist", "MissingColdResist", "MissingLightningResist"}, Div: opt(c.n(1)), GlobalLimit: opt(c.n(2)), GlobalLimitKey: "ReplicaNebulisCold"}}
+	}),
+	`per endurance, frenzy or power charge`: &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "TotalCharges"}},
+	`per fortification`:                     &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "FortificationStacks"}},
+	`per two fortification on you`:          &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "FortificationStacks", Div: opt(2), Actor: "player"}},
+	`per fortification above 20`:            &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "FortificationStacksOver20"}},
+	`per totem`:                             &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "TotemsSummoned"}},
+	`per summoned totem`:                    &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "TotemsSummoned"}},
+	`for each summoned totem`:               &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "TotemsSummoned"}},
+	`per maximum number of summoned totems`: &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveTotemLimit"}},
+	`for each time they have chained`:       &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Chain"}},
+	`for each time it has chained`:          &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "Chain"}},
+	`for each summoned golem`:               &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveGolemLimit"}},
+	`for each golem you have summoned`:      &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveGolemLimit"}},
+	`per summoned golem`:                    &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveGolemLimit"}},
+	`per summoned sentinel of purity`:       &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveSentinelOfPurityLimit"}},
+	`per summoned void spawn`:               &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveVoidSpawnLimit"}},
+	`per summoned skeleton`:                 &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveSkeletonLimit"}},
+	`per skeleton you own`:                  &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveSkeletonLimit", Actor: "parent"}},
+	`per summoned raging spirit`:            &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveRagingSpiritLimit"}},
+	`per summoned phantasm`:                 &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActivePhantasmLimit"}},
+	`per animated weapon`:                   &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveAnimatedWeaponLimit", Actor: "parent"}},
+	`for each raised zombie`:                &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveZombieLimit"}},
+	`per zombie you own`:                    &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveZombieLimit", Actor: "parent"}},
+	`per raised zombie`:                     &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveZombieLimit"}},
+	`per raised spectre`:                    &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveSpectreLimit"}},
+	`per spectre you own`:                   &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ActiveSpectreLimit", Actor: "parent"}},
+	`for each remaining chain`:              &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ChainRemaining"}},
+	`for each remaining chain, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "ChainRemaining", GlobalLimit: opt(c.n(1)), GlobalLimitKey: "FollowThrough"}}
+	}),
+	`for each enemy pierced`:        &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "PiercedCount"}},
+	`for each time they've pierced`: &PatternEntry{Tag: &StatTag{StatKind: TagPerStat, Stat: "PiercedCount"}},
 	// Stat conditions
-	`with ([0-9]+) or more strength`:                      fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Str", "threshold": c.n(1)}} }),
-	`with at least ([0-9]+) strength`:                     fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Str", "threshold": c.n(1)}} }),
-	`w?h?i[lf]e? you have at least ([0-9]+) strength`:     fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Str", "threshold": c.n(1)}} }),
-	`w?h?i[lf]e? you have at least ([0-9]+) dexterity`:    fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Dex", "threshold": c.n(1)}} }),
-	`w?h?i[lf]e? you have at least ([0-9]+) intelligence`: fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Int", "threshold": c.n(1)}} }),
-	`w?h?i[lf]e? strength is below ([0-9]+)`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Str", "threshold": c.n(1) - 1, "upper": true}}
+	`with ([0-9]+) or more strength`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Str", Threshold: opt(c.n(1))}}
 	}),
-	`w?h?i[lf]e? dexterity is below ([0-9]+)`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Dex", "threshold": c.n(1) - 1, "upper": true}}
+	`with at least ([0-9]+) strength`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Str", Threshold: opt(c.n(1))}}
 	}),
-	`w?h?i[lf]e? intelligence is below ([0-9]+)`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Int", "threshold": c.n(1) - 1, "upper": true}}
+	`w?h?i[lf]e? you have at least ([0-9]+) strength`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Str", Threshold: opt(c.n(1))}}
 	}),
-	`at least ([0-9]+) intelligence`:           fn(func(c caps) any { return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Int", "threshold": c.n(1)}} }),
-	`if dexterity is higher than intelligence`: Tag{"tag": Tag{"type": "Condition", "var": "DexHigherThanInt"}},
-	`if strength is higher than intelligence`:  Tag{"tag": Tag{"type": "Condition", "var": "StrHigherThanInt"}},
-	`w?h?i[lf]e? you have at least ([0-9]+) maximum energy shield`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "EnergyShield", "threshold": c.n(1)}}
+	`w?h?i[lf]e? you have at least ([0-9]+) dexterity`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Dex", Threshold: opt(c.n(1))}}
 	}),
-	`against targets they pierce`:   Tag{"tag": Tag{"type": "StatThreshold", "stat": "PierceCount", "threshold": 1}},
-	`against pierced targets`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "PierceCount", "threshold": 1}},
-	`to targets they pierce`:        Tag{"tag": Tag{"type": "StatThreshold", "stat": "PierceCount", "threshold": 1}},
-	`that fire a single projectile`: Tag{"tag": Tag{"type": "StatThreshold", "stat": "ProjectileCount", "threshold": 1, "upper": true}},
-	`w?h?i[lf]e? you have at least ([0-9]+) devotion`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "Devotion", "threshold": c.n(1)}}
+	`w?h?i[lf]e? you have at least ([0-9]+) intelligence`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Int", Threshold: opt(c.n(1))}}
 	}),
-	`while you have at least ([0-9]+) rage`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "Rage", "threshold": c.n(1)}}
+	`w?h?i[lf]e? strength is below ([0-9]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Str", Threshold: opt(c.n(1) - 1), Upper: true}}
 	}),
-	`while affected by a unique abyss jewel`: Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "UniqueAbyssJewels", "threshold": 1}},
-	`while affected by a rare abyss jewel`:   Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "RareAbyssJewels", "threshold": 1}},
-	`while affected by a magic abyss jewel`:  Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "MagicAbyssJewels", "threshold": 1}},
-	`while affected by a normal abyss jewel`: Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NormalAbyssJewels", "threshold": 1}},
-	`while you have at least ([0-9]+) nearby all[yi]e?s?`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NearbyAlly", "threshold": c.n(1)}}
+	`w?h?i[lf]e? dexterity is below ([0-9]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Dex", Threshold: opt(c.n(1) - 1), Upper: true}}
+	}),
+	`w?h?i[lf]e? intelligence is below ([0-9]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Int", Threshold: opt(c.n(1) - 1), Upper: true}}
+	}),
+	`at least ([0-9]+) intelligence`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Int", Threshold: opt(c.n(1))}}
+	}),
+	`if dexterity is higher than intelligence`: &PatternEntry{Tag: &CondTag{Var: "DexHigherThanInt"}},
+	`if strength is higher than intelligence`:  &PatternEntry{Tag: &CondTag{Var: "StrHigherThanInt"}},
+	`w?h?i[lf]e? you have at least ([0-9]+) maximum energy shield`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "EnergyShield", Threshold: opt(c.n(1))}}
+	}),
+	`against targets they pierce`:   &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PierceCount", Threshold: opt(1)}},
+	`against pierced targets`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PierceCount", Threshold: opt(1)}},
+	`to targets they pierce`:        &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PierceCount", Threshold: opt(1)}},
+	`that fire a single projectile`: &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "ProjectileCount", Threshold: opt(1), Upper: true}},
+	`w?h?i[lf]e? you have at least ([0-9]+) devotion`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "Devotion", Threshold: opt(c.n(1))}}
+	}),
+	`while you have at least ([0-9]+) rage`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "Rage", Threshold: opt(c.n(1))}}
+	}),
+	`while affected by a unique abyss jewel`: &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "UniqueAbyssJewels", Threshold: opt(1)}},
+	`while affected by a rare abyss jewel`:   &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "RareAbyssJewels", Threshold: opt(1)}},
+	`while affected by a magic abyss jewel`:  &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "MagicAbyssJewels", Threshold: opt(1)}},
+	`while affected by a normal abyss jewel`: &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NormalAbyssJewels", Threshold: opt(1)}},
+	`while you have at least ([0-9]+) nearby all[yi]e?s?`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NearbyAlly", Threshold: opt(c.n(1))}}
 	}),
 	// Slot conditions
-	`when in main hand`:     Tag{"tag": Tag{"type": "SlotNumber", "num": 1}},
-	`whi?l?en? in off hand`: Tag{"tag": Tag{"type": "SlotNumber", "num": 2}},
-	`in main hand`:          Tag{"tag": Tag{"type": "InSlot", "num": 1}},
-	`in off hand`:           Tag{"tag": Tag{"type": "InSlot", "num": 2}},
-	`w?i?t?h? main hand`:    Tag{"tagList": []any{Tag{"type": "Condition", "var": "MainHandAttack"}, Tag{"type": "SkillType", "skillType": SkillType.Attack}}},
-	`w?i?t?h? off ?hand`:    Tag{"tagList": []any{Tag{"type": "Condition", "var": "OffHandAttack"}, Tag{"type": "SkillType", "skillType": SkillType.Attack}}},
-	`[fi]?[rn]?[of]?[ml]?[ i]?[hc]?[it]?[te]?[sd]? ? with this weapon`: Tag{"tagList": []any{Tag{"type": "Condition", "var": "{Hand}Attack"}, Tag{"type": "SkillType", "skillType": SkillType.Attack}}},
-	`if your o[tp][hp][eo][rs]i?t?e? ring is a shaper item`:            Tag{"tag": Tag{"type": "ItemCondition", "itemSlot": "Ring {OtherSlotNum}", "shaperCond": true}},
-	`if your o[tp][hp][eo][rs]i?t?e? ring is an elder item`:            Tag{"tag": Tag{"type": "ItemCondition", "itemSlot": "Ring {OtherSlotNum}", "elderCond": true}},
-	`of skills supported by spellslinger`:                              Tag{"tag": Tag{"type": "Condition", "var": "SupportedBySpellslinger"}},
+	`when in main hand`:     &PatternEntry{Tag: &SlotTag{SlotKind: TagSlotNumber, Num: 1}},
+	`whi?l?en? in off hand`: &PatternEntry{Tag: &SlotTag{SlotKind: TagSlotNumber, Num: 2}},
+	`in main hand`:          &PatternEntry{Tag: &SlotTag{SlotKind: TagInSlot, Num: 1}},
+	`in off hand`:           &PatternEntry{Tag: &SlotTag{SlotKind: TagInSlot, Num: 2}},
+	`w?i?t?h? main hand`:    &PatternEntry{TagList: []Tag{&CondTag{Var: "MainHandAttack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
+	`w?i?t?h? off ?hand`:    &PatternEntry{TagList: []Tag{&CondTag{Var: "OffHandAttack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
+	`[fi]?[rn]?[of]?[ml]?[ i]?[hc]?[it]?[te]?[sd]? ? with this weapon`: &PatternEntry{TagList: []Tag{&CondTag{Var: "{Hand}Attack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
+	`if your o[tp][hp][eo][rs]i?t?e? ring is a shaper item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ShaperCond: util.Some(true)}},
+	`if your o[tp][hp][eo][rs]i?t?e? ring is an elder item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ElderCond: util.Some(true)}},
+	`of skills supported by spellslinger`:                              &PatternEntry{Tag: &CondTag{Var: "SupportedBySpellslinger"}},
 	// Equipment conditions
-	`while holding a fishing rod`:               Tag{"tag": Tag{"type": "Condition", "var": "UsingFishing"}},
-	`while your off hand is empty`:              Tag{"tag": Tag{"type": "Condition", "var": "OffHandIsEmpty"}},
-	`with shields`:                              Tag{"tag": Tag{"type": "Condition", "var": "UsingShield"}},
-	`while dual wielding`:                       Tag{"tag": Tag{"type": "Condition", "var": "DualWielding"}},
-	`while dual wielding claws`:                 Tag{"tag": Tag{"type": "Condition", "var": "DualWieldingClaws"}},
-	`while dual wielding or holding a shield`:   Tag{"tag": Tag{"type": "Condition", "varList": []any{"DualWielding", "UsingShield"}}},
-	`while wielding an axe`:                     Tag{"tag": Tag{"type": "Condition", "var": "UsingAxe"}},
-	`while wielding an axe or sword`:            Tag{"tag": Tag{"type": "Condition", "varList": []any{"UsingAxe", "UsingSword"}}},
-	`while wielding a bow`:                      Tag{"tag": Tag{"type": "Condition", "var": "UsingBow"}},
-	`while wielding a claw`:                     Tag{"tag": Tag{"type": "Condition", "var": "UsingClaw"}},
-	`while wielding a dagger`:                   Tag{"tag": Tag{"type": "Condition", "var": "UsingDagger"}},
-	`while wielding a claw or dagger`:           Tag{"tag": Tag{"type": "Condition", "varList": []any{"UsingClaw", "UsingDagger"}}},
-	`while wielding a mace`:                     Tag{"tag": Tag{"type": "Condition", "var": "UsingMace"}},
-	`while wielding a mace or sceptre`:          Tag{"tag": Tag{"type": "Condition", "var": "UsingMace"}},
-	`while wielding a mace, sceptre or staff`:   Tag{"tag": Tag{"type": "Condition", "varList": []any{"UsingMace", "UsingStaff"}}},
-	`while wielding a staff`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsingStaff"}},
-	`while wielding a sword`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsingSword"}},
-	`while wielding a melee weapon`:             Tag{"tag": Tag{"type": "Condition", "var": "UsingMeleeWeapon"}},
-	`while wielding a one handed weapon`:        Tag{"tag": Tag{"type": "Condition", "var": "UsingOneHandedWeapon"}},
-	`while wielding a two handed weapon`:        Tag{"tag": Tag{"type": "Condition", "var": "UsingTwoHandedWeapon"}},
-	`while wielding a two handed melee weapon`:  Tag{"tagList": []any{Tag{"type": "Condition", "var": "UsingTwoHandedWeapon"}, Tag{"type": "Condition", "var": "UsingMeleeWeapon"}}},
-	`while wielding a wand`:                     Tag{"tag": Tag{"type": "Condition", "var": "UsingWand"}},
-	`while wielding two different weapon types`: Tag{"tag": Tag{"type": "Condition", "var": "WieldingDifferentWeaponTypes"}},
-	`while unarmed`:                             Tag{"tag": Tag{"type": "Condition", "var": "Unarmed"}},
-	`while you are unencumbered`:                Tag{"tag": Tag{"type": "Condition", "var": "Unencumbered"}},
-	`equipped bow`:                              Tag{"tag": Tag{"type": "Condition", "var": "UsingBow"}},
-	`if equipped ([a-zA-Z \t\n\v\f\r]+) has an ([a-zA-Z \t\n\v\f\r]+) modifier`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "ItemCondition", "searchCond": c.s(2), "itemSlot": c.s(1)}}
+	`while holding a fishing rod`:               &PatternEntry{Tag: &CondTag{Var: "UsingFishing"}},
+	`while your off hand is empty`:              &PatternEntry{Tag: &CondTag{Var: "OffHandIsEmpty"}},
+	`with shields`:                              &PatternEntry{Tag: &CondTag{Var: "UsingShield"}},
+	`while dual wielding`:                       &PatternEntry{Tag: &CondTag{Var: "DualWielding"}},
+	`while dual wielding claws`:                 &PatternEntry{Tag: &CondTag{Var: "DualWieldingClaws"}},
+	`while dual wielding or holding a shield`:   &PatternEntry{Tag: &CondTag{VarList: []string{"DualWielding", "UsingShield"}}},
+	`while wielding an axe`:                     &PatternEntry{Tag: &CondTag{Var: "UsingAxe"}},
+	`while wielding an axe or sword`:            &PatternEntry{Tag: &CondTag{VarList: []string{"UsingAxe", "UsingSword"}}},
+	`while wielding a bow`:                      &PatternEntry{Tag: &CondTag{Var: "UsingBow"}},
+	`while wielding a claw`:                     &PatternEntry{Tag: &CondTag{Var: "UsingClaw"}},
+	`while wielding a dagger`:                   &PatternEntry{Tag: &CondTag{Var: "UsingDagger"}},
+	`while wielding a claw or dagger`:           &PatternEntry{Tag: &CondTag{VarList: []string{"UsingClaw", "UsingDagger"}}},
+	`while wielding a mace`:                     &PatternEntry{Tag: &CondTag{Var: "UsingMace"}},
+	`while wielding a mace or sceptre`:          &PatternEntry{Tag: &CondTag{Var: "UsingMace"}},
+	`while wielding a mace, sceptre or staff`:   &PatternEntry{Tag: &CondTag{VarList: []string{"UsingMace", "UsingStaff"}}},
+	`while wielding a staff`:                    &PatternEntry{Tag: &CondTag{Var: "UsingStaff"}},
+	`while wielding a sword`:                    &PatternEntry{Tag: &CondTag{Var: "UsingSword"}},
+	`while wielding a melee weapon`:             &PatternEntry{Tag: &CondTag{Var: "UsingMeleeWeapon"}},
+	`while wielding a one handed weapon`:        &PatternEntry{Tag: &CondTag{Var: "UsingOneHandedWeapon"}},
+	`while wielding a two handed weapon`:        &PatternEntry{Tag: &CondTag{Var: "UsingTwoHandedWeapon"}},
+	`while wielding a two handed melee weapon`:  &PatternEntry{TagList: []Tag{&CondTag{Var: "UsingTwoHandedWeapon"}, &CondTag{Var: "UsingMeleeWeapon"}}},
+	`while wielding a wand`:                     &PatternEntry{Tag: &CondTag{Var: "UsingWand"}},
+	`while wielding two different weapon types`: &PatternEntry{Tag: &CondTag{Var: "WieldingDifferentWeaponTypes"}},
+	`while unarmed`:                             &PatternEntry{Tag: &CondTag{Var: "Unarmed"}},
+	`while you are unencumbered`:                &PatternEntry{Tag: &CondTag{Var: "Unencumbered"}},
+	`equipped bow`:                              &PatternEntry{Tag: &CondTag{Var: "UsingBow"}},
+	`if equipped ([a-zA-Z \t\n\v\f\r]+) has an ([a-zA-Z \t\n\v\f\r]+) modifier`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(2), ItemSlot: c.s(1)}}
 	}),
-	`if your equipped staff has a red and blue socket`: Tag{"tagList": []any{Tag{"type": "MultiplierThreshold", "var": "RedSocketInWeapon 1", "threshold": 1}, Tag{"type": "MultiplierThreshold", "var": "BlueSocketInWeapon 1", "threshold": 1}, Tag{"type": "Condition", "var": "UsingStaff"}}},
-	`if there are no ([a-zA-Z \t\n\v\f\r]+) modifiers on equipped ([a-zA-Z \t\n\v\f\r]+)`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "ItemCondition", "searchCond": c.s(1), "itemSlot": c.s(2), "neg": true}}
+	`if your equipped staff has a red and blue socket`: &PatternEntry{TagList: []Tag{&MultiplierTag{IsThreshold: true, Var: "RedSocketInWeapon 1", Threshold: opt(1)}, &MultiplierTag{IsThreshold: true, Var: "BlueSocketInWeapon 1", Threshold: opt(1)}, &CondTag{Var: "UsingStaff"}}},
+	`if there are no ([a-zA-Z \t\n\v\f\r]+) modifiers on equipped ([a-zA-Z \t\n\v\f\r]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(1), ItemSlot: c.s(2), Neg: true}}
 	}),
-	`if there are no ([a-zA-Z]+) modifiers on other equipped items`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "ItemCondition", "searchCond": c.s(1), "itemSlot": "{SlotName}", "allSlots": true, "excludeSelf": true, "neg": true}}
+	`if there are no ([a-zA-Z]+) modifiers on other equipped items`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(1), ItemSlot: "{SlotName}", AllSlots: true, ExcludeSelf: true, Neg: true}}
 	}),
-	`if corrupted`:                        Tag{"tag": Tag{"type": "ItemCondition", "itemSlot": "{SlotName}", "corruptedCond": true}},
-	`with a normal item equipped`:         Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NormalItem", "threshold": 1}},
-	`with a magic item equipped`:          Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "MagicItem", "threshold": 1}},
-	`with a rare item equipped`:           Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "RareItem", "threshold": 1}},
-	`with a unique item equipped`:         Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "UniqueItem", "threshold": 1}},
-	`if you wear no corrupted items`:      Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "CorruptedItem", "threshold": 0, "upper": true}},
-	`if no worn items are corrupted`:      Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "CorruptedItem", "threshold": 0, "upper": true}},
-	`if no equipped items are corrupted`:  Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "CorruptedItem", "threshold": 0, "upper": true}},
-	`if all worn items are corrupted`:     Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NonCorruptedItem", "threshold": 0, "upper": true}},
-	`if all equipped items are corrupted`: Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NonCorruptedItem", "threshold": 0, "upper": true}},
-	`if equipped shield has at least ([0-9]+)% chance to block`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "ShieldBlockChance", "threshold": c.n(1)}}
+	`if corrupted`:                        &PatternEntry{Tag: &ItemCondTag{ItemSlot: "{SlotName}", CorruptedCond: util.Some(true)}},
+	`with a normal item equipped`:         &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NormalItem", Threshold: opt(1)}},
+	`with a magic item equipped`:          &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "MagicItem", Threshold: opt(1)}},
+	`with a rare item equipped`:           &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "RareItem", Threshold: opt(1)}},
+	`with a unique item equipped`:         &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "UniqueItem", Threshold: opt(1)}},
+	`if you wear no corrupted items`:      &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "CorruptedItem", Threshold: opt(0), Upper: true}},
+	`if no worn items are corrupted`:      &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "CorruptedItem", Threshold: opt(0), Upper: true}},
+	`if no equipped items are corrupted`:  &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "CorruptedItem", Threshold: opt(0), Upper: true}},
+	`if all worn items are corrupted`:     &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NonCorruptedItem", Threshold: opt(0), Upper: true}},
+	`if all equipped items are corrupted`: &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NonCorruptedItem", Threshold: opt(0), Upper: true}},
+	`if equipped shield has at least ([0-9]+)% chance to block`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "ShieldBlockChance", Threshold: opt(c.n(1))}}
 	}),
-	`if you have ([0-9]+) primordial items socketed or equipped`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "PrimordialItem", "threshold": c.n(1)}}
+	`if you have ([0-9]+) primordial items socketed or equipped`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "PrimordialItem", Threshold: opt(c.n(1))}}
 	}),
 	// Player status conditions
-	`if used while on low life`:              Tag{"tag": Tag{"type": "Condition", "var": "LowLife"}},
-	`wh[ie][ln]e? on low life`:               Tag{"tag": Tag{"type": "Condition", "var": "LowLife"}},
-	`on reaching low life`:                   Tag{"tag": Tag{"type": "Condition", "var": "LowLife"}},
-	`wh[ie][ln]e? not on low life`:           Tag{"tag": Tag{"type": "Condition", "var": "LowLife", "neg": true}},
-	`wh[ie][ln]e? on low mana`:               Tag{"tag": Tag{"type": "Condition", "var": "LowMana"}},
-	`wh[ie][ln]e? not on low mana`:           Tag{"tag": Tag{"type": "Condition", "var": "LowMana", "neg": true}},
-	`wh[ie][ln]e? on full life`:              Tag{"tag": Tag{"type": "Condition", "var": "FullLife"}},
-	`wh[ie][ln]e? not on full life`:          Tag{"tag": Tag{"type": "Condition", "var": "FullLife", "neg": true}},
-	`wh[ie][ln]e? no life is reserved`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "LifeReserved", "threshold": 0, "upper": true}},
-	`wh[ie][ln]e? no mana is reserved`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "ManaReserved", "threshold": 0, "upper": true}},
-	`wh[ie][ln]e? on full energy shield`:     Tag{"tag": Tag{"type": "Condition", "var": "FullEnergyShield"}},
-	`wh[ie][ln]e? not on full energy shield`: Tag{"tag": Tag{"type": "Condition", "var": "FullEnergyShield", "neg": true}},
-	`wh[ie][ln]e? you have energy shield`:    Tag{"tag": Tag{"type": "Condition", "var": "HaveEnergyShield"}},
-	`wh[ie][ln]e? you have no energy shield`: Tag{"tag": Tag{"type": "Condition", "var": "HaveEnergyShield", "neg": true}},
-	`if you have energy shield`:              Tag{"tag": Tag{"type": "Condition", "var": "HaveEnergyShield"}},
-	`while stationary`:                       Tag{"tag": Tag{"type": "Condition", "var": "Stationary"}},
-	`while you are stationary`:               Tag{"tag": Tag{"type": "ActorCondition", "actor": "player", "var": "Stationary"}},
-	`while moving`:                           Tag{"tag": Tag{"type": "Condition", "var": "Moving"}},
-	`while channelling`:                      Tag{"tag": Tag{"type": "Condition", "var": "Channelling"}},
-	`while channelling snipe`:                Tag{"tag": Tag{"type": "Condition", "var": "Channelling"}},
-	`after channelling for ([0-9]+) seconds?`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "ChannellingTime", "threshold": c.n(1)}}
+	`if used while on low life`:              &PatternEntry{Tag: &CondTag{Var: "LowLife"}},
+	`wh[ie][ln]e? on low life`:               &PatternEntry{Tag: &CondTag{Var: "LowLife"}},
+	`on reaching low life`:                   &PatternEntry{Tag: &CondTag{Var: "LowLife"}},
+	`wh[ie][ln]e? not on low life`:           &PatternEntry{Tag: &CondTag{Var: "LowLife", Neg: true}},
+	`wh[ie][ln]e? on low mana`:               &PatternEntry{Tag: &CondTag{Var: "LowMana"}},
+	`wh[ie][ln]e? not on low mana`:           &PatternEntry{Tag: &CondTag{Var: "LowMana", Neg: true}},
+	`wh[ie][ln]e? on full life`:              &PatternEntry{Tag: &CondTag{Var: "FullLife"}},
+	`wh[ie][ln]e? not on full life`:          &PatternEntry{Tag: &CondTag{Var: "FullLife", Neg: true}},
+	`wh[ie][ln]e? no life is reserved`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "LifeReserved", Threshold: opt(0), Upper: true}},
+	`wh[ie][ln]e? no mana is reserved`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "ManaReserved", Threshold: opt(0), Upper: true}},
+	`wh[ie][ln]e? on full energy shield`:     &PatternEntry{Tag: &CondTag{Var: "FullEnergyShield"}},
+	`wh[ie][ln]e? not on full energy shield`: &PatternEntry{Tag: &CondTag{Var: "FullEnergyShield", Neg: true}},
+	`wh[ie][ln]e? you have energy shield`:    &PatternEntry{Tag: &CondTag{Var: "HaveEnergyShield"}},
+	`wh[ie][ln]e? you have no energy shield`: &PatternEntry{Tag: &CondTag{Var: "HaveEnergyShield", Neg: true}},
+	`if you have energy shield`:              &PatternEntry{Tag: &CondTag{Var: "HaveEnergyShield"}},
+	`while stationary`:                       &PatternEntry{Tag: &CondTag{Var: "Stationary"}},
+	`while you are stationary`:               &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "player", Var: "Stationary"}},
+	`while moving`:                           &PatternEntry{Tag: &CondTag{Var: "Moving"}},
+	`while channelling`:                      &PatternEntry{Tag: &CondTag{Var: "Channelling"}},
+	`while channelling snipe`:                &PatternEntry{Tag: &CondTag{Var: "Channelling"}},
+	`after channelling for ([0-9]+) seconds?`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "ChannellingTime", Threshold: opt(c.n(1))}}
 	}),
-	`if you've been channelling for at least ([0-9]+) seconds?`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "ChannellingTime", "threshold": c.n(1)}}
+	`if you've been channelling for at least ([0-9]+) seconds?`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "ChannellingTime", Threshold: opt(c.n(1))}}
 	}),
-	`if you've inflicted exposure recently`: Tag{"tag": Tag{"type": "Condition", "var": "AppliedExposureRecently"}},
-	`while you have no power charges`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "PowerCharges", "threshold": 0, "upper": true}},
-	`while you have no frenzy charges`:      Tag{"tag": Tag{"type": "StatThreshold", "stat": "FrenzyCharges", "threshold": 0, "upper": true}},
-	`while you have no endurance charges`:   Tag{"tag": Tag{"type": "StatThreshold", "stat": "EnduranceCharges", "threshold": 0, "upper": true}},
-	`while you have a power charge`:         Tag{"tag": Tag{"type": "StatThreshold", "stat": "PowerCharges", "threshold": 1}},
-	`while you have a frenzy charge`:        Tag{"tag": Tag{"type": "StatThreshold", "stat": "FrenzyCharges", "threshold": 1}},
-	`while you have an endurance charge`:    Tag{"tag": Tag{"type": "StatThreshold", "stat": "EnduranceCharges", "threshold": 1}},
-	`while at maximum power charges`:        Tag{"tag": Tag{"type": "StatThreshold", "stat": "PowerCharges", "thresholdStat": "PowerChargesMax"}},
-	`while at maximum frenzy charges`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "FrenzyCharges", "thresholdStat": "FrenzyChargesMax"}},
-	`while on full frenzy charges`:          Tag{"tag": Tag{"type": "StatThreshold", "stat": "FrenzyCharges", "thresholdStat": "FrenzyChargesMax"}},
-	`while at maximum endurance charges`:    Tag{"tag": Tag{"type": "StatThreshold", "stat": "EnduranceCharges", "thresholdStat": "EnduranceChargesMax"}},
-	`while at minimum endurance charges`:    Tag{"tag": Tag{"type": "StatThreshold", "stat": "EnduranceCharges", "thresholdStat": "EnduranceChargesMin", "upper": true}},
-	`while at minimum power charges`:        Tag{"tag": Tag{"type": "StatThreshold", "stat": "PowerCharges", "thresholdStat": "PowerChargesMin", "upper": true}},
-	`while at minimum frenzy charges`:       Tag{"tag": Tag{"type": "StatThreshold", "stat": "FrenzyCharges", "thresholdStat": "FrenzyChargesMin", "upper": true}},
-	`while at maximum rage`:                 Tag{"tag": Tag{"type": "Condition", "var": "HaveMaximumRage"}},
-	`while at maximum fortification`:        Tag{"tag": Tag{"type": "Condition", "var": "HaveMaximumFortification"}},
-	`while you have at least ([0-9]+) crab barriers`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "CrabBarriers", "threshold": c.n(1)}}
+	`if you've inflicted exposure recently`: &PatternEntry{Tag: &CondTag{Var: "AppliedExposureRecently"}},
+	`while you have no power charges`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PowerCharges", Threshold: opt(0), Upper: true}},
+	`while you have no frenzy charges`:      &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FrenzyCharges", Threshold: opt(0), Upper: true}},
+	`while you have no endurance charges`:   &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "EnduranceCharges", Threshold: opt(0), Upper: true}},
+	`while you have a power charge`:         &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PowerCharges", Threshold: opt(1)}},
+	`while you have a frenzy charge`:        &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FrenzyCharges", Threshold: opt(1)}},
+	`while you have an endurance charge`:    &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "EnduranceCharges", Threshold: opt(1)}},
+	`while at maximum power charges`:        &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PowerCharges", ThresholdStat: "PowerChargesMax"}},
+	`while at maximum frenzy charges`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FrenzyCharges", ThresholdStat: "FrenzyChargesMax"}},
+	`while on full frenzy charges`:          &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FrenzyCharges", ThresholdStat: "FrenzyChargesMax"}},
+	`while at maximum endurance charges`:    &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "EnduranceCharges", ThresholdStat: "EnduranceChargesMax"}},
+	`while at minimum endurance charges`:    &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "EnduranceCharges", ThresholdStat: "EnduranceChargesMin", Upper: true}},
+	`while at minimum power charges`:        &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "PowerCharges", ThresholdStat: "PowerChargesMin", Upper: true}},
+	`while at minimum frenzy charges`:       &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FrenzyCharges", ThresholdStat: "FrenzyChargesMin", Upper: true}},
+	`while at maximum rage`:                 &PatternEntry{Tag: &CondTag{Var: "HaveMaximumRage"}},
+	`while at maximum fortification`:        &PatternEntry{Tag: &CondTag{Var: "HaveMaximumFortification"}},
+	`while you have at least ([0-9]+) crab barriers`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "CrabBarriers", Threshold: opt(c.n(1))}}
 	}),
-	`while you have at least ([0-9]+) fortification`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "StatThreshold", "stat": "FortificationStacks", "threshold": c.n(1)}}
+	`while you have at least ([0-9]+) fortification`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &StatTag{StatKind: TagStatThreshold, Stat: "FortificationStacks", Threshold: opt(c.n(1))}}
 	}),
-	`while you have at least ([0-9]+) total endurance, frenzy and power charges`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "TotalCharges", "threshold": c.n(1)}}
+	`while you have at least ([0-9]+) total endurance, frenzy and power charges`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "TotalCharges", Threshold: opt(c.n(1))}}
 	}),
-	`while you have a totem`:                             Tag{"tag": Tag{"type": "Condition", "var": "HaveTotem"}},
-	`while you have at least one nearby ally`:            Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NearbyAlly", "threshold": 1}},
-	`while you have a linked target`:                     Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "LinkedTargets", "threshold": 1}},
-	`while you have fortify`:                             Tag{"tag": Tag{"type": "Condition", "var": "Fortified"}},
-	`while you have phasing`:                             Tag{"tag": Tag{"type": "Condition", "var": "Phasing"}},
-	`while you have unbroken ward`:                       Tag{"tag": Tag{"type": "Condition", "var": "UnbrokenWard"}},
-	`while your ward is broken`:                          Tag{"tag": Tag{"type": "Condition", "var": "UnbrokenWard", "neg": true}},
-	`if you[' ]h?a?ve suppressed spell damage recently`:  Tag{"tag": Tag{"type": "Condition", "var": "SuppressedRecently"}},
-	`while you have elusive`:                             Tag{"tag": Tag{"type": "Condition", "var": "Elusive"}},
-	`while physical aegis is depleted`:                   Tag{"tag": Tag{"type": "Condition", "var": "PhysicalAegisDepleted"}},
-	`during onslaught`:                                   Tag{"tag": Tag{"type": "Condition", "var": "Onslaught"}},
-	`while you have onslaught`:                           Tag{"tag": Tag{"type": "Condition", "var": "Onslaught"}},
-	`while phasing`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Phasing"}},
-	`while you have tailwind`:                            Tag{"tag": Tag{"type": "Condition", "var": "Tailwind"}},
-	`while elusive`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Elusive"}},
-	`gain elusive`:                                       Tag{"tag": Tag{"type": "Condition", "varList": []any{"CanBeElusive", "Elusive"}}},
-	`while you have arcane surge`:                        Tag{"tag": Tag{"type": "Condition", "var": "AffectedByArcaneSurge"}},
-	`while you have cat's stealth`:                       Tag{"tag": Tag{"type": "Condition", "var": "AffectedByCat'sStealth"}},
-	`while you have cat's agility`:                       Tag{"tag": Tag{"type": "Condition", "var": "AffectedByCat'sAgility"}},
-	`while you have avian's might`:                       Tag{"tag": Tag{"type": "Condition", "var": "AffectedByAvian'sMight"}},
-	`while you have avian's flight`:                      Tag{"tag": Tag{"type": "Condition", "var": "AffectedByAvian'sFlight"}},
-	`while affected by aspect of the cat`:                Tag{"tag": Tag{"type": "Condition", "varList": []any{"AffectedByCat'sStealth", "AffectedByCat'sAgility"}}},
-	`while affected by a non-vaal guard skill`:           Tag{"tag": Tag{"type": "Condition", "var": "AffectedByNonVaalGuardSkill"}},
-	`if a non-vaal guard buff was lost recently`:         Tag{"tag": Tag{"type": "Condition", "var": "LostNonVaalBuffRecently"}},
-	`while affected by a guard skill buff`:               Tag{"tag": Tag{"type": "Condition", "var": "AffectedByGuardSkill"}},
-	`while affected by a herald`:                         Tag{"tag": Tag{"type": "Condition", "var": "AffectedByHerald"}},
-	`while fortified`:                                    Tag{"tag": Tag{"type": "Condition", "var": "Fortified"}},
-	`while in blood stance`:                              Tag{"tag": Tag{"type": "Condition", "var": "BloodStance"}},
-	`while in sand stance`:                               Tag{"tag": Tag{"type": "Condition", "var": "SandStance"}},
-	`while you have a bestial minion`:                    Tag{"tag": Tag{"type": "Condition", "var": "HaveBestialMinion"}},
-	`while you have infusion`:                            Tag{"tag": Tag{"type": "Condition", "var": "InfusionActive"}},
-	`while focus?sed`:                                    Tag{"tag": Tag{"type": "Condition", "var": "Focused"}},
-	`while leeching`:                                     Tag{"tag": Tag{"type": "Condition", "var": "Leeching"}},
-	`while leeching life`:                                Tag{"tag": Tag{"type": "Condition", "var": "LeechingLife"}},
-	`while leeching energy shield`:                       Tag{"tag": Tag{"type": "Condition", "var": "LeechingEnergyShield"}},
-	`while leeching mana`:                                Tag{"tag": Tag{"type": "Condition", "var": "LeechingMana"}},
-	`while using a flask`:                                Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask"}},
-	`during effect`:                                      Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask"}},
-	`during flask effect`:                                Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask"}},
-	`during any flask effect`:                            Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask"}},
-	`while under no flask effects`:                       Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask", "neg": true}},
-	`while affected by no flasks`:                        Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask", "neg": true}},
-	`during effect of any mana flask`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsingManaFlask"}},
-	`during effect of any life flask`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsingLifeFlask"}},
-	`if you've used a life flask in the past 10 seconds`: Tag{"tag": Tag{"type": "Condition", "var": "UsingLifeFlask"}},
-	`if you've used a mana flask in the past 10 seconds`: Tag{"tag": Tag{"type": "Condition", "var": "UsingManaFlask"}},
-	`during effect of any life or mana flask`:            Tag{"tag": Tag{"type": "Condition", "varList": []any{"UsingManaFlask", "UsingLifeFlask"}}},
-	`while you have an active tincture`:                  Tag{"tag": Tag{"type": "Condition", "var": "UsingTincture"}},
-	`while you have a tincture active`:                   Tag{"tag": Tag{"type": "Condition", "var": "UsingTincture"}},
-	`with at least one ([0-9a-zA-Z]+) grafted to you`:    fn(func(c caps) any { return Tag{"tag": Tag{"type": "Condition", "var": "Using" + firstToUpper(c.s(1))}} }),
-	`while on consecrated ground`:                        Tag{"tag": Tag{"type": "Condition", "var": "OnConsecratedGround"}},
-	`while on caustic ground`:                            Tag{"tag": Tag{"type": "Condition", "var": "OnCausticGround"}},
-	`when you create consecrated ground`:                 d(),
-	`on burning ground`:                                  Tag{"tag": Tag{"type": "Condition", "var": "OnBurningGround"}},
-	`while on burning ground`:                            Tag{"tag": Tag{"type": "Condition", "var": "OnBurningGround"}},
-	`on chilled ground`:                                  Tag{"tag": Tag{"type": "Condition", "var": "OnChilledGround"}},
-	`on shocked ground`:                                  Tag{"tag": Tag{"type": "Condition", "var": "OnShockedGround"}},
-	`while in a caustic cloud`:                           Tag{"tag": Tag{"type": "Condition", "var": "OnCausticCloud"}},
-	`while blinded`:                                      Tag{"tagList": []any{Tag{"type": "Condition", "var": "Blinded"}, Tag{"type": "Condition", "var": "CannotBeBlinded", "neg": true}}},
-	`while burning`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Burning"}},
-	`while ignited`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Ignited"}},
-	`while you are ignited`:                              Tag{"tag": Tag{"type": "Condition", "var": "Ignited"}},
-	`while chilled`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Chilled"}},
-	`while you are chilled`:                              Tag{"tag": Tag{"type": "Condition", "var": "Chilled"}},
-	`while frozen`:                                       Tag{"tag": Tag{"type": "Condition", "var": "Frozen"}},
-	`while shocked`:                                      Tag{"tag": Tag{"type": "Condition", "var": "Shocked"}},
-	`while you are shocked`:                              Tag{"tag": Tag{"type": "Condition", "var": "Shocked"}},
-	`while you are bleeding`:                             Tag{"tag": Tag{"type": "Condition", "var": "Bleeding"}},
-	`while not ignited, frozen or shocked`:               Tag{"tag": Tag{"type": "Condition", "varList": []any{"Ignited", "Frozen", "Shocked"}, "neg": true}},
-	`while bleeding`:                                     Tag{"tag": Tag{"type": "Condition", "var": "Bleeding"}},
-	`while poisoned`:                                     Tag{"tag": Tag{"type": "Condition", "var": "Poisoned"}},
-	`wh[ei][nl][ e] ?you are poisoned`:                   Tag{"tag": Tag{"type": "Condition", "var": "Poisoned"}},
-	`while cursed`:                                       Tag{"tag": Tag{"type": "Condition", "var": "Cursed"}},
-	`while not cursed`:                                   Tag{"tag": Tag{"type": "Condition", "var": "Cursed", "neg": true}},
-	`while there is only one nearby enemy`:               Tag{"tagList": []any{Tag{"type": "Multiplier", "var": "NearbyEnemies", "limit": 1}, Tag{"type": "Condition", "var": "OnlyOneNearbyEnemy"}}},
-	`while at least ([0-9]+) enemies are nearby`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "NearbyEnemies", "threshold": c.n(1)}}
+	`while you have a totem`:                             &PatternEntry{Tag: &CondTag{Var: "HaveTotem"}},
+	`while you have at least one nearby ally`:            &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NearbyAlly", Threshold: opt(1)}},
+	`while you have a linked target`:                     &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "LinkedTargets", Threshold: opt(1)}},
+	`while you have fortify`:                             &PatternEntry{Tag: &CondTag{Var: "Fortified"}},
+	`while you have phasing`:                             &PatternEntry{Tag: &CondTag{Var: "Phasing"}},
+	`while you have unbroken ward`:                       &PatternEntry{Tag: &CondTag{Var: "UnbrokenWard"}},
+	`while your ward is broken`:                          &PatternEntry{Tag: &CondTag{Var: "UnbrokenWard", Neg: true}},
+	`if you[' ]h?a?ve suppressed spell damage recently`:  &PatternEntry{Tag: &CondTag{Var: "SuppressedRecently"}},
+	`while you have elusive`:                             &PatternEntry{Tag: &CondTag{Var: "Elusive"}},
+	`while physical aegis is depleted`:                   &PatternEntry{Tag: &CondTag{Var: "PhysicalAegisDepleted"}},
+	`during onslaught`:                                   &PatternEntry{Tag: &CondTag{Var: "Onslaught"}},
+	`while you have onslaught`:                           &PatternEntry{Tag: &CondTag{Var: "Onslaught"}},
+	`while phasing`:                                      &PatternEntry{Tag: &CondTag{Var: "Phasing"}},
+	`while you have tailwind`:                            &PatternEntry{Tag: &CondTag{Var: "Tailwind"}},
+	`while elusive`:                                      &PatternEntry{Tag: &CondTag{Var: "Elusive"}},
+	`gain elusive`:                                       &PatternEntry{Tag: &CondTag{VarList: []string{"CanBeElusive", "Elusive"}}},
+	`while you have arcane surge`:                        &PatternEntry{Tag: &CondTag{Var: "AffectedByArcaneSurge"}},
+	`while you have cat's stealth`:                       &PatternEntry{Tag: &CondTag{Var: "AffectedByCat'sStealth"}},
+	`while you have cat's agility`:                       &PatternEntry{Tag: &CondTag{Var: "AffectedByCat'sAgility"}},
+	`while you have avian's might`:                       &PatternEntry{Tag: &CondTag{Var: "AffectedByAvian'sMight"}},
+	`while you have avian's flight`:                      &PatternEntry{Tag: &CondTag{Var: "AffectedByAvian'sFlight"}},
+	`while affected by aspect of the cat`:                &PatternEntry{Tag: &CondTag{VarList: []string{"AffectedByCat'sStealth", "AffectedByCat'sAgility"}}},
+	`while affected by a non-vaal guard skill`:           &PatternEntry{Tag: &CondTag{Var: "AffectedByNonVaalGuardSkill"}},
+	`if a non-vaal guard buff was lost recently`:         &PatternEntry{Tag: &CondTag{Var: "LostNonVaalBuffRecently"}},
+	`while affected by a guard skill buff`:               &PatternEntry{Tag: &CondTag{Var: "AffectedByGuardSkill"}},
+	`while affected by a herald`:                         &PatternEntry{Tag: &CondTag{Var: "AffectedByHerald"}},
+	`while fortified`:                                    &PatternEntry{Tag: &CondTag{Var: "Fortified"}},
+	`while in blood stance`:                              &PatternEntry{Tag: &CondTag{Var: "BloodStance"}},
+	`while in sand stance`:                               &PatternEntry{Tag: &CondTag{Var: "SandStance"}},
+	`while you have a bestial minion`:                    &PatternEntry{Tag: &CondTag{Var: "HaveBestialMinion"}},
+	`while you have infusion`:                            &PatternEntry{Tag: &CondTag{Var: "InfusionActive"}},
+	`while focus?sed`:                                    &PatternEntry{Tag: &CondTag{Var: "Focused"}},
+	`while leeching`:                                     &PatternEntry{Tag: &CondTag{Var: "Leeching"}},
+	`while leeching life`:                                &PatternEntry{Tag: &CondTag{Var: "LeechingLife"}},
+	`while leeching energy shield`:                       &PatternEntry{Tag: &CondTag{Var: "LeechingEnergyShield"}},
+	`while leeching mana`:                                &PatternEntry{Tag: &CondTag{Var: "LeechingMana"}},
+	`while using a flask`:                                &PatternEntry{Tag: &CondTag{Var: "UsingFlask"}},
+	`during effect`:                                      &PatternEntry{Tag: &CondTag{Var: "UsingFlask"}},
+	`during flask effect`:                                &PatternEntry{Tag: &CondTag{Var: "UsingFlask"}},
+	`during any flask effect`:                            &PatternEntry{Tag: &CondTag{Var: "UsingFlask"}},
+	`while under no flask effects`:                       &PatternEntry{Tag: &CondTag{Var: "UsingFlask", Neg: true}},
+	`while affected by no flasks`:                        &PatternEntry{Tag: &CondTag{Var: "UsingFlask", Neg: true}},
+	`during effect of any mana flask`:                    &PatternEntry{Tag: &CondTag{Var: "UsingManaFlask"}},
+	`during effect of any life flask`:                    &PatternEntry{Tag: &CondTag{Var: "UsingLifeFlask"}},
+	`if you've used a life flask in the past 10 seconds`: &PatternEntry{Tag: &CondTag{Var: "UsingLifeFlask"}},
+	`if you've used a mana flask in the past 10 seconds`: &PatternEntry{Tag: &CondTag{Var: "UsingManaFlask"}},
+	`during effect of any life or mana flask`:            &PatternEntry{Tag: &CondTag{VarList: []string{"UsingManaFlask", "UsingLifeFlask"}}},
+	`while you have an active tincture`:                  &PatternEntry{Tag: &CondTag{Var: "UsingTincture"}},
+	`while you have a tincture active`:                   &PatternEntry{Tag: &CondTag{Var: "UsingTincture"}},
+	`with at least one ([0-9a-zA-Z]+) grafted to you`:    entryFn(func(c caps) *PatternEntry { return &PatternEntry{Tag: &CondTag{Var: "Using" + firstToUpper(c.s(1))}} }),
+	`while on consecrated ground`:                        &PatternEntry{Tag: &CondTag{Var: "OnConsecratedGround"}},
+	`while on caustic ground`:                            &PatternEntry{Tag: &CondTag{Var: "OnCausticGround"}},
+	`when you create consecrated ground`:                 &PatternEntry{},
+	`on burning ground`:                                  &PatternEntry{Tag: &CondTag{Var: "OnBurningGround"}},
+	`while on burning ground`:                            &PatternEntry{Tag: &CondTag{Var: "OnBurningGround"}},
+	`on chilled ground`:                                  &PatternEntry{Tag: &CondTag{Var: "OnChilledGround"}},
+	`on shocked ground`:                                  &PatternEntry{Tag: &CondTag{Var: "OnShockedGround"}},
+	`while in a caustic cloud`:                           &PatternEntry{Tag: &CondTag{Var: "OnCausticCloud"}},
+	`while blinded`:                                      &PatternEntry{TagList: []Tag{&CondTag{Var: "Blinded"}, &CondTag{Var: "CannotBeBlinded", Neg: true}}},
+	`while burning`:                                      &PatternEntry{Tag: &CondTag{Var: "Burning"}},
+	`while ignited`:                                      &PatternEntry{Tag: &CondTag{Var: "Ignited"}},
+	`while you are ignited`:                              &PatternEntry{Tag: &CondTag{Var: "Ignited"}},
+	`while chilled`:                                      &PatternEntry{Tag: &CondTag{Var: "Chilled"}},
+	`while you are chilled`:                              &PatternEntry{Tag: &CondTag{Var: "Chilled"}},
+	`while frozen`:                                       &PatternEntry{Tag: &CondTag{Var: "Frozen"}},
+	`while shocked`:                                      &PatternEntry{Tag: &CondTag{Var: "Shocked"}},
+	`while you are shocked`:                              &PatternEntry{Tag: &CondTag{Var: "Shocked"}},
+	`while you are bleeding`:                             &PatternEntry{Tag: &CondTag{Var: "Bleeding"}},
+	`while not ignited, frozen or shocked`:               &PatternEntry{Tag: &CondTag{VarList: []string{"Ignited", "Frozen", "Shocked"}, Neg: true}},
+	`while bleeding`:                                     &PatternEntry{Tag: &CondTag{Var: "Bleeding"}},
+	`while poisoned`:                                     &PatternEntry{Tag: &CondTag{Var: "Poisoned"}},
+	`wh[ei][nl][ e] ?you are poisoned`:                   &PatternEntry{Tag: &CondTag{Var: "Poisoned"}},
+	`while cursed`:                                       &PatternEntry{Tag: &CondTag{Var: "Cursed"}},
+	`while not cursed`:                                   &PatternEntry{Tag: &CondTag{Var: "Cursed", Neg: true}},
+	`while there is only one nearby enemy`:               &PatternEntry{TagList: []Tag{&MultiplierTag{Var: "NearbyEnemies", Limit: opt(1)}, &CondTag{Var: "OnlyOneNearbyEnemy"}}},
+	`while at least ([0-9]+) enemies are nearby`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NearbyEnemies", Threshold: opt(c.n(1))}}
 	}),
-	`while t?h?e?r?e? ?i?s? ?a rare or unique enemy i?s? ?nearby`:                      Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"NearbyRareOrUniqueEnemy", "RareOrUnique"}}},
-	`if you[' ]h?a?ve hit recently`:                                                    Tag{"tag": Tag{"type": "Condition", "var": "HitRecently"}},
-	`if you[' ]h?a?ve hit an enemy recently`:                                           Tag{"tag": Tag{"type": "Condition", "var": "HitRecently"}},
-	`if you[' ]h?a?ve hit with your main hand weapon recently`:                         Tag{"tag": Tag{"type": "Condition", "var": "HitRecentlyWithWeapon"}},
-	`if you[' ]h?a?ve hit with your off hand weapon recently`:                          Tag{"tagList": []any{Tag{"type": "Condition", "var": "HitRecentlyWithWeapon"}, Tag{"type": "Condition", "var": "DualWielding"}}},
-	`if you[' ]h?a?ve hit a cursed enemy recently`:                                     Tag{"tagList": []any{Tag{"type": "Condition", "var": "HitRecently"}, Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}}},
-	`when you or your totems hit an enemy with a spell`:                                Tag{"tag": Tag{"type": "Condition", "varList": []any{"HitSpellRecently", "TotemsHitSpellRecently"}}},
-	`on hit with spells`:                                                               Tag{"tag": Tag{"type": "Condition", "var": "HitSpellRecently"}},
-	`if you[' ]h?a?ve crit recently`:                                                   Tag{"tag": Tag{"type": "Condition", "var": "CritRecently"}},
-	`if you[' ]h?a?ve dealt a critical strike recently`:                                Tag{"tag": Tag{"type": "Condition", "var": "CritRecently"}},
-	`when you deal a critical strike`:                                                  Tag{"tag": Tag{"type": "Condition", "var": "CritRecently"}},
-	`if you[' ]h?a?ve dealt a critical strike with this weapon recently`:               Tag{"tag": Tag{"type": "Condition", "var": "CritRecently"}},
-	`if you[' ]h?a?ve crit in the past 8 seconds`:                                      Tag{"tag": Tag{"type": "Condition", "var": "CritInPast8Sec"}},
-	`if you[' ]h?a?ve dealt a crit in the past 8 seconds`:                              Tag{"tag": Tag{"type": "Condition", "var": "CritInPast8Sec"}},
-	`if you[' ]h?a?ve dealt a critical strike in the past 8 seconds`:                   Tag{"tag": Tag{"type": "Condition", "var": "CritInPast8Sec"}},
-	`if you haven't crit recently`:                                                     Tag{"tag": Tag{"type": "Condition", "var": "CritRecently", "neg": true}},
-	`if you haven't dealt a critical strike recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "CritRecently", "neg": true}},
-	`if you[' ]h?a?ve dealt a non-critical strike recently`:                            Tag{"tag": Tag{"type": "Condition", "var": "NonCritRecently"}},
-	`if your skills have dealt a critical strike recently`:                             Tag{"tag": Tag{"type": "Condition", "var": "SkillCritRecently"}},
-	`if you dealt a critical strike with a herald skill recently`:                      Tag{"tag": Tag{"type": "Condition", "var": "CritWithHeraldSkillRecently"}},
-	`if you[' ]h?a?ve dealt a critical strike with a two handed melee weapon recently`: Tag{"flags": ModFlag.Weapon2H | ModFlag.WeaponMelee, "tag": Tag{"type": "Condition", "var": "CritRecently"}},
-	`if you[' ]h?a?ve killed recently`:                                                 Tag{"tag": Tag{"type": "Condition", "var": "KilledRecently"}},
-	`on killing taunted enemies`:                                                       Tag{"tag": Tag{"type": "Condition", "var": "KilledTauntedEnemyRecently"}},
-	`on kill`:                                                                          Tag{"tag": Tag{"type": "Condition", "var": "KilledRecently"}},
-	`on melee kill`:                                                                    Tag{"flags": ModFlag.WeaponMelee, "tag": Tag{"type": "Condition", "var": "KilledRecently"}},
-	`when you kill an enemy`:                                                           Tag{"tag": Tag{"type": "Condition", "var": "KilledRecently"}},
-	`if you[' ]h?a?ve killed an enemy recently`:                                        Tag{"tag": Tag{"type": "Condition", "var": "KilledRecently"}},
-	`if you[' ]h?a?ve killed at least ([0-9]) enemies recently`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "EnemyKilledRecently", "threshold": c.n(1)}}
+	`while t?h?e?r?e? ?i?s? ?a rare or unique enemy i?s? ?nearby`:                      &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"NearbyRareOrUniqueEnemy", "RareOrUnique"}}},
+	`if you[' ]h?a?ve hit recently`:                                                    &PatternEntry{Tag: &CondTag{Var: "HitRecently"}},
+	`if you[' ]h?a?ve hit an enemy recently`:                                           &PatternEntry{Tag: &CondTag{Var: "HitRecently"}},
+	`if you[' ]h?a?ve hit with your main hand weapon recently`:                         &PatternEntry{Tag: &CondTag{Var: "HitRecentlyWithWeapon"}},
+	`if you[' ]h?a?ve hit with your off hand weapon recently`:                          &PatternEntry{TagList: []Tag{&CondTag{Var: "HitRecentlyWithWeapon"}, &CondTag{Var: "DualWielding"}}},
+	`if you[' ]h?a?ve hit a cursed enemy recently`:                                     &PatternEntry{TagList: []Tag{&CondTag{Var: "HitRecently"}, &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}}},
+	`when you or your totems hit an enemy with a spell`:                                &PatternEntry{Tag: &CondTag{VarList: []string{"HitSpellRecently", "TotemsHitSpellRecently"}}},
+	`on hit with spells`:                                                               &PatternEntry{Tag: &CondTag{Var: "HitSpellRecently"}},
+	`if you[' ]h?a?ve crit recently`:                                                   &PatternEntry{Tag: &CondTag{Var: "CritRecently"}},
+	`if you[' ]h?a?ve dealt a critical strike recently`:                                &PatternEntry{Tag: &CondTag{Var: "CritRecently"}},
+	`when you deal a critical strike`:                                                  &PatternEntry{Tag: &CondTag{Var: "CritRecently"}},
+	`if you[' ]h?a?ve dealt a critical strike with this weapon recently`:               &PatternEntry{Tag: &CondTag{Var: "CritRecently"}},
+	`if you[' ]h?a?ve crit in the past 8 seconds`:                                      &PatternEntry{Tag: &CondTag{Var: "CritInPast8Sec"}},
+	`if you[' ]h?a?ve dealt a crit in the past 8 seconds`:                              &PatternEntry{Tag: &CondTag{Var: "CritInPast8Sec"}},
+	`if you[' ]h?a?ve dealt a critical strike in the past 8 seconds`:                   &PatternEntry{Tag: &CondTag{Var: "CritInPast8Sec"}},
+	`if you haven't crit recently`:                                                     &PatternEntry{Tag: &CondTag{Var: "CritRecently", Neg: true}},
+	`if you haven't dealt a critical strike recently`:                                  &PatternEntry{Tag: &CondTag{Var: "CritRecently", Neg: true}},
+	`if you[' ]h?a?ve dealt a non-critical strike recently`:                            &PatternEntry{Tag: &CondTag{Var: "NonCritRecently"}},
+	`if your skills have dealt a critical strike recently`:                             &PatternEntry{Tag: &CondTag{Var: "SkillCritRecently"}},
+	`if you dealt a critical strike with a herald skill recently`:                      &PatternEntry{Tag: &CondTag{Var: "CritWithHeraldSkillRecently"}},
+	`if you[' ]h?a?ve dealt a critical strike with a two handed melee weapon recently`: &PatternEntry{Flags: FlagWeapon2H | FlagWeaponMelee, Tag: &CondTag{Var: "CritRecently"}},
+	`if you[' ]h?a?ve killed recently`:                                                 &PatternEntry{Tag: &CondTag{Var: "KilledRecently"}},
+	`on killing taunted enemies`:                                                       &PatternEntry{Tag: &CondTag{Var: "KilledTauntedEnemyRecently"}},
+	`on kill`:                                                                          &PatternEntry{Tag: &CondTag{Var: "KilledRecently"}},
+	`on melee kill`:                                                                    &PatternEntry{Flags: FlagWeaponMelee, Tag: &CondTag{Var: "KilledRecently"}},
+	`when you kill an enemy`:                                                           &PatternEntry{Tag: &CondTag{Var: "KilledRecently"}},
+	`if you[' ]h?a?ve killed an enemy recently`:                                        &PatternEntry{Tag: &CondTag{Var: "KilledRecently"}},
+	`if you[' ]h?a?ve killed at least ([0-9]) enemies recently`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "EnemyKilledRecently", Threshold: opt(c.n(1))}}
 	}),
-	`if you haven't killed recently`:                                              Tag{"tag": Tag{"type": "Condition", "var": "KilledRecently", "neg": true}},
-	`if you or your totems have killed recently`:                                  Tag{"tag": Tag{"type": "Condition", "varList": []any{"KilledRecently", "TotemsKilledRecently"}}},
-	`if you[' ]h?a?ve thrown a trap or mine recently`:                             Tag{"tag": Tag{"type": "Condition", "var": "TrapOrMineThrownRecently"}},
-	`on throwing a trap`:                                                          Tag{"tag": Tag{"type": "Condition", "var": "TrapOrMineThrownRecently"}},
-	`if you[' ]h?a?ve killed a maimed enemy recently`:                             Tag{"tagList": []any{Tag{"type": "Condition", "var": "KilledRecently"}, Tag{"type": "ActorCondition", "actor": "enemy", "var": "Maimed"}}},
-	`if you[' ]h?a?ve killed a cursed enemy recently`:                             Tag{"tagList": []any{Tag{"type": "Condition", "var": "KilledRecently"}, Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}}},
-	`if you[' ]h?a?ve killed a bleeding enemy recently`:                           Tag{"tagList": []any{Tag{"type": "Condition", "var": "KilledRecently"}, Tag{"type": "ActorCondition", "actor": "enemy", "var": "Bleeding"}}},
-	`if you[' ]h?a?ve killed an enemy affected by your damage over time recently`: Tag{"tag": Tag{"type": "Condition", "var": "KilledAffectedByDotRecently"}},
-	`if you[' ]h?a?ve frozen an enemy recently`:                                   Tag{"tag": Tag{"type": "Condition", "var": "FrozenEnemyRecently"}},
-	`if you[' ]h?a?ve chilled an enemy recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "ChilledEnemyRecently"}},
-	`if you[' ]h?a?ve ignited an enemy recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "IgnitedEnemyRecently"}},
-	`if you[' ]h?a?ve shocked an enemy recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "ShockedEnemyRecently"}},
-	`if you[' ]h?a?ve stunned an enemy recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "StunnedEnemyRecently"}},
-	`if you[' ]h?a?ve stunned an enemy with a two handed melee weapon recently`:   Tag{"flags": ModFlag.Weapon2H | ModFlag.WeaponMelee, "tag": Tag{"type": "Condition", "var": "StunnedEnemyRecently"}},
-	`if you[' ]h?a?ve been hit recently`:                                          Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently"}},
-	`if you[' ]h?a?ve been hit by an attack recently`:                             Tag{"tag": Tag{"type": "Condition", "var": "BeenHitByAttackRecently"}},
-	`if you were hit recently`:                                                    Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently"}},
-	`if you were damaged by a hit recently`:                                       Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently"}},
-	`if you[' ]h?a?ve taken a critical strike recently`:                           Tag{"tag": Tag{"type": "Condition", "var": "BeenCritRecently"}},
-	`if you[' ]h?a?ve taken a savage hit recently`:                                Tag{"tag": Tag{"type": "Condition", "var": "BeenSavageHitRecently"}},
-	`if you have ?n[o']t been hit recently`:                                       Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently", "neg": true}},
-	`if you have ?n[o']t been hit by an attack recently`:                          Tag{"tag": Tag{"type": "Condition", "var": "BeenHitByAttackRecently", "neg": true}},
-	`if you[' ]h?a?ve taken no damage from hits recently`:                         Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently", "neg": true}},
-	`if you[' ]h?a?ve taken fire damage from a hit recently`:                      Tag{"tag": Tag{"type": "Condition", "var": "HitByFireDamageRecently"}},
-	`if you[' ]h?a?ve taken fire damage from an enemy hit recently`:               Tag{"tag": Tag{"type": "Condition", "var": "TakenFireDamageFromEnemyHitRecently"}},
-	`if you[' ]h?a?ve taken spell damage recently`:                                Tag{"tag": Tag{"type": "Condition", "var": "HitBySpellDamageRecently"}},
-	`if you haven't taken damage recently`:                                        Tag{"tag": Tag{"type": "Condition", "var": "BeenHitRecently", "neg": true}},
-	`if you[' ]h?a?ve blocked recently`:                                           Tag{"tag": Tag{"type": "Condition", "var": "BlockedRecently"}},
-	`if you haven't blocked recently`:                                             Tag{"tag": Tag{"type": "Condition", "var": "BlockedRecently", "neg": true}},
-	`if you[' ]h?a?ve blocked an attack recently`:                                 Tag{"tag": Tag{"type": "Condition", "var": "BlockedAttackRecently"}},
-	`if you[' ]h?a?ve blocked attack damage recently`:                             Tag{"tag": Tag{"type": "Condition", "var": "BlockedAttackRecently"}},
-	`if you[' ]h?a?ve blocked a spell recently`:                                   Tag{"tag": Tag{"type": "Condition", "var": "BlockedSpellRecently"}},
-	`if you[' ]h?a?ve blocked spell damage recently`:                              Tag{"tag": Tag{"type": "Condition", "var": "BlockedSpellRecently"}},
-	`if you[' ]h?a?ve blocked damage from a unique enemy in the past 10 seconds`:  Tag{"tag": Tag{"type": "Condition", "var": "BlockedHitFromUniqueEnemyInPast10Sec"}},
-	`if you[' ]h?a?ve attacked recently`:                                          Tag{"tag": Tag{"type": "Condition", "var": "AttackedRecently"}},
-	`if you[' ]h?a?ve cast a spell recently`:                                      Tag{"tag": Tag{"type": "Condition", "var": "CastSpellRecently"}},
-	`if you[' ]h?a?ve been stunned while casting recently`:                        Tag{"tag": Tag{"type": "Condition", "var": "StunnedWhileCastingRecently"}},
-	`if you[' ]h?a?ve consumed a corpse recently`:                                 Tag{"tag": Tag{"type": "Condition", "var": "ConsumedCorpseRecently"}},
-	`if you[' ]h?a?ve cursed an enemy recently`:                                   Tag{"tag": Tag{"type": "Condition", "var": "CursedEnemyRecently"}},
-	`if you[' ]h?a?ve cast a mark spell recently`:                                 Tag{"tag": Tag{"type": "Condition", "var": "CastMarkRecently"}},
-	`if you have ?n[o']t consumed a corpse recently`:                              Tag{"tag": Tag{"type": "Condition", "var": "ConsumedCorpseRecently", "neg": true}},
-	`for each corpse consumed recently`:                                           Tag{"tag": Tag{"type": "Multiplier", "var": "CorpseConsumedRecently"}},
-	`if you[' ]h?a?ve taunted an enemy recently`:                                  Tag{"tag": Tag{"type": "Condition", "var": "TauntedEnemyRecently"}},
-	`if you[' ]h?a?ve used a skill recently`:                                      Tag{"tag": Tag{"type": "Condition", "var": "UsedSkillRecently"}},
-	`if you[' ]h?a?ve used a travel skill recently`:                               Tag{"tag": Tag{"type": "Condition", "var": "UsedTravelSkillRecently"}},
-	`for each skill you've used recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "SkillUsedRecently", "limit": c.n(1), "limitTotal": true}}
+	`if you haven't killed recently`:                                              &PatternEntry{Tag: &CondTag{Var: "KilledRecently", Neg: true}},
+	`if you or your totems have killed recently`:                                  &PatternEntry{Tag: &CondTag{VarList: []string{"KilledRecently", "TotemsKilledRecently"}}},
+	`if you[' ]h?a?ve thrown a trap or mine recently`:                             &PatternEntry{Tag: &CondTag{Var: "TrapOrMineThrownRecently"}},
+	`on throwing a trap`:                                                          &PatternEntry{Tag: &CondTag{Var: "TrapOrMineThrownRecently"}},
+	`if you[' ]h?a?ve killed a maimed enemy recently`:                             &PatternEntry{TagList: []Tag{&CondTag{Var: "KilledRecently"}, &CondTag{IsActor: true, Actor: "enemy", Var: "Maimed"}}},
+	`if you[' ]h?a?ve killed a cursed enemy recently`:                             &PatternEntry{TagList: []Tag{&CondTag{Var: "KilledRecently"}, &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}}},
+	`if you[' ]h?a?ve killed a bleeding enemy recently`:                           &PatternEntry{TagList: []Tag{&CondTag{Var: "KilledRecently"}, &CondTag{IsActor: true, Actor: "enemy", Var: "Bleeding"}}},
+	`if you[' ]h?a?ve killed an enemy affected by your damage over time recently`: &PatternEntry{Tag: &CondTag{Var: "KilledAffectedByDotRecently"}},
+	`if you[' ]h?a?ve frozen an enemy recently`:                                   &PatternEntry{Tag: &CondTag{Var: "FrozenEnemyRecently"}},
+	`if you[' ]h?a?ve chilled an enemy recently`:                                  &PatternEntry{Tag: &CondTag{Var: "ChilledEnemyRecently"}},
+	`if you[' ]h?a?ve ignited an enemy recently`:                                  &PatternEntry{Tag: &CondTag{Var: "IgnitedEnemyRecently"}},
+	`if you[' ]h?a?ve shocked an enemy recently`:                                  &PatternEntry{Tag: &CondTag{Var: "ShockedEnemyRecently"}},
+	`if you[' ]h?a?ve stunned an enemy recently`:                                  &PatternEntry{Tag: &CondTag{Var: "StunnedEnemyRecently"}},
+	`if you[' ]h?a?ve stunned an enemy with a two handed melee weapon recently`:   &PatternEntry{Flags: FlagWeapon2H | FlagWeaponMelee, Tag: &CondTag{Var: "StunnedEnemyRecently"}},
+	`if you[' ]h?a?ve been hit recently`:                                          &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently"}},
+	`if you[' ]h?a?ve been hit by an attack recently`:                             &PatternEntry{Tag: &CondTag{Var: "BeenHitByAttackRecently"}},
+	`if you were hit recently`:                                                    &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently"}},
+	`if you were damaged by a hit recently`:                                       &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently"}},
+	`if you[' ]h?a?ve taken a critical strike recently`:                           &PatternEntry{Tag: &CondTag{Var: "BeenCritRecently"}},
+	`if you[' ]h?a?ve taken a savage hit recently`:                                &PatternEntry{Tag: &CondTag{Var: "BeenSavageHitRecently"}},
+	`if you have ?n[o']t been hit recently`:                                       &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently", Neg: true}},
+	`if you have ?n[o']t been hit by an attack recently`:                          &PatternEntry{Tag: &CondTag{Var: "BeenHitByAttackRecently", Neg: true}},
+	`if you[' ]h?a?ve taken no damage from hits recently`:                         &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently", Neg: true}},
+	`if you[' ]h?a?ve taken fire damage from a hit recently`:                      &PatternEntry{Tag: &CondTag{Var: "HitByFireDamageRecently"}},
+	`if you[' ]h?a?ve taken fire damage from an enemy hit recently`:               &PatternEntry{Tag: &CondTag{Var: "TakenFireDamageFromEnemyHitRecently"}},
+	`if you[' ]h?a?ve taken spell damage recently`:                                &PatternEntry{Tag: &CondTag{Var: "HitBySpellDamageRecently"}},
+	`if you haven't taken damage recently`:                                        &PatternEntry{Tag: &CondTag{Var: "BeenHitRecently", Neg: true}},
+	`if you[' ]h?a?ve blocked recently`:                                           &PatternEntry{Tag: &CondTag{Var: "BlockedRecently"}},
+	`if you haven't blocked recently`:                                             &PatternEntry{Tag: &CondTag{Var: "BlockedRecently", Neg: true}},
+	`if you[' ]h?a?ve blocked an attack recently`:                                 &PatternEntry{Tag: &CondTag{Var: "BlockedAttackRecently"}},
+	`if you[' ]h?a?ve blocked attack damage recently`:                             &PatternEntry{Tag: &CondTag{Var: "BlockedAttackRecently"}},
+	`if you[' ]h?a?ve blocked a spell recently`:                                   &PatternEntry{Tag: &CondTag{Var: "BlockedSpellRecently"}},
+	`if you[' ]h?a?ve blocked spell damage recently`:                              &PatternEntry{Tag: &CondTag{Var: "BlockedSpellRecently"}},
+	`if you[' ]h?a?ve blocked damage from a unique enemy in the past 10 seconds`:  &PatternEntry{Tag: &CondTag{Var: "BlockedHitFromUniqueEnemyInPast10Sec"}},
+	`if you[' ]h?a?ve attacked recently`:                                          &PatternEntry{Tag: &CondTag{Var: "AttackedRecently"}},
+	`if you[' ]h?a?ve cast a spell recently`:                                      &PatternEntry{Tag: &CondTag{Var: "CastSpellRecently"}},
+	`if you[' ]h?a?ve been stunned while casting recently`:                        &PatternEntry{Tag: &CondTag{Var: "StunnedWhileCastingRecently"}},
+	`if you[' ]h?a?ve consumed a corpse recently`:                                 &PatternEntry{Tag: &CondTag{Var: "ConsumedCorpseRecently"}},
+	`if you[' ]h?a?ve cursed an enemy recently`:                                   &PatternEntry{Tag: &CondTag{Var: "CursedEnemyRecently"}},
+	`if you[' ]h?a?ve cast a mark spell recently`:                                 &PatternEntry{Tag: &CondTag{Var: "CastMarkRecently"}},
+	`if you have ?n[o']t consumed a corpse recently`:                              &PatternEntry{Tag: &CondTag{Var: "ConsumedCorpseRecently", Neg: true}},
+	`for each corpse consumed recently`:                                           &PatternEntry{Tag: &MultiplierTag{Var: "CorpseConsumedRecently"}},
+	`if you[' ]h?a?ve taunted an enemy recently`:                                  &PatternEntry{Tag: &CondTag{Var: "TauntedEnemyRecently"}},
+	`if you[' ]h?a?ve used a skill recently`:                                      &PatternEntry{Tag: &CondTag{Var: "UsedSkillRecently"}},
+	`if you[' ]h?a?ve used a travel skill recently`:                               &PatternEntry{Tag: &CondTag{Var: "UsedTravelSkillRecently"}},
+	`for each skill you've used recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "SkillUsedRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each different non-instant spell you[' ]h?a?ve cast recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "NonInstantSpellCastRecently"}},
-	`if you[' ]h?a?ve used a warcry recently`:                          Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
+	`for each different non-instant spell you[' ]h?a?ve cast recently`: &PatternEntry{Tag: &MultiplierTag{Var: "NonInstantSpellCastRecently"}},
+	`if you[' ]h?a?ve used a warcry recently`:                          &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},
 	// #EVAL: archive parity — "when you warcry" appears twice in the
 	// reference with the same value (duplicate table key).
-	`when you warcry`:                                 Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
-	`if you[' ]h?a?ve warcried recently`:              Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently"}},
-	`if you[' ]h?a?ve not warcried recently`:          Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryRecently", "neg": true}},
-	`for each time you[' ]h?a?ve warcried recently`:   Tag{"tag": Tag{"type": "Multiplier", "var": "WarcryUsedRecently"}},
-	`for each warcry exerting them`:                   Tag{"tag": Tag{"type": "Multiplier", "var": "ExertingWarcryCount"}},
-	`if you[' ]h?a?ve warcried in the past 8 seconds`: Tag{"tag": Tag{"type": "Condition", "var": "UsedWarcryInPast8Seconds"}},
-	`for each second you've been affected by a warcry buff, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "AffectedByWarcryBuffDuration", "limit": c.n(1), "limitTotal": true}}
+	`when you warcry`:                                 &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},
+	`if you[' ]h?a?ve warcried recently`:              &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},
+	`if you[' ]h?a?ve not warcried recently`:          &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently", Neg: true}},
+	`for each time you[' ]h?a?ve warcried recently`:   &PatternEntry{Tag: &MultiplierTag{Var: "WarcryUsedRecently"}},
+	`for each warcry exerting them`:                   &PatternEntry{Tag: &MultiplierTag{Var: "ExertingWarcryCount"}},
+	`if you[' ]h?a?ve warcried in the past 8 seconds`: &PatternEntry{Tag: &CondTag{Var: "UsedWarcryInPast8Seconds"}},
+	`for each second you've been affected by a warcry buff, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "AffectedByWarcryBuffDuration", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each of your mines detonated recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "MineDetonatedRecently", "limit": c.n(1), "limitTotal": true}}
+	`for each of your mines detonated recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "MineDetonatedRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`[fp][oe]r ?e?a?c?h? mine detonated recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "MineDetonatedRecently", "limit": c.n(1), "limitTotal": true}}
+	`[fp][oe]r ?e?a?c?h? mine detonated recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "MineDetonatedRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`[fp][oe]r ?e?a?c?h? mine detonated recently, up to ([0-9]+)% per second`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "MineDetonatedRecently", "limit": c.n(1), "limitTotal": true}}
+	`[fp][oe]r ?e?a?c?h? mine detonated recently, up to ([0-9]+)% per second`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "MineDetonatedRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`[fp][oe]r ?e?a?c?h? mine detonated recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "MineDetonatedRecently"}},
-	`for each of your traps triggered recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "TrapTriggeredRecently", "limit": c.n(1), "limitTotal": true}}
+	`[fp][oe]r ?e?a?c?h? mine detonated recently`: &PatternEntry{Tag: &MultiplierTag{Var: "MineDetonatedRecently"}},
+	`for each of your traps triggered recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "TrapTriggeredRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each trap triggered recently, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "TrapTriggeredRecently", "limit": c.n(1), "limitTotal": true}}
+	`for each trap triggered recently, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "TrapTriggeredRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each trap triggered recently, up to ([0-9]+)% per second`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "TrapTriggeredRecently", "limit": c.n(1), "limitTotal": true}}
+	`for each trap triggered recently, up to ([0-9]+)% per second`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "TrapTriggeredRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`if you[' ]h?a?ve used a fire skill recently`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsedFireSkillRecently"}},
-	`if you[' ]h?a?ve used a cold skill recently`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsedColdSkillRecently"}},
-	`if you[' ]h?a?ve used a fire skill in the past 10 seconds`:      Tag{"tag": Tag{"type": "Condition", "var": "UsedFireSkillInPast10Sec"}},
-	`if you[' ]h?a?ve used a cold skill in the past 10 seconds`:      Tag{"tag": Tag{"type": "Condition", "var": "UsedColdSkillInPast10Sec"}},
-	`if you[' ]h?a?ve used a lightning skill in the past 10 seconds`: Tag{"tag": Tag{"type": "Condition", "var": "UsedLightningSkillInPast10Sec"}},
-	`if you[' ]h?a?ve summoned a totem recently`:                     Tag{"tag": Tag{"type": "Condition", "var": "SummonedTotemRecently"}},
-	`when you summon a totem`:                                        Tag{"tag": Tag{"type": "Condition", "var": "SummonedTotemRecently"}},
-	`if you summoned a golem in the past 8 seconds`:                  Tag{"tag": Tag{"type": "Condition", "var": "SummonedGolemInPast8Sec"}},
-	`if you haven't summoned a totem in the past 2 seconds`:          Tag{"tag": Tag{"type": "Condition", "var": "NoSummonedTotemsInPastTwoSeconds"}},
-	`if you[' ]h?a?ve used a minion skill recently`:                  Tag{"tag": Tag{"type": "Condition", "var": "UsedMinionSkillRecently"}},
-	`if you[' ]h?a?ve used a movement skill recently`:                Tag{"tag": Tag{"type": "Condition", "var": "UsedMovementSkillRecently"}},
-	`when you use a movement skill`:                                  Tag{"tag": Tag{"type": "Condition", "var": "UsedMovementSkillRecently"}},
-	`if you haven't cast dash recently`:                              Tag{"tag": Tag{"type": "Condition", "var": "CastDashRecently", "neg": true}},
-	`if you[' ]h?a?ve cast dash recently`:                            Tag{"tag": Tag{"type": "Condition", "var": "CastDashRecently"}},
-	`if you[' ]h?a?ve used a vaal skill recently`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsedVaalSkillRecently"}},
-	`if you[' ]h?a?ve used a socketed vaal skill recently`:           Tag{"tag": Tag{"type": "Condition", "var": "UsedVaalSkillRecently"}},
-	`when you use a vaal skill`:                                      Tag{"tag": Tag{"type": "Condition", "var": "UsedVaalSkillRecently"}},
-	`if you haven't used a brand skill recently`:                     Tag{"tag": Tag{"type": "Condition", "var": "UsedBrandRecently", "neg": true}},
-	`if you[' ]h?a?ve used a brand skill recently`:                   Tag{"tag": Tag{"type": "Condition", "var": "UsedBrandRecently"}},
-	`if you[' ]h?a?ve used a retaliation skill recently`:             Tag{"tag": Tag{"type": "Condition", "var": "UsedRetaliationRecently"}},
-	`if you[' ]h?a?ve spent ([0-9]+) total mana recently`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "ManaSpentRecently", "threshold": c.n(1)}}
+	`if you[' ]h?a?ve used a fire skill recently`:                    &PatternEntry{Tag: &CondTag{Var: "UsedFireSkillRecently"}},
+	`if you[' ]h?a?ve used a cold skill recently`:                    &PatternEntry{Tag: &CondTag{Var: "UsedColdSkillRecently"}},
+	`if you[' ]h?a?ve used a fire skill in the past 10 seconds`:      &PatternEntry{Tag: &CondTag{Var: "UsedFireSkillInPast10Sec"}},
+	`if you[' ]h?a?ve used a cold skill in the past 10 seconds`:      &PatternEntry{Tag: &CondTag{Var: "UsedColdSkillInPast10Sec"}},
+	`if you[' ]h?a?ve used a lightning skill in the past 10 seconds`: &PatternEntry{Tag: &CondTag{Var: "UsedLightningSkillInPast10Sec"}},
+	`if you[' ]h?a?ve summoned a totem recently`:                     &PatternEntry{Tag: &CondTag{Var: "SummonedTotemRecently"}},
+	`when you summon a totem`:                                        &PatternEntry{Tag: &CondTag{Var: "SummonedTotemRecently"}},
+	`if you summoned a golem in the past 8 seconds`:                  &PatternEntry{Tag: &CondTag{Var: "SummonedGolemInPast8Sec"}},
+	`if you haven't summoned a totem in the past 2 seconds`:          &PatternEntry{Tag: &CondTag{Var: "NoSummonedTotemsInPastTwoSeconds"}},
+	`if you[' ]h?a?ve used a minion skill recently`:                  &PatternEntry{Tag: &CondTag{Var: "UsedMinionSkillRecently"}},
+	`if you[' ]h?a?ve used a movement skill recently`:                &PatternEntry{Tag: &CondTag{Var: "UsedMovementSkillRecently"}},
+	`when you use a movement skill`:                                  &PatternEntry{Tag: &CondTag{Var: "UsedMovementSkillRecently"}},
+	`if you haven't cast dash recently`:                              &PatternEntry{Tag: &CondTag{Var: "CastDashRecently", Neg: true}},
+	`if you[' ]h?a?ve cast dash recently`:                            &PatternEntry{Tag: &CondTag{Var: "CastDashRecently"}},
+	`if you[' ]h?a?ve used a vaal skill recently`:                    &PatternEntry{Tag: &CondTag{Var: "UsedVaalSkillRecently"}},
+	`if you[' ]h?a?ve used a socketed vaal skill recently`:           &PatternEntry{Tag: &CondTag{Var: "UsedVaalSkillRecently"}},
+	`when you use a vaal skill`:                                      &PatternEntry{Tag: &CondTag{Var: "UsedVaalSkillRecently"}},
+	`if you haven't used a brand skill recently`:                     &PatternEntry{Tag: &CondTag{Var: "UsedBrandRecently", Neg: true}},
+	`if you[' ]h?a?ve used a brand skill recently`:                   &PatternEntry{Tag: &CondTag{Var: "UsedBrandRecently"}},
+	`if you[' ]h?a?ve used a retaliation skill recently`:             &PatternEntry{Tag: &CondTag{Var: "UsedRetaliationRecently"}},
+	`if you[' ]h?a?ve spent ([0-9]+) total mana recently`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "ManaSpentRecently", Threshold: opt(c.n(1))}}
 	}),
-	`if you[' ]h?a?ve spent life recently`: Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "LifeSpentRecently", "threshold": 1}},
-	`for [0-9]+ seconds after spending a total of ([0-9]+) mana`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "ManaSpentRecently", "threshold": c.n(1)}}
+	`if you[' ]h?a?ve spent life recently`: &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "LifeSpentRecently", Threshold: opt(1)}},
+	`for [0-9]+ seconds after spending a total of ([0-9]+) mana`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "ManaSpentRecently", Threshold: opt(c.n(1))}}
 	}),
-	`if you've impaled an enemy recently`:                         Tag{"tag": Tag{"type": "Condition", "var": "ImpaledRecently"}},
-	`if you've changed stance recently`:                           Tag{"tag": Tag{"type": "Condition", "var": "ChangedStanceRecently"}},
-	`if you've gained a power charge recently`:                    Tag{"tag": Tag{"type": "Condition", "var": "GainedPowerChargeRecently"}},
-	`if you haven't gained a power charge recently`:               Tag{"tag": Tag{"type": "Condition", "var": "GainedPowerChargeRecently", "neg": true}},
-	`if you haven't gained a frenzy charge recently`:              Tag{"tag": Tag{"type": "Condition", "var": "GainedFrenzyChargeRecently", "neg": true}},
-	`if you've stopped taking damage over time recently`:          Tag{"tag": Tag{"type": "Condition", "var": "StoppedTakingDamageOverTimeRecently"}},
-	`if you've used an amethyst flask recently`:                   Tag{"tag": Tag{"type": "Condition", "var": "UsedAmethystFlaskRecently"}},
-	`if you've used a ruby flask recently`:                        Tag{"tag": Tag{"type": "Condition", "var": "UsedRubyFlaskRecently"}},
-	`if you've used a sapphire flask recently`:                    Tag{"tag": Tag{"type": "Condition", "var": "UsedSapphireFlaskRecently"}},
-	`if you've used a topaz flask recently`:                       Tag{"tag": Tag{"type": "Condition", "var": "UsedTopazFlaskRecently"}},
-	`during soul gain prevention`:                                 Tag{"tag": Tag{"type": "Condition", "var": "SoulGainPrevention"}},
-	`if you detonated mines recently`:                             Tag{"tag": Tag{"type": "Condition", "var": "DetonatedMinesRecently"}},
-	`if you detonated a mine recently`:                            Tag{"tag": Tag{"type": "Condition", "var": "DetonatedMinesRecently"}},
-	`if you[' ]h?a?ve detonated a mine recently`:                  Tag{"tag": Tag{"type": "Condition", "var": "DetonatedMinesRecently"}},
-	`when your mine is detonated targeting an enemy`:              Tag{"tag": Tag{"type": "Condition", "var": "DetonatedMinesRecently"}},
-	`when your trap is triggered by an enemy`:                     Tag{"tag": Tag{"type": "Condition", "var": "TriggeredTrapsRecently"}},
-	`if energy shield recharge has started recently`:              Tag{"tag": Tag{"type": "Condition", "var": "EnergyShieldRechargeRecently"}},
-	`if energy shield recharge has started in the past 2 seconds`: Tag{"tag": Tag{"type": "Condition", "var": "EnergyShieldRechargePastTwoSec"}},
-	`when cast on frostbolt`:                                      Tag{"tag": Tag{"type": "Condition", "var": "CastOnFrostbolt"}},
-	`branded enemy's`:                                             Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "BrandsAttachedToEnemy", "threshold": 1}},
-	`to enemies they're attached to`:                              Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "BrandsAttachedToEnemy", "threshold": 1}},
-	`for each hit you've taken recently up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "BeenHitRecently", "limit": c.n(1), "limitTotal": true}}
+	`if you've impaled an enemy recently`:                         &PatternEntry{Tag: &CondTag{Var: "ImpaledRecently"}},
+	`if you've changed stance recently`:                           &PatternEntry{Tag: &CondTag{Var: "ChangedStanceRecently"}},
+	`if you've gained a power charge recently`:                    &PatternEntry{Tag: &CondTag{Var: "GainedPowerChargeRecently"}},
+	`if you haven't gained a power charge recently`:               &PatternEntry{Tag: &CondTag{Var: "GainedPowerChargeRecently", Neg: true}},
+	`if you haven't gained a frenzy charge recently`:              &PatternEntry{Tag: &CondTag{Var: "GainedFrenzyChargeRecently", Neg: true}},
+	`if you've stopped taking damage over time recently`:          &PatternEntry{Tag: &CondTag{Var: "StoppedTakingDamageOverTimeRecently"}},
+	`if you've used an amethyst flask recently`:                   &PatternEntry{Tag: &CondTag{Var: "UsedAmethystFlaskRecently"}},
+	`if you've used a ruby flask recently`:                        &PatternEntry{Tag: &CondTag{Var: "UsedRubyFlaskRecently"}},
+	`if you've used a sapphire flask recently`:                    &PatternEntry{Tag: &CondTag{Var: "UsedSapphireFlaskRecently"}},
+	`if you've used a topaz flask recently`:                       &PatternEntry{Tag: &CondTag{Var: "UsedTopazFlaskRecently"}},
+	`during soul gain prevention`:                                 &PatternEntry{Tag: &CondTag{Var: "SoulGainPrevention"}},
+	`if you detonated mines recently`:                             &PatternEntry{Tag: &CondTag{Var: "DetonatedMinesRecently"}},
+	`if you detonated a mine recently`:                            &PatternEntry{Tag: &CondTag{Var: "DetonatedMinesRecently"}},
+	`if you[' ]h?a?ve detonated a mine recently`:                  &PatternEntry{Tag: &CondTag{Var: "DetonatedMinesRecently"}},
+	`when your mine is detonated targeting an enemy`:              &PatternEntry{Tag: &CondTag{Var: "DetonatedMinesRecently"}},
+	`when your trap is triggered by an enemy`:                     &PatternEntry{Tag: &CondTag{Var: "TriggeredTrapsRecently"}},
+	`if energy shield recharge has started recently`:              &PatternEntry{Tag: &CondTag{Var: "EnergyShieldRechargeRecently"}},
+	`if energy shield recharge has started in the past 2 seconds`: &PatternEntry{Tag: &CondTag{Var: "EnergyShieldRechargePastTwoSec"}},
+	`when cast on frostbolt`:                                      &PatternEntry{Tag: &CondTag{Var: "CastOnFrostbolt"}},
+	`branded enemy's`:                                             &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "BrandsAttachedToEnemy", Threshold: opt(1)}},
+	`to enemies they're attached to`:                              &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "BrandsAttachedToEnemy", Threshold: opt(1)}},
+	`for each hit you've taken recently up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "BeenHitRecently", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`per enemy hit taken recently`: Tag{"tag": Tag{"type": "Multiplier", "var": "BeenHitRecently"}},
-	`for each nearby enemy, up to ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "NearbyEnemies", "limit": c.n(1), "limitTotal": true}}
+	`per enemy hit taken recently`: &PatternEntry{Tag: &MultiplierTag{Var: "BeenHitRecently"}},
+	`for each nearby enemy, up to ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "NearbyEnemies", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each nearby enemy, up to a maximum of ([0-9]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "var": "NearbyEnemies", "limit": c.n(1), "limitTotal": true}}
+	`for each nearby enemy, up to a maximum of ([0-9]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Var: "NearbyEnemies", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`while you have iron reflexes`:             Tag{"tag": Tag{"type": "Condition", "var": "HaveIronReflexes"}},
-	`while you do not have iron reflexes`:      Tag{"tag": Tag{"type": "Condition", "var": "HaveIronReflexes", "neg": true}},
-	`while you have elemental overload`:        Tag{"tag": Tag{"type": "Condition", "var": "HaveElementalOverload"}},
-	`while you do not have elemental overload`: Tag{"tag": Tag{"type": "Condition", "var": "HaveElementalOverload", "neg": true}},
-	`while you have resolute technique`:        Tag{"tag": Tag{"type": "Condition", "var": "HaveResoluteTechnique"}},
-	`while you do not have resolute technique`: Tag{"tag": Tag{"type": "Condition", "var": "HaveResoluteTechnique", "neg": true}},
-	`while you have avatar of fire`:            Tag{"tag": Tag{"type": "Condition", "var": "HaveAvatarOfFire"}},
-	`while you do not have avatar of fire`:     Tag{"tag": Tag{"type": "Condition", "var": "HaveAvatarOfFire", "neg": true}},
-	`if you have a summoned golem`:             Tag{"tag": Tag{"type": "Condition", "varList": []any{"HavePhysicalGolem", "HaveLightningGolem", "HaveColdGolem", "HaveFireGolem", "HaveChaosGolem", "HaveCarrionGolem"}}},
-	`while you have a summoned golem`:          Tag{"tag": Tag{"type": "Condition", "varList": []any{"HavePhysicalGolem", "HaveLightningGolem", "HaveColdGolem", "HaveFireGolem", "HaveChaosGolem", "HaveCarrionGolem"}}},
-	`if a minion has died recently`:            Tag{"tag": Tag{"type": "Condition", "var": "MinionsDiedRecently"}},
-	`if a minion has been killed recently`:     Tag{"tag": Tag{"type": "Condition", "var": "MinionsDiedRecently"}},
-	`while you have sacrificial zeal`:          Tag{"tag": Tag{"type": "Condition", "var": "SacrificialZeal"}},
-	`while sane`:                               Tag{"tag": Tag{"type": "Condition", "var": "Insane", "neg": true}},
-	`while insane`:                             Tag{"tag": Tag{"type": "Condition", "var": "Insane"}},
-	`while you have defiance`:                  Tag{"tag": Tag{"type": "MultiplierThreshold", "var": "Defiance", "threshold": 1}},
-	`while affected by glorious madness`:       Tag{"tag": Tag{"type": "Condition", "var": "AffectedByGloriousMadness"}},
-	`if you've shattered an enemy recently`:    Tag{"tag": Tag{"type": "Condition", "var": "ShatteredEnemyRecently"}},
-	`while affected by no flasks?`:             Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask", "neg": true}},
-	`while affected by flasks?`:                Tag{"tag": Tag{"type": "Condition", "var": "UsingFlask"}},
+	`while you have iron reflexes`:             &PatternEntry{Tag: &CondTag{Var: "HaveIronReflexes"}},
+	`while you do not have iron reflexes`:      &PatternEntry{Tag: &CondTag{Var: "HaveIronReflexes", Neg: true}},
+	`while you have elemental overload`:        &PatternEntry{Tag: &CondTag{Var: "HaveElementalOverload"}},
+	`while you do not have elemental overload`: &PatternEntry{Tag: &CondTag{Var: "HaveElementalOverload", Neg: true}},
+	`while you have resolute technique`:        &PatternEntry{Tag: &CondTag{Var: "HaveResoluteTechnique"}},
+	`while you do not have resolute technique`: &PatternEntry{Tag: &CondTag{Var: "HaveResoluteTechnique", Neg: true}},
+	`while you have avatar of fire`:            &PatternEntry{Tag: &CondTag{Var: "HaveAvatarOfFire"}},
+	`while you do not have avatar of fire`:     &PatternEntry{Tag: &CondTag{Var: "HaveAvatarOfFire", Neg: true}},
+	`if you have a summoned golem`:             &PatternEntry{Tag: &CondTag{VarList: []string{"HavePhysicalGolem", "HaveLightningGolem", "HaveColdGolem", "HaveFireGolem", "HaveChaosGolem", "HaveCarrionGolem"}}},
+	`while you have a summoned golem`:          &PatternEntry{Tag: &CondTag{VarList: []string{"HavePhysicalGolem", "HaveLightningGolem", "HaveColdGolem", "HaveFireGolem", "HaveChaosGolem", "HaveCarrionGolem"}}},
+	`if a minion has died recently`:            &PatternEntry{Tag: &CondTag{Var: "MinionsDiedRecently"}},
+	`if a minion has been killed recently`:     &PatternEntry{Tag: &CondTag{Var: "MinionsDiedRecently"}},
+	`while you have sacrificial zeal`:          &PatternEntry{Tag: &CondTag{Var: "SacrificialZeal"}},
+	`while sane`:                               &PatternEntry{Tag: &CondTag{Var: "Insane", Neg: true}},
+	`while insane`:                             &PatternEntry{Tag: &CondTag{Var: "Insane"}},
+	`while you have defiance`:                  &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "Defiance", Threshold: opt(1)}},
+	`while affected by glorious madness`:       &PatternEntry{Tag: &CondTag{Var: "AffectedByGloriousMadness"}},
+	`if you've shattered an enemy recently`:    &PatternEntry{Tag: &CondTag{Var: "ShatteredEnemyRecently"}},
+	`while affected by no flasks?`:             &PatternEntry{Tag: &CondTag{Var: "UsingFlask", Neg: true}},
+	`while affected by flasks?`:                &PatternEntry{Tag: &CondTag{Var: "UsingFlask"}},
 	// Enemy status conditions
-	`at close range`:                               Tag{"tag": Tag{"type": "Condition", "var": "AtCloseRange"}},
-	`not at close range`:                           Tag{"tag": Tag{"type": "Condition", "var": "AtCloseRange", "neg": true}},
-	`against rare and unique enemies`:              Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "RareOrUnique"}},
-	`by s?l?a?i?n? rare [ao][nr]d? unique enemies`: Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "RareOrUnique"}},
-	`against unique enemies`:                       Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "RareOrUnique"}},
-	`against enemies on full life`:                 Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "FullLife"}},
-	`against enemies that are on full life`:        Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "FullLife"}},
-	`against enemies on low life`:                  Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "LowLife"}},
-	`against enemies that are on low life`:         Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "LowLife"}},
-	`against enemies that are not on low life`:     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "LowLife", "neg": true}},
-	`to enemies which have energy shield`:          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "HaveEnergyShield"}, "keywordFlags": KeywordFlag.Hit | KeywordFlag.Ailment},
-	`against cursed enemies`:                       Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}},
-	`against stunned enemies`:                      Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Stunned"}},
-	`on cursed enemies`:                            Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}},
-	`of cursed enemies'`:                           Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}},
-	`when hitting cursed enemies`:                  Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}, "keywordFlags": KeywordFlag.Hit},
-	`from cursed enemies`:                          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Cursed"}},
-	`against marked enemy`:                         Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Marked"}},
-	`when hitting marked enemy`:                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Marked"}, "keywordFlags": KeywordFlag.Hit},
-	`from marked enemy`:                            Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Marked"}},
-	`against taunted enemies`:                      Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Taunted"}},
-	`against bleeding enemies`:                     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Bleeding"}},
-	`you inflict on bleeding enemies`:              Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Bleeding"}},
-	`to bleeding enemies`:                          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Bleeding"}},
-	`from bleeding enemies`:                        Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Bleeding"}},
-	`against poisoned enemies`:                     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Poisoned"}},
-	`you inflict on poisoned enemies`:              Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Poisoned"}},
-	`to poisoned enemies`:                          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Poisoned"}},
-	`against enemies affected by ([0-9]+) or more poisons`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "actor": "enemy", "var": "PoisonStack", "threshold": c.n(1)}}
+	`at close range`:                               &PatternEntry{Tag: &CondTag{Var: "AtCloseRange"}},
+	`not at close range`:                           &PatternEntry{Tag: &CondTag{Var: "AtCloseRange", Neg: true}},
+	`against rare and unique enemies`:              &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "RareOrUnique"}},
+	`by s?l?a?i?n? rare [ao][nr]d? unique enemies`: &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "RareOrUnique"}},
+	`against unique enemies`:                       &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "RareOrUnique"}},
+	`against enemies on full life`:                 &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "FullLife"}},
+	`against enemies that are on full life`:        &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "FullLife"}},
+	`against enemies on low life`:                  &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "LowLife"}},
+	`against enemies that are on low life`:         &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "LowLife"}},
+	`against enemies that are not on low life`:     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "LowLife", Neg: true}},
+	`to enemies which have energy shield`:          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "HaveEnergyShield"}, KeywordFlags: KeywordHit | KeywordAilment},
+	`against cursed enemies`:                       &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}},
+	`against stunned enemies`:                      &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Stunned"}},
+	`on cursed enemies`:                            &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}},
+	`of cursed enemies'`:                           &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}},
+	`when hitting cursed enemies`:                  &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}, KeywordFlags: KeywordHit},
+	`from cursed enemies`:                          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Cursed"}},
+	`against marked enemy`:                         &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Marked"}},
+	`when hitting marked enemy`:                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Marked"}, KeywordFlags: KeywordHit},
+	`from marked enemy`:                            &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Marked"}},
+	`against taunted enemies`:                      &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Taunted"}},
+	`against bleeding enemies`:                     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Bleeding"}},
+	`you inflict on bleeding enemies`:              &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Bleeding"}},
+	`to bleeding enemies`:                          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Bleeding"}},
+	`from bleeding enemies`:                        &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Bleeding"}},
+	`against poisoned enemies`:                     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Poisoned"}},
+	`you inflict on poisoned enemies`:              &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Poisoned"}},
+	`to poisoned enemies`:                          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Poisoned"}},
+	`against enemies affected by ([0-9]+) or more poisons`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Actor: "enemy", Var: "PoisonStack", Threshold: opt(c.n(1))}}
 	}),
-	`against enemies affected by at least ([0-9]+) poisons`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "actor": "enemy", "var": "PoisonStack", "threshold": c.n(1)}}
+	`against enemies affected by at least ([0-9]+) poisons`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Actor: "enemy", Var: "PoisonStack", Threshold: opt(c.n(1))}}
 	}),
-	`against hindered enemies`:                                   Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Hindered"}},
-	`against maimed enemies`:                                     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Maimed"}},
-	`you inflict on maimed enemies`:                              Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Maimed"}},
-	`against blinded enemies`:                                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Blinded"}},
-	`against excommunicated enemies`:                             Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Excommunicated"}},
-	`from blinded enemies`:                                       Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Blinded"}},
-	`against burning enemies`:                                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Burning"}},
-	`against ignited enemies`:                                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Ignited"}},
-	`to ignited enemies`:                                         Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Ignited"}},
-	`against shocked enemies`:                                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
-	`you inflict on shocked enemies`:                             Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
-	`to shocked enemies`:                                         Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
-	`inflicted on shocked enemies`:                               Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
-	`enemies which are shocked`:                                  Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
-	`against frozen enemies`:                                     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Frozen"}},
-	`to frozen enemies`:                                          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Frozen"}},
-	`against chilled enemies`:                                    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Chilled"}},
-	`you inflict on chilled enemies`:                             Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Chilled"}},
-	`to chilled enemies`:                                         Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Chilled"}},
-	`inflicted on chilled enemies`:                               Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Chilled"}},
-	`enemies which are chilled`:                                  Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Chilled"}},
-	`against chilled or frozen enemies`:                          Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Chilled", "Frozen"}}},
-	`against frozen, shocked or ignited enemies`:                 Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Frozen", "Shocked", "Ignited"}}},
-	`against enemies affected by elemental ailments`:             Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}}},
-	`against enemies affected by ailments`:                       Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped", "Poisoned", "Bleeding"}}},
-	`against enemies that are affected by elemental ailments`:    Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}}},
-	`against enemies that are affected by no elemental ailments`: Tag{"tagList": []any{Tag{"type": "ActorCondition", "actor": "enemy", "varList": []any{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}, "neg": true}, Tag{"type": "Condition", "var": "Effective"}}},
-	`against enemies affected by ([0-9]+) spider's webs`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "actor": "enemy", "var": "Spider's WebStack", "threshold": c.n(1)}}
+	`against hindered enemies`:                                   &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Hindered"}},
+	`against maimed enemies`:                                     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Maimed"}},
+	`you inflict on maimed enemies`:                              &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Maimed"}},
+	`against blinded enemies`:                                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Blinded"}},
+	`against excommunicated enemies`:                             &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Excommunicated"}},
+	`from blinded enemies`:                                       &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Blinded"}},
+	`against burning enemies`:                                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Burning"}},
+	`against ignited enemies`:                                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Ignited"}},
+	`to ignited enemies`:                                         &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Ignited"}},
+	`against shocked enemies`:                                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
+	`you inflict on shocked enemies`:                             &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
+	`to shocked enemies`:                                         &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
+	`inflicted on shocked enemies`:                               &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
+	`enemies which are shocked`:                                  &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
+	`against frozen enemies`:                                     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Frozen"}},
+	`to frozen enemies`:                                          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Frozen"}},
+	`against chilled enemies`:                                    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Chilled"}},
+	`you inflict on chilled enemies`:                             &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Chilled"}},
+	`to chilled enemies`:                                         &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Chilled"}},
+	`inflicted on chilled enemies`:                               &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Chilled"}},
+	`enemies which are chilled`:                                  &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Chilled"}},
+	`against chilled or frozen enemies`:                          &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Chilled", "Frozen"}}},
+	`against frozen, shocked or ignited enemies`:                 &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Frozen", "Shocked", "Ignited"}}},
+	`against enemies affected by elemental ailments`:             &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}}},
+	`against enemies affected by ailments`:                       &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped", "Poisoned", "Bleeding"}}},
+	`against enemies that are affected by elemental ailments`:    &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}}},
+	`against enemies that are affected by no elemental ailments`: &PatternEntry{TagList: []Tag{&CondTag{IsActor: true, Actor: "enemy", VarList: []string{"Frozen", "Chilled", "Shocked", "Ignited", "Scorched", "Brittle", "Sapped"}, Neg: true}, &CondTag{Var: "Effective"}}},
+	`against enemies affected by ([0-9]+) spider's webs`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Actor: "enemy", Var: "Spider's WebStack", Threshold: opt(c.n(1))}}
 	}),
-	`against enemies on consecrated ground`:                                     Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "OnConsecratedGround"}},
-	`against enemies with a higher percentage of their life remaining than you`: Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "HigherLifePercentThanPlayer"}},
-	`if ([0-9]+)% of curse duration expired`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "MultiplierThreshold", "actor": "enemy", "var": "CurseExpired", "threshold": c.n(1)}}
+	`against enemies on consecrated ground`:                                     &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "OnConsecratedGround"}},
+	`against enemies with a higher percentage of their life remaining than you`: &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "HigherLifePercentThanPlayer"}},
+	`if ([0-9]+)% of curse duration expired`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Actor: "enemy", Var: "CurseExpired", Threshold: opt(c.n(1))}}
 	}),
-	`against enemies with ([0-9a-zA-Z]+) exposure`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Has" + (firstToUpper(c.s(1)) + "Exposure")}}
+	`against enemies with ([0-9a-zA-Z]+) exposure`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Has" + (firstToUpper(c.s(1)) + "Exposure")}}
 	}),
-	`by s?l?a?i?n? ?frozen enemies`:  Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Frozen"}},
-	`by s?l?a?i?n? ?shocked enemies`: Tag{"tag": Tag{"type": "ActorCondition", "actor": "enemy", "var": "Shocked"}},
+	`by s?l?a?i?n? ?frozen enemies`:  &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Frozen"}},
+	`by s?l?a?i?n? ?shocked enemies`: &PatternEntry{Tag: &CondTag{IsActor: true, Actor: "enemy", Var: "Shocked"}},
 	// Enemy multipliers
-	`per freeze, shock [ao][nr]d? ignite on enemy`: Tag{"tag": Tag{"type": "Multiplier", "var": "FreezeShockIgniteOnEnemy"}},
-	`per poison affecting enemy`:                   Tag{"tag": Tag{"type": "Multiplier", "actor": "enemy", "var": "PoisonStack"}},
-	`per poison affecting enemy, up to \+([0-9.]+)%`: fn(func(c caps) any {
-		return Tag{"tag": Tag{"type": "Multiplier", "actor": "enemy", "var": "PoisonStack", "limit": c.n(1), "limitTotal": true}}
+	`per freeze, shock [ao][nr]d? ignite on enemy`: &PatternEntry{Tag: &MultiplierTag{Var: "FreezeShockIgniteOnEnemy"}},
+	`per poison affecting enemy`:                   &PatternEntry{Tag: &MultiplierTag{Actor: "enemy", Var: "PoisonStack"}},
+	`per poison affecting enemy, up to \+([0-9.]+)%`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &MultiplierTag{Actor: "enemy", Var: "PoisonStack", Limit: opt(c.n(1)), LimitTotal: true}}
 	}),
-	`for each spider's web on the enemy`: Tag{"tag": Tag{"type": "Multiplier", "actor": "enemy", "var": "Spider's WebStack"}},
+	`for each spider's web on the enemy`: &PatternEntry{Tag: &MultiplierTag{Actor: "enemy", Var: "Spider's WebStack"}},
 	// Hand-ported entries the transform could not express — ModParser.lua:1595,1631-1632,1650-1658,1739-1746,1810-1812.
-	`if you have a ([a-zA-Z]+) ([a-zA-Z]+) in ([a-zA-Z]+) slot`: fn(func(c caps) any {
+	`if you have a ([a-zA-Z]+) ([a-zA-Z]+) in ([a-zA-Z]+) slot`: entryFn(func(c caps) *PatternEntry {
 		slotIndex := ""
 		switch c.s(3) {
 		case "right":
@@ -858,43 +936,30 @@ var modTagList = map[string]any{
 		case "left":
 			slotIndex = "1"
 		}
-		return d(p("tag", Tag{"type": "Condition", "var": firstToUpper(c.s(1)) + "ItemIn" + firstToUpper(c.s(2)) + " " + slotIndex}))
+		return &PatternEntry{Tag: &CondTag{Var: firstToUpper(c.s(1)) + "ItemIn" + firstToUpper(c.s(2)) + " " + slotIndex}}
 	}),
-	`while holding a ([0-9a-zA-Z]+)`: fn(func(c caps) any {
-		return d(p("tag", Tag{"type": "Condition", "varList": []any{"Using" + firstToUpper(c.s(1))}}))
+	`while holding a ([0-9a-zA-Z]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &CondTag{VarList: []string{"Using" + firstToUpper(c.s(1))}}}
 	}),
-	`while holding a ([0-9a-zA-Z]+) or ([0-9a-zA-Z]+)`: fn(func(c caps) any {
-		return d(p("tag", Tag{"type": "Condition", "varList": []any{"Using" + firstToUpper(c.s(1)), "Using" + firstToUpper(c.s(2))}}))
+	`while holding a ([0-9a-zA-Z]+) or ([0-9a-zA-Z]+)`: entryFn(func(c caps) *PatternEntry {
+		return &PatternEntry{Tag: &CondTag{VarList: []string{"Using" + firstToUpper(c.s(1)), "Using" + firstToUpper(c.s(2))}}}
 	}),
 	// itemSlotName:sub(1, #itemSlotName - 1) drops the plural 's'.
-	`if both equipped ([a-zA-Z \t\n\v\f\r]+) have a?n? ?([a-zA-Z \t\n\v\f\r]+) modifiers?`: fn(func(c caps) any {
+	`if both equipped ([a-zA-Z \t\n\v\f\r]+) have a?n? ?([a-zA-Z \t\n\v\f\r]+) modifiers?`: entryFn(func(c caps) *PatternEntry {
 		slot := c.s(1)
 		if len(slot) > 0 {
 			slot = slot[:len(slot)-1]
 		}
-		return d(p("tag", Tag{"type": "ItemCondition", "searchCond": c.s(2), "itemSlot": slot, "bothSlots": true}))
+		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(2), ItemSlot: slot, BothSlots: true}}
 	}),
-	`if both equipped left and right ([a-zA-Z \t\n\v\f\r]+) have a?n? ?([a-zA-Z \t\n\v\f\r]+) modifiers?`: fn(func(c caps) any {
+	`if both equipped left and right ([a-zA-Z \t\n\v\f\r]+) have a?n? ?([a-zA-Z \t\n\v\f\r]+) modifiers?`: entryFn(func(c caps) *PatternEntry {
 		slot := c.s(1)
 		if len(slot) > 0 {
 			slot = slot[:len(slot)-1]
 		}
-		return d(p("tag", Tag{"type": "ItemCondition", "searchCond": c.s(2), "itemSlot": slot, "bothSlots": true}))
+		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(2), ItemSlot: slot, BothSlots: true}}
 	}),
-	`if equipped helmet, body armour, gloves, and boots all have armour`: d(p("tagList", []any{
-		Tag{"type": "StatThreshold", "stat": "ArmourOnHelmet", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "ArmourOnBody Armour", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "ArmourOnGloves", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "ArmourOnBoots", "threshold": 1},
-	})),
-	`if equipped helmet, body armour, gloves, and boots all have evasion rating`: d(p("tagList", []any{
-		Tag{"type": "StatThreshold", "stat": "EvasionOnHelmet", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "EvasionOnBody Armour", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "EvasionOnGloves", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "EvasionOnBoots", "threshold": 1},
-	})),
-	`if you have reserved life and mana`: d(p("tagList", []any{
-		Tag{"type": "StatThreshold", "stat": "LifeReserved", "threshold": 1},
-		Tag{"type": "StatThreshold", "stat": "ManaReserved", "threshold": 1},
-	})),
+	`if equipped helmet, body armour, gloves, and boots all have armour`:         &PatternEntry{TagList: []Tag{&StatTag{StatKind: TagStatThreshold, Stat: "ArmourOnHelmet", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "ArmourOnBody Armour", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "ArmourOnGloves", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "ArmourOnBoots", Threshold: opt(1)}}},
+	`if equipped helmet, body armour, gloves, and boots all have evasion rating`: &PatternEntry{TagList: []Tag{&StatTag{StatKind: TagStatThreshold, Stat: "EvasionOnHelmet", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "EvasionOnBody Armour", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "EvasionOnGloves", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "EvasionOnBoots", Threshold: opt(1)}}},
+	`if you have reserved life and mana`:                                         &PatternEntry{TagList: []Tag{&StatTag{StatKind: TagStatThreshold, Stat: "LifeReserved", Threshold: opt(1)}, &StatTag{StatKind: TagStatThreshold, Stat: "ManaReserved", Threshold: opt(1)}}},
 }

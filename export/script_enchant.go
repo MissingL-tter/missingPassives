@@ -7,6 +7,7 @@ package export
 import (
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
@@ -161,24 +162,36 @@ var enchantSkillMap = map[string]string{
 	"Flame Dash":             "Flame Dash",
 }
 
-func buildEnchant(x *Ctx) (any, error) {
+func buildEnchant(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
-	doLabEnchantment := func(group string) map[string][][]string {
+	mods, err := x.Dat("Mods")
+	if err != nil {
+		return nil, err
+	}
+	activeSkills, err := x.Dat("ActiveSkills")
+	if err != nil {
+		return nil, err
+	}
+
+	doLabEnchantment := func(group string) (map[string][][]string, error) {
 		byDiff := map[string][][]string{}
-		for _, mod := range x.Dat("Mods").GetRowList("GenerationType", 10) {
-			family := listRows(mod.Get("Family"))
-			if len(family) > 0 && luaStr(family[0].Get("Id")) == group &&
-				mod.Get("SpawnWeights").([]any)[0].(int64) > 0 {
-				stats := x.DescribeMod(mod)
-				diff := enchantLab[mod.Get("Level").(int64)]
+		for _, mod := range mods.GetRowList("GenerationType", 10) {
+			family := mod.Refs("Family")
+			if len(family) > 0 && family[0].Str("Id") == group &&
+				mod.Ints("SpawnWeights")[0] > 0 {
+				stats, err := x.DescribeMod(mod)
+				if err != nil {
+					return nil, err
+				}
+				diff := enchantLab[mod.Int("Level")]
 				byDiff[diff] = append(byDiff[diff], stats.Lines)
 			}
 		}
-		return byDiff
+		return byDiff, nil
 	}
 
-	doOtherEnchantment := func(groupsList map[int64]map[string]string) map[string][][]string {
+	doOtherEnchantment := func(groupsList map[int64]map[string]string) (map[string][][]string, error) {
 		byDiff := map[string][][]string{}
 		gens := make([]int64, 0, len(groupsList))
 		for g := range groupsList {
@@ -186,34 +199,48 @@ func buildEnchant(x *Ctx) (any, error) {
 		}
 		sort.Slice(gens, func(a, b int) bool { return gens[a] < gens[b] })
 		for _, generation := range gens {
-			for _, mod := range x.Dat("Mods").GetRowList("GenerationType", generation) {
-				family := listRows(mod.Get("Family"))
+			for _, mod := range mods.GetRowList("GenerationType", generation) {
+				family := mod.Refs("Family")
 				if len(family) > 0 {
-					if diff, ok := groupsList[generation][luaStr(family[0].Get("Id"))]; ok {
-						stats := x.DescribeMod(mod)
+					if diff, ok := groupsList[generation][family[0].Str("Id")]; ok {
+						stats, err := x.DescribeMod(mod)
+						if err != nil {
+							return nil, err
+						}
 						byDiff[diff] = append(byDiff[diff], stats.Lines)
 					}
 				}
 			}
 		}
-		return byDiff
+		return byDiff, nil
 	}
 
-	d := schema.Enchants{
-		Boots:  doLabEnchantment("ConditionalBuffEnchantment"),
-		Gloves: doLabEnchantment("TriggerEnchantment"),
-		Belt:   doLabEnchantment("BuffEnchantment"),
-		// Harvest flask enchants stat descriptions don't read properly yet
-		Flask: doOtherEnchantment(map[int64]map[string]string{
-			21: {"FlaskEnchantment": "ENKINDLING"},
-			22: {"FlaskEnchantment": "INSTILLING"},
-		}),
-		Body: doOtherEnchantment(map[int64]map[string]string{
-			3: {"AlternateArmourQuality": "HARVEST", "EnchantmentHeistArmour": "HEIST"},
-		}),
-		Weapon: doOtherEnchantment(map[int64]map[string]string{
-			3: {"AlternateWeaponQuality": "HARVEST", "EnchantmentHeistWeapon": "HEIST"},
-		}),
+	var d schema.Enchants
+	if d.Boots, err = doLabEnchantment("ConditionalBuffEnchantment"); err != nil {
+		return nil, err
+	}
+	if d.Gloves, err = doLabEnchantment("TriggerEnchantment"); err != nil {
+		return nil, err
+	}
+	if d.Belt, err = doLabEnchantment("BuffEnchantment"); err != nil {
+		return nil, err
+	}
+	// Harvest flask enchants stat descriptions don't read properly yet
+	if d.Flask, err = doOtherEnchantment(map[int64]map[string]string{
+		21: {"FlaskEnchantment": "ENKINDLING"},
+		22: {"FlaskEnchantment": "INSTILLING"},
+	}); err != nil {
+		return nil, err
+	}
+	if d.Body, err = doOtherEnchantment(map[int64]map[string]string{
+		3: {"AlternateArmourQuality": "HARVEST", "EnchantmentHeistArmour": "HEIST"},
+	}); err != nil {
+		return nil, err
+	}
+	if d.Weapon, err = doOtherEnchantment(map[int64]map[string]string{
+		3: {"AlternateWeaponQuality": "HARVEST", "EnchantmentHeistWeapon": "HEIST"},
+	}); err != nil {
+		return nil, err
 	}
 
 	// Helmet skill enchantments.
@@ -228,36 +255,36 @@ func buildEnchant(x *Ctx) (any, error) {
 	}
 
 	bySkill := map[string]map[string][][]string{}
-	for _, mod := range x.Dat("Mods").GetRowList("GenerationType", 10) {
-		family := listRows(mod.Get("Family"))
-		if !(len(family) > 0 && luaStr(family[0].Get("Id")) == "SkillEnchantment" &&
-			mod.Get("SpawnWeights").([]any)[0].(int64) > 0) {
+	for _, mod := range mods.GetRowList("GenerationType", 10) {
+		family := mod.Refs("Family")
+		if !(len(family) > 0 && family[0].Str("Id") == "SkillEnchantment" &&
+			mod.Ints("SpawnWeights")[0] > 0) {
 			continue
 		}
 		skill := ""
 		// Each stat's searches can overwrite an earlier stat's finding, as in
 		// the Lua (no outer break).
 		findSkill := func(col string, stat *Row) {
-			for _, as := range x.Dat("ActiveSkills").GetRowList(col, stat) {
+			for _, as := range activeSkills.GetRowList(col, stat) {
 				// #EVAL: archive parity — the Lua compares SkillTypes ROWS
 				// against the number 39, which is always false; only the id
 				// substring check can set isVaal.
-				isVaal := strings.Contains(luaStr(as.Get("Id")), "vaal")
-				if dn := luaStr(as.Get("DisplayName")); !isVaal && dn != "" {
+				isVaal := strings.Contains(as.Str("Id"), "vaal")
+				if dn := as.Str("DisplayName"); !isVaal && dn != "" {
 					skill = dn
 					return
 				}
 			}
 		}
 		for i := 1; i <= 6; i++ {
-			stat, ok := mod.Get("Stat" + luaStr(i)).(*Row)
-			if !ok {
+			stat := mod.Ref("Stat" + strconv.Itoa(i))
+			if stat == nil {
 				continue
 			}
 			findSkill("SkillSpecificStat", stat)
 			findSkill("SecondarySkillSpecificStat", stat)
 		}
-		modId := luaStr(mod.Get("Id"))
+		modId := mod.Str("Id")
 		for _, p := range skillPatterns {
 			if loc := patternRe[p].FindStringIndex(modId); loc != nil {
 				// Lua string.find spans: j - i with 1-based inclusive ends.
@@ -271,14 +298,17 @@ func buildEnchant(x *Ctx) (any, error) {
 			skill = mapped
 		}
 
-		stats := x.DescribeMod(mod)
+		stats, err := x.DescribeMod(mod)
+		if err != nil {
+			return nil, err
+		}
 		if len(stats.Lines) == 0 {
 			continue // the Lua printfs the mod id
 		}
 		if bySkill[skill] == nil {
 			bySkill[skill] = map[string][][]string{}
 		}
-		diff := enchantLab[mod.Get("Level").(int64)]
+		diff := enchantLab[mod.Int("Level")]
 		bySkill[skill][diff] = append(bySkill[skill][diff], stats.Lines)
 	}
 	d.Helmet = bySkill

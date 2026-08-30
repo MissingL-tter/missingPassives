@@ -3,6 +3,8 @@ package modparser
 import (
 	"math"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 // Helpers ported from ModParser.lua:2011-2119. Each mirrors its Lua original
@@ -11,7 +13,7 @@ import (
 var damageTypeList = []string{"Physical", "Lightning", "Cold", "Fire", "Chaos"}
 
 // dealNoNonDamageType — ModParser.lua:2017.
-func dealNoNonDamageType(dmgType string, forMinionArg ...bool) any {
+func dealNoNonDamageType(dmgType string, forMinionArg ...bool) []*Mod {
 	forMinion := len(forMinionArg) > 0 && forMinionArg[0]
 	dmgType = firstToUpper(dmgType)
 	found := false
@@ -23,12 +25,12 @@ func dealNoNonDamageType(dmgType string, forMinionArg ...bool) any {
 	if !found {
 		return nil
 	}
-	var mods []any
+	var mods []*Mod
 	for _, damageType := range damageTypeList {
 		if damageType != dmgType {
 			dealNo := flag("DealNo" + damageType)
 			if forMinion {
-				mods = append(mods, mod("MinionModifier", "LIST", Tag{"mod": dealNo}))
+				mods = append(mods, mod("MinionModifier", List, ModRef{Mod: dealNo}))
 			} else {
 				mods = append(mods, dealNo)
 			}
@@ -47,58 +49,57 @@ func buildGemIdLookup() map[string]string {
 	}
 	for _, sk := range skillData {
 		if !sk.hidden || sk.fromItem || sk.fromTree {
-			out[asciiLower(sk.name)] = sk.id
+			out[strings.ToLower(sk.name)] = sk.id
 		}
 	}
 	return out
 }
 
 // grantedExtraSkill — ModParser.lua:2046.
-func grantedExtraSkill(name string, level any, noSupports ...bool) any {
+func grantedExtraSkill(name string, level float64, noSupports ...bool) []*Mod {
 	name = strings.ReplaceAll(name, " skill", "")
 	id, ok := gemIdLookup[name]
 	if !ok {
 		return nil
 	}
-	value := Tag{"skillId": id, "level": toNum(level)}
+	value := SkillRef{SkillID: id, Level: opt(level)}
 	if len(noSupports) > 0 && noSupports[0] {
-		value["noSupports"] = true
+		value.NoSupports = true
 	}
-	return []any{mod("ExtraSkill", "LIST", value)}
+	return []*Mod{mod("ExtraSkill", List, value)}
+}
+
+// triggerOpts are triggerExtraSkill's option table.
+type triggerOpts struct {
+	NoSupports     bool
+	IgnoreHexproof bool
+	OnCrit         bool
+	TriggerChance  util.Opt[float64]
+	SourceSkill    string
 }
 
 // triggerExtraSkill — ModParser.lua:2054.
-func triggerExtraSkill(name string, level any, opts ...Tag) any {
-	var options Tag
+func triggerExtraSkill(name string, level float64, opts ...triggerOpts) []*Mod {
+	var options triggerOpts
 	if len(opts) > 0 {
 		options = opts[0]
 	}
-	lvl := toNum(level)
-	mods := []any{}
+	mods := []*Mod{}
 	name = strings.ReplaceAll(name, " skill", "")
-	sourceSkill, _ := options["sourceSkill"].(string)
+	sourceSkill := options.SourceSkill
 	if sourceSkill != "" {
 		sourceSkill = strings.ReplaceAll(sourceSkill, " skill", "")
 	}
 	id, ok := gemIdLookup[name]
 	if ok {
-		value := Tag{"skillId": id, "level": lvl, "triggered": true}
-		if truthy(options["noSupports"]) {
-			value["noSupports"] = true
-		}
-		if sourceSkill != "" {
-			value["source"] = sourceSkill
-		}
-		if tc, has := options["triggerChance"]; has && tc != nil {
-			value["triggerChance"] = toNum(tc)
-		}
-		mods = append(mods, mod("ExtraSkill", "LIST", value))
+		value := SkillRef{SkillID: id, Level: opt(level), Triggered: true, NoSupports: options.NoSupports, Source: sourceSkill, TriggerChance: options.TriggerChance}
+		mods = append(mods, mod("ExtraSkill", List, value))
 	}
-	if truthy(options["ignoreHexproof"]) {
-		mods = append(mods, mod("SkillData", "LIST", Tag{"key": "ignoreHexproof", "value": true}, Tag{"type": "SkillId", "skillId": gemIdLookup[name]}))
+	if options.IgnoreHexproof {
+		mods = append(mods, mod("SkillData", List, DataRef{Key: "ignoreHexproof", Value: Bool(true)}, &SkillIDTag{SkillID: gemIdLookup[name]}))
 	}
-	if truthy(options["onCrit"]) {
-		mods = append(mods, mod("ExtraSkillMod", "LIST", Tag{"mod": mod("SkillData", "LIST", Tag{"key": "triggerOnCrit", "value": true})}, Tag{"type": "SkillId", "skillId": gemIdLookup[name]}))
+	if options.OnCrit {
+		mods = append(mods, mod("ExtraSkillMod", List, ModRef{Mod: mod("SkillData", List, DataRef{Key: "triggerOnCrit", Value: Bool(true)})}, &SkillIDTag{SkillID: gemIdLookup[name]}))
 	}
 	return mods
 }
@@ -131,7 +132,7 @@ func condenseName(s string) string {
 }
 
 // extraSupport — ModParser.lua:2072.
-func extraSupport(name string, level any, slotArg ...string) any {
+func extraSupport(name string, level float64, slotArg ...string) []*Mod {
 	slot := ""
 	hasSlot := len(slotArg) > 0
 	if hasSlot {
@@ -158,25 +159,24 @@ func extraSupport(name string, level any, slotArg ...string) any {
 	if !ok {
 		return nil
 	}
+	socketed := &SlotTag{SlotKind: TagSocketedIn, SlotName: slot}
 	if g, resolved := supportGemResolve[skillId]; resolved {
-		mods := []any{mod("ExtraSupport", "LIST", Tag{"skillId": g.grantedEffectId, "level": toNum(level)}, Tag{"type": "SocketedIn", "slotName": slot})}
+		mods := []*Mod{mod("ExtraSupport", List, SkillRef{SkillID: g.grantedEffectId, Level: opt(level)}, socketed)}
 		if g.hasSecondary {
 			if g.secondarySupport {
-				mods = append(mods, mod("ExtraSupport", "LIST", Tag{"skillId": g.secondaryGrantedEffectId, "level": toNum(level)}, Tag{"type": "SocketedIn", "slotName": slot}))
+				mods = append(mods, mod("ExtraSupport", List, SkillRef{SkillID: g.secondaryGrantedEffectId, Level: opt(level)}, socketed.Clone()))
 			} else {
-				mods = append(mods, mod("ExtraSkill", "LIST", Tag{"skillId": g.secondaryGrantedEffectId, "level": toNum(level)}))
+				mods = append(mods, mod("ExtraSkill", List, SkillRef{SkillID: g.secondaryGrantedEffectId, Level: opt(level)}))
 			}
 		}
 		return mods
 	}
-	return []any{
-		mod("ExtraSupport", "LIST", Tag{"skillId": skillId, "level": toNum(level)}, Tag{"type": "SocketedIn", "slotName": slot}),
-	}
+	return []*Mod{mod("ExtraSupport", List, SkillRef{SkillID: skillId, Level: opt(level)}, socketed)}
 }
 
 // explodeFunc — ModParser.lua:2106.
-func explodeFunc(chance float64, amount, typ string, tags ...any) any {
-	amountNumber, ok := tonumber(amount)
+func explodeFunc(chance float64, amount, typ string, tags ...Tag) []*Mod {
+	amountNumber, ok := util.Tonumber(amount)
 	if !ok {
 		if amount == "tenth" {
 			amountNumber, ok = 10, true
@@ -187,48 +187,15 @@ func explodeFunc(chance float64, amount, typ string, tags ...any) any {
 	if !ok {
 		return nil
 	}
-	args := append([]any{}, tags...)
-	explode := mod("ExplodeMod", "LIST", Tag{
-		"type": firstToUpper(typ), "chance": chance / 100,
-		"amount": amountNumber, "keyOfScaledMod": "chance",
-	}, args...)
-	return []any{explode, flag("CanExplode")}
+	explode := mod("ExplodeMod", List, ExplodeRef{Type: firstToUpper(typ), Chance: chance / 100, Amount: amountNumber, KeyOfScaledMod: "chance"}, tags...)
+	return []*Mod{explode, flag("CanExplode")}
 }
 
 // m_huge mirrors Lua's math.huge.
 var m_huge = math.Inf(1)
 
-// truthy mirrors Lua truthiness: nil and false are false, all else true.
-func truthy(v any) bool {
-	if v == nil {
-		return false
-	}
-	if b, ok := v.(bool); ok {
-		return b
-	}
-	return true
-}
-
-// toNum mirrors Lua's implicit tonumber on values that may arrive as capture
-// strings or as numbers.
-func toNum(v any) float64 {
-	switch t := v.(type) {
-	case float64:
-		return t
-	case int:
-		return float64(t)
-	case string:
-		f, _ := tonumber(t)
-		return f
-	}
-	return 0
-}
-
-// gemIdOrNil mirrors indexing gemIdLookup in Lua: nil (an absent key in the
-// built table) instead of Go's zero string when the skill is unknown.
-func gemIdOrNil(name string) any {
-	if id, ok := gemIdLookup[name]; ok {
-		return id
-	}
-	return nil
+// gemIdOrNil mirrors indexing gemIdLookup in Lua: "" (the absent key the
+// serialisers omit) instead of a guessed id when the skill is unknown.
+func gemIdOrNil(name string) string {
+	return gemIdLookup[name]
 }

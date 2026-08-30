@@ -14,7 +14,8 @@ import (
 // initialisers (which Go orders by dependency, unlike init functions) build
 // them before the scan tables that read them.
 type skillListsT struct {
-	skillNames, preSkillNames, gemSpecials map[string]any
+	skillNames, preSkillNames map[string]*PatternEntry
+	gemSpecials               map[string]modsValue
 }
 
 var skillLists = buildSkillLists()
@@ -27,101 +28,101 @@ var preSkillNameList = skillLists.preSkillNames
 var gemSpecialMods = skillLists.gemSpecials
 
 func buildSkillLists() skillListsT {
-	skillNameList := map[string]any{}
-	preSkillNameList := map[string]any{}
-	gemSpecialMods := map[string]any{}
+	skillNameList := map[string]*PatternEntry{}
+	preSkillNameList := map[string]*PatternEntry{}
+	gemSpecialMods := map[string]modsValue{}
 	// ModParser.lua:6042 — the one literal entry. Sigh.
-	skillNameList[" corpse cremation "] = d(p("tag", Tag{"type": "SkillName", "skillName": "Cremation", "includeTransfigured": true}))
+	skillNameList[" corpse cremation "] = &PatternEntry{Tag: &SkillNameTag{SkillName: "Cremation", IncludeTransfigured: true}}
 
 	for _, g := range gemSkills {
 		skillName := g.name
 		// Keys built from names go into regex tables; QuoteMeta keeps a name
 		// with regex metacharacters literal (none exist today).
-		lower := regexp.QuoteMeta(asciiLower(skillName))
-		nameTag := Tag{"type": "SkillName", "skillName": skillName, "includeTransfigured": true}
+		lower := regexp.QuoteMeta(strings.ToLower(skillName))
+		// One shared tag table per skill, as the reference's local nameTag.
+		nameTag := &SkillNameTag{SkillName: skillName, IncludeTransfigured: true}
+		buffEffect := func() *PatternEntry {
+			return &PatternEntry{AddToSkill: nameTag, Tag: &GlobalEffectTag{EffectType: "Buff"}}
+		}
 
-		skillNameList[" "+lower+" "] = d(p("tag", nameTag))
-		preSkillNameList["^"+lower+" "] = d(p("tag", nameTag))
-		preSkillNameList["^"+lower+" has ?a? "] = d(p("tag", nameTag))
-		preSkillNameList["^"+lower+" deals "] = d(p("tag", nameTag))
-		preSkillNameList["^"+lower+" damage "] = d(p("tag", nameTag))
+		skillNameList[" "+lower+" "] = &PatternEntry{Tag: nameTag}
+		preSkillNameList["^"+lower+" "] = &PatternEntry{Tag: nameTag}
+		preSkillNameList["^"+lower+" has ?a? "] = &PatternEntry{Tag: nameTag}
+		preSkillNameList["^"+lower+" deals "] = &PatternEntry{Tag: nameTag}
+		preSkillNameList["^"+lower+" damage "] = &PatternEntry{Tag: nameTag}
 		if g.totem {
-			preSkillNameList["^"+lower+" totem deals "] = d(p("tag", nameTag))
-			preSkillNameList["^"+lower+" totem grants "] = d(p("addToSkill", nameTag), p("tag", Tag{"type": "GlobalEffect", "effectType": "Buff"}))
+			preSkillNameList["^"+lower+" totem deals "] = &PatternEntry{Tag: nameTag}
+			preSkillNameList["^"+lower+" totem grants "] = buffEffect()
 		}
 		if g.buff {
-			preSkillNameList["^"+lower+" grants "] = d(p("addToSkill", nameTag), p("tag", Tag{"type": "GlobalEffect", "effectType": "Buff"}))
-			preSkillNameList["^"+lower+" grants a?n? ?additional "] = d(p("addToSkill", nameTag), p("tag", Tag{"type": "GlobalEffect", "effectType": "Buff"}))
+			preSkillNameList["^"+lower+" grants "] = buffEffect()
+			preSkillNameList["^"+lower+" grants a?n? ?additional "] = buffEffect()
 		}
 		if g.auraOrHerald {
-			affected := Tag{"type": "Condition", "var": "AffectedBy" + strings.ReplaceAll(skillName, " ", "")}
-			skillNameList["while affected by "+lower] = d(p("tag", affected))
-			skillNameList["while using "+lower] = d(p("tag", affected))
+			affected := &CondTag{Var: "AffectedBy" + strings.ReplaceAll(skillName, " ", "")}
+			skillNameList["while affected by "+lower] = &PatternEntry{Tag: affected}
+			skillNameList["while using "+lower] = &PatternEntry{Tag: affected}
 		}
 		if g.curse {
-			skillNameList["if you've cast "+lower+" in the past ([0-9]+) seconds"] = d(p("tag", Tag{"type": "Condition", "var": "SelfCast" + condenseName(skillName)}))
+			skillNameList["if you've cast "+lower+" in the past ([0-9]+) seconds"] = &PatternEntry{Tag: &CondTag{Var: "SelfCast" + condenseName(skillName)}}
 		}
 		if g.mine {
-			gemSpecialMods["^"+lower+" has ([0-9]+)% increased throwing speed"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("MineLayingSpeed", "INC", c.n(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" has ([0-9]+)% increased throwing speed"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("MineLayingSpeed", Inc, c.v(1))}, nameTag)}
 			})
 		}
 		if g.trap {
-			gemSpecialMods["([0-9]+)% increased "+lower+" throwing speed"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("TrapThrowingSpeed", "INC", c.n(1))}, nameTag)}
+			gemSpecialMods["([0-9]+)% increased "+lower+" throwing speed"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("TrapThrowingSpeed", Inc, c.v(1))}, nameTag)}
 			})
 		}
 		if g.chaining {
-			gemSpecialMods["^"+lower+" chains an additional time"] = []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ChainCountMax", "BASE", 1)}, nameTag)}
-			gemSpecialMods["^"+lower+" chains an additional ([0-9]+) times"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ChainCountMax", "BASE", c.n(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" chains an additional time"] = modList{mod("ExtraSkillMod", List, ModRef{Mod: mod("ChainCountMax", Base, Num(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" chains an additional ([0-9]+) times"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("ChainCountMax", Base, c.v(1))}, nameTag)}
 			})
-			gemSpecialMods["^"+lower+" chains ([0-9]+) additional times"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ChainCountMax", "BASE", c.n(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" chains ([0-9]+) additional times"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("ChainCountMax", Base, c.v(1))}, nameTag)}
 			})
 		}
 		if g.bow {
-			gemSpecialMods["^"+lower+" fires an additional arrow"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ProjectileCount", "BASE", 1, nil, 0, KeywordFlag.Arrow)}, nameTag)}
+			gemSpecialMods["^"+lower+" fires an additional arrow"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: modf("ProjectileCount", Base, Num(1), FlagNone, KeywordArrow)}, nameTag)}
 			})
-			gemSpecialMods["^"+lower+" fires ([0-9]+) additional arrows?"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ProjectileCount", "BASE", c.n(1), nil, 0, KeywordFlag.Arrow)}, nameTag)}
+			gemSpecialMods["^"+lower+" fires ([0-9]+) additional arrows?"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: modf("ProjectileCount", Base, c.v(1), FlagNone, KeywordArrow)}, nameTag)}
 			})
 		}
 		if g.projectile {
-			gemSpecialMods["^"+lower+" pierces an additional target"] = []any{mod("PierceCount", "BASE", 1, nameTag)}
-			gemSpecialMods["^"+lower+" pierces ([0-9]+) additional targets?"] = fnGem(func(c caps) any {
-				return []any{mod("PierceCount", "BASE", c.n(1), nameTag)}
+			gemSpecialMods["^"+lower+" pierces an additional target"] = modList{mod("PierceCount", Base, Num(1), nameTag)}
+			gemSpecialMods["^"+lower+" pierces ([0-9]+) additional targets?"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("PierceCount", Base, c.v(1), nameTag)}
 			})
 		}
 		if g.bow || g.projectile {
-			gemSpecialMods["^"+lower+" fires an additional projectile"] = []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ProjectileCount", "BASE", 1)}, nameTag)}
-			gemSpecialMods["^"+lower+" fires ([0-9]+) additional projectiles"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ProjectileCount", "BASE", c.n(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" fires an additional projectile"] = modList{mod("ExtraSkillMod", List, ModRef{Mod: mod("ProjectileCount", Base, Num(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" fires ([0-9]+) additional projectiles"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("ProjectileCount", Base, c.v(1))}, nameTag)}
 			})
-			gemSpecialMods["^"+lower+" fires ([0-9]+) additional shard projectiles"] = fnGem(func(c caps) any {
-				return []any{mod("ExtraSkillMod", "LIST", Tag{"mod": mod("ProjectileCount", "BASE", c.n(1))}, nameTag)}
+			gemSpecialMods["^"+lower+" fires ([0-9]+) additional shard projectiles"] = modFn(func(c caps) []*Mod {
+				return []*Mod{mod("ExtraSkillMod", List, ModRef{Mod: mod("ProjectileCount", Base, c.v(1))}, nameTag)}
 			})
 		}
 	}
 	return skillListsT{skillNames: skillNameList, preSkillNames: preSkillNameList, gemSpecials: gemSpecialMods}
 }
 
-// fnGem wraps a gem-loop closure; it exists so the loop above reads like the
-// reference while still producing the shared fn type.
-func fnGem(f func(c caps) any) fn { return fn(f) }
-
 // keystoneSpecialMods — ModParser.lua:5881-5886.
-func keystoneSpecialMods() map[string]any {
-	out := map[string]any{}
+func keystoneSpecialMods() map[string]modsValue {
+	out := map[string]modsValue{}
 	for _, name := range keystoneNames {
-		out[asciiLower(name)] = []any{
-			mod("Keystone", "LIST", name),
+		out[strings.ToLower(name)] = modList{
+			mod("Keystone", List, Str(name)),
 			flag("Condition:Have" + condenseName(firstToUpper(name))),
 		}
 	}
 	for _, name := range clusterJewelKeystones {
-		out[asciiLower(name)] = []any{mod("Keystone", "LIST", name)}
+		out[strings.ToLower(name)] = modList{mod("Keystone", List, Str(name))}
 	}
 	return out
 }
@@ -130,16 +131,16 @@ func keystoneSpecialMods() map[string]any {
 // jewel enchants, notables and keystones.
 var clusterJewelSkills = buildClusterJewelSkills()
 
-func buildClusterJewelSkills() map[string]any {
-	out := map[string]any{}
+func buildClusterJewelSkills() map[string][]*Mod {
+	out := map[string][]*Mod{}
 	for line, skillId := range clusterJewelSkillEnchants {
-		out[line] = []any{mod("JewelData", "LIST", Tag{"key": "clusterJewelSkill", "value": skillId})}
+		out[line] = []*Mod{mod("JewelData", List, DataRef{Key: "clusterJewelSkill", Value: Str(skillId)})}
 	}
 	for _, notable := range clusterJewelNotables {
-		out["1 added passive skill is "+asciiLower(notable)] = []any{mod("ClusterJewelNotable", "LIST", notable)}
+		out["1 added passive skill is "+strings.ToLower(notable)] = []*Mod{mod("ClusterJewelNotable", List, Str(notable))}
 	}
 	for _, keystone := range clusterJewelKeystones {
-		out["adds "+asciiLower(keystone)] = []any{mod("JewelData", "LIST", Tag{"key": "clusterJewelKeystone", "value": keystone})}
+		out["adds "+strings.ToLower(keystone)] = []*Mod{mod("JewelData", List, DataRef{Key: "clusterJewelKeystone", Value: Str(keystone)})}
 	}
 	return out
 }

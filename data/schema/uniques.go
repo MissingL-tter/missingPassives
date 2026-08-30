@@ -5,6 +5,8 @@ package schema
 // resolved to mod text, ordered by stat order.
 type Uniques map[string]UniqueFile
 
+func (Uniques) isDocument() {}
+
 type UniqueFile struct {
 	Sections []UniqueSection `json:"sections"`
 }

@@ -1,197 +1,364 @@
 package modparser
 
-// Transcribed from src/Data/Global.lua. Kept as fields on package-level structs
-// so hand-ported parser code reads exactly like the reference: ModFlag.Attack,
-// KeywordFlag.Aura, SkillType.Banner.
+// Transcribed from src/Data/Global.lua: the modifier bit flags and the
+// active skill type ids, as named types so the two flag sets cannot be
+// mixed by accident.
 
 // ModFlag classifies which damage calculations a modifier participates in.
-var ModFlag = struct {
+type ModFlag uint64
+
+const (
+	FlagNone ModFlag = 0
+
 	// Damage modes
-	Attack, Spell, Hit, Dot, Cast int64
+	FlagAttack ModFlag = 0x00000001
+	FlagSpell  ModFlag = 0x00000002
+	FlagHit    ModFlag = 0x00000004
+	FlagDot    ModFlag = 0x00000008
+	FlagCast   ModFlag = 0x00000010
+
 	// Damage sources
-	Melee, Area, Projectile, SourceMask, Ailment, MeleeHit, Weapon int64
+	FlagMelee      ModFlag = 0x00000100
+	FlagArea       ModFlag = 0x00000200
+	FlagProjectile ModFlag = 0x00000400
+	FlagSourceMask ModFlag = 0x00000600
+	FlagAilment    ModFlag = 0x00000800
+	FlagMeleeHit   ModFlag = 0x00001000
+	FlagWeapon     ModFlag = 0x00002000
+
 	// Weapon types
-	Axe, Bow, Claw, Dagger, Mace, Staff, Sword, Wand, Unarmed, Fishing int64
+	FlagAxe     ModFlag = 0x00010000
+	FlagBow     ModFlag = 0x00020000
+	FlagClaw    ModFlag = 0x00040000
+	FlagDagger  ModFlag = 0x00080000
+	FlagMace    ModFlag = 0x00100000
+	FlagStaff   ModFlag = 0x00200000
+	FlagSword   ModFlag = 0x00400000
+	FlagWand    ModFlag = 0x00800000
+	FlagUnarmed ModFlag = 0x01000000
+	FlagFishing ModFlag = 0x02000000
+
 	// Weapon classes
-	WeaponMelee, WeaponRanged, Weapon1H, Weapon2H, WeaponMask int64
-}{
-	Attack: 0x00000001,
-	Spell:  0x00000002,
-	Hit:    0x00000004,
-	Dot:    0x00000008,
-	Cast:   0x00000010,
-
-	Melee:      0x00000100,
-	Area:       0x00000200,
-	Projectile: 0x00000400,
-	SourceMask: 0x00000600,
-	Ailment:    0x00000800,
-	MeleeHit:   0x00001000,
-	Weapon:     0x00002000,
-
-	Axe:     0x00010000,
-	Bow:     0x00020000,
-	Claw:    0x00040000,
-	Dagger:  0x00080000,
-	Mace:    0x00100000,
-	Staff:   0x00200000,
-	Sword:   0x00400000,
-	Wand:    0x00800000,
-	Unarmed: 0x01000000,
-	Fishing: 0x02000000,
-
-	WeaponMelee:  0x04000000,
-	WeaponRanged: 0x08000000,
-	Weapon1H:     0x10000000,
-	Weapon2H:     0x20000000,
-	WeaponMask:   0x2FFF0000,
-}
+	FlagWeaponMelee  ModFlag = 0x04000000
+	FlagWeaponRanged ModFlag = 0x08000000
+	FlagWeapon1H     ModFlag = 0x10000000
+	FlagWeapon2H     ModFlag = 0x20000000
+	FlagWeaponMask   ModFlag = 0x2FFF0000
+)
 
 // KeywordFlag classifies modifiers by skill keyword.
-var KeywordFlag = struct {
+type KeywordFlag uint64
+
+const (
+	KeywordNone KeywordFlag = 0
+
 	// Skill keywords
-	Aura, Curse, Warcry, Movement, Physical, Fire, Cold, Lightning, Chaos, Vaal, Bow, Arrow int64
+	KeywordAura      KeywordFlag = 0x00000001
+	KeywordCurse     KeywordFlag = 0x00000002
+	KeywordWarcry    KeywordFlag = 0x00000004
+	KeywordMovement  KeywordFlag = 0x00000008
+	KeywordPhysical  KeywordFlag = 0x00000010
+	KeywordFire      KeywordFlag = 0x00000020
+	KeywordCold      KeywordFlag = 0x00000040
+	KeywordLightning KeywordFlag = 0x00000080
+	KeywordChaos     KeywordFlag = 0x00000100
+	KeywordVaal      KeywordFlag = 0x00000200
+	KeywordBow       KeywordFlag = 0x00000400
+	KeywordArrow     KeywordFlag = 0x00000800
+
 	// Skill types
-	Trap, Mine, Totem, Minion, Attack, Spell, Hit, Ailment, Brand int64
+	KeywordTrap    KeywordFlag = 0x00001000
+	KeywordMine    KeywordFlag = 0x00002000
+	KeywordTotem   KeywordFlag = 0x00004000
+	KeywordMinion  KeywordFlag = 0x00008000
+	KeywordAttack  KeywordFlag = 0x00010000
+	KeywordSpell   KeywordFlag = 0x00020000
+	KeywordHit     KeywordFlag = 0x00040000
+	KeywordAilment KeywordFlag = 0x00080000
+	KeywordBrand   KeywordFlag = 0x00100000
+
 	// Other effects
-	Poison, Bleed, Ignite int64
+	KeywordPoison KeywordFlag = 0x00200000
+	KeywordBleed  KeywordFlag = 0x00400000
+	KeywordIgnite KeywordFlag = 0x00800000
+
 	// Damage over Time types
-	PhysicalDot, LightningDot, ColdDot, FireDot, ChaosDot int64
+	KeywordPhysicalDot  KeywordFlag = 0x01000000
+	KeywordLightningDot KeywordFlag = 0x02000000
+	KeywordColdDot      KeywordFlag = 0x04000000
+	KeywordFireDot      KeywordFlag = 0x08000000
+	KeywordChaosDot     KeywordFlag = 0x10000000
+
 	// Match *all* flags instead of any
-	MatchAll int64
-}{
-	Aura:      0x00000001,
-	Curse:     0x00000002,
-	Warcry:    0x00000004,
-	Movement:  0x00000008,
-	Physical:  0x00000010,
-	Fire:      0x00000020,
-	Cold:      0x00000040,
-	Lightning: 0x00000080,
-	Chaos:     0x00000100,
-	Vaal:      0x00000200,
-	Bow:       0x00000400,
-	Arrow:     0x00000800,
+	KeywordMatchAll KeywordFlag = 0x40000000
+)
 
-	Trap:    0x00001000,
-	Mine:    0x00002000,
-	Totem:   0x00004000,
-	Minion:  0x00008000,
-	Attack:  0x00010000,
-	Spell:   0x00020000,
-	Hit:     0x00040000,
-	Ailment: 0x00080000,
-	Brand:   0x00100000,
+// SkillTypeID is an active skill type from ActiveSkillType.dat.
+type SkillTypeID int64
 
-	Poison: 0x00200000,
-	Bleed:  0x00400000,
-	Ignite: 0x00800000,
+const (
+	SkillTypeAttack                               SkillTypeID = 1
+	SkillTypeSpell                                SkillTypeID = 2
+	SkillTypeProjectile                           SkillTypeID = 3
+	SkillTypeDualWieldOnly                        SkillTypeID = 4
+	SkillTypeBuff                                 SkillTypeID = 5
+	SkillTypeMinion                               SkillTypeID = 6
+	SkillTypeDamage                               SkillTypeID = 7
+	SkillTypeArea                                 SkillTypeID = 8
+	SkillTypeDuration                             SkillTypeID = 9
+	SkillTypeRequiresShield                       SkillTypeID = 10
+	SkillTypeProjectileSpeed                      SkillTypeID = 11
+	SkillTypeHasReservation                       SkillTypeID = 12
+	SkillTypeReservationBecomesCost               SkillTypeID = 13
+	SkillTypeTrappable                            SkillTypeID = 14
+	SkillTypeTotemable                            SkillTypeID = 15
+	SkillTypeMineable                             SkillTypeID = 16
+	SkillTypeElementalStatus                      SkillTypeID = 17
+	SkillTypeMinionsCanExplode                    SkillTypeID = 18
+	SkillTypeChains                               SkillTypeID = 19
+	SkillTypeMelee                                SkillTypeID = 20
+	SkillTypeMeleeSingleTarget                    SkillTypeID = 21
+	SkillTypeMulticastable                        SkillTypeID = 22
+	SkillTypeTotemCastsAlone                      SkillTypeID = 23
+	SkillTypeMultistrikeable                      SkillTypeID = 24
+	SkillTypeCausesBurning                        SkillTypeID = 25
+	SkillTypeSummonsTotem                         SkillTypeID = 26
+	SkillTypeTotemCastsWhenNotDetached            SkillTypeID = 27
+	SkillTypePhysical                             SkillTypeID = 28
+	SkillTypeFire                                 SkillTypeID = 29
+	SkillTypeCold                                 SkillTypeID = 30
+	SkillTypeLightning                            SkillTypeID = 31
+	SkillTypeTriggerable                          SkillTypeID = 32
+	SkillTypeTrapped                              SkillTypeID = 33
+	SkillTypeMovement                             SkillTypeID = 34
+	SkillTypeDamageOverTime                       SkillTypeID = 35
+	SkillTypeRemoteMined                          SkillTypeID = 36
+	SkillTypeTriggered                            SkillTypeID = 37
+	SkillTypeVaal                                 SkillTypeID = 38
+	SkillTypeAura                                 SkillTypeID = 39
+	SkillTypeCanTargetUnusableCorpse              SkillTypeID = 40
+	SkillTypeRangedAttack                         SkillTypeID = 41
+	SkillTypeChaos                                SkillTypeID = 42
+	SkillTypeFixedSpeedProjectile                 SkillTypeID = 43
+	SkillTypeThresholdJewelArea                   SkillTypeID = 44
+	SkillTypeThresholdJewelProjectile             SkillTypeID = 45
+	SkillTypeThresholdJewelDuration               SkillTypeID = 46
+	SkillTypeThresholdJewelRangedAttack           SkillTypeID = 47
+	SkillTypeChannel                              SkillTypeID = 48
+	SkillTypeDegenOnlySpellDamage                 SkillTypeID = 49
+	SkillTypeInbuiltTrigger                       SkillTypeID = 50
+	SkillTypeGolem                                SkillTypeID = 51
+	SkillTypeHerald                               SkillTypeID = 52
+	SkillTypeAuraAffectsEnemies                   SkillTypeID = 53
+	SkillTypeNoRuthless                           SkillTypeID = 54
+	SkillTypeThresholdJewelSpellDamage            SkillTypeID = 55
+	SkillTypeCascadable                           SkillTypeID = 56
+	SkillTypeProjectilesFromUser                  SkillTypeID = 57
+	SkillTypeMirageArcherCanUse                   SkillTypeID = 58
+	SkillTypeProjectileSpiral                     SkillTypeID = 59
+	SkillTypeSingleMainProjectile                 SkillTypeID = 60
+	SkillTypeMinionsPersistWhenSkillRemoved       SkillTypeID = 61
+	SkillTypeProjectileNumber                     SkillTypeID = 62
+	SkillTypeWarcry                               SkillTypeID = 63
+	SkillTypeInstant                              SkillTypeID = 64
+	SkillTypeBrand                                SkillTypeID = 65
+	SkillTypeDestroysCorpse                       SkillTypeID = 66
+	SkillTypeNonHitChill                          SkillTypeID = 67
+	SkillTypeChillingArea                         SkillTypeID = 68
+	SkillTypeAppliesCurse                         SkillTypeID = 69
+	SkillTypeCanRapidFire                         SkillTypeID = 70
+	SkillTypeAuraDuration                         SkillTypeID = 71
+	SkillTypeAreaSpell                            SkillTypeID = 72
+	SkillTypeOR                                   SkillTypeID = 73
+	SkillTypeAND                                  SkillTypeID = 74
+	SkillTypeNOT                                  SkillTypeID = 75
+	SkillTypeAppliesMaim                          SkillTypeID = 76
+	SkillTypeCreatesMinion                        SkillTypeID = 77
+	SkillTypeGuard                                SkillTypeID = 78
+	SkillTypeTravel                               SkillTypeID = 79
+	SkillTypeBlink                                SkillTypeID = 80
+	SkillTypeCanHaveBlessing                      SkillTypeID = 81
+	SkillTypeProjectilesNotFromUser               SkillTypeID = 82
+	SkillTypeAttackInPlaceIsDefault               SkillTypeID = 83
+	SkillTypeNova                                 SkillTypeID = 84
+	SkillTypeInstantNoRepeatWhenHeld              SkillTypeID = 85
+	SkillTypeInstantShiftAttackForLeftMouse       SkillTypeID = 86
+	SkillTypeAuraNotOnCaster                      SkillTypeID = 87
+	SkillTypeBanner                               SkillTypeID = 88
+	SkillTypeRain                                 SkillTypeID = 89
+	SkillTypeCooldown                             SkillTypeID = 90
+	SkillTypeThresholdJewelChaining               SkillTypeID = 91
+	SkillTypeSlam                                 SkillTypeID = 92
+	SkillTypeStance                               SkillTypeID = 93
+	SkillTypeNonRepeatable                        SkillTypeID = 94
+	SkillTypeOtherThingUsesSkill                  SkillTypeID = 95
+	SkillTypeSteel                                SkillTypeID = 96
+	SkillTypeHex                                  SkillTypeID = 97
+	SkillTypeMark                                 SkillTypeID = 98
+	SkillTypeAegis                                SkillTypeID = 99
+	SkillTypeOrb                                  SkillTypeID = 100
+	SkillTypeKillNoDamageModifiers                SkillTypeID = 101
+	SkillTypeRandomElement                        SkillTypeID = 102
+	SkillTypeLateConsumeCooldown                  SkillTypeID = 103
+	SkillTypeArcane                               SkillTypeID = 104
+	SkillTypeFixedCastTime                        SkillTypeID = 105
+	SkillTypeRequiresOffHandNotWeapon             SkillTypeID = 106
+	SkillTypeLink                                 SkillTypeID = 107
+	SkillTypeBlessing                             SkillTypeID = 108
+	SkillTypeZeroReservation                      SkillTypeID = 109
+	SkillTypeDynamicCooldown                      SkillTypeID = 110
+	SkillTypeMicrotransaction                     SkillTypeID = 111
+	SkillTypeOwnerCannotUse                       SkillTypeID = 112
+	SkillTypeProjectilesNumberModifiersNotApplied SkillTypeID = 113
+	SkillTypeTotemsAreBallistae                   SkillTypeID = 114
+	SkillTypeSkillGrantedBySupport                SkillTypeID = 115
+	SkillTypePreventHexTransfer                   SkillTypeID = 116
+	SkillTypeMinionsAreUndamagable                SkillTypeID = 117
+	SkillTypeInnateTrauma                         SkillTypeID = 118
+	SkillTypeDualWieldRequiresDifferentTypes      SkillTypeID = 119
+	SkillTypeNoVolley                             SkillTypeID = 120
+	SkillTypeRetaliation                          SkillTypeID = 121
+	SkillTypeNeverExertable                       SkillTypeID = 122
+	SkillTypeDisallowTriggerSupports              SkillTypeID = 123
+	SkillTypeProjectileCannotReturn               SkillTypeID = 124
+	SkillTypeOffering                             SkillTypeID = 125
+	SkillTypeSupportedByBane                      SkillTypeID = 126
+	SkillTypeWandAttack                           SkillTypeID = 127
+	SkillTypeGainsIntensity                       SkillTypeID = 128
+	SkillTypeCreatesSentinelMinion                SkillTypeID = 129
+	SkillTypeSupportedByAutoExertion              SkillTypeID = 130
+	SkillTypeSupportedByCrabTotem                 SkillTypeID = 131
+	SkillTypeSupportedBySpellTotem                SkillTypeID = 132
+	SkillTypeCreatesCorpse                        SkillTypeID = 133
+	SkillTypeRequiresStaff                        SkillTypeID = 134
+	SkillTypePact                                 SkillTypeID = 135
+)
 
-	PhysicalDot:  0x01000000,
-	LightningDot: 0x02000000,
-	ColdDot:      0x04000000,
-	FireDot:      0x08000000,
-	ChaosDot:     0x10000000,
-
-	MatchAll: 0x40000000,
+// ModFlagByName is ModFlag[name]: the flag under its Global.lua key.
+var ModFlagByName = map[string]ModFlag{
+	"Attack": FlagAttack, "Spell": FlagSpell, "Hit": FlagHit, "Dot": FlagDot, "Cast": FlagCast,
+	"Melee": FlagMelee, "Area": FlagArea, "Projectile": FlagProjectile, "SourceMask": FlagSourceMask,
+	"Ailment": FlagAilment, "MeleeHit": FlagMeleeHit, "Weapon": FlagWeapon,
+	"Axe": FlagAxe, "Bow": FlagBow, "Claw": FlagClaw, "Dagger": FlagDagger, "Mace": FlagMace,
+	"Staff": FlagStaff, "Sword": FlagSword, "Wand": FlagWand, "Unarmed": FlagUnarmed, "Fishing": FlagFishing,
+	"WeaponMelee": FlagWeaponMelee, "WeaponRanged": FlagWeaponRanged, "Weapon1H": FlagWeapon1H,
+	"Weapon2H": FlagWeapon2H, "WeaponMask": FlagWeaponMask,
 }
 
-// SkillType enumerates active skill types from ActiveSkillType.dat.
-var SkillType = struct {
-	Attack, Spell, Projectile, DualWieldOnly, Buff, Minion, Damage, Area, Duration,
-	RequiresShield, ProjectileSpeed, HasReservation, ReservationBecomesCost, Trappable,
-	Totemable, Mineable, ElementalStatus, MinionsCanExplode, Chains, Melee,
-	MeleeSingleTarget, Multicastable, TotemCastsAlone, Multistrikeable, CausesBurning,
-	SummonsTotem, TotemCastsWhenNotDetached, Physical, Fire, Cold, Lightning,
-	Triggerable, Trapped, Movement, DamageOverTime, RemoteMined, Triggered, Vaal, Aura,
-	CanTargetUnusableCorpse, RangedAttack, Chaos, FixedSpeedProjectile,
-	ThresholdJewelArea, ThresholdJewelProjectile, ThresholdJewelDuration,
-	ThresholdJewelRangedAttack, Channel, DegenOnlySpellDamage, InbuiltTrigger, Golem,
-	Herald, AuraAffectsEnemies, NoRuthless, ThresholdJewelSpellDamage, Cascadable,
-	ProjectilesFromUser, MirageArcherCanUse, ProjectileSpiral, SingleMainProjectile,
-	MinionsPersistWhenSkillRemoved, ProjectileNumber, Warcry, Instant, Brand,
-	DestroysCorpse, NonHitChill, ChillingArea, AppliesCurse, CanRapidFire, AuraDuration,
-	AreaSpell, OR, AND, NOT, AppliesMaim, CreatesMinion, Guard, Travel, Blink,
-	CanHaveBlessing, ProjectilesNotFromUser, AttackInPlaceIsDefault, Nova,
-	InstantNoRepeatWhenHeld, InstantShiftAttackForLeftMouse, AuraNotOnCaster, Banner,
-	Rain, Cooldown, ThresholdJewelChaining, Slam, Stance, NonRepeatable,
-	OtherThingUsesSkill, Steel, Hex, Mark, Aegis, Orb, KillNoDamageModifiers,
-	RandomElement, LateConsumeCooldown, Arcane, FixedCastTime, RequiresOffHandNotWeapon,
-	Link, Blessing, ZeroReservation, DynamicCooldown, Microtransaction, OwnerCannotUse,
-	ProjectilesNumberModifiersNotApplied, TotemsAreBallistae, SkillGrantedBySupport,
-	PreventHexTransfer, MinionsAreUndamagable, InnateTrauma,
-	DualWieldRequiresDifferentTypes, NoVolley, Retaliation, NeverExertable,
-	DisallowTriggerSupports, ProjectileCannotReturn, Offering, SupportedByBane,
-	WandAttack, GainsIntensity, CreatesSentinelMinion, SupportedByAutoExertion,
-	SupportedByCrabTotem, SupportedBySpellTotem, CreatesCorpse, RequiresStaff, Pact int64
-}{
-	Attack: 1, Spell: 2, Projectile: 3, DualWieldOnly: 4, Buff: 5, Minion: 6,
-	Damage: 7, Area: 8, Duration: 9, RequiresShield: 10, ProjectileSpeed: 11,
-	HasReservation: 12, ReservationBecomesCost: 13, Trappable: 14, Totemable: 15,
-	Mineable: 16, ElementalStatus: 17, MinionsCanExplode: 18, Chains: 19, Melee: 20,
-	MeleeSingleTarget: 21, Multicastable: 22, TotemCastsAlone: 23, Multistrikeable: 24,
-	CausesBurning: 25, SummonsTotem: 26, TotemCastsWhenNotDetached: 27, Physical: 28,
-	Fire: 29, Cold: 30, Lightning: 31, Triggerable: 32, Trapped: 33, Movement: 34,
-	DamageOverTime: 35, RemoteMined: 36, Triggered: 37, Vaal: 38, Aura: 39,
-	CanTargetUnusableCorpse: 40, RangedAttack: 41, Chaos: 42, FixedSpeedProjectile: 43,
-	ThresholdJewelArea: 44, ThresholdJewelProjectile: 45, ThresholdJewelDuration: 46,
-	ThresholdJewelRangedAttack: 47, Channel: 48, DegenOnlySpellDamage: 49,
-	InbuiltTrigger: 50, Golem: 51, Herald: 52, AuraAffectsEnemies: 53, NoRuthless: 54,
-	ThresholdJewelSpellDamage: 55, Cascadable: 56, ProjectilesFromUser: 57,
-	MirageArcherCanUse: 58, ProjectileSpiral: 59, SingleMainProjectile: 60,
-	MinionsPersistWhenSkillRemoved: 61, ProjectileNumber: 62, Warcry: 63, Instant: 64,
-	Brand: 65, DestroysCorpse: 66, NonHitChill: 67, ChillingArea: 68, AppliesCurse: 69,
-	CanRapidFire: 70, AuraDuration: 71, AreaSpell: 72, OR: 73, AND: 74, NOT: 75,
-	AppliesMaim: 76, CreatesMinion: 77, Guard: 78, Travel: 79, Blink: 80,
-	CanHaveBlessing: 81, ProjectilesNotFromUser: 82, AttackInPlaceIsDefault: 83,
-	Nova: 84, InstantNoRepeatWhenHeld: 85, InstantShiftAttackForLeftMouse: 86,
-	AuraNotOnCaster: 87, Banner: 88, Rain: 89, Cooldown: 90, ThresholdJewelChaining: 91,
-	Slam: 92, Stance: 93, NonRepeatable: 94, OtherThingUsesSkill: 95, Steel: 96,
-	Hex: 97, Mark: 98, Aegis: 99, Orb: 100, KillNoDamageModifiers: 101,
-	RandomElement: 102, LateConsumeCooldown: 103, Arcane: 104, FixedCastTime: 105,
-	RequiresOffHandNotWeapon: 106, Link: 107, Blessing: 108, ZeroReservation: 109,
-	DynamicCooldown: 110, Microtransaction: 111, OwnerCannotUse: 112,
-	ProjectilesNumberModifiersNotApplied: 113, TotemsAreBallistae: 114,
-	SkillGrantedBySupport: 115, PreventHexTransfer: 116, MinionsAreUndamagable: 117,
-	InnateTrauma: 118, DualWieldRequiresDifferentTypes: 119, NoVolley: 120,
-	Retaliation: 121, NeverExertable: 122, DisallowTriggerSupports: 123,
-	ProjectileCannotReturn: 124, Offering: 125, SupportedByBane: 126, WandAttack: 127,
-	GainsIntensity: 128, CreatesSentinelMinion: 129, SupportedByAutoExertion: 130,
-	SupportedByCrabTotem: 131, SupportedBySpellTotem: 132, CreatesCorpse: 133,
-	RequiresStaff: 134, Pact: 135,
+// KeywordFlagByName is KeywordFlag[name].
+var KeywordFlagByName = map[string]KeywordFlag{
+	"Aura": KeywordAura, "Curse": KeywordCurse, "Warcry": KeywordWarcry, "Movement": KeywordMovement,
+	"Physical": KeywordPhysical, "Fire": KeywordFire, "Cold": KeywordCold, "Lightning": KeywordLightning,
+	"Chaos": KeywordChaos, "Vaal": KeywordVaal, "Bow": KeywordBow, "Arrow": KeywordArrow,
+	"Trap": KeywordTrap, "Mine": KeywordMine, "Totem": KeywordTotem, "Minion": KeywordMinion,
+	"Attack": KeywordAttack, "Spell": KeywordSpell, "Hit": KeywordHit, "Ailment": KeywordAilment,
+	"Brand": KeywordBrand, "Poison": KeywordPoison, "Bleed": KeywordBleed, "Ignite": KeywordIgnite,
+	"PhysicalDot": KeywordPhysicalDot, "LightningDot": KeywordLightningDot, "ColdDot": KeywordColdDot,
+	"FireDot": KeywordFireDot, "ChaosDot": KeywordChaosDot, "MatchAll": KeywordMatchAll,
 }
 
-// modFlagNames and keywordFlagNames mirror iterating the ModFlag/KeywordFlag
-// tables with pairs(), as modLib.formatFlags does: every named flag whose bits
-// are wholly contained in a value contributes its name.
-var modFlagNames = map[string]int64{
-	"Attack": ModFlag.Attack, "Spell": ModFlag.Spell, "Hit": ModFlag.Hit,
-	"Dot": ModFlag.Dot, "Cast": ModFlag.Cast, "Melee": ModFlag.Melee,
-	"Area": ModFlag.Area, "Projectile": ModFlag.Projectile,
-	"SourceMask": ModFlag.SourceMask, "Ailment": ModFlag.Ailment,
-	"MeleeHit": ModFlag.MeleeHit, "Weapon": ModFlag.Weapon,
-	"Axe": ModFlag.Axe, "Bow": ModFlag.Bow, "Claw": ModFlag.Claw,
-	"Dagger": ModFlag.Dagger, "Mace": ModFlag.Mace, "Staff": ModFlag.Staff,
-	"Sword": ModFlag.Sword, "Wand": ModFlag.Wand, "Unarmed": ModFlag.Unarmed,
-	"Fishing": ModFlag.Fishing, "WeaponMelee": ModFlag.WeaponMelee,
-	"WeaponRanged": ModFlag.WeaponRanged, "Weapon1H": ModFlag.Weapon1H,
-	"Weapon2H": ModFlag.Weapon2H, "WeaponMask": ModFlag.WeaponMask,
+// SkillTypeByName is SkillType[name].
+var SkillTypeByName = map[string]SkillTypeID{
+	"Attack": SkillTypeAttack, "Spell": SkillTypeSpell, "Projectile": SkillTypeProjectile,
+	"DualWieldOnly": SkillTypeDualWieldOnly, "Buff": SkillTypeBuff, "Minion": SkillTypeMinion,
+	"Damage": SkillTypeDamage, "Area": SkillTypeArea, "Duration": SkillTypeDuration,
+	"RequiresShield": SkillTypeRequiresShield, "ProjectileSpeed": SkillTypeProjectileSpeed,
+	"HasReservation": SkillTypeHasReservation, "ReservationBecomesCost": SkillTypeReservationBecomesCost,
+	"Trappable": SkillTypeTrappable, "Totemable": SkillTypeTotemable, "Mineable": SkillTypeMineable,
+	"ElementalStatus": SkillTypeElementalStatus, "MinionsCanExplode": SkillTypeMinionsCanExplode,
+	"Chains": SkillTypeChains, "Melee": SkillTypeMelee, "MeleeSingleTarget": SkillTypeMeleeSingleTarget,
+	"Multicastable": SkillTypeMulticastable, "TotemCastsAlone": SkillTypeTotemCastsAlone,
+	"Multistrikeable": SkillTypeMultistrikeable, "CausesBurning": SkillTypeCausesBurning,
+	"SummonsTotem": SkillTypeSummonsTotem, "TotemCastsWhenNotDetached": SkillTypeTotemCastsWhenNotDetached,
+	"Physical": SkillTypePhysical, "Fire": SkillTypeFire, "Cold": SkillTypeCold, "Lightning": SkillTypeLightning,
+	"Triggerable": SkillTypeTriggerable, "Trapped": SkillTypeTrapped, "Movement": SkillTypeMovement,
+	"DamageOverTime": SkillTypeDamageOverTime, "RemoteMined": SkillTypeRemoteMined, "Triggered": SkillTypeTriggered,
+	"Vaal": SkillTypeVaal, "Aura": SkillTypeAura, "CanTargetUnusableCorpse": SkillTypeCanTargetUnusableCorpse,
+	"RangedAttack": SkillTypeRangedAttack, "Chaos": SkillTypeChaos, "FixedSpeedProjectile": SkillTypeFixedSpeedProjectile,
+	"ThresholdJewelArea": SkillTypeThresholdJewelArea, "ThresholdJewelProjectile": SkillTypeThresholdJewelProjectile,
+	"ThresholdJewelDuration": SkillTypeThresholdJewelDuration, "ThresholdJewelRangedAttack": SkillTypeThresholdJewelRangedAttack,
+	"Channel": SkillTypeChannel, "DegenOnlySpellDamage": SkillTypeDegenOnlySpellDamage, "InbuiltTrigger": SkillTypeInbuiltTrigger,
+	"Golem": SkillTypeGolem, "Herald": SkillTypeHerald, "AuraAffectsEnemies": SkillTypeAuraAffectsEnemies,
+	"NoRuthless": SkillTypeNoRuthless, "ThresholdJewelSpellDamage": SkillTypeThresholdJewelSpellDamage,
+	"Cascadable": SkillTypeCascadable, "ProjectilesFromUser": SkillTypeProjectilesFromUser,
+	"MirageArcherCanUse": SkillTypeMirageArcherCanUse, "ProjectileSpiral": SkillTypeProjectileSpiral,
+	"SingleMainProjectile": SkillTypeSingleMainProjectile, "MinionsPersistWhenSkillRemoved": SkillTypeMinionsPersistWhenSkillRemoved,
+	"ProjectileNumber": SkillTypeProjectileNumber, "Warcry": SkillTypeWarcry, "Instant": SkillTypeInstant,
+	"Brand": SkillTypeBrand, "DestroysCorpse": SkillTypeDestroysCorpse, "NonHitChill": SkillTypeNonHitChill,
+	"ChillingArea": SkillTypeChillingArea, "AppliesCurse": SkillTypeAppliesCurse, "CanRapidFire": SkillTypeCanRapidFire,
+	"AuraDuration": SkillTypeAuraDuration, "AreaSpell": SkillTypeAreaSpell, "OR": SkillTypeOR, "AND": SkillTypeAND,
+	"NOT": SkillTypeNOT, "AppliesMaim": SkillTypeAppliesMaim, "CreatesMinion": SkillTypeCreatesMinion,
+	"Guard": SkillTypeGuard, "Travel": SkillTypeTravel, "Blink": SkillTypeBlink, "CanHaveBlessing": SkillTypeCanHaveBlessing,
+	"ProjectilesNotFromUser": SkillTypeProjectilesNotFromUser, "AttackInPlaceIsDefault": SkillTypeAttackInPlaceIsDefault,
+	"Nova": SkillTypeNova, "InstantNoRepeatWhenHeld": SkillTypeInstantNoRepeatWhenHeld,
+	"InstantShiftAttackForLeftMouse": SkillTypeInstantShiftAttackForLeftMouse, "AuraNotOnCaster": SkillTypeAuraNotOnCaster,
+	"Banner": SkillTypeBanner, "Rain": SkillTypeRain, "Cooldown": SkillTypeCooldown,
+	"ThresholdJewelChaining": SkillTypeThresholdJewelChaining, "Slam": SkillTypeSlam, "Stance": SkillTypeStance,
+	"NonRepeatable": SkillTypeNonRepeatable, "OtherThingUsesSkill": SkillTypeOtherThingUsesSkill, "Steel": SkillTypeSteel,
+	"Hex": SkillTypeHex, "Mark": SkillTypeMark, "Aegis": SkillTypeAegis, "Orb": SkillTypeOrb,
+	"KillNoDamageModifiers": SkillTypeKillNoDamageModifiers, "RandomElement": SkillTypeRandomElement,
+	"LateConsumeCooldown": SkillTypeLateConsumeCooldown, "Arcane": SkillTypeArcane, "FixedCastTime": SkillTypeFixedCastTime,
+	"RequiresOffHandNotWeapon": SkillTypeRequiresOffHandNotWeapon, "Link": SkillTypeLink, "Blessing": SkillTypeBlessing,
+	"ZeroReservation": SkillTypeZeroReservation, "DynamicCooldown": SkillTypeDynamicCooldown,
+	"Microtransaction": SkillTypeMicrotransaction, "OwnerCannotUse": SkillTypeOwnerCannotUse,
+	"ProjectilesNumberModifiersNotApplied": SkillTypeProjectilesNumberModifiersNotApplied,
+	"TotemsAreBallistae":                   SkillTypeTotemsAreBallistae, "SkillGrantedBySupport": SkillTypeSkillGrantedBySupport,
+	"PreventHexTransfer": SkillTypePreventHexTransfer, "MinionsAreUndamagable": SkillTypeMinionsAreUndamagable,
+	"InnateTrauma": SkillTypeInnateTrauma, "DualWieldRequiresDifferentTypes": SkillTypeDualWieldRequiresDifferentTypes,
+	"NoVolley": SkillTypeNoVolley, "Retaliation": SkillTypeRetaliation, "NeverExertable": SkillTypeNeverExertable,
+	"DisallowTriggerSupports": SkillTypeDisallowTriggerSupports, "ProjectileCannotReturn": SkillTypeProjectileCannotReturn,
+	"Offering": SkillTypeOffering, "SupportedByBane": SkillTypeSupportedByBane, "WandAttack": SkillTypeWandAttack,
+	"GainsIntensity": SkillTypeGainsIntensity, "CreatesSentinelMinion": SkillTypeCreatesSentinelMinion,
+	"SupportedByAutoExertion": SkillTypeSupportedByAutoExertion, "SupportedByCrabTotem": SkillTypeSupportedByCrabTotem,
+	"SupportedBySpellTotem": SkillTypeSupportedBySpellTotem, "CreatesCorpse": SkillTypeCreatesCorpse,
+	"RequiresStaff": SkillTypeRequiresStaff, "Pact": SkillTypePact,
 }
 
-var keywordFlagNames = map[string]int64{
-	"Aura": KeywordFlag.Aura, "Curse": KeywordFlag.Curse,
-	"Warcry": KeywordFlag.Warcry, "Movement": KeywordFlag.Movement,
-	"Physical": KeywordFlag.Physical, "Fire": KeywordFlag.Fire,
-	"Cold": KeywordFlag.Cold, "Lightning": KeywordFlag.Lightning,
-	"Chaos": KeywordFlag.Chaos, "Vaal": KeywordFlag.Vaal,
-	"Bow": KeywordFlag.Bow, "Arrow": KeywordFlag.Arrow,
-	"Trap": KeywordFlag.Trap, "Mine": KeywordFlag.Mine,
-	"Totem": KeywordFlag.Totem, "Minion": KeywordFlag.Minion,
-	"Attack": KeywordFlag.Attack, "Spell": KeywordFlag.Spell,
-	"Hit": KeywordFlag.Hit, "Ailment": KeywordFlag.Ailment,
-	"Brand": KeywordFlag.Brand, "Poison": KeywordFlag.Poison,
-	"Bleed": KeywordFlag.Bleed, "Ignite": KeywordFlag.Ignite,
-	"PhysicalDot": KeywordFlag.PhysicalDot, "LightningDot": KeywordFlag.LightningDot,
-	"ColdDot": KeywordFlag.ColdDot, "FireDot": KeywordFlag.FireDot,
-	"ChaosDot": KeywordFlag.ChaosDot, "MatchAll": KeywordFlag.MatchAll,
+var skillTypeNames = func() map[SkillTypeID]string {
+	m := make(map[SkillTypeID]string, len(SkillTypeByName))
+	for name, id := range SkillTypeByName {
+		m[id] = name
+	}
+	return m
+}()
+
+// SkillTypeName is the inverse of SkillTypeByName; ok is false for an id
+// without a named constant.
+func SkillTypeName(id SkillTypeID) (name string, ok bool) {
+	name, ok = skillTypeNames[id]
+	return
+}
+
+// ModType is a modifier's aggregation kind (mod.type). The zero value is
+// "no type set" and formats as "".
+type ModType uint8
+
+const (
+	Base ModType = iota + 1
+	Inc
+	More
+	Flag
+	Override
+	List
+	Max
+	Min
+	Chance   // HitsInvert*ResChance mods (special.go)
+	Dummy    // the "Dummy" carrier mod (special.go)
+	FlagTypo // the reference's mixed-case "Flag": CanNotUseItem mods and their item-disabler query
+)
+
+var modTypeNames = [...]string{"", "BASE", "INC", "MORE", "FLAG", "OVERRIDE", "LIST", "MAX", "MIN", "CHANCE", "DUMMY", "Flag"}
+
+// String is the reference's mod.type text.
+func (t ModType) String() string {
+	if int(t) < len(modTypeNames) {
+		return modTypeNames[t]
+	}
+	return ""
+}
+
+// ModTypeByName resolves the reference's mod.type text (codec, ModTools).
+var ModTypeByName = map[string]ModType{
+	"BASE": Base, "INC": Inc, "MORE": More, "FLAG": Flag, "OVERRIDE": Override,
+	"LIST": List, "MAX": Max, "MIN": Min, "CHANCE": Chance, "DUMMY": Dummy, "Flag": FlagTypo,
 }

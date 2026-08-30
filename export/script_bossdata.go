@@ -3,12 +3,13 @@
 package export
 
 import (
+	"fmt"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 func init() {
@@ -55,33 +56,43 @@ var bossOldMethod = map[string]bossOldMethodEntry{
 
 var bossDamageTypes = []string{"Physical", "Lightning", "Cold", "Fire", "Chaos"}
 
-var (
-	reBossMon3       = regexp.MustCompile(`([0-9A-Za-z_]+) (.+) \{([0-9A-Za-z_]+)\}`)
-	reBossMon2       = regexp.MustCompile(`([0-9A-Za-z_]+) (.+)`)
-	reBossSkill4     = regexp.MustCompile(`([0-9A-Za-z_]+) (.+) ([0-9A-Za-z_]+) ([0-9A-Za-z_]+)`)
-	reSkillArgs      = regexp.MustCompile(`([0-9A-Za-z_]+) ([0-9A-Za-z_]+)`)
-	reSkillIndex     = regexp.MustCompile(`skillIndex = ([0-9A-Za-z_]+),`)
-	reSkillIndexUber = regexp.MustCompile(`skillIndexUber = ([0-9A-Za-z_]+),`)
-	reGranted2       = regexp.MustCompile(`GrantedEffectId2 = ([0-9A-Za-z_]+),`)
-	reGrantedUber    = regexp.MustCompile(`GrantedEffectIdUber = ([0-9A-Za-z_]+),`)
-	reExtraMult      = regexp.MustCompile(`ExtraDamageMult = ([0-9]+),`)
-	reStages         = regexp.MustCompile(`stages = ([0-9A-Za-z_]+),`)
-	reSpeedMult      = regexp.MustCompile(`speedMult = ([0-9]+),`)
-)
+// penVal is one penetration/overwhelm value; blank stands for the
+// reference's "" (a zero base value whose uber value is non-zero).
+type penVal struct {
+	n     float64
+	blank bool
+}
 
-func buildBossData(x *Ctx) (any, error) {
+func buildBossData(x *Ctx) (schema.Document, error) {
 	var doc schema.BossData
-	unique := x.Dat("Mods").GetRow("Id", "MonsterUnique5").Get("Stat1Value").(Interval)[0]
-	uniqueAttackPenalty := x.Dat("Mods").GetRow("Id", "MonsterUnique8").Get("Stat1Value").(Interval)[0]
+	var (
+		mods, mapDifficulty, monsterVarieties, grantedEffects *DatFile
+		statSetsDat, statSetsPerLevel, monsterTypes           *DatFile
+	)
+	for name, dst := range map[string]**DatFile{
+		"Mods":                          &mods,
+		"MonsterMapDifficulty":          &mapDifficulty,
+		"MonsterVarieties":              &monsterVarieties,
+		"GrantedEffects":                &grantedEffects,
+		"GrantedEffectStatSets":         &statSetsDat,
+		"GrantedEffectStatSetsPerLevel": &statSetsPerLevel,
+		"MonsterTypes":                  &monsterTypes,
+	} {
+		var err error
+		if *dst, err = x.Dat(name); err != nil {
+			return nil, err
+		}
+	}
+	unique := mods.GetRow("Id", "MonsterUnique5").Ivl("Stat1Value")[0]
+	uniqueAttackPenalty := mods.GetRow("Id", "MonsterUnique8").Ivl("Stat1Value")[0]
 	rarityDamageMult := map[string]float64{
 		"Unique":       1 + float64(unique)/100,
 		"UniqueAttack": (1 + float64(unique)/100) * (1 - float64(uniqueAttackPenalty)/100),
 	}
 	monsterMapDifficultyMult := map[float64]float64{}
-	x.Dat("MonsterMapDifficulty").Rows(func(row *Row) bool {
-		monsterMapDifficultyMult[float64(row.Get("AreaLevel").(int64))] = 1 + float64(row.Get("DamagePercentIncrease").(int64))/100
-		return true
-	})
+	for row := range mapDifficulty.Rows() {
+		monsterMapDifficultyMult[float64(row.Int("AreaLevel"))] = 1 + float64(row.Int("DamagePercentIncrease"))/100
+	}
 	mmdm := func(level float64) (float64, bool) {
 		v, ok := monsterMapDifficultyMult[level]
 		return v, ok
@@ -117,29 +128,30 @@ func buildBossData(x *Ctx) (any, error) {
 		boss                 *bossInfo
 		skill                *skillInfo
 		skillList            []string
-		DamageData           map[string]any
+		DamageMult           map[string]float64 // <Type>DamageMultMin/Max, SkillUberDamageMult
+		Pen                  map[string]penVal
 		DamageType           string
 		SkillExtraDamageMult float64
 	}
 	var state *skillState
 
-	statRowsAndVals := func(spl *Row, statsCol, valsCol string) ([]*Row, []any) {
-		return listRows(spl.Get(statsCol)), spl.Get(valsCol).([]any)
+	statRowsAndVals := func(spl *Row, statsCol, valsCol string) ([]*Row, []int64) {
+		return spl.Refs(statsCol), spl.Ints(valsCol)
 	}
 
 	getDamageType := func() string {
 		skill := state.skill
 		damageType := "Untyped"
 		isHit := false
-		for _, is := range listRows(skill.statSets.Get("ImplicitStats")) {
-			if luaStr(is.Get("Id")) == "base_is_projectile" {
+		for _, is := range skill.statSets.Refs("ImplicitStats") {
+			if is.Str("Id") == "base_is_projectile" {
 				damageType = "Projectile"
 				break
 			}
 		}
-		activeSkill := skill.skillData.Get("ActiveSkill").(*Row)
-		for _, st := range listRows(activeSkill.Get("SkillTypes")) {
-			switch luaStr(st.Get("Id")) {
+		activeSkill := skill.skillData.Ref("ActiveSkill")
+		for _, st := range activeSkill.Refs("SkillTypes") {
+			switch st.Str("Id") {
 			case "Attack":
 				if damageType != "Projectile" {
 					damageType = "Melee"
@@ -158,8 +170,8 @@ func buildBossData(x *Ctx) (any, error) {
 				}
 			}
 		}
-		for _, cf := range listRows(activeSkill.Get("StatContextFlags")) {
-			switch luaStr(cf.Get("Id")) {
+		for _, cf := range activeSkill.Refs("StatContextFlags") {
+			switch cf.Str("Id") {
 			case "AttackHit":
 				isHit = true
 				if damageType != "Projectile" {
@@ -181,8 +193,8 @@ func buildBossData(x *Ctx) (any, error) {
 			}
 		}
 		if !isHit {
-			for _, cf := range listRows(activeSkill.Get("StatContextFlags")) {
-				if luaStr(cf.Get("Id")) == "DamageOverTime" {
+			for _, cf := range activeSkill.Refs("StatContextFlags") {
+				if cf.Str("Id") == "DamageOverTime" {
 					return "DamageOverTime"
 				}
 			}
@@ -190,7 +202,7 @@ func buildBossData(x *Ctx) (any, error) {
 		return damageType
 	}
 
-	calcSkillDamage := func() {
+	calcSkillDamage := func() error {
 		monsterLevel := float64(84)
 		skill := state.skill
 		boss := state.boss
@@ -203,7 +215,7 @@ func buildBossData(x *Ctx) (any, error) {
 		var rarityType string
 		if state.DamageType == "Melee" || state.DamageType == "Projectile" {
 			if boss.rarity == "" {
-				panic("bossData: rarity unset for attack skill (the Lua would error)")
+				return fmt.Errorf("%s: rarity unset for attack skill (the Lua would error)", grantedId)
 			}
 			rarityType = boss.rarity + "Attack"
 		} else {
@@ -218,8 +230,8 @@ func buildBossData(x *Ctx) (any, error) {
 			spl := skill.statsPerLevel[levelIndex-1]
 			addStats, addVals := statRowsAndVals(spl, "AdditionalStats", "AdditionalStatsValues")
 			for j, as := range addStats {
-				if luaStr(as.Get("Id")) == "active_skill_damage_+%_final" {
-					extraDamageMult[i] = 1 + float64(addVals[j].(int64))/100
+				if as.Str("Id") == "active_skill_damage_+%_final" {
+					extraDamageMult[i] = 1 + float64(addVals[j])/100
 					break
 				}
 			}
@@ -228,8 +240,8 @@ func buildBossData(x *Ctx) (any, error) {
 			stageMulti := 1.0
 			constStats, constVals := statRowsAndVals(skill.statSets, "ConstantStats", "ConstantStatsValues")
 			for i, cs := range constStats {
-				if luaStr(cs.Get("Id")) == "charged_blast_spell_damage_+%_final_per_stack" {
-					stageMulti = float64(constVals[i].(int64)) / 100
+				if cs.Str("Id") == "charged_blast_spell_damage_+%_final_per_stack" {
+					stageMulti = float64(constVals[i]) / 100
 					break
 				}
 			}
@@ -261,8 +273,8 @@ func buildBossData(x *Ctx) (any, error) {
 						damageRange = float64(boss.damageRange) / 100
 					}
 					damageMult := dv[0] * baseDamageMult
-					state.DamageData[damageType+"DamageMultMin"] = damageMult * (1 - damageRange)
-					state.DamageData[damageType+"DamageMultMax"] = damageMult * (1 + damageRange)
+					state.DamageMult[damageType+"DamageMultMin"] = damageMult * (1 - damageRange)
+					state.DamageMult[damageType+"DamageMultMax"] = damageMult * (1 + damageRange)
 				}
 			}
 			mapRatio := 1.0
@@ -272,9 +284,9 @@ func buildBossData(x *Ctx) (any, error) {
 				mapRatio = a / b
 			}
 			if extraDamageMult[0] != extraDamageMult[1] {
-				state.DamageData["SkillUberDamageMult"] = 100 * extraDamageMult[1] / extraDamageMult[0] * mapRatio
+				state.DamageMult["SkillUberDamageMult"] = 100 * extraDamageMult[1] / extraDamageMult[0] * mapRatio
 			} else if om.hasUberMult {
-				state.DamageData["SkillUberDamageMult"] = om.uberDamage * mapRatio
+				state.DamageMult["SkillUberDamageMult"] = om.uberDamage * mapRatio
 			} else if boss.mapBoss {
 				lvl := monsterLevel + 1
 				if om.hasUberMapBoss {
@@ -282,7 +294,7 @@ func buildBossData(x *Ctx) (any, error) {
 				}
 				a, _ := mmdm(lvl)
 				b, _ := mmdm(monsterLevel)
-				state.DamageData["SkillUberDamageMult"] = 100 * (a / b)
+				state.DamageMult["SkillUberDamageMult"] = 100 * (a / b)
 			}
 		} else {
 			// new method
@@ -295,32 +307,32 @@ func buildBossData(x *Ctx) (any, error) {
 					spl = skill.statsPerLevel[levelIndex-1]
 				}
 				floatStats, baseVals := statRowsAndVals(spl, "FloatStats", "BaseResolvedValues")
-				suffix := luaStr(i + 1)
+				suffix := strconv.Itoa(i + 1)
 				for j, fs := range floatStats {
-					id := luaStr(fs.Get("Id"))
+					id := fs.Str("Id")
 					for _, dt := range bossDamageTypes {
 						lower := strings.ToLower(dt)
 						if id == "spell_minimum_base_"+lower+"_damage" {
-							baseDamages["min"+dt+suffix] = 1 + float64(baseVals[j].(int64))
+							baseDamages["min"+dt+suffix] = 1 + float64(baseVals[j])
 						} else if id == "spell_maximum_base_"+lower+"_damage" {
-							baseDamages["max"+dt+suffix] = 1 + float64(baseVals[j].(int64))
+							baseDamages["max"+dt+suffix] = 1 + float64(baseVals[j])
 						}
 					}
 				}
 				if state.DamageType == "DamageOverTime" {
 					for j, fs := range floatStats {
-						id := luaStr(fs.Get("Id"))
+						id := fs.Str("Id")
 						for _, dt := range bossDamageTypes {
 							lower := strings.ToLower(dt)
 							if id == "base_"+lower+"_damage_to_deal_per_minute" {
-								baseDamages["min"+dt+suffix] = 1 + float64(baseVals[j].(int64))/60
-								baseDamages["max"+dt+suffix] = 1 + float64(baseVals[j].(int64))/60
+								baseDamages["min"+dt+suffix] = 1 + float64(baseVals[j])/60
+								baseDamages["max"+dt+suffix] = 1 + float64(baseVals[j])/60
 							}
 						}
 					}
 				}
 			}
-			monsterLevel = skill.statsPerLevel[skill.index-1].Get("PlayerLevelReq").(float64)
+			monsterLevel = skill.statsPerLevel[skill.index-1].Float("PlayerLevelReq")
 			mapMult := 1.0
 			if boss.mapBoss {
 				if v, found := mmdm(monsterLevel); found {
@@ -348,24 +360,24 @@ func buildBossData(x *Ctx) (any, error) {
 					if !hasMax {
 						mx = 0
 					}
-					state.DamageData[dt+"DamageMultMin"] = damageMult * mn
-					state.DamageData[dt+"DamageMultMax"] = damageMult * mx
+					state.DamageMult[dt+"DamageMultMin"] = damageMult * mn
+					state.DamageMult[dt+"DamageMultMax"] = damageMult * mx
 				}
 			}
 			if skill.hasUberIndex {
 				skillUber := 0.0
 				skillBase := 0.0
-				uberMonsterLevel := skill.statsPerLevel[skill.uberIndex-1].Get("PlayerLevelReq").(float64)
+				uberMonsterLevel := skill.statsPerLevel[skill.uberIndex-1].Float("PlayerLevelReq")
 				for _, dt := range bossDamageTypes {
 					mn1, hasMin1 := baseDamages["min"+dt+"1"]
 					_, hasMax1 := baseDamages["max"+dt+"1"]
 					if hasMin1 || hasMax1 {
 						if !hasMin1 {
-							panic("bossData: min damage missing (the Lua would error)")
+							return fmt.Errorf("%s: min %s damage missing (the Lua would error)", grantedId, dt)
 						}
 						mn2, hasMin2 := baseDamages["min"+dt+"2"]
 						if !hasMin2 {
-							panic("bossData: uber min damage missing (the Lua would error)")
+							return fmt.Errorf("%s: uber min %s damage missing (the Lua would error)", grantedId, dt)
 						}
 						skillBase += mn1
 						skillUber += mn2
@@ -387,16 +399,17 @@ func buildBossData(x *Ctx) (any, error) {
 				}
 				uberMult := (skillUber / ub) / (skillBase / bb) * ratio
 				if uberMult > 1.15 || uberMult < 0.85 {
-					state.DamageData["SkillUberDamageMult"] = math.Ceil(uberMult * 100)
+					state.DamageMult["SkillUberDamageMult"] = math.Ceil(uberMult * 100)
 				}
 			}
 		}
+		return nil
 	}
 
 	getPenetration := func() bool {
-		dd := state.DamageData
+		dd := state.Pen
 		for _, k := range []string{"PhysOverwhelm", "PhysUberOverwhelm", "LightningPen", "LightningUberPen", "ColdPen", "ColdUberPen", "FirePen", "FireUberPen", "ChaosPen", "ChaosUberPen"} {
-			dd[k] = float64(0)
+			dd[k] = penVal{}
 		}
 		scan := func(levels []*Row) {
 			for level, spl := range levels {
@@ -406,15 +419,15 @@ func buildBossData(x *Ctx) (any, error) {
 					uber = "Uber"
 				}
 				for i, as := range addStats {
-					switch luaStr(as.Get("Id")) {
+					switch as.Str("Id") {
 					case "base_reduce_enemy_lightning_resistance_%":
-						dd["Lightning"+uber+"Pen"] = float64(addVals[i].(int64))
+						dd["Lightning"+uber+"Pen"] = penVal{n: float64(addVals[i])}
 					case "base_reduce_enemy_cold_resistance_%":
-						dd["Cold"+uber+"Pen"] = float64(addVals[i].(int64))
+						dd["Cold"+uber+"Pen"] = penVal{n: float64(addVals[i])}
 					case "base_reduce_enemy_fire_resistance_%":
-						dd["Fire"+uber+"Pen"] = float64(addVals[i].(int64))
+						dd["Fire"+uber+"Pen"] = penVal{n: float64(addVals[i])}
 					case "base_reduce_enemy_chaos_resistance_%":
-						dd["Chaos"+uber+"Pen"] = float64(addVals[i].(int64))
+						dd["Chaos"+uber+"Pen"] = penVal{n: float64(addVals[i])}
 					}
 				}
 			}
@@ -423,25 +436,24 @@ func buildBossData(x *Ctx) (any, error) {
 		if state.skill.statsPerLevel2 != nil {
 			scan(state.skill.statsPerLevel2)
 		}
-		zero := func(v any) bool { f, ok := v.(float64); return ok && f == 0 }
-		if zero(dd["PhysOverwhelm"]) && !zero(dd["PhysUberOverwhelm"]) {
-			dd["PhysOverwhelm"] = ""
+		zero := func(k string) bool { v := dd[k]; return !v.blank && v.n == 0 }
+		if zero("PhysOverwhelm") && !zero("PhysUberOverwhelm") {
+			dd["PhysOverwhelm"] = penVal{blank: true}
 		}
 		for _, dt := range []string{"Lightning", "Cold", "Fire"} {
-			if zero(dd[dt+"Pen"]) && !zero(dd[dt+"UberPen"]) {
-				dd[dt+"Pen"] = ""
+			if zero(dt+"Pen") && !zero(dt+"UberPen") {
+				dd[dt+"Pen"] = penVal{blank: true}
 			}
 		}
-		return !zero(dd["PhysOverwhelm"]) || !zero(dd["LightningPen"]) || !zero(dd["ColdPen"]) || !zero(dd["FirePen"])
+		return !zero("PhysOverwhelm") || !zero("LightningPen") || !zero("ColdPen") || !zero("FirePen")
 	}
 
-	getSpeed := func() (float64, float64, bool, bool) {
+	getSpeed := func() (speed, uberSpeed float64, hasUberSpeed bool, err error) {
 		skill := state.skill
-		speed := float64(skill.skillData.Get("CastTime").(int64))
-		var uberSpeed float64
+		speed = float64(skill.skillData.Int("CastTime"))
 		hasUber := false
 		if skill.skillDataUber != nil {
-			uberSpeed = float64(skill.skillDataUber.Get("CastTime").(int64))
+			uberSpeed = float64(skill.skillDataUber.Int("CastTime"))
 			hasUber = true
 		}
 		speedMult := [2]float64{0, 0}
@@ -451,9 +463,9 @@ func buildBossData(x *Ctx) (any, error) {
 			}
 			addStats, addVals := statRowsAndVals(spl, "AdditionalStats", "AdditionalStatsValues")
 			for i, as := range addStats {
-				id := luaStr(as.Get("Id"))
+				id := as.Str("Id")
 				if id == "active_skill_attack_speed_+%_final" || id == "active_skill_cast_speed_+%_final" {
-					speedMult[level] = 100 + float64(addVals[i].(int64))
+					speedMult[level] = 100 + float64(addVals[i])
 					break
 				}
 			}
@@ -472,28 +484,30 @@ func buildBossData(x *Ctx) (any, error) {
 		}
 		if speedMult[0] != 0 {
 			if speedMult[0] != speedMult[1] {
-				return math.Ceil(speed / speedMult[0] * 100), math.Ceil(speed / speedMult[1] * 100), true, true
+				return math.Ceil(speed / speedMult[0] * 100), math.Ceil(speed / speedMult[1] * 100), true, nil
 			}
 			speed = speed / speedMult[0] * 100
 			if !hasUber {
-				panic("bossData: uberSpeed nil in speed normalisation (the Lua would error)")
+				return 0, 0, false, fmt.Errorf("%s: uberSpeed nil in speed normalisation (the Lua would error)", skill.grantedId)
 			}
 			uberSpeed = uberSpeed / speedMult[0] * 100
 		}
 		if hasUber {
-			return math.Ceil(speed), math.Ceil(uberSpeed), true, true
+			return math.Ceil(speed), math.Ceil(uberSpeed), true, nil
 		}
-		return math.Ceil(speed), 0, true, false
+		return math.Ceil(speed), 0, false, nil
 	}
 
+	// addStatsSet holds the extra stat lines: a number each, or a flag.
 	type addStatsSet struct {
-		vals  map[string]any
+		vals  map[string]schema.BossStatValue
 		count int64
 	}
+	flagStat := schema.BossStatValue{Flag: true}
 	getAdditionalStats := func() (base, uber *addStatsSet) {
 		skill := state.skill
-		base = &addStatsSet{vals: map[string]any{}}
-		uber = &addStatsSet{vals: map[string]any{}}
+		base = &addStatsSet{vals: map[string]schema.BossStatValue{}}
+		uber = &addStatsSet{vals: map[string]schema.BossStatValue{}}
 		for level, spl := range skill.statsPerLevel {
 			if level > 1 {
 				break
@@ -504,24 +518,24 @@ func buildBossData(x *Ctx) (any, error) {
 			}
 			addStats, addVals := statRowsAndVals(spl, "AdditionalStats", "AdditionalStatsValues")
 			for i, as := range addStats {
-				switch luaStr(as.Get("Id")) {
+				switch as.Str("Id") {
 				case "global_reduce_enemy_block_%":
-					set.vals["reduceEnemyBlock"] = float64(addVals[i].(int64))
+					set.vals["reduceEnemyBlock"] = schema.BossStatValue{Value: float64(addVals[i])}
 					set.count++
 				case "reduce_enemy_dodge_%":
-					set.vals["reduceEnemyDodge"] = float64(addVals[i].(int64))
+					set.vals["reduceEnemyDodge"] = schema.BossStatValue{Value: float64(addVals[i])}
 					set.count++
 				}
 			}
-			for _, as := range listRows(spl.Get("AdditionalBooleanStats")) {
-				switch luaStr(as.Get("Id")) {
+			for _, as := range spl.Refs("AdditionalBooleanStats") {
+				switch as.Str("Id") {
 				case "global_always_hit":
-					set.vals["CannotBeEvaded"] = "\"flag\""
+					set.vals["CannotBeEvaded"] = flagStat
 					set.count++
 				case "cannot_be_blocked_or_dodged_or_suppressed":
-					set.vals["CannotBeBlocked"] = "\"flag\""
-					set.vals["CannotBeDodged"] = "\"flag\""
-					set.vals["CannotBeSuppressed"] = "\"flag\""
+					set.vals["CannotBeBlocked"] = flagStat
+					set.vals["CannotBeDodged"] = flagStat
+					set.vals["CannotBeSuppressed"] = flagStat
 					if level == 0 {
 						set.count += 3
 					} else {
@@ -532,12 +546,12 @@ func buildBossData(x *Ctx) (any, error) {
 				}
 			}
 		}
-		for _, is := range listRows(skill.statSets.Get("ImplicitStats")) {
-			if luaStr(is.Get("Id")) == "cannot_be_blocked_or_dodged_or_suppressed" {
+		for _, is := range skill.statSets.Refs("ImplicitStats") {
+			if is.Str("Id") == "cannot_be_blocked_or_dodged_or_suppressed" {
 				for _, set := range []*addStatsSet{base, uber} {
-					set.vals["CannotBeBlocked"] = "\"flag\""
-					set.vals["CannotBeDodged"] = "\"flag\""
-					set.vals["CannotBeSuppressed"] = "\"flag\""
+					set.vals["CannotBeBlocked"] = flagStat
+					set.vals["CannotBeDodged"] = flagStat
+					set.vals["CannotBeSuppressed"] = flagStat
 					set.count += 3
 				}
 			}
@@ -545,7 +559,7 @@ func buildBossData(x *Ctx) (any, error) {
 		constStats, constVals := statRowsAndVals(skill.statSets, "ConstantStats", "ConstantStatsValues")
 		for i, cs := range constStats {
 			var name string
-			switch luaStr(cs.Get("Id")) {
+			switch cs.Str("Id") {
 			case "skill_physical_damage_%_to_convert_to_lightning":
 				name = "PhysicalDamageSkillConvertToLightning"
 			case "skill_physical_damage_%_to_convert_to_cold":
@@ -556,9 +570,10 @@ func buildBossData(x *Ctx) (any, error) {
 				name = "PhysicalDamageSkillConvertToChaos"
 			}
 			if name != "" {
-				base.vals[name] = float64(constVals[i].(int64))
+				v := schema.BossStatValue{Value: float64(constVals[i])}
+				base.vals[name] = v
 				base.count++
-				uber.vals[name] = float64(constVals[i].(int64))
+				uber.vals[name] = v
 				uber.count++
 			}
 		}
@@ -568,45 +583,26 @@ func buildBossData(x *Ctx) (any, error) {
 		return base, uber
 	}
 
-	renderStatSet := func(set *addStatsSet) map[string]string {
-		out := map[string]string{}
-		for k, v := range set.vals {
-			if s, ok := v.(string); ok {
-				out[k] = s
-			} else {
-				out[k] = luaNum(v.(float64))
-			}
-		}
-		return out
-	}
-
-	skillsDirectives := map[string]func(args string){}
-	skillsDirectives["boss"] = func(args string) {
-		m := reBossSkill4.FindStringSubmatch(args)
-		bossData := x.Dat("MonsterVarieties").GetRow("Id", m[2])
+	openBoss := func(d *bossHeadDirective) {
+		bossData := monsterVarieties.GetRow("Id", d.Monster)
 		b := &bossInfo{
-			displayName: m[1],
-			damageRange: bossData.Get("Type").(*Row).Get("DamageSpread").(int64),
-			damageMult:  bossData.Get("DamageMultiplier").(int64),
+			displayName: d.Name,
+			damageRange: bossData.Ref("Type").Int("DamageSpread"),
+			damageMult:  bossData.Int("DamageMultiplier"),
 			critChance:  5,
 		}
-		if m[3] == "true" {
-			b.earlierUber = true
-		}
-		if m[4] == "true" {
-			b.mapBoss = true
-		}
-		for _, mod := range listRows(bossData.Get("Mods")) {
-			if luaStr(mod.Get("Id")) == "MonsterMapBoss" {
+		b.earlierUber = d.EarlierUber
+		b.mapBoss = d.MapBoss
+		for _, mod := range bossData.Refs("Mods") {
+			if mod.Str("Id") == "MonsterMapBoss" {
 				b.rarity = "Unique"
 				break
 			}
 		}
 		state.boss = b
 	}
-	skillsDirectives["skill"] = func(args string) {
-		m := reSkillArgs.FindStringSubmatch(args)
-		displayName, grantedId := m[1], m[2]
+	addSkill := func(d *bossSkillEntry) error {
+		displayName, grantedId := d.Name, d.Granted
 		switch displayName {
 		case "MemoryGame":
 			displayName = "Memory Game"
@@ -616,74 +612,68 @@ func buildBossData(x *Ctx) (any, error) {
 		boss := state.boss
 		state.skillList = append(state.skillList, boss.displayName+" "+displayName)
 		skill := &skillInfo{grantedId: grantedId}
-		skill.skillData = x.Dat("GrantedEffects").GetRow("Id", grantedId)
-		skill.statSets = x.Dat("GrantedEffectStatSets").GetRow("Id", grantedId)
-		skill.statsPerLevel = x.Dat("GrantedEffectStatSetsPerLevel").GetRowList("GrantedEffect", skill.skillData)
+		skill.skillData = grantedEffects.GetRow("Id", grantedId)
+		skill.statSets = statSetsDat.GetRow("Id", grantedId)
+		skill.statsPerLevel = statSetsPerLevel.GetRowList("GrantedEffect", skill.skillData)
 		state.skill = skill
 		skill.index = 1
 		skill.hasIndex = true
-		if im := reSkillIndex.FindStringSubmatch(args); im != nil {
-			if im[1] == "nil" {
-				skill.hasIndex = false
-			} else {
-				n, _ := strconv.Atoi(im[1])
-				skill.index = n
+		if d.SkillIndex.Set {
+			skill.hasIndex = !d.SkillIndex.Nil
+			if !d.SkillIndex.Nil {
+				skill.index = d.SkillIndex.N
 			}
 		}
-		if um := reSkillIndexUber.FindStringSubmatch(args); um != nil {
-			if um[1] == "nil" {
-				skill.hasUberIndex = false
-			} else {
-				n, _ := strconv.Atoi(um[1])
-				skill.uberIndex = n
-				skill.hasUberIndex = true
-			}
+		if d.SkillIndexUber.Set {
+			skill.hasUberIndex = !d.SkillIndexUber.Nil
+			skill.uberIndex = d.SkillIndexUber.N
 		} else if skill.hasIndex {
 			skill.uberIndex = skill.index + 1
 			skill.hasUberIndex = true
 		}
-		if g2 := reGranted2.FindStringSubmatch(args); g2 != nil {
-			skill.grantedId2 = g2[1]
-			sd2 := x.Dat("GrantedEffects").GetRow("Id", g2[1])
-			skill.statsPerLevel2 = x.Dat("GrantedEffectStatSetsPerLevel").GetRowList("GrantedEffect", sd2)
+		if d.Granted2 != "" {
+			skill.grantedId2 = d.Granted2
+			sd2 := grantedEffects.GetRow("Id", d.Granted2)
+			skill.statsPerLevel2 = statSetsPerLevel.GetRowList("GrantedEffect", sd2)
 		}
-		if gu := reGrantedUber.FindStringSubmatch(args); gu != nil {
-			skill.skillDataUber = x.Dat("GrantedEffects").GetRow("Id", gu[1])
+		if d.GrantedUber != "" {
+			skill.skillDataUber = grantedEffects.GetRow("Id", d.GrantedUber)
 		}
 		state.SkillExtraDamageMult = 1
-		if em := reExtraMult.FindStringSubmatch(args); em != nil {
-			n, _ := strconv.ParseFloat(em[1], 64)
-			state.SkillExtraDamageMult = n / 100
+		if d.ExtraDamageMult != nil {
+			state.SkillExtraDamageMult = *d.ExtraDamageMult / 100
 		}
-		if sm := reStages.FindStringSubmatch(args); sm != nil {
-			n, _ := strconv.ParseFloat(sm[1], 64)
-			skill.stages = n
+		if d.Stages != nil {
+			skill.stages = *d.Stages
 			skill.hasStages = true
 		}
-		state.DamageData = map[string]any{}
+		state.DamageMult = map[string]float64{}
+		state.Pen = map[string]penVal{}
 		state.DamageType = getDamageType()
-		calcSkillDamage()
+		if err := calcSkillDamage(); err != nil {
+			return err
+		}
 		bs := schema.BossSkill{
 			Key:        boss.displayName + " " + displayName,
 			DamageType: state.DamageType,
 		}
 		for _, dt := range bossDamageTypes {
-			if mn, ok := state.DamageData[dt+"DamageMultMin"].(float64); ok {
-				mx := state.DamageData[dt+"DamageMultMax"].(float64)
+			if mn, ok := state.DamageMult[dt+"DamageMultMin"]; ok {
+				mx := state.DamageMult[dt+"DamageMultMax"]
 				bs.DamageMultipliers = append(bs.DamageMultipliers, schema.BossDamageMult{
 					Type: dt, Min: mn, Spread: (mx - mn) / 100,
 				})
 			}
 		}
-		if um, ok := state.DamageData["SkillUberDamageMult"].(float64); ok {
+		if um, ok := state.DamageMult["SkillUberDamageMult"]; ok {
 			v := um / 100
 			bs.UberDamageMultiplier = &v
 		}
 		penEntries := func(keys []string, strip bool) []schema.PenEntry {
 			var entries []schema.PenEntry
 			for _, penType := range keys {
-				v := state.DamageData[penType]
-				if f, ok := v.(float64); ok && f == 0 {
+				v := state.Pen[penType]
+				if !v.blank && v.n == 0 {
 					continue
 				}
 				name := penType
@@ -691,8 +681,8 @@ func buildBossData(x *Ctx) (any, error) {
 					name = strings.ReplaceAll(name, "Uber", "")
 				}
 				text := "\"\""
-				if f, ok := v.(float64); ok {
-					text = luaNum(f)
+				if !v.blank {
+					text = util.FormatG14(v.n)
 				}
 				entries = append(entries, schema.PenEntry{Name: name, Text: text})
 			}
@@ -702,75 +692,80 @@ func buildBossData(x *Ctx) (any, error) {
 			bs.HasPen = true
 			bs.Pens = penEntries([]string{"PhysOverwhelm", "LightningPen", "ColdPen", "FirePen"}, false)
 			nonZero := func(k string) bool {
-				f, ok := state.DamageData[k].(float64)
-				return !(ok && f == 0)
+				v := state.Pen[k]
+				return v.blank || v.n != 0
 			}
 			if nonZero("PhysUberOverwhelm") || nonZero("LightningUberPen") || nonZero("ColdUberPen") || nonZero("FireUberPen") {
 				bs.HasUberPen = true
 				bs.UberPens = penEntries([]string{"PhysUberOverwhelm", "LightningUberPen", "ColdUberPen", "FireUberPen"}, true)
 			}
 		}
-		if sm := reSpeedMult.FindStringSubmatch(args); sm != nil {
-			n, _ := strconv.ParseFloat(sm[1], 64)
-			state.skill.speedMult = n
+		if d.SpeedMult != nil {
+			state.skill.speedMult = *d.SpeedMult
 			state.skill.hasSpeedMult = true
 		}
-		speed, uberSpeed, _, hasUberSpeed := getSpeed()
+		speed, uberSpeed, hasUberSpeed, err := getSpeed()
+		if err != nil {
+			return err
+		}
 		bs.Speed = speed
 		if hasUberSpeed {
 			bs.UberSpeed = &uberSpeed
 		}
-		bs.CritChance = int64(math.Ceil(float64(skill.statsPerLevel[0].Get("AttackCritChance").(int64)) / 100))
+		bs.CritChance = int64(math.Ceil(float64(skill.statsPerLevel[0].Int("AttackCritChance")) / 100))
 		bs.EarlierUber = boss.earlierUber
 		baseSet, uberSet := getAdditionalStats()
 		if baseSet != nil {
 			bs.HasAdditional = true
 			bs.BaseCount = baseSet.count
 			bs.UberCount = uberSet.count
-			bs.BaseVals = renderStatSet(baseSet)
-			bs.UberVals = renderStatSet(uberSet)
+			bs.BaseVals = baseSet.vals
+			bs.UberVals = uberSet.vals
 		}
 		doc.Skills = append(doc.Skills, bs)
-	}
-	skillsDirectives["tooltip"] = func(args string) {
-		doc.Skills[len(doc.Skills)-1].Tooltip = args
-		state.skill = nil
-	}
-	skillsDirectives["skillList"] = func(string) {
-		doc.SkillLists = append(doc.SkillLists, append([]string{}, state.skillList...))
-		state.boss = nil
-		state.skillList = nil
-	}
-
-	monstersDirectives := map[string]func(args string){}
-	monstersDirectives["boss"] = func(args string) {
-		var displayName, monsterId string
-		isUber := false
-		if m := reBossMon3.FindStringSubmatch(args); m != nil {
-			displayName, monsterId = m[1], m[2]
-			isUber = true
-		} else if m := reBossMon2.FindStringSubmatch(args); m != nil {
-			displayName, monsterId = m[1], m[2]
-		}
-		monsterType := x.Dat("MonsterTypes").GetRow("Id", monsterId)
-		if monsterType == nil {
-			doc.Bosses = append(doc.Bosses, nil) // the Lua prints "Invalid Type"
-			return
-		}
-		doc.Bosses = append(doc.Bosses, &schema.BossMonster{
-			DisplayName: displayName,
-			ArmourMult:  monsterType.Get("Armour").(int64),
-			EvasionMult: monsterType.Get("Evasion").(int64),
-			IsUber:      isUber,
-		})
+		return nil
 	}
 
 	state = &skillState{}
-	if err := x.WalkTemplate("BossSkills", "Enemies/", skillsDirectives); err != nil {
+	skillsTpl, err := readTemplate("Enemies/", "BossSkills", bossSkillDirectives)
+	if err != nil {
 		return nil, err
 	}
-	if err := x.WalkTemplate("Bosses", "Enemies/", monstersDirectives); err != nil {
+	for _, d := range skillsTpl.Directives {
+		switch d := d.(type) {
+		case *bossHeadDirective:
+			openBoss(d)
+		case *bossSkillEntry:
+			if err := addSkill(d); err != nil {
+				return nil, err
+			}
+		case *tooltipDirective:
+			doc.Skills[len(doc.Skills)-1].Tooltip = d.Text
+			state.skill = nil
+		case *skillListDirective:
+			doc.SkillLists = append(doc.SkillLists, append([]string{}, state.skillList...))
+			state.boss = nil
+			state.skillList = nil
+		}
+	}
+
+	bossesTpl, err := readTemplate("Enemies/", "Bosses", bossMonsterDirectives)
+	if err != nil {
 		return nil, err
+	}
+	for _, d := range bossesTpl.Directives {
+		b := d.(*bossMonsterEntry)
+		monsterType := monsterTypes.GetRow("Id", b.Monster)
+		if monsterType == nil {
+			doc.Bosses = append(doc.Bosses, nil) // the Lua prints "Invalid Type"
+			continue
+		}
+		doc.Bosses = append(doc.Bosses, &schema.BossMonster{
+			DisplayName: b.Name,
+			ArmourMult:  monsterType.Int("Armour"),
+			EvasionMult: monsterType.Int("Evasion"),
+			IsUber:      b.Uber,
+		})
 	}
 	return doc, nil
 }

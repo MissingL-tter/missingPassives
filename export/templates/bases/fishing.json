@@ -1,8 +1,8 @@
 {
 	"directives": [
-		"#type Fishing Rod",
-		"#socketLimit 4",
-		"#forceShow true",
-		"#baseMatch Metadata/Items/Weapons/TwoHandWeapon/FishingRods/FishingRod"
+		{"directive":"type","name":"Fishing Rod"},
+		{"directive":"socketLimit","limit":4},
+		{"directive":"forceShow","value":true},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Weapons/TwoHandWeapon/FishingRods/FishingRod"}
 	]
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 var foulbornPrefixRe = regexp.MustCompile(`^[Ff]oulborn `)
@@ -15,23 +16,7 @@ var foulbornAnyRe = regexp.MustCompile(`[Ff]oulborn `)
 
 // foulbornEntry reads data.foulbornMap[title] as orig-mod-id -> foul-mod-id.
 func foulbornEntry(title string) map[string]string {
-	v, ok := data.FoulbornMap[title]
-	if !ok {
-		return nil
-	}
-	m, ok := v.(map[string]any)
-	if !ok {
-		panic("item: unexpected foulbornMap entry shape for " + title)
-	}
-	out := map[string]string{}
-	for k, fv := range m {
-		fs, ok := fv.(string)
-		if !ok {
-			panic("item: non-string foulbornMap value for " + title)
-		}
-		out[k] = fs
-	}
-	return out
+	return data.FoulbornMap[title]
 }
 
 func clusterJewelFor(baseName string) *data.ClusterJewelSize {
@@ -46,7 +31,7 @@ func (it *Item) parseRawTail(implicitLines int, importedLevelReq *float64, highQ
 	if it.AdvancedCopy && (it.Rarity == "UNIQUE" || it.Rarity == "RELIC") {
 		exact, normalised := uniqueStatOrder()
 		for _, modLine := range it.ExplicitModLines {
-			exactLine := strings.ReplaceAll(luaLower(modLine.Line), "\n", " ")
+			exactLine := strings.ReplaceAll(strings.ToLower(modLine.Line), "\n", " ")
 			if order, ok := exact[exactLine]; ok {
 				o := order
 				modLine.Order = &o
@@ -60,21 +45,19 @@ func (it *Item) parseRawTail(implicitLines int, importedLevelReq *float64, highQ
 	}
 	if it.Base != nil && len(it.Sockets) > 0 {
 		// In-game totals include socketed gems; rebuild from the base.
-		it.Requirements["str"] = reqOrZero(it.Base.Req.Str)
-		it.Requirements["dex"] = reqOrZero(it.Base.Req.Dex)
-		it.Requirements["int"] = reqOrZero(it.Base.Req.Int)
+		it.Requirements.Str = util.Some(reqOrZero(it.Base.Req.Str))
+		it.Requirements.Dex = util.Some(reqOrZero(it.Base.Req.Dex))
+		it.Requirements.Int = util.Some(reqOrZero(it.Base.Req.Int))
 	}
-	if it.Base != nil {
-		if _, hasLevel := it.Requirements["level"]; !hasLevel {
-			if importedLevelReq != nil && len(it.Sockets) == 0 {
-				it.Requirements["level"] = *importedLevelReq
-			} else if it.Base.Req.Level != nil {
-				it.Requirements["level"] = *it.Base.Req.Level
-			}
+	if it.Base != nil && !it.Requirements.Level.Set {
+		if importedLevelReq != nil && len(it.Sockets) == 0 {
+			it.Requirements.Level = util.Some(*importedLevelReq)
+		} else if it.Base.Req.Level != nil {
+			it.Requirements.Level = util.Some(*it.Base.Req.Level)
 		}
 	}
 	// Cane of Kulemak hack.
-	if luaLower(it.Title) == "cane of kulemak" && (it.Rarity == "UNIQUE" || it.Rarity == "RELIC") && it.AdvancedCopy {
+	if strings.ToLower(it.Title) == "cane of kulemak" && (it.Rarity == "UNIQUE" || it.Rarity == "RELIC") && it.AdvancedCopy {
 		for _, mod := range it.ExplicitModLines {
 			if !strings.Contains(mod.Line, "magnitude") {
 				mod.setFlag("unveiled")
@@ -122,22 +105,19 @@ func (it *Item) parseRawTail(implicitLines int, importedLevelReq *float64, highQ
 						match = false
 					}
 					if match && !mod.flag("unscalable") {
-						vs := mod.ValueScalar
-						if vs == 0 {
-							vs = 1
-						}
+						vs := mod.ValueScalar.Or(1)
 						if magnitudeMod.multiplier != nil {
-							mod.ValueScalar = vs * *magnitudeMod.multiplier
+							mod.ValueScalar = util.Some(vs * *magnitudeMod.multiplier)
 						} else {
-							mod.ValueScalar = vs + magnitudeMod.quality/100
+							mod.ValueScalar = util.Some(vs + magnitudeMod.quality/100)
 						}
 					}
-					if mod.ValueScalar != 0 && mod.ValueScalar != 1 {
+					if mod.ValueScalar.Set && mod.ValueScalar.V != 1 {
 						r := 1.0
 						if mod.Range != nil {
 							r = *mod.Range
 						}
-						rangedLine := applyRange(mod.Line, r, mod.ValueScalar, 1)
+						rangedLine := applyRange(mod.Line, r, mod.ValueScalar.V, 1)
 						modList, extra, parsed := parseModLine3(rangedLine)
 						mod.ModList = modList
 						mod.HasModList = parsed
@@ -306,7 +286,7 @@ func (it *Item) parseRawTail(implicitLines int, importedLevelReq *float64, highQ
 			it.Foulborn = true
 		}
 	}
-	hasFoulbornPrefix := it.Title != "" && foulbornPrefixRe.MatchString(luaLower(it.Title))
+	hasFoulbornPrefix := it.Title != "" && foulbornPrefixRe.MatchString(strings.ToLower(it.Title))
 	if it.Foulborn && !hasFoulbornPrefix {
 		it.Title = "Foulborn " + it.Title
 	} else if !it.Foulborn && hasFoulbornPrefix {
@@ -345,17 +325,9 @@ func (it *Item) parseRawTail(implicitLines int, importedLevelReq *float64, highQ
 	it.BuildModList()
 	if deferJewelRadiusIndexAssignment {
 		it.JewelRadiusIndex = nil
-		if it.JewelData != nil {
-			switch idx := it.JewelData["radiusIndex"].(type) {
-			case float64:
-				i := int(idx)
-				it.JewelRadiusIndex = &i
-			case int64:
-				i := int(idx)
-				it.JewelRadiusIndex = &i
-			case int:
-				it.JewelRadiusIndex = &idx
-			}
+		if it.JewelData != nil && it.JewelData.RadiusIndex != 0 {
+			idx := it.JewelData.RadiusIndex
+			it.JewelRadiusIndex = &idx
 		}
 	}
 }

@@ -10,14 +10,6 @@ import (
 	"strings"
 )
 
-// round is Common.lua round: floor(v + 0.5), or at dec places.
-func round(v float64) float64 { return math.Floor(v + 0.5) }
-
-func roundDec(v float64, dec int) float64 {
-	factor := math.Pow(10, float64(dec))
-	return math.Floor(v*factor+0.5) / factor
-}
-
 // roundSymmetric is Common.lua roundSymmetric.
 func roundSymmetric(v float64) float64 {
 	if v >= 0 {
@@ -39,25 +31,6 @@ func floorSymmetric(v float64) float64 { return math.Trunc(v) }
 
 // alwaysPositiveRound is Common.lua alwaysPositiveRound (no-dec form).
 func alwaysPositiveRound(v float64) float64 { return floorSymmetric(v + 0.5) }
-
-// luaNumStr is tostring() on a Lua number: %.14g with integer fast path.
-func luaNumStr(v float64) string {
-	if v == math.Trunc(v) && math.Abs(v) < 1e15 {
-		return strconv.FormatInt(int64(v), 10)
-	}
-	return strconv.FormatFloat(v, 'g', 14, 64)
-}
-
-// luaLower is string.lower: ASCII-only (C locale).
-func luaLower(s string) string {
-	b := []byte(s)
-	for i, c := range b {
-		if c >= 'A' && c <= 'Z' {
-			b[i] = c + 32
-		}
-	}
-	return string(b)
-}
 
 func imin(a, b int) int {
 	if a < b {
@@ -126,11 +99,11 @@ func trimRawLines(raw string) []string {
 	return out
 }
 
-// sanitiseText ports Common.lua sanitiseText: strip <...> spans, fold the
-// unicode hyphen family to "-" and a-/o-umlaut to ascii (UTF-8 and cp1252
-// forms), and replace any remaining high byte with "?" — but only when a
-// byte 128-255 or '<' occurs.
-func sanitiseText(text string) string {
+// FoldText is Common.lua sanitiseText: strip <...> spans, fold the unicode
+// hyphen family to "-" and a-/o-umlaut to ascii (UTF-8 and cp1252 forms;
+// both cases, where the reference folds only lowercase), and replace any
+// remaining high byte with "?" — but only when a byte 128-255 or '<' occurs.
+func FoldText(text string) string {
 	if !strings.ContainsFunc(text, func(r rune) bool { return r == '<' || r > 127 }) {
 		// The reference returns nil here (the and-chain falls through);
 		// every caller treats that as "unchanged".
@@ -140,9 +113,10 @@ func sanitiseText(text string) string {
 	for _, rp := range [...][2]string{
 		{"‐", "-"}, {"‑", "-"}, {"‒", "-"}, {"–", "-"},
 		{"—", "-"}, {"―", "-"}, {"−", "-"},
-		{"ä", "a"}, {"ö", "o"},
+		{"ä", "a"}, {"ö", "o"}, {"Ä", "A"}, {"Ö", "O"},
 		// single-byte: Windows-1252 and similar
 		{"\x96", "-"}, {"\x97", "-"}, {"\xe4", "a"}, {"\xf6", "o"},
+		{"\xc4", "A"}, {"\xd6", "O"},
 	} {
 		text = strings.ReplaceAll(text, rp[0], rp[1])
 	}

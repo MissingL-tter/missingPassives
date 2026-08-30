@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 // The differential test: every modifier line the application has ever parsed
@@ -88,15 +89,17 @@ func TestAgainstReference(t *testing.T) {
 
 	agree, disagree, shown := 0, 0, 0
 	for _, rec := range records {
-		mods, extra := modparser.Parse(rec.Line)
+		mods, extra, recognised := modparser.Parse(rec.Line)
 
 		gotMods := "null"
-		if mods != nil {
-			gotMods = modparser.Canon(mods)
+		if recognised {
+			gotMods = luacanon.CanonMods(mods)
 		}
 		wantMods := "null"
 		if rec.Mods != nil {
-			wantMods = *rec.Mods
+			// The reference's parser kept a handful of numeric tag fields as
+			// the raw capture text; the port parses them (luacanon).
+			wantMods = luacanon.NormalizeArchiveMods(*rec.Mods)
 		}
 		gotExtra := extra
 		wantExtra := ""

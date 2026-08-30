@@ -145,7 +145,7 @@ func renderItemBase(b *B, ib schema.ItemBase) {
 	if len(ib.FlavourText) > 0 {
 		b.W("\tflavourText = {\n")
 		for _, line := range ib.FlavourText {
-			b.W("\t\t\"", line, "\",\n")
+			b.W("\t\t\"", luaEsc(line), "\",\n")
 		}
 		b.W("\t},\n")
 	}

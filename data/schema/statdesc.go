@@ -4,6 +4,8 @@ package schema
 // (e.g. "stat_descriptions").
 type StatDescs map[string]*StatDescFile
 
+func (StatDescs) isDocument() {}
+
 type StatDescFile struct {
 	Parent      string           `json:"parent,omitempty"`
 	Descriptors []StatDescriptor `json:"descriptors"`

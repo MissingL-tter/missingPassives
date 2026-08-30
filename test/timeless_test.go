@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/data"
-	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/tree"
 )
 
@@ -53,49 +52,30 @@ func inflateJewelFile(t *testing.T, name string) []byte {
 	return out
 }
 
-// timelessNodeIndex decodes data.NodeIDList: graph id -> (index, size).
+// timelessNodeIndex reads data.NodeIDList: graph id -> (index, size).
 func timelessNodeIndex(t *testing.T) (nodes map[int64][2]int, sizeNotable int) {
 	t.Helper()
 	nodes = map[int64][2]int{}
-	for k, v := range data.NodeIDList {
-		entry, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		id, err := strconv.ParseInt(k, 10, 64)
-		if err != nil {
-			continue
-		}
-		nodes[id] = [2]int{int(entry["index"].(float64)), int(entry["size"].(float64))}
+	for id, e := range data.NodeIDList {
+		nodes[id] = [2]int{int(e.Index), int(e.Size)}
 	}
-	sizeNotable = int(data.NodeIDList["sizeNotable"].(float64))
+	sizeNotable = data.NodeIDListSizeNotable
 	if len(nodes) != 1937 || sizeNotable != 454 {
 		t.Fatalf("nodeIDList decode: %d nodes, sizeNotable %d", len(nodes), sizeNotable)
 	}
 	return nodes, sizeNotable
 }
 
-// timelessLocalToGlobal decodes NodeIDList.localIdToGlobalId for one jewel
-// type (a Lua array: index 0 lives in the D's KV, 1.. in Arr, sparse high
-// locals in KV).
+// timelessLocalToGlobal reads data.LocalIDToGlobalID for one jewel type.
 func timelessLocalToGlobal(t *testing.T, jewelType int) func(int) int {
 	t.Helper()
-	arr, ok := data.NodeIDList["localIdToGlobalId"].([]any)
-	if !ok || jewelType > len(arr) {
+	if jewelType > len(data.LocalIDToGlobalID) {
 		t.Fatalf("localIdToGlobalId missing for type %d", jewelType)
 	}
-	d, ok := arr[jewelType-1].(*modparser.D)
-	if !ok {
-		t.Fatalf("localIdToGlobalId[%d]: unexpected shape", jewelType)
-	}
+	m := data.LocalIDToGlobalID[jewelType-1].Global
 	return func(local int) int {
-		if local >= 1 && local <= len(d.Arr) {
-			if g, ok := d.Arr[local-1].(float64); ok {
-				return int(g)
-			}
-		}
-		if g, ok := d.KV[strconv.Itoa(local)].(float64); ok {
-			return int(g)
+		if g, ok := m[local]; ok {
+			return g
 		}
 		return local // reference: unmapped ids pass through
 	}

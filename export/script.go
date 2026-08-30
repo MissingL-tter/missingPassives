@@ -5,13 +5,11 @@
 package export
 
 import (
-	"fmt"
-	"math"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // Ctx is what a ported script runs against.
@@ -24,7 +22,7 @@ type Ctx struct {
 	sd               *statDescState
 	modItemExclusive map[string]*modEntry
 	modFoulborn      map[string]*modEntry
-	modsDoc          any // cached mods schema document
+	modsDoc          *schema.ModsData // cached mods document
 	flavourEntries   []flavourEntry
 }
 
@@ -37,14 +35,14 @@ type Script struct {
 	// name differs from the reference script's (see
 	// .claude/documentation/lua-go-map.md); empty = Name.
 	OutName string
-	Build   func(*Ctx) (any, error)
+	Build   func(*Ctx) (schema.Document, error)
 }
 
 // Scripts lists every ported script.
 var Scripts []Script
 
-// Dat is Main.lua's dat().
-func (x *Ctx) Dat(name string) *DatFile {
+// Dat is Main.lua's dat(); a table missing from the extract is an error.
+func (x *Ctx) Dat(name string) (*DatFile, error) {
 	return x.Dats.Dat(name)
 }
 
@@ -64,47 +62,6 @@ func (x *Ctx) GetFile(name string) string {
 	}
 	x.txtCache[name] = string(b)
 	return string(b)
-}
-
-// luaNum formats a float64 the way LuaJIT's tostring/write does (%.14g, with
-// inf/nan spelled Lua-style).
-func luaNum(f float64) string {
-	if math.IsInf(f, 1) {
-		return "inf"
-	}
-	if math.IsInf(f, -1) {
-		return "-inf"
-	}
-	if math.IsNaN(f) {
-		return "nan"
-	}
-	s := strconv.FormatFloat(f, 'g', 14, 64)
-	// Go writes exponents as 1e+05 like C's %g; keep that. Trim Go's lack of
-	// difference aside, the formats agree for %.14g.
-	return s
-}
-
-// luaStr mirrors tostring() for the value kinds scripts hit: nil, booleans,
-// numbers and strings.
-func luaStr(v any) string {
-	switch t := v.(type) {
-	case nil:
-		return "nil"
-	case bool:
-		if t {
-			return "true"
-		}
-		return "false"
-	case string:
-		return t
-	case int:
-		return strconv.Itoa(t)
-	case int64:
-		return strconv.FormatInt(t, 10)
-	case float64:
-		return luaNum(t)
-	}
-	panic(fmt.Sprintf("luaStr: unsupported type %T", v))
 }
 
 // modEntry is one exported mod's data as written by mods.lua, kept in memory
@@ -132,5 +89,3 @@ func (x *Ctx) EnsureMods() error {
 type flavourEntry struct {
 	id, name string
 }
-
-var reDirective = regexp.MustCompile(`#([A-Za-z]+) ?(.*)`)

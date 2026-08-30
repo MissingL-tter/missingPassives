@@ -8,6 +8,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -28,8 +29,8 @@ func (env *Env) warcryStatsFor(c *offenceCtx, value *ActiveSkill) warcryStats {
 
 // warcryStoredUses is `value.skillData.storedUses + Sum(AdditionalCooldownUses)`.
 func warcryStoredUses(value *ActiveSkill) float64 {
-	return anyNum(value.SkillData["storedUses"]) +
-		value.SkillModList.Sum("BASE", value.SkillCfg, "AdditionalCooldownUses")
+	return value.SkillData.N("storedUses") +
+		value.SkillModList.Sum(modparser.Base, value.SkillCfg, "AdditionalCooldownUses")
 }
 
 // offenceExerts ports L2552-2905 for one pass.
@@ -40,138 +41,137 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 	globalOutput := c.output
 
 	// Exerted Attack members
-	exertedDoubleDamage := env.ModDB.Sum("BASE", cfg, "ExertDoubleDamageChance")
-	exertingWarcryCount := env.ModDB.Sum("BASE", nil, "Multiplier:ExertingWarcryCount")
-	globalOutput["OffensiveWarcryEffect"] = 1.0
-	globalOutput["MaxOffensiveWarcryEffect"] = 1.0
-	globalOutput["TheoreticalOffensiveWarcryEffect"] = 1.0
-	globalOutput["TheoreticalMaxOffensiveWarcryEffect"] = 1.0
-	globalOutput["RallyingHitEffect"] = 1.0
-	globalOutput["AilmentWarcryEffect"] = 1.0
-	globalOutput["GlobalWarcryUptimeRatio"] = 0.0
+	exertedDoubleDamage := env.ModDB.Sum(modparser.Base, cfg, "ExertDoubleDamageChance")
+	exertingWarcryCount := env.ModDB.Sum(modparser.Base, nil, "Multiplier:ExertingWarcryCount")
+	globalOutput.SetN("OffensiveWarcryEffect", 1.0)
+	globalOutput.SetN("MaxOffensiveWarcryEffect", 1.0)
+	globalOutput.SetN("TheoreticalOffensiveWarcryEffect", 1.0)
+	globalOutput.SetN("TheoreticalMaxOffensiveWarcryEffect", 1.0)
+	globalOutput.SetN("RallyingHitEffect", 1.0)
+	globalOutput.SetN("AilmentWarcryEffect", 1.0)
+	globalOutput.SetN("GlobalWarcryUptimeRatio", 0.0)
 
 	if !env.ModeBuffs {
 		return
 	}
 
 	addGlobalUptime := func(v float64) {
-		globalOutput["GlobalWarcryUptimeRatio"] = outNum(globalOutput, "GlobalWarcryUptimeRatio") + v
+		globalOutput.SetN("GlobalWarcryUptimeRatio", globalOutput.N("GlobalWarcryUptimeRatio")+v)
 	}
 	// baseUptime is the ratio every cry computes the same way.
 	uptimeFor := func(exerts float64, w warcryStats, value *ActiveSkill) float64 {
-		baseUptimeRatio := math.Min((exerts/outNum(globalOutput, "Speed"))/(w.cooldown+w.castTime), 1) * 100
+		baseUptimeRatio := math.Min((exerts/globalOutput.N("Speed"))/(w.cooldown+w.castTime), 1) * 100
 		return math.Min(100, baseUptimeRatio*warcryStoredUses(value))
 	}
 
 	// Iterate over all the active skills to account for exerted attacks
 	// provided by warcries
-	if !activeSkill.SkillTypes[modparser.SkillType.NeverExertable] && !activeSkill.SkillTypes[modparser.SkillType.Triggered] &&
-		!activeSkill.SkillTypes[modparser.SkillType.Channel] && !activeSkill.SkillTypes[modparser.SkillType.OtherThingUsesSkill] &&
-		!activeSkill.SkillTypes[modparser.SkillType.Retaliation] && !activeSkill.SkillTypes[modparser.SkillType.SummonsTotem] {
+	if !activeSkill.SkillTypes[modparser.SkillTypeNeverExertable] && !activeSkill.SkillTypes[modparser.SkillTypeTriggered] &&
+		!activeSkill.SkillTypes[modparser.SkillTypeChannel] && !activeSkill.SkillTypes[modparser.SkillTypeOtherThingUsesSkill] &&
+		!activeSkill.SkillTypes[modparser.SkillTypeRetaliation] && !activeSkill.SkillTypes[modparser.SkillTypeSummonsTotem] {
 		for _, value := range actor.skills {
 			name := value.ActiveEffect.GrantedEffect.Name
 			switch {
-			case name == "Ancestral Cry" && activeSkill.SkillTypes[modparser.SkillType.MeleeSingleTarget] &&
-				!truthy(globalOutput["AncestralCryCalculated"]) && !value.SkillFlags["disable"]:
+			case name == "Ancestral Cry" && activeSkill.SkillTypes[modparser.SkillTypeMeleeSingleTarget] &&
+				!globalOutput.Flag("AncestralCryCalculated") && !value.SkillFlags["disable"]:
 				w := env.warcryStatsFor(c, value)
-				globalOutput["AncestralCryDuration"] = w.duration
-				globalOutput["AncestralCryCooldown"] = w.cooldown
-				globalOutput["AncestralCryCastTime"] = w.castTime
-				globalOutput["AncestralExertsCount"] = env.ModDB.Sum("BASE", nil, "NumAncestralExerts")
-				globalOutput["AncestralUpTimeRatio"] = uptimeFor(outNum(globalOutput, "AncestralExertsCount"), w, value)
-				addGlobalUptime(outNum(globalOutput, "AncestralUpTimeRatio"))
-				globalOutput["AncestralCryCalculated"] = true
-			case name == "Infernal Cry" && !truthy(globalOutput["InfernalCryCalculated"]) && !value.SkillFlags["disable"]:
+				globalOutput.SetN("AncestralCryDuration", w.duration)
+				globalOutput.SetN("AncestralCryCooldown", w.cooldown)
+				globalOutput.SetN("AncestralCryCastTime", w.castTime)
+				globalOutput.SetN("AncestralExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumAncestralExerts"))
+				globalOutput.SetN("AncestralUpTimeRatio", uptimeFor(globalOutput.N("AncestralExertsCount"), w, value))
+				addGlobalUptime(globalOutput.N("AncestralUpTimeRatio"))
+				globalOutput.SetFlag("AncestralCryCalculated", true)
+			case name == "Infernal Cry" && !globalOutput.Flag("InfernalCryCalculated") && !value.SkillFlags["disable"]:
 				w := env.warcryStatsFor(c, value)
-				globalOutput["InfernalCryDuration"] = w.duration
-				globalOutput["InfernalCryCooldown"] = w.cooldown
-				globalOutput["InfernalCryCastTime"] = w.castTime
-				if activeSkill.SkillTypes[modparser.SkillType.Melee] {
-					globalOutput["InfernalExertsCount"] = env.ModDB.Sum("BASE", nil, "NumInfernalExerts")
-					globalOutput["InfernalUpTimeRatio"] = uptimeFor(outNum(globalOutput, "InfernalExertsCount"), w, value)
-					addGlobalUptime(outNum(globalOutput, "InfernalUpTimeRatio"))
+				globalOutput.SetN("InfernalCryDuration", w.duration)
+				globalOutput.SetN("InfernalCryCooldown", w.cooldown)
+				globalOutput.SetN("InfernalCryCastTime", w.castTime)
+				if activeSkill.SkillTypes[modparser.SkillTypeMelee] {
+					globalOutput.SetN("InfernalExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumInfernalExerts"))
+					globalOutput.SetN("InfernalUpTimeRatio", uptimeFor(globalOutput.N("InfernalExertsCount"), w, value))
+					addGlobalUptime(globalOutput.N("InfernalUpTimeRatio"))
 				}
-				globalOutput["InfernalCryCalculated"] = true
-			case name == "Intimidating Cry" && activeSkill.SkillTypes[modparser.SkillType.Melee] &&
-				!truthy(globalOutput["IntimidatingCryCalculated"]) && !value.SkillFlags["disable"]:
-				globalOutput["CreateWarcryOffensiveCalcSection"] = true
+				globalOutput.SetFlag("InfernalCryCalculated", true)
+			case name == "Intimidating Cry" && activeSkill.SkillTypes[modparser.SkillTypeMelee] &&
+				!globalOutput.Flag("IntimidatingCryCalculated") && !value.SkillFlags["disable"]:
+				globalOutput.SetFlag("CreateWarcryOffensiveCalcSection", true)
 				w := env.warcryStatsFor(c, value)
-				globalOutput["IntimidatingCryDuration"] = w.duration
-				globalOutput["IntimidatingCryCooldown"] = w.cooldown
-				globalOutput["IntimidatingCryCastTime"] = w.castTime
-				globalOutput["IntimidatingExertsCount"] = env.ModDB.Sum("BASE", nil, "NumIntimidatingExerts")
-				globalOutput["IntimidatingUpTimeRatio"] = uptimeFor(outNum(globalOutput, "IntimidatingExertsCount"), w, value)
-				addGlobalUptime(outNum(globalOutput, "IntimidatingUpTimeRatio"))
+				globalOutput.SetN("IntimidatingCryDuration", w.duration)
+				globalOutput.SetN("IntimidatingCryCooldown", w.cooldown)
+				globalOutput.SetN("IntimidatingCryCastTime", w.castTime)
+				globalOutput.SetN("IntimidatingExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumIntimidatingExerts"))
+				globalOutput.SetN("IntimidatingUpTimeRatio", uptimeFor(globalOutput.N("IntimidatingExertsCount"), w, value))
+				addGlobalUptime(globalOutput.N("IntimidatingUpTimeRatio"))
 				selfDD := 0.0
 				if env.ModeEffective {
-					selfDD = enemyDB.Sum("BASE", cfg, "SelfDoubleDamageChance")
+					selfDD = enemyDB.Sum(modparser.Base, cfg, "SelfDoubleDamageChance")
 				}
-				ddChance := math.Min(skillModList.Sum("BASE", cfg, "DoubleDamageChance")+selfDD+exertedDoubleDamage, 100)
-				globalOutput["IntimidatingAvgDmg"] = 2 * (1 - ddChance/100)
-				globalOutput["IntimidatingHitEffect"] = 1 + outNum(globalOutput, "IntimidatingAvgDmg")*outNum(globalOutput, "IntimidatingUpTimeRatio")/100
-				globalOutput["IntimidatingMaxHitEffect"] = 1 + outNum(globalOutput, "IntimidatingAvgDmg")
-				globalOutput["TheoreticalOffensiveWarcryEffect"] = outNum(globalOutput, "TheoreticalOffensiveWarcryEffect") * outNum(globalOutput, "IntimidatingHitEffect")
-				globalOutput["TheoreticalMaxOffensiveWarcryEffect"] = outNum(globalOutput, "TheoreticalMaxOffensiveWarcryEffect") * outNum(globalOutput, "IntimidatingMaxHitEffect")
-				globalOutput["IntimidatingCryCalculated"] = true
-			case name == "Rallying Cry" && activeSkill.SkillTypes[modparser.SkillType.Melee] &&
-				!truthy(globalOutput["RallyingCryCalculated"]) && !value.SkillFlags["disable"]:
-				globalOutput["CreateWarcryOffensiveCalcSection"] = true
+				ddChance := math.Min(skillModList.Sum(modparser.Base, cfg, "DoubleDamageChance")+selfDD+exertedDoubleDamage, 100)
+				globalOutput.SetN("IntimidatingAvgDmg", 2*(1-ddChance/100))
+				globalOutput.SetN("IntimidatingHitEffect", 1+globalOutput.N("IntimidatingAvgDmg")*globalOutput.N("IntimidatingUpTimeRatio")/100)
+				globalOutput.SetN("IntimidatingMaxHitEffect", 1+globalOutput.N("IntimidatingAvgDmg"))
+				globalOutput.SetN("TheoreticalOffensiveWarcryEffect", globalOutput.N("TheoreticalOffensiveWarcryEffect")*globalOutput.N("IntimidatingHitEffect"))
+				globalOutput.SetN("TheoreticalMaxOffensiveWarcryEffect", globalOutput.N("TheoreticalMaxOffensiveWarcryEffect")*globalOutput.N("IntimidatingMaxHitEffect"))
+				globalOutput.SetFlag("IntimidatingCryCalculated", true)
+			case name == "Rallying Cry" && activeSkill.SkillTypes[modparser.SkillTypeMelee] &&
+				!globalOutput.Flag("RallyingCryCalculated") && !value.SkillFlags["disable"]:
+				globalOutput.SetFlag("CreateWarcryOffensiveCalcSection", true)
 				w := env.warcryStatsFor(c, value)
-				globalOutput["RallyingCryDuration"] = w.duration
-				globalOutput["RallyingCryCooldown"] = w.cooldown
-				globalOutput["RallyingCryCastTime"] = w.castTime
-				globalOutput["RallyingExertsCount"] = env.ModDB.Sum("BASE", nil, "NumRallyingExerts")
-				globalOutput["RallyingUpTimeRatio"] = uptimeFor(outNum(globalOutput, "RallyingExertsCount"), w, value)
-				addGlobalUptime(outNum(globalOutput, "RallyingUpTimeRatio"))
-				globalOutput["RallyingAvgDmg"] = math.Min(env.ModDB.Sum("BASE", cfg, "Multiplier:NearbyAlly"), 5) *
-					(env.ModDB.Sum("BASE", nil, "RallyingExertMoreDamagePerAlly") / 100)
-				globalOutput["RallyingHitEffect"] = 1 + outNum(globalOutput, "RallyingAvgDmg")*outNum(globalOutput, "RallyingUpTimeRatio")/100
-				globalOutput["RallyingMaxHitEffect"] = 1 + outNum(globalOutput, "RallyingAvgDmg")
-				globalOutput["OffensiveWarcryEffect"] = outNum(globalOutput, "OffensiveWarcryEffect") * outNum(globalOutput, "RallyingHitEffect")
-				globalOutput["MaxOffensiveWarcryEffect"] = outNum(globalOutput, "MaxOffensiveWarcryEffect") * outNum(globalOutput, "RallyingMaxHitEffect")
-				globalOutput["TheoreticalOffensiveWarcryEffect"] = outNum(globalOutput, "TheoreticalOffensiveWarcryEffect") * outNum(globalOutput, "RallyingHitEffect")
-				globalOutput["TheoreticalMaxOffensiveWarcryEffect"] = outNum(globalOutput, "TheoreticalMaxOffensiveWarcryEffect") * outNum(globalOutput, "RallyingMaxHitEffect")
-				globalOutput["RallyingCryCalculated"] = true
-			case name == "Seismic Cry" && activeSkill.SkillTypes[modparser.SkillType.Slam] &&
-				!truthy(globalOutput["SeismicCryCalculated"]) && !value.SkillFlags["disable"]:
-				globalOutput["CreateWarcryOffensiveCalcSection"] = true
+				globalOutput.SetN("RallyingCryDuration", w.duration)
+				globalOutput.SetN("RallyingCryCooldown", w.cooldown)
+				globalOutput.SetN("RallyingCryCastTime", w.castTime)
+				globalOutput.SetN("RallyingExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumRallyingExerts"))
+				globalOutput.SetN("RallyingUpTimeRatio", uptimeFor(globalOutput.N("RallyingExertsCount"), w, value))
+				addGlobalUptime(globalOutput.N("RallyingUpTimeRatio"))
+				globalOutput.SetN("RallyingAvgDmg", math.Min(env.ModDB.Sum(modparser.Base, cfg, "Multiplier:NearbyAlly"), 5)*
+					(env.ModDB.Sum(modparser.Base, nil, "RallyingExertMoreDamagePerAlly")/100))
+				globalOutput.SetN("RallyingHitEffect", 1+globalOutput.N("RallyingAvgDmg")*globalOutput.N("RallyingUpTimeRatio")/100)
+				globalOutput.SetN("RallyingMaxHitEffect", 1+globalOutput.N("RallyingAvgDmg"))
+				globalOutput.SetN("OffensiveWarcryEffect", globalOutput.N("OffensiveWarcryEffect")*globalOutput.N("RallyingHitEffect"))
+				globalOutput.SetN("MaxOffensiveWarcryEffect", globalOutput.N("MaxOffensiveWarcryEffect")*globalOutput.N("RallyingMaxHitEffect"))
+				globalOutput.SetN("TheoreticalOffensiveWarcryEffect", globalOutput.N("TheoreticalOffensiveWarcryEffect")*globalOutput.N("RallyingHitEffect"))
+				globalOutput.SetN("TheoreticalMaxOffensiveWarcryEffect", globalOutput.N("TheoreticalMaxOffensiveWarcryEffect")*globalOutput.N("RallyingMaxHitEffect"))
+				globalOutput.SetFlag("RallyingCryCalculated", true)
+			case name == "Seismic Cry" && activeSkill.SkillTypes[modparser.SkillTypeSlam] &&
+				!globalOutput.Flag("SeismicCryCalculated") && !value.SkillFlags["disable"]:
+				globalOutput.SetFlag("CreateWarcryOffensiveCalcSection", true)
 				w := env.warcryStatsFor(c, value)
-				globalOutput["SeismicCryDuration"] = w.duration
-				globalOutput["SeismicCryCooldown"] = w.cooldown
-				globalOutput["SeismicCryCastTime"] = w.castTime
-				globalOutput["SeismicExertsCount"] = env.ModDB.Sum("BASE", nil, "NumSeismicExerts")
-				globalOutput["SeismicUpTimeRatio"] = uptimeFor(outNum(globalOutput, "SeismicExertsCount"), w, value)
-				addGlobalUptime(outNum(globalOutput, "SeismicUpTimeRatio"))
+				globalOutput.SetN("SeismicCryDuration", w.duration)
+				globalOutput.SetN("SeismicCryCooldown", w.cooldown)
+				globalOutput.SetN("SeismicCryCastTime", w.castTime)
+				globalOutput.SetN("SeismicExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumSeismicExerts"))
+				globalOutput.SetN("SeismicUpTimeRatio", uptimeFor(globalOutput.N("SeismicExertsCount"), w, value))
+				addGlobalUptime(globalOutput.N("SeismicUpTimeRatio"))
 				// account for AoE increase
 				if activeSkill.SkillModList.Flag(nil, "Condition:WarcryMaxHit") {
-					skillModList.AddMod(newMod("AreaOfEffect", "MORE", env.ModDB.Sum("BASE", nil, "SeismicMoreAoE"), "Max Seismic Exert AoE"))
+					skillModList.AddMod(newModS("AreaOfEffect", modparser.More, modparser.Num(env.ModDB.Sum(modparser.Base, nil, "SeismicMoreAoE")), "Max Seismic Exert AoE"))
 				} else {
-					skillModList.AddMod(newMod("AreaOfEffect", "MORE",
-						math.Floor(env.ModDB.Sum("BASE", nil, "SeismicMoreAoE")/100*outNum(globalOutput, "SeismicUpTimeRatio")), "Avg Seismic Exert AoE"))
+					skillModList.AddMod(newModS("AreaOfEffect", modparser.More, modparser.Num(math.Floor(env.ModDB.Sum(modparser.Base, nil, "SeismicMoreAoE")/100*globalOutput.N("SeismicUpTimeRatio"))), "Avg Seismic Exert AoE"))
 				}
 				env.calcAreaOfEffect(c)
-				globalOutput["SeismicCryCalculated"] = true
-			case name == "Battlemage's Cry" && !truthy(globalOutput["BattleMageCryCalculated"]) && !value.SkillFlags["disable"]:
+				globalOutput.SetFlag("SeismicCryCalculated", true)
+			case name == "Battlemage's Cry" && !globalOutput.Flag("BattleMageCryCalculated") && !value.SkillFlags["disable"]:
 				w := env.warcryStatsFor(c, value)
-				globalOutput["BattleMageCryDuration"] = w.duration
-				globalOutput["BattleMageCryCooldown"] = w.cooldown
-				globalOutput["BattleMageCryCastTime"] = w.castTime
-				if activeSkill.SkillTypes[modparser.SkillType.Melee] {
-					globalOutput["BattleCryExertsCount"] = env.ModDB.Sum("BASE", nil, "NumBattlemageExerts")
-					globalOutput["BattlemageUpTimeRatio"] = uptimeFor(outNum(globalOutput, "BattleCryExertsCount"), w, value)
-					addGlobalUptime(outNum(globalOutput, "BattlemageUpTimeRatio"))
+				globalOutput.SetN("BattleMageCryDuration", w.duration)
+				globalOutput.SetN("BattleMageCryCooldown", w.cooldown)
+				globalOutput.SetN("BattleMageCryCastTime", w.castTime)
+				if activeSkill.SkillTypes[modparser.SkillTypeMelee] {
+					globalOutput.SetN("BattleCryExertsCount", env.ModDB.Sum(modparser.Base, nil, "NumBattlemageExerts"))
+					globalOutput.SetN("BattlemageUpTimeRatio", uptimeFor(globalOutput.N("BattleCryExertsCount"), w, value))
+					addGlobalUptime(globalOutput.N("BattlemageUpTimeRatio"))
 				}
-				globalOutput["BattleMageCryCalculated"] = true
+				globalOutput.SetFlag("BattleMageCryCalculated", true)
 			}
 		}
 
 		if activeSkill.SkillModList.Flag(nil, "Condition:WarcryMaxHit") {
-			globalOutput["AilmentWarcryEffect"] = globalOutput["MaxOffensiveWarcryEffect"]
-			skillData["showAverage"] = true
+			globalOutput.Set("AilmentWarcryEffect", globalOutput.Get("MaxOffensiveWarcryEffect"))
+			skillData.SetFlag("showAverage", true)
 			skillFlags["showAverage"] = true
 			skillFlags["notAverage"] = false
 		} else {
-			globalOutput["AilmentWarcryEffect"] = globalOutput["OffensiveWarcryEffect"]
+			globalOutput.Set("AilmentWarcryEffect", globalOutput.Get("OffensiveWarcryEffect"))
 		}
 
 		// Calculate Exerted Attack Uptime
@@ -181,41 +181,41 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 		warcryList := []string{"AncestralUpTimeRatio", "InfernalUpTimeRatio", "IntimidatingUpTimeRatio",
 			"RallyingUpTimeRatio", "SeismicUpTimeRatio", "BattlemageUpTimeRatio"}
 		for _, cryTimeRatio := range warcryList {
-			globalOutput["ExertedAttackUptimeRatio"] = math.Max(outNum(globalOutput, "ExertedAttackUptimeRatio"), outNum(globalOutput, cryTimeRatio))
+			globalOutput.SetN("ExertedAttackUptimeRatio", math.Max(globalOutput.N("ExertedAttackUptimeRatio"), globalOutput.N(cryTimeRatio)))
 		}
-		if outNum(globalOutput, "ExertedAttackUptimeRatio") > 0 && !truthy(globalOutput["ExertedAttackUptimeRatioCalculated"]) {
-			incExertedAttacks := skillModList.Sum("INC", cfg, "ExertIncrease")
-			moreExertedAttacks := skillModList.Sum("MORE", cfg, "ExertIncrease")
-			moreExertedAttackDamage := skillModList.Sum("MORE", cfg, "ExertAttackIncrease")
-			overexertionExertedDamage := skillModList.Sum("MORE", cfg, "OverexertionExertAverageIncrease")
-			echoesOfCreationExertedDamage := skillModList.Sum("MORE", cfg, "EchoesExertAverageIncrease")
+		if globalOutput.N("ExertedAttackUptimeRatio") > 0 && !globalOutput.Flag("ExertedAttackUptimeRatioCalculated") {
+			incExertedAttacks := skillModList.Sum(modparser.Inc, cfg, "ExertIncrease")
+			moreExertedAttacks := skillModList.Sum(modparser.More, cfg, "ExertIncrease")
+			moreExertedAttackDamage := skillModList.Sum(modparser.More, cfg, "ExertAttackIncrease")
+			overexertionExertedDamage := skillModList.Sum(modparser.More, cfg, "OverexertionExertAverageIncrease")
+			echoesOfCreationExertedDamage := skillModList.Sum(modparser.More, cfg, "EchoesExertAverageIncrease")
 			if activeSkill.SkillModList.Flag(nil, "Condition:WarcryMaxHit") {
-				skillModList.AddMod(newMod("Damage", "INC", incExertedAttacks, "Exerted Attacks"))
-				skillModList.AddMod(newMod("Damage", "MORE", moreExertedAttacks, "Exerted Attacks"))
-				skillModList.AddMod(newMod("Damage", "MORE", moreExertedAttackDamage, "Exerted Attack Damage", modparser.ModFlag.Attack))
-				skillModList.AddMod(newMod("Damage", "MORE", overexertionExertedDamage*exertingWarcryCount, "Max Autoexertion Support"))
-				skillModList.AddMod(newMod("Damage", "MORE", echoesOfCreationExertedDamage*exertingWarcryCount, "Max Echoes of Creation"))
+				skillModList.AddMod(newModS("Damage", modparser.Inc, modparser.Num(incExertedAttacks), "Exerted Attacks"))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(moreExertedAttacks), "Exerted Attacks"))
+				skillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(moreExertedAttackDamage), "Exerted Attack Damage", modparser.FlagAttack, modparser.KeywordNone))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(overexertionExertedDamage*exertingWarcryCount), "Max Autoexertion Support"))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(echoesOfCreationExertedDamage*exertingWarcryCount), "Max Echoes of Creation"))
 			} else {
-				uptime := outNum(globalOutput, "ExertedAttackUptimeRatio")
-				globalUptime := outNum(globalOutput, "GlobalWarcryUptimeRatio")
-				skillModList.AddMod(newMod("Damage", "INC", incExertedAttacks*uptime/100, "Uptime Scaled Exerted Attacks"))
-				skillModList.AddMod(newMod("Damage", "MORE", moreExertedAttacks*uptime/100, "Uptime Scaled Exerted Attacks"))
-				skillModList.AddMod(newMod("Damage", "MORE", moreExertedAttackDamage*uptime/100, "Uptime Scaled Exerted Attack Damage", modparser.ModFlag.Attack))
-				skillModList.AddMod(newMod("Damage", "MORE", overexertionExertedDamage*globalUptime/100, "Uptime Scaled Autoexertion Support"))
-				skillModList.AddMod(newMod("Damage", "MORE", echoesOfCreationExertedDamage*globalUptime/100, "Uptime Scaled Echoes of Creation"))
+				uptime := globalOutput.N("ExertedAttackUptimeRatio")
+				globalUptime := globalOutput.N("GlobalWarcryUptimeRatio")
+				skillModList.AddMod(newModS("Damage", modparser.Inc, modparser.Num(incExertedAttacks*uptime/100), "Uptime Scaled Exerted Attacks"))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(moreExertedAttacks*uptime/100), "Uptime Scaled Exerted Attacks"))
+				skillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(moreExertedAttackDamage*uptime/100), "Uptime Scaled Exerted Attack Damage", modparser.FlagAttack, modparser.KeywordNone))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(overexertionExertedDamage*globalUptime/100), "Uptime Scaled Autoexertion Support"))
+				skillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(echoesOfCreationExertedDamage*globalUptime/100), "Uptime Scaled Echoes of Creation"))
 			}
 			avg := Mod(skillModList, skillCfg, "ExertIncrease")
 			avg = avg * Mod(skillModList, skillCfg, "ExertAttackIncrease", "OverexertionExertAverageIncrease", "EchoesExertAverageIncrease")
-			globalOutput["ExertedAttackAvgDmg"] = avg
-			globalOutput["ExertedAttackHitEffect"] = avg * outNum(globalOutput, "ExertedAttackUptimeRatio") / 100
-			globalOutput["ExertedAttackMaxHitEffect"] = avg
-			globalOutput["ExertedAttackUptimeRatioCalculated"] = true
+			globalOutput.SetN("ExertedAttackAvgDmg", avg)
+			globalOutput.SetN("ExertedAttackHitEffect", avg*globalOutput.N("ExertedAttackUptimeRatio")/100)
+			globalOutput.SetN("ExertedAttackMaxHitEffect", avg)
+			globalOutput.SetFlag("ExertedAttackUptimeRatioCalculated", true)
 		}
 	}
 
 	// Each Pact has different eligible spell types, but shares the same
 	// uptime calculation.
-	if activeSkill.SkillTypes[modparser.SkillType.Spell] && !activeSkill.SkillTypes[modparser.SkillType.Brand] {
+	if activeSkill.SkillTypes[modparser.SkillTypeSpell] && !activeSkill.SkillTypes[modparser.SkillTypeBrand] {
 		for _, value := range actor.skills {
 			pactName := value.ActiveEffect.GrantedEffect.Name
 			if !strings.HasPrefix(pactName, "Pact of ") {
@@ -228,14 +228,14 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 			if pactKey == "K'Tash" {
 				pactKey = "Ktash"
 			}
-			isVaal := activeSkill.SkillTypes[modparser.SkillType.Vaal]
-			pactApplies := pactKey == "Beidat" && !isVaal && !activeSkill.SkillTypes[modparser.SkillType.Channel] &&
-				(skillFlags["projectile"] || activeSkill.SkillTypes[modparser.SkillType.Cascadable] || (skillFlags["chaining"] && !skillFlags["projectile"])) ||
-				pactKey == "Ghorr" && !isVaal && activeSkill.SkillTypes[modparser.SkillType.DamageOverTime] ||
-				pactKey == "Ktash" && isVaal && (activeSkill.SkillTypes[modparser.SkillType.Damage] || activeSkill.SkillTypes[modparser.SkillType.DamageOverTime]) ||
-				pactKey == "Lycia" && !isVaal && activeSkill.SkillTypes[modparser.SkillType.Channel] && skillFlags["selfCast"]
+			isVaal := activeSkill.SkillTypes[modparser.SkillTypeVaal]
+			pactApplies := pactKey == "Beidat" && !isVaal && !activeSkill.SkillTypes[modparser.SkillTypeChannel] &&
+				(skillFlags["projectile"] || activeSkill.SkillTypes[modparser.SkillTypeCascadable] || (skillFlags["chaining"] && !skillFlags["projectile"])) ||
+				pactKey == "Ghorr" && !isVaal && activeSkill.SkillTypes[modparser.SkillTypeDamageOverTime] ||
+				pactKey == "Ktash" && isVaal && (activeSkill.SkillTypes[modparser.SkillTypeDamage] || activeSkill.SkillTypes[modparser.SkillTypeDamageOverTime]) ||
+				pactKey == "Lycia" && !isVaal && activeSkill.SkillTypes[modparser.SkillTypeChannel] && skillFlags["selfCast"]
 			calculated := "PactOf" + pactKey + "Calculated"
-			if !pactApplies || truthy(globalOutput[calculated]) || value.SkillFlags["disable"] {
+			if !pactApplies || globalOutput.Flag(calculated) || value.SkillFlags["disable"] {
 				continue
 			}
 			cooldown, _ := env.calcSkillCooldown(value.SkillModList, value.SkillCfg, value.SkillData)
@@ -245,11 +245,11 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 			}
 			castRate := 1 / pactCastTime * Mod(value.SkillModList, value.SkillCfg, "Speed") * env.actionSpeedMod(actor)
 			castTime := 1 / math.Min(castRate, data.Misc.ServerTickRate)
-			count := value.SkillModList.Sum("BASE", value.SkillCfg, pactKey+"EmpoweredSpells")
+			count := value.SkillModList.Sum(modparser.Base, value.SkillCfg, pactKey+"EmpoweredSpells")
 			storedUses := warcryStoredUses(value)
 			uptime := 100.0
-			if outNum(globalOutput, "Speed") != 0 {
-				uptime = math.Min((count/outNum(globalOutput, "Speed"))/(cooldown+castTime), 1) * 100
+			if globalOutput.N("Speed") != 0 {
+				uptime = math.Min((count/globalOutput.N("Speed"))/(cooldown+castTime), 1) * 100
 			}
 			uptime = math.Min(100, uptime*storedUses)
 			effect := uptime
@@ -258,17 +258,15 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 			}
 			effectMult := effect / 100
 
-			globalOutput["CreatePactOffensiveCalcSection"] = true
-			globalOutput["PactOf"+pactKey+"Cooldown"] = cooldown
-			globalOutput["PactOf"+pactKey+"CastTime"] = castTime
-			globalOutput[pactKey+"EmpoweredCount"] = count
-			globalOutput[pactKey+"UpTimeRatio"] = uptime
+			globalOutput.SetFlag("CreatePactOffensiveCalcSection", true)
+			globalOutput.SetN("PactOf"+pactKey+"Cooldown", cooldown)
+			globalOutput.SetN("PactOf"+pactKey+"CastTime", castTime)
+			globalOutput.SetN(pactKey+"EmpoweredCount", count)
+			globalOutput.SetN(pactKey+"UpTimeRatio", uptime)
 
 			if list := value.SkillModList.List(value.SkillCfg, pactKey+"PactDamage"); len(list) > 0 {
-				tag, _ := list[0].(modparser.Tag)
-				if mod, _ := tag["mod"].(*modparser.Mod); mod != nil {
-					skillModList.AddMod(newMod(mod.Name, mod.Type, anyNum(mod.Value)*effectMult,
-						modArgs("Uptime Scaled "+pactName, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+				if mod := modRefOf(list[0]); mod != nil {
+					skillModList.AddMod(modparser.NewModFull(mod.Name, mod.Type, modparser.Num(valueNum(mod.Value)*effectMult), "Uptime Scaled "+pactName, true, mod.Flags, mod.KeywordFlags, mod.Tags...))
 				}
 			}
 
@@ -277,27 +275,27 @@ func (env *Env) offenceExerts(c *offenceCtx, pass *damagePass) {
 				// Coverage bonuses are averaged with the same uptime as the
 				// damage bonus.
 				if skillFlags["projectile"] && !skillModList.Flag(skillCfg, "NoAdditionalProjectiles") && !skillModList.Flag(skillCfg, "SingleProjectile") {
-					globalOutput["BeidatAdditionalProjectiles"] = value.SkillModList.Sum("BASE", value.SkillCfg, "BeidatAdditionalProjectiles") * effectMult
-					globalOutput["ProjectileCount"] = outNum(globalOutput, "ProjectileCount") + outNum(globalOutput, "BeidatAdditionalProjectiles")
+					globalOutput.SetN("BeidatAdditionalProjectiles", value.SkillModList.Sum(modparser.Base, value.SkillCfg, "BeidatAdditionalProjectiles")*effectMult)
+					globalOutput.SetN("ProjectileCount", globalOutput.N("ProjectileCount")+globalOutput.N("BeidatAdditionalProjectiles"))
 				}
 				if skillFlags["chaining"] && !skillFlags["projectile"] && !skillModList.Flag(skillCfg, "CannotChain") && !skillModList.Flag(skillCfg, "NoAdditionalChains") {
-					globalOutput["BeidatAdditionalBeamChains"] = value.SkillModList.Sum("BASE", value.SkillCfg, "BeidatAdditionalBeamChains") * effectMult
-					globalOutput["ChainMax"] = outNum(globalOutput, "ChainMax") + outNum(globalOutput, "BeidatAdditionalBeamChains")
-					globalOutput["ChainMaxString"] = globalOutput["ChainMax"]
-					globalOutput["ChainRemaining"] = math.Max(0, outNum(globalOutput, "ChainMax")-outNum(globalOutput, "Chain"))
+					globalOutput.SetN("BeidatAdditionalBeamChains", value.SkillModList.Sum(modparser.Base, value.SkillCfg, "BeidatAdditionalBeamChains")*effectMult)
+					globalOutput.SetN("ChainMax", globalOutput.N("ChainMax")+globalOutput.N("BeidatAdditionalBeamChains"))
+					globalOutput.Set("ChainMaxString", globalOutput.Get("ChainMax"))
+					globalOutput.SetN("ChainRemaining", math.Max(0, globalOutput.N("ChainMax")-globalOutput.N("Chain")))
 				}
-				if activeSkill.SkillTypes[modparser.SkillType.Cascadable] {
-					globalOutput["BeidatAdditionalCascades"] = value.SkillModList.Sum("BASE", value.SkillCfg, "BeidatAdditionalCascades") * effectMult
+				if activeSkill.SkillTypes[modparser.SkillTypeCascadable] {
+					globalOutput.SetN("BeidatAdditionalCascades", value.SkillModList.Sum(modparser.Base, value.SkillCfg, "BeidatAdditionalCascades")*effectMult)
 				}
 			case "Ktash":
-				globalOutput["KtashSoulRefundChance"] = value.SkillModList.Sum("BASE", value.SkillCfg, "KtashPactSoulRefundChance") * effectMult
-				if truthy(globalOutput["SoulGainPreventionDuration"]) {
-					duration := outNum(globalOutput, "SoulGainPreventionDuration")
-					durationMod := 1 + value.SkillModList.Sum("BASE", value.SkillCfg, "KtashPactSoulGainPrevention")*effectMult/100
-					globalOutput["SoulGainPreventionDuration"] = math.Max(math.Ceil(duration*durationMod*data.Misc.ServerTickRate), 1) / data.Misc.ServerTickRate
+				globalOutput.SetN("KtashSoulRefundChance", value.SkillModList.Sum(modparser.Base, value.SkillCfg, "KtashPactSoulRefundChance")*effectMult)
+				if globalOutput.Has("SoulGainPreventionDuration") {
+					duration := globalOutput.N("SoulGainPreventionDuration")
+					durationMod := 1 + value.SkillModList.Sum(modparser.Base, value.SkillCfg, "KtashPactSoulGainPrevention")*effectMult/100
+					globalOutput.SetN("SoulGainPreventionDuration", math.Max(math.Ceil(duration*durationMod*data.Misc.ServerTickRate), 1)/data.Misc.ServerTickRate)
 				}
 			}
-			globalOutput[calculated] = true
+			globalOutput.SetFlag(calculated, true)
 		}
 	}
 }
@@ -309,26 +307,26 @@ func (env *Env) offenceRuthless(c *offenceCtx, pass *damagePass) {
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
 
-	output["RuthlessBlowHitEffect"] = 1.0
-	output["RuthlessBlowAilmentEffect"] = 1.0
-	output["FistOfWarDamageEffect"] = 1.0
+	output.SetN("RuthlessBlowHitEffect", 1.0)
+	output.SetN("RuthlessBlowAilmentEffect", 1.0)
+	output.SetN("FistOfWarDamageEffect", 1.0)
 	if !env.ModeCombat {
 		return
 	}
 	ruthlessEffect := "AVERAGE"
-	if v := str(env.ConfigInput["ruthlessSupportMode"]); v != "" {
+	if v := env.ConfigInput.RuthlessSupportMode; v != "" {
 		ruthlessEffect = v
 	}
 	// Calculate Ruthless Blow chance/multipliers + Fist of War multipliers
-	output["RuthlessBlowMaxCount"] = skillModList.Sum("BASE", cfg, "RuthlessBlowMaxCount")
-	maxCount := outNum(output, "RuthlessBlowMaxCount")
+	output.SetN("RuthlessBlowMaxCount", skillModList.Sum(modparser.Base, cfg, "RuthlessBlowMaxCount"))
+	maxCount := output.N("RuthlessBlowMaxCount")
 	usedByMirage := skillCfg.SkillCond != nil && skillCfg.SkillCond["usedByMirage"]
-	if maxCount > 0 && (!usedByMirage || anyNum(skillData["mirageUses"]) > maxCount) {
+	if maxCount > 0 && (!usedByMirage || skillData.N("mirageUses") > maxCount) {
 		switch ruthlessEffect {
 		case "AVERAGE":
-			output["RuthlessBlowChance"] = roundDec(100/maxCount, 0)
+			output.SetN("RuthlessBlowChance", util.RoundHalfUp(100/maxCount, 0))
 		case "MAX":
-			output["RuthlessBlowChance"] = 100.0
+			output.SetN("RuthlessBlowChance", 100.0)
 			// `dpsMultiplier / (output.RuthlessBlowMaxCount or 1)`: the `or 1`
 			// is unreachable (maxCount > 0 gates this branch and the value is
 			// a number, so it is never nil), and so is this guard.
@@ -336,22 +334,22 @@ func (env *Env) offenceRuthless(c *offenceCtx, pass *damagePass) {
 			if denom == 0 {
 				denom = 1
 			}
-			skillData["dpsMultiplier"] = anyNum(skillData["dpsMultiplier"]) / denom
+			skillData.SetN("dpsMultiplier", skillData.N("dpsMultiplier")/denom)
 		}
 	} else {
-		output["RuthlessBlowChance"] = 0.0
+		output.SetN("RuthlessBlowChance", 0.0)
 	}
-	output["RuthlessBlowHitMultiplier"] = 1 + skillModList.Sum("BASE", cfg, "RuthlessBlowHitMultiplier")/100
-	output["RuthlessBlowAilmentMultiplier"] = 1 + skillModList.Sum("BASE", cfg, "RuthlessBlowAilmentMultiplier")/100
-	chance := outNum(output, "RuthlessBlowChance")
-	output["RuthlessBlowHitEffect"] = 1 - chance/100 + chance/100*outNum(output, "RuthlessBlowHitMultiplier")
-	output["RuthlessBlowAilmentEffect"] = 1 - chance/100 + chance/100*outNum(output, "RuthlessBlowAilmentMultiplier")
+	output.SetN("RuthlessBlowHitMultiplier", 1+skillModList.Sum(modparser.Base, cfg, "RuthlessBlowHitMultiplier")/100)
+	output.SetN("RuthlessBlowAilmentMultiplier", 1+skillModList.Sum(modparser.Base, cfg, "RuthlessBlowAilmentMultiplier")/100)
+	chance := output.N("RuthlessBlowChance")
+	output.SetN("RuthlessBlowHitEffect", 1-chance/100+chance/100*output.N("RuthlessBlowHitMultiplier"))
+	output.SetN("RuthlessBlowAilmentEffect", 1-chance/100+chance/100*output.N("RuthlessBlowAilmentMultiplier"))
 
-	globalOutput["FistOfWarCooldown"] = skillModList.Sum("BASE", cfg, "FistOfWarCooldown")
+	globalOutput.SetN("FistOfWarCooldown", skillModList.Sum(modparser.Base, cfg, "FistOfWarCooldown"))
 	// If Fist of War & Active Skill is a Slam Skill & NOT a Vaal Skill & NOT
 	// used by mirage or other
-	if outNum(globalOutput, "FistOfWarCooldown") != 0 && activeSkill.SkillTypes[modparser.SkillType.Slam] &&
-		!activeSkill.SkillTypes[modparser.SkillType.Vaal] && !activeSkill.SkillTypes[modparser.SkillType.OtherThingUsesSkill] {
+	if globalOutput.N("FistOfWarCooldown") != 0 && activeSkill.SkillTypes[modparser.SkillTypeSlam] &&
+		!activeSkill.SkillTypes[modparser.SkillTypeVaal] && !activeSkill.SkillTypes[modparser.SkillTypeOtherThingUsesSkill] {
 		env.offenceFistOfWar(c, pass)
 	}
 }

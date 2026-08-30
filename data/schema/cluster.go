@@ -8,6 +8,8 @@ type ClusterJewels struct {
 	OrbitOffsets     []OrbitOffset      `json:"orbitOffsets"`
 }
 
+func (ClusterJewels) isDocument() {}
+
 type ClusterJewelSize struct {
 	Name            string         `json:"name"`
 	Size            string         `json:"size"`

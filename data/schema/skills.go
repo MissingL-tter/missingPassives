@@ -1,11 +1,19 @@
 package schema
 
+import (
+	"encoding/json"
+
+	"github.com/MissingL-tter/missingPassives/modparser"
+)
+
 // SkillsData is the skills script's document: per-template skill
 // definitions plus the gem list (Data/Gems.lua).
 type SkillsData struct {
 	Files map[string]SkillFile `json:"files"` // keyed by template ("act_str", ...)
 	Gems  []GemDef             `json:"gems"`  // SkillGems row order
 }
+
+func (SkillsData) isDocument() {}
 
 // SkillFile pairs by position: Skills has one entry per #skill directive,
 // Tails one per #mods directive (snapshotted at #mods time, which preserves
@@ -24,7 +32,7 @@ type SkillHeader struct {
 	Name         string   `json:"name"`
 	Hidden       bool     `json:"hidden,omitempty"`
 	BaseTypeName *string  `json:"baseTypeName,omitempty"`
-	Description  *string  `json:"description,omitempty"` // final escaped text
+	Description  *string  `json:"description,omitempty"`
 	HasFlavour   bool     `json:"hasFlavour,omitempty"`
 	FlavourText  []string `json:"flavourText,omitempty"`
 
@@ -33,21 +41,21 @@ type SkillHeader struct {
 	IncrementalEffectiveness *float64 `json:"incrementalEffectiveness,omitempty"`
 
 	Support bool `json:"support,omitempty"`
-	// Support-only fields ("SkillType.X" strings).
-	RequireSkillTypes []string `json:"requireSkillTypes,omitempty"`
-	AddSkillTypes     []string `json:"addSkillTypes,omitempty"`
-	ExcludeSkillTypes []string `json:"excludeSkillTypes,omitempty"`
-	IsTrigger         bool     `json:"isTrigger,omitempty"`
-	SupportGemsOnly   bool     `json:"supportGemsOnly,omitempty"`
-	IgnoreMinionTypes bool     `json:"ignoreMinionTypes,omitempty"`
-	PlusVersionOf     *string  `json:"plusVersionOf,omitempty"`
+	// Support-only fields.
+	RequireSkillTypes []modparser.SkillTypeID `json:"requireSkillTypes,omitempty"`
+	AddSkillTypes     []modparser.SkillTypeID `json:"addSkillTypes,omitempty"`
+	ExcludeSkillTypes []modparser.SkillTypeID `json:"excludeSkillTypes,omitempty"`
+	IsTrigger         bool                    `json:"isTrigger,omitempty"`
+	SupportGemsOnly   bool                    `json:"supportGemsOnly,omitempty"`
+	IgnoreMinionTypes bool                    `json:"ignoreMinionTypes,omitempty"`
+	PlusVersionOf     *string                 `json:"plusVersionOf,omitempty"`
 
 	// Active-only fields.
-	SkillTypes        []string `json:"skillTypes,omitempty"`
-	MinionSkillTypes  []string `json:"minionSkillTypes,omitempty"`
-	SkillTotemId      *int64   `json:"skillTotemId,omitempty"`
-	CastTime          *float64 `json:"castTime,omitempty"`
-	CannotBeSupported bool     `json:"cannotBeSupported,omitempty"`
+	SkillTypes        []modparser.SkillTypeID `json:"skillTypes,omitempty"`
+	MinionSkillTypes  []modparser.SkillTypeID `json:"minionSkillTypes,omitempty"`
+	SkillTotemId      *int64                  `json:"skillTotemId,omitempty"`
+	CastTime          *float64                `json:"castTime,omitempty"`
+	CannotBeSupported bool                    `json:"cannotBeSupported,omitempty"`
 
 	WeaponTypes          []string `json:"weaponTypes,omitempty"` // sorted
 	StatDescriptionScope string   `json:"statDescriptionScope"`
@@ -56,15 +64,15 @@ type SkillHeader struct {
 type SkillTail struct {
 	// ModsArgs is the raw #mods directive argument (the noBaseFlags/noStats/
 	// ... gates).
-	ModsArgs      string       `json:"modsArgs,omitempty"`
-	Support       bool         `json:"support,omitempty"`
-	BaseFlags     []string     `json:"baseFlags,omitempty"`
-	BaseMods      []string     `json:"baseMods,omitempty"` // raw template text
-	QualityStats  []StatValue  `json:"qualityStats,omitempty"`
-	ConstantStats []StatValue  `json:"constantStats,omitempty"`
-	Stats         []string     `json:"stats"`
-	NotMinionStat []string     `json:"notMinionStat,omitempty"`
-	Levels        []SkillLevel `json:"levels"`
+	ModsArgs      string            `json:"modsArgs,omitempty"`
+	Support       bool              `json:"support,omitempty"`
+	BaseFlags     []string          `json:"baseFlags,omitempty"`
+	BaseMods      []json.RawMessage `json:"baseMods,omitempty"` // structured mods (modparser codec), one list per template line
+	QualityStats  []StatValue       `json:"qualityStats,omitempty"`
+	ConstantStats []StatValue       `json:"constantStats,omitempty"`
+	Stats         []string          `json:"stats"`
+	NotMinionStat []string          `json:"notMinionStat,omitempty"`
+	Levels        []SkillLevel      `json:"levels"`
 }
 
 type StatValue struct {

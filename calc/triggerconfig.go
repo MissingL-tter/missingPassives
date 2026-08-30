@@ -111,10 +111,10 @@ func init() {
 func castOnCriticalStrikeConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && env.slotMatch(skill)
+			return skill.SkillTypes[modparser.SkillTypeAttack] && env.slotMatch(skill)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByCoc"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByCoc") && env.slotMatch(skill)
 		},
 	}
 }
@@ -126,8 +126,8 @@ func novaConfig(env *Env, actor *performActor) *triggerConfig {
 		return nil
 	}
 	sim := &simSkill{uuid: env.cacheSkillUUID(env.Minion.MainSkill)}
-	if v, ok := env.Minion.MainSkill.SkillData["cooldown"]; ok && truthy(v) {
-		n := anyNum(v)
+	if sd := env.Minion.MainSkill.SkillData; sd.Flag("cooldown") {
+		n := sd.N("cooldown")
 		sim.cd = &n
 	}
 	return &triggerConfig{
@@ -135,7 +135,7 @@ func novaConfig(env *Env, actor *performActor) *triggerConfig {
 		actor:           env.minionPA,
 		triggeredSkills: []*simSkill{sim},
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeAttack]
 		},
 	}
 }
@@ -145,11 +145,11 @@ func novaConfig(env *Env, actor *performActor) *triggerConfig {
 // it is its own source and the rate comes from the trigger cap.
 func castWhenDamageTakenConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
-	if !truthy(main.SkillData["triggeredByDamageTaken"]) {
+	if !main.SkillData.Flag("triggeredByDamageTaken") {
 		return nil
 	}
 	thresholdMod := Mod(main.SkillModList, nil, "CWDTThreshold")
-	env.Player.Output["CWDTThreshold"] = anyNum(main.SkillData["triggeredByDamageTaken"]) * thresholdMod
+	env.Player.Output.SetN("CWDTThreshold", main.SkillData.N("triggeredByDamageTaken")*thresholdMod)
 	main.SkillFlags["globalTrigger"] = true
 	return &triggerConfig{source: main}
 }
@@ -162,28 +162,28 @@ func triggeredMoltenStrikeConfig(env *Env, actor *performActor) *triggerConfig {
 
 // meleeOrAttack is the trigger condition several unique-item entries share.
 func meleeOrAttack(env *Env, skill *ActiveSkill) bool {
-	return skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]
+	return skill.SkillTypes[modparser.SkillTypeMelee] || skill.SkillTypes[modparser.SkillTypeAttack]
 }
 
 // doomBlastConfig ports the "doom blast" entry (L1394): the hexes that are
 // removed drive the blast, so the source is the curse cast rate and each
 // overlapping curse is another blast.
 func doomBlastConfig(env *Env, actor *performActor) *triggerConfig {
-	if str(env.ConfigInput["doomBlastSource"]) == "replacement" {
-		env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+	if env.ConfigInput.DoomBlastSource == "replacement" {
+		env.ModDB.AddMod(newModS("UsesCurseOverlaps", modparser.Flag, modparser.Bool(true), "Config"))
 	}
-	env.PlayerMainSkill.SkillData["ignoresTickRate"] = true
+	env.PlayerMainSkill.SkillData.SetFlag("ignoresTickRate", true)
 	cfg := &triggerConfig{
 		useCastRate:       true,
 		customTriggerName: "Doom Blast triggering Hex: ",
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Hex] && env.slotMatch(skill)
+			return skill.SkillTypes[modparser.SkillTypeHex] && env.slotMatch(skill)
 		},
 	}
 	// `#Tabulate(...) > 0 and m_max(Sum(...), 1)`: false, not nil, when no
 	// mod grants overlaps.
-	if len(env.ModDB.Tabulate("BASE", nil, "Multiplier:CurseOverlaps")) > 0 {
-		n := math.Max(env.ModDB.Sum("BASE", nil, "Multiplier:CurseOverlaps"), 1)
+	if len(env.ModDB.Tabulate(modparser.Base, nil, "Multiplier:CurseOverlaps")) > 0 {
+		n := math.Max(env.ModDB.Sum(modparser.Base, nil, "Multiplier:CurseOverlaps"), 1)
 		cfg.overlaps = &n
 	}
 	return cfg
@@ -194,8 +194,8 @@ func voidstormConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] &&
-				skill.SkillTypes[modparser.SkillType.Rain] && env.slotMatch(skill)
+			return skill.SkillTypes[modparser.SkillTypeAttack] &&
+				skill.SkillTypes[modparser.SkillTypeRain] && env.slotMatch(skill)
 		},
 	}
 }
@@ -207,7 +207,7 @@ func shockwaveConfig(env *Env, actor *performActor) *triggerConfig {
 }
 
 func meleeAndSlot(env *Env, skill *ActiveSkill) bool {
-	return skill.SkillTypes[modparser.SkillType.Melee] && env.slotMatch(skill)
+	return skill.SkillTypes[modparser.SkillTypeMelee] && env.slotMatch(skill)
 }
 
 // tempestShieldConfig ports the "tempest shield" entry (L1301): it triggers
@@ -235,15 +235,15 @@ func burstingToadConfig(env *Env, actor *performActor) *triggerConfig {
 	// All gems in the socket group should return the same HexToadCooldown
 	// even when there are multiple hextoad support gems slotted
 	for _, skill := range env.PlayerActiveSkills {
-		if truthy(skill.SkillData["hextoadTriggerInterval"]) {
-			triggerInterval = math.Min(triggerInterval, anyNum(skill.SkillData["hextoadTriggerInterval"]))
+		if skill.SkillData.Flag("hextoadTriggerInterval") {
+			triggerInterval = math.Min(triggerInterval, skill.SkillData.N("hextoadTriggerInterval"))
 		}
 	}
 	if math.IsInf(triggerInterval, 1) {
 		return nil
 	}
 	env.PlayerMainSkill.SkillFlags["globalTrigger"] = true
-	env.PlayerMainSkill.SkillData["triggerRateCapOverride"] = 1 / triggerInterval
+	env.PlayerMainSkill.SkillData.SetN("triggerRateCapOverride", 1/triggerInterval)
 	return &triggerConfig{source: env.PlayerMainSkill}
 }
 
@@ -269,16 +269,16 @@ func automationConfig(env *Env, actor *performActor) *triggerConfig {
 // markOnHitConfig ports the "mark on hit" entry (L1286).
 func markOnHitConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Attack]
+		return skill.SkillTypes[modparser.SkillTypeAttack]
 	}}
 }
 
 // hextouchConfig ports the "hextouch" entry (L1289): the curse lands at the
 // rate of the attack that applies it, and that rate is already final.
 func hextouchConfig(env *Env, actor *performActor) *triggerConfig {
-	env.PlayerMainSkill.SkillData["sourceRateIsFinal"] = true
+	env.PlayerMainSkill.SkillData.SetFlag("sourceRateIsFinal", true)
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Attack] && env.slotMatch(skill)
+		return skill.SkillTypes[modparser.SkillTypeAttack] && env.slotMatch(skill)
 	}}
 }
 
@@ -303,14 +303,14 @@ func spellslingerConfig(env *Env, actor *performActor) *triggerConfig {
 		main.SkillFlags["skipEffectiveRate"] = true
 	}
 	// Spell slinger adds a cooldown with its support part
-	main.SkillData["sourceRateIsFinal"] = true
+	main.SkillData.SetFlag("sourceRateIsFinal", true)
 	return &triggerConfig{
 		triggerName:  "Spellslinger",
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			isWandProjectileAttack := skill.SkillTypes[modparser.SkillType.Attack] &&
-				skill.SkillTypes[modparser.SkillType.Projectile] && cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Wand)
-			return isWandProjectileAttack && !truthy(skill.SkillData["triggeredBySpellSlinger"])
+			isWandProjectileAttack := skill.SkillTypes[modparser.SkillTypeAttack] &&
+				skill.SkillTypes[modparser.SkillTypeProjectile] && cfgHasFlag(skill.SkillCfg, modparser.FlagWand)
+			return isWandProjectileAttack && !skill.SkillData.Flag("triggeredBySpellSlinger")
 		},
 	}
 }
@@ -321,7 +321,7 @@ func manaforgedArrowsConfig(env *Env, actor *performActor) *triggerConfig {
 		triggerOnUse: true,
 		triggerName:  "Manaforged Arrows",
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Bow)
+			return skill.SkillTypes[modparser.SkillTypeAttack] && cfgHasFlag(skill.SkillCfg, modparser.FlagBow)
 		},
 	}
 }
@@ -330,19 +330,19 @@ func manaforgedArrowsConfig(env *Env, actor *performActor) *triggerConfig {
 func combustConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee]
+			return skill.SkillTypes[modparser.SkillTypeMelee]
 		},
 		comparer: func(env *Env, uuid string, source *ActiveSkill, triggerRate *float64) bool {
 			// Skills with no uptime ratio are not exerted by infernal cry so
 			// should not be considered.
 			uptimeRatio := env.GlobalCache[uuid].out("InfernalUpTimeRatio")
-			return defaultComparer(env, uuid, source, triggerRate) && truthy(uptimeRatio)
+			return defaultComparer(env, uuid, source, triggerRate) && uptimeRatio.Truthy()
 		},
 	}
 }
 
 // cfgHasFlag is `band(cfg.flags, ModFlag.X) > 0`.
-func cfgHasFlag(cfg *modstore.Cfg, flag int64) bool {
+func cfgHasFlag(cfg *modstore.Cfg, flag modparser.ModFlag) bool {
 	return cfg != nil && cfg.Flags != nil && *cfg.Flags&flag != 0
 }
 
@@ -351,7 +351,7 @@ func vixensEntrapmentConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		useCastRate: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Hex]
+			return skill.SkillTypes[modparser.SkillTypeHex]
 		},
 	}
 }
@@ -360,11 +360,11 @@ func vixensEntrapmentConfig(env *Env, actor *performActor) *triggerConfig {
 func cosprisMaliceConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee] &&
-				cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Sword|modparser.ModFlag.Weapon1H)
+			return skill.SkillTypes[modparser.SkillTypeMelee] &&
+				cfgHasFlag(skill.SkillCfg, modparser.FlagSword|modparser.FlagWeapon1H)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByCospris"]) && sameSocketSlot(env.PlayerMainSkill, skill)
+			return skill.SkillData.Flag("triggeredByCospris") && sameSocketSlot(env.PlayerMainSkill, skill)
 		},
 	}
 }
@@ -375,8 +375,7 @@ func sameSocketSlot(a, b *ActiveSkill) bool {
 		if s.SocketGroup == nil {
 			return "", false
 		}
-		v, ok := s.SocketGroup.KV["slot"].(string)
-		return v, ok
+		return s.SocketGroup.Slot, s.SocketGroup.Slot != ""
 	}
 	sa, oka := slot(a)
 	sb, okb := slot(b)
@@ -399,7 +398,7 @@ func arcanistBrandConfig(env *Env, actor *performActor) *triggerConfig {
 	if main.ActiveEffect.GrantedEffect.Name == "Arcanist Brand" || main.TriggeredBy == nil {
 		return nil
 	}
-	main.SkillData["sourceRateIsFinal"] = true
+	main.SkillData.SetFlag("sourceRateIsFinal", true)
 	for _, skill := range env.PlayerActiveSkills {
 		if skill.ActiveEffect.GrantedEffect.Name == "Arcanist Brand" {
 			main.TriggeredBy.MainSkill = skill
@@ -407,18 +406,18 @@ func arcanistBrandConfig(env *Env, actor *performActor) *triggerConfig {
 		}
 	}
 	brand := main.TriggeredBy.MainSkill
-	activationFreqInc := (100 + brand.SkillModList.Sum("INC", brand.SkillCfg, "Speed", "BrandActivationFrequency")) / 100
+	activationFreqInc := (100 + brand.SkillModList.Sum(modparser.Inc, brand.SkillCfg, "Speed", "BrandActivationFrequency")) / 100
 	activationFreqMore := brand.SkillModList.More(brand.SkillCfg, "BrandActivationFrequency")
 	main.TriggeredBy.ActivationFreqInc = activationFreqInc
 	main.TriggeredBy.ActivationFreqMore = activationFreqMore
-	main.TriggeredBy.AttachedBrandCount = anyNum(brand.SkillData["attachedBrandCount"])
+	main.TriggeredBy.AttachedBrandCount = brand.SkillData.N("attachedBrandCount")
 	main.TriggeredBy.IgnoresTickRate = true
-	trigRate := anyNum(brand.SkillData["repeatFrequency"]) * activationFreqInc * activationFreqMore * main.TriggeredBy.AttachedBrandCount
+	trigRate := brand.SkillData.N("repeatFrequency") * activationFreqInc * activationFreqMore * main.TriggeredBy.AttachedBrandCount
 	return &triggerConfig{
 		trigRate: &trigRate,
 		source:   brand,
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByBrand"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByBrand") && env.slotMatch(skill)
 		},
 	}
 }
@@ -428,7 +427,7 @@ func arcanistBrandConfig(env *Env, actor *performActor) *triggerConfig {
 // can special-case totem-like sources onto their placement rate.
 func triggerCraftConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
-	if !truthy(main.SkillData["triggeredByCraft"]) {
+	if !main.SkillData.Flag("triggeredByCraft") {
 		return nil
 	}
 	var trigRate *float64
@@ -437,8 +436,8 @@ func triggerCraftConfig(env *Env, actor *performActor) *triggerConfig {
 	useCastRate := false
 	var triggeredSkills []*simSkill
 	for _, skill := range env.PlayerActiveSkills {
-		if (skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack] || skill.SkillTypes[modparser.SkillType.Spell]) &&
-			!skill.SkillFlags["aura"] && skill != main && !truthy(skill.SkillData["triggeredByCraft"]) &&
+		if (skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack] || skill.SkillTypes[modparser.SkillTypeSpell]) &&
+			!skill.SkillFlags["aura"] && skill != main && !skill.SkillData.Flag("triggeredByCraft") &&
 			!env.geFromItem(skill.ActiveEffect.GrantedEffect) && !isTriggered(skill) {
 			source, trigRate, uuid = env.findTriggerSkill(skill, source, trigRate, nil)
 			if (skill.SkillFlags["totem"] || skill.SkillFlags["golem"] || skill.SkillFlags["banner"] || skill.SkillFlags["ballista"]) &&
@@ -447,7 +446,7 @@ func triggerCraftConfig(env *Env, actor *performActor) *triggerConfig {
 				rate := 1 / *skill.ActiveEffect.GrantedEffect.CastTime
 				if skill.ActiveEffect.GrantedEffect.Levels != nil {
 					cd := 0.0
-					if lvl := skill.ActiveEffect.GrantedEffect.Levels[skill.ActiveEffect.Level]; lvl != nil {
+					if lvl := skill.ActiveEffect.GrantedEffect.LevelData(skill.ActiveEffect.Level); lvl != nil {
 						cd = lvl.Extra["cooldown"]
 					}
 					rate = 1 / (*skill.ActiveEffect.GrantedEffect.CastTime + cd)
@@ -456,7 +455,7 @@ func triggerCraftConfig(env *Env, actor *performActor) *triggerConfig {
 				useCastRate = true
 			}
 		}
-		if truthy(skill.SkillData["triggeredByCraft"]) && sameSocketSlot(main, skill) {
+		if skill.SkillData.Flag("triggeredByCraft") && sameSocketSlot(main, skill) {
 			triggeredSkills = append(triggeredSkills, env.packageSkillDataForSimulation(skill))
 		}
 	}
@@ -481,8 +480,8 @@ func autoexertionConfig(env *Env, actor *performActor) *triggerConfig {
 			}
 		}
 	}
-	main.SkillData["sourceRateIsFinal"] = true
-	main.SkillData["ignoresTickRate"] = true
+	main.SkillData.SetFlag("sourceRateIsFinal", true)
+	main.SkillData.SetFlag("ignoresTickRate", true)
 	return &triggerConfig{triggerOnUse: true, useCastRate: true, source: main}
 }
 
@@ -493,16 +492,16 @@ func battlemagesCryConfig(env *Env, actor *performActor) *triggerConfig {
 	}
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee]
+			return skill.SkillTypes[modparser.SkillTypeMelee]
 		},
 		comparer: func(env *Env, uuid string, source *ActiveSkill, triggerRate *float64) bool {
 			// Skills with no uptime ratio are not exerted by battlemage so
 			// should not be considered.
 			uptimeRatio := env.GlobalCache[uuid].out("BattlemageUpTimeRatio")
-			return defaultComparer(env, uuid, source, triggerRate) && truthy(uptimeRatio)
+			return defaultComparer(env, uuid, source, triggerRate) && uptimeRatio.Truthy()
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByBattleMageCry"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByBattleMageCry") && env.slotMatch(skill)
 		},
 	}
 }
@@ -518,10 +517,10 @@ func castOnMeleeKillConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		assumingEveryHitKills: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && skill.SkillTypes[modparser.SkillType.Melee] && env.slotMatch(skill)
+			return skill.SkillTypes[modparser.SkillTypeAttack] && skill.SkillTypes[modparser.SkillTypeMelee] && env.slotMatch(skill)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByMeleeKill"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByMeleeKill") && env.slotMatch(skill)
 		},
 	}
 }
@@ -531,8 +530,8 @@ func castWhenStunnedConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
 	main.SkillFlags["globalTrigger"] = true
 	cfg := &triggerConfig{source: main}
-	if v, ok := main.SkillData["chanceToTriggerOnStun"]; ok && v != nil {
-		n := anyNum(v)
+	if main.SkillData.Has("chanceToTriggerOnStun") {
+		n := main.SkillData.N("chanceToTriggerOnStun")
 		cfg.triggerChance = &n
 	}
 	return cfg
@@ -543,8 +542,8 @@ func castOnWardBreakConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
 	main.SkillFlags["globalTrigger"] = true
 	cfg := &triggerConfig{source: main}
-	if v, ok := main.SkillData["chanceToTriggerOnWardBreak"]; ok && v != nil {
-		n := anyNum(v)
+	if main.SkillData.Has("chanceToTriggerOnWardBreak") {
+		n := main.SkillData.N("chanceToTriggerOnWardBreak")
 		cfg.triggerChance = &n
 	}
 	return cfg
@@ -556,14 +555,14 @@ func castOnWardBreakConfig(env *Env, actor *performActor) *triggerConfig {
 func castOnDeathConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
 	main.SkillFlags["globalTrigger"] = true
-	main.SkillData["triggered"] = true
+	main.SkillData.SetFlag("triggered", true)
 	return nil
 }
 
 // prismaticBurstConfig ports the "prismatic burst" entry (L1366).
 func prismaticBurstConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Attack] && env.slotMatch(skill)
+		return skill.SkillTypes[modparser.SkillTypeAttack] && env.slotMatch(skill)
 	}}
 }
 
@@ -580,10 +579,10 @@ func intuitiveLinkConfig(env *Env, actor *performActor) *triggerConfig {
 			break
 		}
 	}
-	trigRate := env.ModDB.Sum("BASE", nil, "IntuitiveLinkSourceRate")
+	trigRate := env.ModDB.Sum(modparser.Base, nil, "IntuitiveLinkSourceRate")
 	return &triggerConfig{
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Spell] && env.slotMatch(skill) && skill != main.TriggeredBy.MainSkill
+			return skill.SkillTypes[modparser.SkillTypeSpell] && env.slotMatch(skill) && skill != main.TriggeredBy.MainSkill
 		},
 		trigRate:    &trigRate,
 		source:      main.TriggeredBy.MainSkill,
@@ -597,12 +596,12 @@ func intuitiveLinkConfig(env *Env, actor *performActor) *triggerConfig {
 // one per stage.
 func snipeConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
-	snipeStages := math.Min(env.ModDB.Sum("BASE", nil, "Multiplier:SnipeStage"), env.ModDB.Sum("BASE", nil, "Multiplier:SnipeStagesMax"))
-	snipeHitMulti := main.SkillModList.Sum("BASE", main.SkillCfg, "snipeHitMulti")
-	snipeAilmentMulti := main.SkillModList.Sum("BASE", main.SkillCfg, "snipeAilmentMulti")
+	snipeStages := math.Min(env.ModDB.Sum(modparser.Base, nil, "Multiplier:SnipeStage"), env.ModDB.Sum(modparser.Base, nil, "Multiplier:SnipeStagesMax"))
+	snipeHitMulti := main.SkillModList.Sum(modparser.Base, main.SkillCfg, "snipeHitMulti")
+	snipeAilmentMulti := main.SkillModList.Sum(modparser.Base, main.SkillCfg, "snipeAilmentMulti")
 	var triggeredSkills []*ActiveSkill
 	for _, skill := range env.PlayerActiveSkills {
-		if truthy(skill.SkillData["triggeredBySnipe"]) && skill.SocketGroup != nil && sameSocketSlot(skill, main) {
+		if skill.SkillData.Flag("triggeredBySnipe") && skill.SocketGroup != nil && sameSocketSlot(skill, main) {
 			triggeredSkills = append(triggeredSkills, skill)
 		}
 	}
@@ -615,20 +614,19 @@ func snipeConfig(env *Env, actor *performActor) *triggerConfig {
 		} else {
 			// max(1, stages) keeps it consistent with other channelled
 			// ranged skills; the first stage takes 0.5x time to channel.
-			main.SkillData["hitTimeMultiplier"] = math.Max(1, snipeStages) - 0.5
+			main.SkillData.SetN("hitTimeMultiplier", math.Max(1, snipeStages)-0.5)
 		}
 		if len(triggeredSkills) < 1 {
 			// Snipe is being used as a standalone skill. `if snipeStages`: a
 			// bare number is always truthy.
-			main.SkillModList.AddMod(newMod("Multiplier:SnipeStages", "BASE", snipeStages, "Snipe"))
-			main.SkillModList.AddMod(newMod("Damage", "MORE", snipeHitMulti, "Snipe", modparser.ModFlag.Hit, int64(0), modparser.Tag{"type": "Multiplier", "var": "SnipeStages"}))
-			main.SkillModList.AddMod(newMod("Damage", "MORE", snipeAilmentMulti, "Snipe", modparser.ModFlag.Ailment, int64(0), modparser.Tag{"type": "Multiplier", "var": "SnipeStages"}))
+			main.SkillModList.AddMod(newModS("Multiplier:SnipeStages", modparser.Base, modparser.Num(snipeStages), "Snipe"))
+			main.SkillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(snipeHitMulti), "Snipe", modparser.FlagHit, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SnipeStages"}))
+			main.SkillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(snipeAilmentMulti), "Snipe", modparser.FlagAilment, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SnipeStages"}))
 		} else {
 			// Snipe is a trigger source: it triggers the others and deals no
 			// damage itself.
 			for _, dmg := range []string{"Lightning", "Cold", "Fire", "Chaos", "Physical"} {
-				main.SkillModList.AddMod(newMod("DealNo"+dmg, "FLAG", true,
-					modparser.Tag{"type": "SkillName", "skillName": "Snipe", "includeTransfigured": true}))
+				main.SkillModList.AddMod(newMod("DealNo"+dmg, modparser.Flag, modparser.Bool(true), &modparser.SkillNameTag{SkillName: "Snipe", IncludeTransfigured: true}))
 			}
 		}
 		return nil
@@ -644,19 +642,19 @@ func snipeConfig(env *Env, actor *performActor) *triggerConfig {
 
 	// Does snipe have enough stages to trigger this skill?
 	if currentSkillSnipeIndex == 0 || float64(currentSkillSnipeIndex) > snipeStages {
-		delete(main.SkillData, "triggered")
+		main.SkillData.Del("triggered")
 		main.InfoMessage2 = "DPS reported assuming Self-Cast"
 		main.InfoMessage = "Not enough Snipe stages to trigger this skill"
 		return nil
 	}
 	var source *ActiveSkill
 	var trigRate *float64
-	main.SkillModList.AddMod(newMod("Multiplier:SnipeStages", "BASE", snipeStages, "Snipe"))
-	main.SkillModList.AddMod(newMod("Damage", "MORE", snipeAilmentMulti, "Snipe", modparser.ModFlag.Ailment, int64(0), modparser.Tag{"type": "Multiplier", "var": "SnipeStages"}))
-	main.SkillModList.AddMod(newMod("Damage", "MORE", snipeHitMulti, "Snipe", modparser.ModFlag.Hit, int64(0), modparser.Tag{"type": "Multiplier", "var": "SnipeStages"}))
+	main.SkillModList.AddMod(newModS("Multiplier:SnipeStages", modparser.Base, modparser.Num(snipeStages), "Snipe"))
+	main.SkillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(snipeAilmentMulti), "Snipe", modparser.FlagAilment, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SnipeStages"}))
+	main.SkillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(snipeHitMulti), "Snipe", modparser.FlagHit, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SnipeStages"}))
 	for _, skill := range env.PlayerActiveSkills {
 		if skill.ActiveEffect.GrantedEffect.Name == "Snipe" && skill.SocketGroup != nil && sameSocketSlot(skill, main) {
-			skill.SkillData["hitTimeMultiplier"] = snipeStages - 0.5
+			skill.SkillData.SetN("hitTimeMultiplier", snipeStages-0.5)
 			uuid := env.cacheSkillUUID(skill)
 			if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
 				env.BuildActiveSkill(env.Mode, skill, uuid)
@@ -664,11 +662,11 @@ func snipeConfig(env *Env, actor *performActor) *triggerConfig {
 			cachedSpeed := env.GlobalCache[uuid].out("HitSpeed")
 			usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
 			if !skill.SkillFlags["disable"] && skill.SkillCfg != nil && !usedByMirage &&
-				!skill.SkillTypes[modparser.SkillType.OtherThingUsesSkill] &&
-				truthy(cachedSpeed) && (source == nil || anyNum(cachedSpeed) > num64(trigRate)) {
-				n := anyNum(cachedSpeed)
+				!skill.SkillTypes[modparser.SkillTypeOtherThingUsesSkill] &&
+				cachedSpeed.Truthy() && (source == nil || cachedSpeed.Num() > num64(trigRate)) {
+				n := cachedSpeed.Num()
 				trigRate = &n
-				env.Player.Output["ChannelTimeToTrigger"] = env.GlobalCache[uuid].out("HitTime")
+				env.Player.Output.Set("ChannelTimeToTrigger", env.GlobalCache[uuid].out("HitTime"))
 				source = skill
 			}
 		}
@@ -689,20 +687,20 @@ func num64(p *float64) float64 {
 func mjolnerConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return (skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]) &&
-				cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Mace|modparser.ModFlag.Weapon1H) && !env.slotMatch(skill)
+			return (skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]) &&
+				cfgHasFlag(skill.SkillCfg, modparser.FlagMace|modparser.FlagWeapon1H) && !env.slotMatch(skill)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByMjolner"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByMjolner") && env.slotMatch(skill)
 		},
 	}
 }
 
 // oskarmConfig ports the "oskarm" entry (L1295).
 func oskarmConfig(env *Env, actor *performActor) *triggerConfig {
-	env.PlayerMainSkill.SkillData["sourceRateIsFinal"] = true
+	env.PlayerMainSkill.SkillData.SetFlag("sourceRateIsFinal", true)
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Attack]
+		return skill.SkillTypes[modparser.SkillTypeAttack]
 	}}
 }
 
@@ -712,7 +710,7 @@ func markRingConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		assumingEveryHitKills: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]
 		},
 	}
 }
@@ -720,8 +718,8 @@ func markRingConfig(env *Env, actor *performActor) *triggerConfig {
 // kitavasThirstConfig ports the "kitava's thirst" entry (L1092): the source
 // is the fastest skill whose mana cost clears the helmet's threshold.
 func kitavasThirstConfig(env *Env, actor *performActor) *triggerConfig {
-	requiredManaCost := env.ModDB.Sum("BASE", nil, "KitavaRequiredManaCost")
-	chance := env.ModDB.Sum("BASE", nil, "KitavaTriggerChance")
+	requiredManaCost := env.ModDB.Sum(modparser.Base, nil, "KitavaRequiredManaCost")
+	chance := env.ModDB.Sum(modparser.Base, nil, "KitavaTriggerChance")
 	return &triggerConfig{
 		triggerChance: &chance,
 		triggerName:   "Kitava's Thirst",
@@ -747,12 +745,12 @@ func asenathsChantConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return (skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]) &&
-				cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Bow)
+			return (skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]) &&
+				cfgHasFlag(skill.SkillCfg, modparser.FlagBow)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByUnique"]) && sameSocketSlot(env.PlayerMainSkill, skill) &&
-				skill.SkillTypes[modparser.SkillType.Spell]
+			return skill.SkillData.Flag("triggeredByUnique") && sameSocketSlot(env.PlayerMainSkill, skill) &&
+				skill.SkillTypes[modparser.SkillTypeSpell]
 		},
 	}
 }
@@ -782,13 +780,13 @@ func maloneysMechanismConfig(env *Env, actor *performActor) *triggerConfig {
 		triggerName:  uniqueTriggerName,
 		useCastRate:  isReplica,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			attack := skill.SkillTypes[modparser.SkillType.Attack] && cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Bow) && !isReplica
-			spell := skill.SkillTypes[modparser.SkillType.Spell] && isReplica
+			attack := skill.SkillTypes[modparser.SkillTypeAttack] && cfgHasFlag(skill.SkillCfg, modparser.FlagBow) && !isReplica
+			spell := skill.SkillTypes[modparser.SkillTypeSpell] && isReplica
 			return attack || spell
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByUnique"]) && sameSocketSlot(env.PlayerMainSkill, skill) &&
-				skill.SkillTypes[modparser.SkillType.RangedAttack]
+			return skill.SkillData.Flag("triggeredByUnique") && sameSocketSlot(env.PlayerMainSkill, skill) &&
+				skill.SkillTypes[modparser.SkillTypeRangedAttack]
 		},
 	}
 }
@@ -798,11 +796,11 @@ func maloneysMechanismConfig(env *Env, actor *performActor) *triggerConfig {
 // of Arrows (the mod parser's triggerExtraSkill cannot attach the custom
 // no-cooldown version), so the cooldown is written here instead.
 func lioneyesPawsConfig(env *Env, actor *performActor) *triggerConfig {
-	env.PlayerMainSkill.SkillData["cooldown"] = 1.0
+	env.PlayerMainSkill.SkillData.SetN("cooldown", 1.0)
 	return &triggerConfig{
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Bow)
+			return skill.SkillTypes[modparser.SkillTypeAttack] && cfgHasFlag(skill.SkillCfg, modparser.FlagBow)
 		},
 	}
 }
@@ -814,7 +812,7 @@ func lioneyesPawsConfig(env *Env, actor *performActor) *triggerConfig {
 func namedMeleeTriggerConfig(name string) triggerConfigBuilder {
 	return func(env *Env, actor *performActor) *triggerConfig {
 		return &triggerConfig{triggerName: name, triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeMelee] || skill.SkillTypes[modparser.SkillTypeAttack]
 		}}
 	}
 }
@@ -824,7 +822,7 @@ func namedMeleeTriggerConfig(name string) triggerConfigBuilder {
 func namedDamageTriggerConfig(name string) triggerConfigBuilder {
 	return func(env *Env, actor *performActor) *triggerConfig {
 		return &triggerConfig{triggerName: name, triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]
 		}}
 	}
 }
@@ -835,7 +833,7 @@ func killTriggerConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		assumingEveryHitKills: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]
 		},
 	}
 }
@@ -843,7 +841,7 @@ func killTriggerConfig(env *Env, actor *performActor) *triggerConfig {
 // killFinalRateConfig: the same plus sourceRateIsFinal (Rigwald's Crest,
 // Jorrhast's Blacksteel, Ashcaller).
 func killFinalRateConfig(env *Env, actor *performActor) *triggerConfig {
-	env.PlayerMainSkill.SkillData["sourceRateIsFinal"] = true
+	env.PlayerMainSkill.SkillData.SetFlag("sourceRateIsFinal", true)
 	return killTriggerConfig(env, actor)
 }
 
@@ -857,9 +855,9 @@ func globalTriggerSelfConfig(env *Env, actor *performActor) *triggerConfig {
 // lawOfTheWildsConfig ports the "law of the wilds" entry (L909).
 func lawOfTheWildsConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return !skill.SkillTypes[modparser.SkillType.SummonsTotem] &&
-			(skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]) &&
-			cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Claw)
+		return !skill.SkillTypes[modparser.SkillTypeSummonsTotem] &&
+			(skill.SkillTypes[modparser.SkillTypeMelee] || skill.SkillTypes[modparser.SkillTypeAttack]) &&
+			cfgHasFlag(skill.SkillCfg, modparser.FlagClaw)
 	}}
 }
 
@@ -873,7 +871,7 @@ func ripplingThoughtsConfig(onUse bool) triggerConfigBuilder {
 		return &triggerConfig{
 			triggerOnUse: onUse,
 			triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-				return skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]
+				return skill.SkillTypes[modparser.SkillTypeMelee] || skill.SkillTypes[modparser.SkillTypeAttack]
 			},
 		}
 	}
@@ -884,7 +882,7 @@ func ripplingThoughtsConfig(onUse bool) triggerConfigBuilder {
 func hiddenBladeConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
 	main.SkillFlags["globalTrigger"] = true
-	main.SkillData["triggerRateCapOverride"] = 2.0
+	main.SkillData.SetN("triggerRateCapOverride", 2.0)
 	if env.ModDB.Flag(nil, "Condition:Phasing") {
 		return &triggerConfig{source: main}
 	}
@@ -897,9 +895,9 @@ func hiddenBladeConfig(env *Env, actor *performActor) *triggerConfig {
 // Lioneye's Paws the granted skill is the ordinary Lightning Warp, so the
 // cooldown is written here.
 func moonbendersWingConfig(env *Env, actor *performActor) *triggerConfig {
-	env.PlayerMainSkill.SkillData["cooldown"] = 1.0
+	env.PlayerMainSkill.SkillData.SetN("cooldown", 1.0)
 	return &triggerConfig{triggerName: "Lightning Warp", triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Melee] || skill.SkillTypes[modparser.SkillType.Attack]
+		return skill.SkillTypes[modparser.SkillTypeMelee] || skill.SkillTypes[modparser.SkillTypeAttack]
 	}}
 }
 
@@ -908,12 +906,12 @@ func poetsPenConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return (skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]) &&
-				cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Wand)
+			return (skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]) &&
+				cfgHasFlag(skill.SkillCfg, modparser.FlagWand)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByUnique"]) && sameSocketSlot(env.PlayerMainSkill, skill) &&
-				skill.SkillTypes[modparser.SkillType.Spell]
+			return skill.SkillData.Flag("triggeredByUnique") && sameSocketSlot(env.PlayerMainSkill, skill) &&
+				skill.SkillTypes[modparser.SkillTypeSpell]
 		},
 	}
 }
@@ -922,14 +920,14 @@ func poetsPenConfig(env *Env, actor *performActor) *triggerConfig {
 // judgement" entries (L1057, L1063): Queen's Demand casts them.
 func judgementConfig(env *Env, actor *performActor) *triggerConfig {
 	main := env.PlayerMainSkill
-	main.SkillData["sourceRateIsFinal"] = true
+	main.SkillData.SetFlag("sourceRateIsFinal", true)
 	return &triggerConfig{
 		triggerName: main.ActiveEffect.GrantedEffect.Name,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
 			return skill.ActiveEffect.GrantedEffect.Name == "Queen's Demand"
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByUnique"]) && sameSocketSlot(env.PlayerMainSkill, skill)
+			return skill.SkillData.Flag("triggeredByUnique") && sameSocketSlot(env.PlayerMainSkill, skill)
 		},
 	}
 }
@@ -937,8 +935,8 @@ func judgementConfig(env *Env, actor *performActor) *triggerConfig {
 // foulbornKitavasThirstConfig ports the "foulborn kitava's thirst" entry
 // (L1106): the life-cost twin of Kitava's Thirst.
 func foulbornKitavasThirstConfig(env *Env, actor *performActor) *triggerConfig {
-	requiredLifeCost := env.ModDB.Sum("BASE", nil, "FoulbornKitavaRequiredLifeCost")
-	chance := env.ModDB.Sum("BASE", nil, "FoulbornKitavaTriggerChance")
+	requiredLifeCost := env.ModDB.Sum(modparser.Base, nil, "FoulbornKitavaRequiredLifeCost")
+	chance := env.ModDB.Sum(modparser.Base, nil, "FoulbornKitavaTriggerChance")
 	return &triggerConfig{
 		triggerChance: &chance,
 		triggerName:   "Foulborn Kitava's Thirst",
@@ -959,11 +957,11 @@ func foulbornKitavasThirstConfig(env *Env, actor *performActor) *triggerConfig {
 func wingOfTheWyvernConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return (skill.SkillTypes[modparser.SkillType.Damage] || skill.SkillTypes[modparser.SkillType.Attack]) &&
-				cfgHasFlag(skill.SkillCfg, modparser.ModFlag.Bow) && !env.slotMatch(skill)
+			return (skill.SkillTypes[modparser.SkillTypeDamage] || skill.SkillTypes[modparser.SkillTypeAttack]) &&
+				cfgHasFlag(skill.SkillCfg, modparser.FlagBow) && !env.slotMatch(skill)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByUnique"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByUnique") && env.slotMatch(skill)
 		},
 	}
 }
@@ -971,14 +969,14 @@ func wingOfTheWyvernConfig(env *Env, actor *performActor) *triggerConfig {
 // sevenTeachingsConfig ports the "seven teachings" entry (L1142): unarmed
 // melee hits trigger it.
 func sevenTeachingsConfig(env *Env, actor *performActor) *triggerConfig {
-	unarmedMelee := modparser.ModFlag.Unarmed | modparser.ModFlag.Melee
+	unarmedMelee := modparser.FlagUnarmed | modparser.FlagMelee
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee] && skill.SkillCfg != nil &&
+			return skill.SkillTypes[modparser.SkillTypeMelee] && skill.SkillCfg != nil &&
 				skill.SkillCfg.Flags != nil && *skill.SkillCfg.Flags&unarmedMelee == unarmedMelee
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredBySevenTeachings"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredBySevenTeachings") && env.slotMatch(skill)
 		},
 	}
 }
@@ -994,10 +992,10 @@ func squirmingTerrorConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		assumingEveryHitKills: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && skill.SkillTypes[modparser.SkillType.Melee]
+			return skill.SkillTypes[modparser.SkillTypeAttack] && skill.SkillTypes[modparser.SkillTypeMelee]
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredBySquirmingTerror"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredBySquirmingTerror") && env.slotMatch(skill)
 		},
 	}
 }
@@ -1006,10 +1004,10 @@ func squirmingTerrorConfig(env *Env, actor *performActor) *triggerConfig {
 func kineticFluxConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack] && env.slotMatch(skill)
+			return skill.SkillTypes[modparser.SkillTypeAttack] && env.slotMatch(skill)
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByKineticFlux"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByKineticFlux") && env.slotMatch(skill)
 		},
 	}
 }
@@ -1036,14 +1034,14 @@ func callToArmsConfig(env *Env, actor *performActor) *triggerConfig {
 // seizeTheFleshConfig ports the "seize the flesh" entry (L1280).
 func seizeTheFleshConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Warcry] && env.slotMatch(skill)
+		return skill.SkillTypes[modparser.SkillTypeWarcry] && env.slotMatch(skill)
 	}}
 }
 
 // fissureConfig ports the "fissure" entry (L1283).
 func fissureConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerOnUse: true, triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return skill.SkillTypes[modparser.SkillType.Slam] && env.slotMatch(skill)
+		return skill.SkillTypes[modparser.SkillTypeSlam] && env.slotMatch(skill)
 	}}
 }
 
@@ -1056,7 +1054,7 @@ func shattershardConfig(env *Env, actor *performActor) *triggerConfig {
 	if env.GlobalCache[uuid] == nil || env.Mode == "CALCULATOR" {
 		env.BuildActiveSkill(env.Mode, main, uuid, uuid)
 	}
-	main.SkillData["triggerRateCapOverride"] = 1 / anyNum(env.GlobalCache[uuid].out("Duration"))
+	main.SkillData.SetN("triggerRateCapOverride", 1/env.GlobalCache[uuid].out("Duration").Num())
 	return &triggerConfig{source: main}
 }
 
@@ -1065,10 +1063,10 @@ func shattershardConfig(env *Env, actor *performActor) *triggerConfig {
 func hexOnTrapConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Trapped]
+			return skill.SkillTypes[modparser.SkillTypeTrapped]
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredByTrapTrigger"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredByTrapTrigger") && env.slotMatch(skill)
 		},
 	}
 }
@@ -1079,10 +1077,10 @@ func hexOnTrapConfig(env *Env, actor *performActor) *triggerConfig {
 func settlersEnchantConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Melee]
+			return skill.SkillTypes[modparser.SkillTypeMelee]
 		},
 		triggeredSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return truthy(skill.SkillData["triggeredBySettlersEnchantTrigger"]) && env.slotMatch(skill)
+			return skill.SkillData.Flag("triggeredBySettlersEnchantTrigger") && env.slotMatch(skill)
 		},
 	}
 }
@@ -1093,7 +1091,7 @@ func ghostlyArtilleryConfig(env *Env, actor *performActor) *triggerConfig {
 		sourceWeapon: true,
 		triggerOnUse: true,
 		triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-			return skill.SkillTypes[modparser.SkillType.Attack]
+			return skill.SkillTypes[modparser.SkillTypeAttack]
 		},
 	}
 }
@@ -1102,7 +1100,7 @@ func ghostlyArtilleryConfig(env *Env, actor *performActor) *triggerConfig {
 // (L1549).
 func replicaGiftsFromAboveConfig(env *Env, actor *performActor) *triggerConfig {
 	return &triggerConfig{triggerSkillCond: func(env *Env, skill *ActiveSkill) bool {
-		return !skill.SkillTypes[modparser.SkillType.SummonsTotem] && skill.SkillTypes[modparser.SkillType.Attack]
+		return !skill.SkillTypes[modparser.SkillTypeSummonsTotem] && skill.SkillTypes[modparser.SkillTypeAttack]
 	}}
 }
 

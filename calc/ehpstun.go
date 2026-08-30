@@ -4,6 +4,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -14,46 +15,46 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 	stunThresholdBase := 0.0
 	switch {
 	case modDB.Flag(nil, "StunThresholdBasedOnEnergyShieldInsteadOfLife"):
-		stunThresholdBase = outNum(output, "EnergyShield") * modDB.Sum("BASE", nil, "StunThresholdEnergyShieldPercent") / 100
+		stunThresholdBase = output.N("EnergyShield") * modDB.Sum(modparser.Base, nil, "StunThresholdEnergyShieldPercent") / 100
 	case modDB.Flag(nil, "StunThresholdBasedOnManaInsteadOfLife"):
-		stunThresholdBase = outNum(output, "Mana") * modDB.Sum("BASE", nil, "StunThresholdManaPercent") / 100
+		stunThresholdBase = output.N("Mana") * modDB.Sum(modparser.Base, nil, "StunThresholdManaPercent") / 100
 	case modDB.Flag(nil, "ChaosInoculation"):
-		stunThresholdBase = modDB.Sum("BASE", nil, "Life")
+		stunThresholdBase = modDB.Sum(modparser.Base, nil, "Life")
 	default:
-		stunThresholdBase = outNum(output, "Life")
+		stunThresholdBase = output.N("Life")
 	}
 	if modDB.Flag(nil, "AddESToStunThreshold") {
-		esMult := modDB.Sum("BASE", nil, "ESToStunThresholdPercent")
-		stunThresholdBase += outNum(output, "EnergyShield") * esMult / 100
+		esMult := modDB.Sum(modparser.Base, nil, "ESToStunThresholdPercent")
+		stunThresholdBase += output.N("EnergyShield") * esMult / 100
 	}
-	stunThresholdMod := 1 + modDB.Sum("INC", nil, "StunThreshold")/100
-	output["StunThreshold"] = stunThresholdBase * stunThresholdMod
+	stunThresholdMod := 1 + modDB.Sum(modparser.Inc, nil, "StunThreshold")/100
+	output.SetN("StunThreshold", stunThresholdBase*stunThresholdMod)
 
 	notAvoidChance := 0.0
 	if !modDB.Flag(nil, "StunImmune") {
-		notAvoidChance = 100 - math.Min(modDB.Sum("BASE", nil, "AvoidStun"), 100)
+		notAvoidChance = 100 - math.Min(modDB.Sum(modparser.Base, nil, "AvoidStun"), 100)
 	}
 	// Having any energy shield when the hit occurs grants 50% chance to
 	// avoid stun; PoB applies it only when ES exceeds incoming damage.
-	if outNum(output, "EnergyShield") > outNum(output, "totalTakenHit") && !env.ModDB.Flag(nil, "EnergyShieldProtectsMana") {
+	if output.N("EnergyShield") > output.N("totalTakenHit") && !env.ModDB.Flag(nil, "EnergyShieldProtectsMana") {
 		notAvoidChance = notAvoidChance * 0.5
 	}
-	output["StunAvoidChance"] = 100 - notAvoidChance
+	output.SetN("StunAvoidChance", 100-notAvoidChance)
 
-	if outNum(output, "StunAvoidChance") >= 100 {
-		output["StunDuration"] = 0.0
-		output["BlockDuration"] = 0.0
+	if output.N("StunAvoidChance") >= 100 {
+		output.SetN("StunDuration", 0.0)
+		output.SetN("BlockDuration", 0.0)
 	} else {
-		stunDuration := 1 + modDB.Sum("INC", nil, "StunDuration")/100
+		stunDuration := 1 + modDB.Sum(modparser.Inc, nil, "StunDuration")/100
 		baseStunDuration := data.Misc.StunBaseDuration
-		stunRecovery := 1 + modDB.Sum("INC", nil, "StunRecovery")/100
-		stunAndBlockRecovery := 1 + modDB.Sum("INC", nil, "StunRecovery", "BlockRecovery")/100
-		output["StunDuration"] = math.Ceil(baseStunDuration*stunDuration/stunRecovery*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
-		output["BlockDuration"] = math.Ceil(baseStunDuration*stunDuration/stunAndBlockRecovery*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		stunRecovery := 1 + modDB.Sum(modparser.Inc, nil, "StunRecovery")/100
+		stunAndBlockRecovery := 1 + modDB.Sum(modparser.Inc, nil, "StunRecovery", "BlockRecovery")/100
+		output.SetN("StunDuration", math.Ceil(baseStunDuration*stunDuration/stunRecovery*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
+		output.SetN("BlockDuration", math.Ceil(baseStunDuration*stunDuration/stunAndBlockRecovery*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	output["InterruptStunAvoidChance"] = math.Min(modDB.Sum("BASE", nil, "AvoidInterruptStun"), 100)
+	output.SetN("InterruptStunAvoidChance", math.Min(modDB.Sum(modparser.Base, nil, "AvoidInterruptStun"), 100))
 
-	effectiveEnemyDamage := outNum(output, "totalTakenHit") + outNum(output, "PhysicalTakenHit")*0.25
+	effectiveEnemyDamage := output.N("totalTakenHit") + output.N("PhysicalTakenHit")*0.25
 	// #EVAL the reference's second branch is `elseif ~= "Melee"`, which only
 	// runs when the category IS "Average", so the Melee multiplier below can
 	// never apply to a non-melee category.
@@ -62,10 +63,10 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig string) {
 	} else if damageCategoryConfig != "Melee" {
 		effectiveEnemyDamage = effectiveEnemyDamage * data.Misc.StunNotMeleeDamageMult
 	}
-	baseStunChance := math.Min(data.Misc.StunBaseMult*effectiveEnemyDamage/outNum(output, "StunThreshold"), 100)
+	baseStunChance := math.Min(data.Misc.StunBaseMult*effectiveEnemyDamage/output.N("StunThreshold"), 100)
 	chance := 0.0
 	if baseStunChance > data.Misc.MinStunChanceNeeded {
 		chance = baseStunChance
 	}
-	output["SelfStunChance"] = chance * notAvoidChance / 100
+	output.SetN("SelfStunChance", chance*notAvoidChance/100)
 }

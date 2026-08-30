@@ -6,7 +6,9 @@ package calc
 import (
 	"math"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // capDamageType ports `string.gsub(" "..value.damageType, "%W%l", string.upper):sub(2)`:
@@ -30,7 +32,7 @@ func capDamageType(s string) string {
 
 // applyDmgTakenConversion ports calcs.applyDmgTakenConversion
 // (CalcDefence.lua L83): how much of a self-inflicted hit actually lands.
-func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output map[string]any, sourceType string, baseDmg float64) float64 {
+func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output modstore.Output, sourceType string, baseDmg float64) float64 {
 	skillModList := activeSkill.SkillModList
 	totalDamageTaken := 0.0
 	shiftTable := map[string]float64{}
@@ -40,7 +42,7 @@ func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output map[str
 		if isElementalRes[sourceType] {
 			names = append(names, "ElementalDamageTakenAs"+damageType, "ElementalDamageFromHitsTakenAs"+damageType)
 		}
-		shiftTable[damageType] = skillModList.Sum("BASE", nil, names...)
+		shiftTable[damageType] = skillModList.Sum(modparser.Base, nil, names...)
 		totalTakenAs += shiftTable[damageType]
 	}
 	for _, damageType := range dmgTypeList {
@@ -55,27 +57,27 @@ func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output map[str
 		}
 		damage := baseDmg * damageTakenAs
 
-		baseTakenInc := skillModList.Sum("INC", nil, "DamageTaken", damageType+"DamageTaken", "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
+		baseTakenInc := skillModList.Sum(modparser.Inc, nil, "DamageTaken", damageType+"DamageTaken", "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
 		baseTakenMore := skillModList.More(nil, "DamageTaken", damageType+"DamageTaken", "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
 		if damageType == "Lightning" || damageType == "Cold" || damageType == "Fire" {
-			baseTakenInc += skillModList.Sum("INC", nil, "ElementalDamageTaken", "ElementalDamageTakenWhenHit")
+			baseTakenInc += skillModList.Sum(modparser.Inc, nil, "ElementalDamageTaken", "ElementalDamageTakenWhenHit")
 			baseTakenMore *= skillModList.More(nil, "ElementalDamageTaken", "ElementalDamageTakenWhenHit")
 		}
 		damageTakenMods := math.Max((1+baseTakenInc/100)*baseTakenMore, 0)
 		reduction := 0.0
 		if !skillModList.Flag(nil, "SelfIgnoreBase"+damageType+"DamageReduction") {
-			if v := output["Base"+damageType+"DamageReductionWhenHit"]; truthy(v) {
-				reduction = anyNum(v)
+			if v := output["Base"+damageType+"DamageReductionWhenHit"]; v.Truthy() {
+				reduction = v.Num()
 			} else {
-				reduction = outNum(output, "Base"+damageType+"DamageReduction")
+				reduction = output.N("Base" + damageType + "DamageReduction")
 			}
 		}
 		resist := 0.0
 		if !skillModList.Flag(nil, "SelfIgnore"+damageType+"Resistance") {
-			if v := output[damageType+"ResistWhenHit"]; truthy(v) {
-				resist = anyNum(v)
+			if v := output[damageType+"ResistWhenHit"]; v.Truthy() {
+				resist = v.Num()
 			} else {
-				resist = outNum(output, damageType+"Resist")
+				resist = output.N(damageType + "Resist")
 			}
 		}
 		armourReduct := 0.0
@@ -83,23 +85,23 @@ func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output map[str
 
 		percentOfArmourApplies := 0.0
 		if !skillModList.Flag(nil, "ArmourDoesNotApplyTo"+damageType+"DamageTaken") {
-			percentOfArmourApplies = skillModList.Sum("BASE", nil, "ArmourAppliesTo"+damageType+"DamageTaken")
+			percentOfArmourApplies = skillModList.Sum(modparser.Base, nil, "ArmourAppliesTo"+damageType+"DamageTaken")
 		}
 		percentOfArmourApplies = math.Min(percentOfArmourApplies, 100)
 		physicalReductionBasedOnWard := damageType == "Physical" && skillModList.Flag(nil, "PhysicalReductionBasedOnWard")
 		if percentOfArmourApplies > 0 || physicalReductionBasedOnWard {
-			effArmour := (outNum(output, "Armour") * percentOfArmourApplies / 100) * (1 + outNum(output, "ArmourDefense"))
+			effArmour := (output.N("Armour") * percentOfArmourApplies / 100) * (1 + output.N("ArmourDefense"))
 			if physicalReductionBasedOnWard {
-				multiplier := anyNum(skillModList.Override(nil, "PhysicalReductionBasedOnWardPercent")) / 100
-				effArmour = outNum(output, "Ward") * multiplier
+				multiplier := overrideNum(skillModList, nil, "PhysicalReductionBasedOnWardPercent") / 100
+				effArmour = output.N("Ward") * multiplier
 			}
 			effDamage := damage * resMult
 			if effArmour != 0 && damage*resMult != 0 {
-				armourReduct = roundDec(effArmour/(effArmour+effDamage*5)*100, 0)
+				armourReduct = util.RoundHalfUp(effArmour/(effArmour+effDamage*5)*100, 0)
 			}
-			armourReduct = math.Min(outNum(output, "DamageReductionMax"), armourReduct)
+			armourReduct = math.Min(output.N("DamageReductionMax"), armourReduct)
 		}
-		reductMult := (1 - math.Max(math.Min(outNum(output, "DamageReductionMax"), armourReduct+reduction), 0)/100) * damageTakenMods
+		reductMult := (1 - math.Max(math.Min(output.N("DamageReductionMax"), armourReduct+reduction), 0)/100) * damageTakenMods
 		totalDamageTaken += damage * resMult * reductMult
 	}
 	return totalDamageTaken
@@ -109,9 +111,9 @@ func (env *Env) applyDmgTakenConversion(activeSkill *ActiveSkill, output map[str
 // self-damage mods carry, summing baseDamage across them.
 func selfDamageList(activeSkill *ActiveSkill, name string) (dmgType string, dmgVal float64, ok bool) {
 	for _, value := range activeSkill.SkillModList.List(nil, name) {
-		tag, _ := value.(modparser.Tag)
-		dmgVal += anyNum(tag["baseDamage"])
-		dmgType = capDamageType(str(tag["damageType"]))
+		tag, _ := value.(modparser.SelfDamage)
+		dmgVal += tag.BaseDamage.Or(0)
+		dmgType = capDamageType(tag.DamageType)
 		ok = true
 	}
 	return
@@ -120,9 +122,13 @@ func selfDamageList(activeSkill *ActiveSkill, name string) (dmgType string, dmgV
 // selfDamageFirst is the same read but taking only the first entry.
 func selfDamageFirst(activeSkill *ActiveSkill, name, key string) (dmgType string, val float64, ok bool) {
 	for _, value := range activeSkill.SkillModList.List(nil, name) {
-		tag, _ := value.(modparser.Tag)
-		val = anyNum(tag[key])
-		dmgType = capDamageType(str(tag["damageType"]))
+		tag, _ := value.(modparser.SelfDamage)
+		if key == "dmgMult" {
+			val = tag.DmgMult.Or(0)
+		} else {
+			val = tag.BaseDamage.Or(0)
+		}
+		dmgType = capDamageType(tag.DamageType)
 		return dmgType, val, true
 	}
 	return "", 0, false
@@ -134,14 +140,14 @@ func (env *Env) offenceSelfHit(c *offenceCtx) {
 	skillFlags := c.skillFlags
 
 	add := func(v float64) {
-		output["SelfHitDamage"] = outNum(output, "SelfHitDamage") + v
+		output.SetN("SelfHitDamage", output.N("SelfHitDamage")+v)
 	}
 
 	// The reference iterates the handler table with pairs(); each handler
 	// only adds into SelfHitDamage, so the order is immaterial.
 	if activeSkill.ActiveEffect.GrantedEffect.Name == "Summon Skeletons" { // Heartbound Loop
 		if dmgType, dmgVal, ok := selfDamageList(activeSkill, "HeartboundLoopSelfDamage"); ok && dmgType != "" {
-			add(env.applyDmgTakenConversion(activeSkill, output, dmgType, dmgVal) * outNum(output, "SummonedMinionsPerCast"))
+			add(env.applyDmgTakenConversion(activeSkill, output, dmgType, dmgVal) * output.N("SummonedMinionsPerCast"))
 		}
 	}
 	if activeSkill.ActiveEffect.GrantedEffect.Name == "Herald of Thunder" { // Storm's Secret
@@ -153,18 +159,18 @@ func (env *Env) offenceSelfHit(c *offenceCtx) {
 		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, dmgVal))
 	}
 	if dmgType, dmgMult, ok := selfDamageFirst(activeSkill, "EchoesOfCreationSelfDamage", "dmgMult"); ok && dmgType != "" {
-		averageWarcryCount := outNum(output, "GlobalWarcryUptimeRatio") / 100
+		averageWarcryCount := output.N("GlobalWarcryUptimeRatio") / 100
 		if activeSkill.SkillModList.Flag(nil, "Condition:WarcryMaxHit") {
-			averageWarcryCount = env.ModDB.Sum("BASE", nil, "Multiplier:ExertingWarcryCount")
+			averageWarcryCount = env.ModDB.Sum(modparser.Base, nil, "Multiplier:ExertingWarcryCount")
 		}
-		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, outNum(output, "Life")*dmgMult/100*averageWarcryCount))
+		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, output.N("Life")*dmgMult/100*averageWarcryCount))
 	}
-	if dmgType, dmgMult, ok := selfDamageFirst(activeSkill, "ScoldsBridleSelfDamage", "dmgMult"); ok && truthy(output["ManaHasCost"]) && dmgType != "" {
-		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, outNum(output, "ManaCost")*dmgMult/100))
+	if dmgType, dmgMult, ok := selfDamageFirst(activeSkill, "ScoldsBridleSelfDamage", "dmgMult"); ok && output.Flag("ManaHasCost") && dmgType != "" {
+		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, output.N("ManaCost")*dmgMult/100))
 	}
 	{ // Trauma
-		currentTraumaStacks := math.Max(activeSkill.SkillModList.Sum("BASE", nil, "Multiplier:TraumaStacks"), 1)
-		damagePerTrauma := activeSkill.SkillModList.Sum("BASE", nil, "TraumaSelfDamageTakenLife")
+		currentTraumaStacks := math.Max(activeSkill.SkillModList.Sum(modparser.Base, nil, "Multiplier:TraumaStacks"), 1)
+		damagePerTrauma := activeSkill.SkillModList.Sum(modparser.Base, nil, "TraumaSelfDamageTakenLife")
 		if activeSkill.BaseSkillModList.Flag(nil, "HasTrauma") {
 			add(env.applyDmgTakenConversion(activeSkill, output, "Physical", damagePerTrauma*currentTraumaStacks))
 		}

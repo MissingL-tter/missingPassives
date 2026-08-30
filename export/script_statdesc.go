@@ -58,7 +58,7 @@ func sdStr(s string) *schema.NumOrStr {
 	return &schema.NumOrStr{Str: &s}
 }
 
-func buildStatdesc(x *Ctx) (any, error) {
+func buildStatdesc(x *Ctx) (schema.Document, error) {
 	docs := schema.StatDescs{}
 	for _, name := range statFileList {
 		docs[name] = parseStatFile(x, name)

@@ -1,14 +1,14 @@
 {
 	"directives": [
-		"#type Belt",
-		"#influenceBaseTag belt",
-		"#baseMatch Metadata/Items/Belts/Belt[0-9]+",
-		"#forceShow true",
-		"#baseMatch Metadata/Items/Belts/BeltE[0-9]+",
-		"#forceShow false",
-		"#baseMatch Metadata/Items/Belts/BeltAtlas[0-9]+",
-		"#base Metadata/Items/Belts/BeltAbyss",
-		"#base Metadata/Items/Belts/BeltFaridun",
-		"#base Metadata/Items/Belts/BeltDemigods1"
+		{"directive":"type","name":"Belt"},
+		{"directive":"influenceBaseTag","tag":"belt"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Belts/Belt[0-9]+"},
+		{"directive":"forceShow","value":true},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Belts/BeltE[0-9]+"},
+		{"directive":"forceShow","value":false},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Belts/BeltAtlas[0-9]+"},
+		{"directive":"base","id":"Metadata/Items/Belts/BeltAbyss"},
+		{"directive":"base","id":"Metadata/Items/Belts/BeltFaridun"},
+		{"directive":"base","id":"Metadata/Items/Belts/BeltDemigods1"}
 	]
 }

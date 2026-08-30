@@ -56,7 +56,7 @@ func loadModPool(pool []schema.ItemMod) map[string]ItemModData {
 	out := map[string]ItemModData{}
 	for _, m := range pool {
 		e := ItemModData{
-			Lines:     unescapeAll(m.Lines),
+			Lines:     emptyIfNil(m.Lines),
 			Type:      m.Type,
 			Affix:     m.Affix,
 			StatOrder: m.StatOrders,
@@ -80,7 +80,7 @@ func loadModPool(pool []schema.ItemMod) map[string]ItemModData {
 			if len(th.Lines) == 0 {
 				e.TradeHashes[th.Hash] = []string{""}
 			} else {
-				e.TradeHashes[th.Hash] = unescapeAll(th.Lines)
+				e.TradeHashes[th.Hash] = th.Lines
 			}
 		}
 		out[m.Id] = e

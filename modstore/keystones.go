@@ -26,11 +26,12 @@ func MergeKeystones(env *KeystoneEnv, modDB Store) {
 	if env.KeystonesAdded == nil {
 		env.KeystonesAdded = map[string]bool{}
 	}
-	for _, modObj := range modDB.Tabulate("LIST", nil, "Keystone") {
-		name, ok := modObj.Value.(string)
+	for _, modObj := range modDB.Tabulate(modparser.List, nil, "Keystone") {
+		str, ok := modObj.Value.(modparser.Str)
 		if !ok {
 			continue // keystoneMap lookup with a non-string key finds nothing
 		}
+		name := string(str)
 		modList, known := env.KeystoneMods[name]
 		if env.KeystonesAdded[name] || !known {
 			continue

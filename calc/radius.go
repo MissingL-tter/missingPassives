@@ -21,8 +21,8 @@ type RadiusJewel struct {
 	Type       string
 	Item       *Item
 	NodeID     int
-	Attributes map[string]any
-	Data       modparser.Tag
+	Attributes map[string]float64
+	Data       *modparser.JewelFuncTag
 }
 
 // jewelNodeRef adapts *NodeInput to modparser.JewelNodeRef.
@@ -38,43 +38,20 @@ func (r jewelNodeRef) ModList() []*modparser.Mod {
 // listWriter adapts *modstore.List to modparser.JewelStoreWriter.
 type listWriter struct{ l *modstore.List }
 
-func (w listWriter) NewMod(name, typ string, value any, rest ...any) {
-	w.l.AddMod(modparser.NewMod(name, typ, value, rest...))
+func (w listWriter) Sum(typ modparser.ModType, names ...string) float64 {
+	return w.l.Sum(typ, nil, names...)
 }
-func (w listWriter) MergeNewMod(name, typ string, value any, rest ...any) {
-	w.l.MergeMod(modparser.NewMod(name, typ, value, rest...), false)
-}
-func (w listWriter) Sum(typ string, cfg any, names ...string) float64 {
-	c, _ := cfg.(*modstore.Cfg)
-	return w.l.Sum(typ, c, names...)
-}
-func (w listWriter) AddMod(m *modparser.Mod) { w.l.AddMod(m) }
-func (w listWriter) AddList(list any) {
-	switch t := list.(type) {
-	case []*modparser.Mod:
-		w.l.AddList(t)
-	case []any:
-		for _, e := range t {
-			if m, ok := e.(*modparser.Mod); ok {
-				w.l.AddMod(m)
-			}
-		}
-	case modparser.ModListSource:
-		// A jewel func that built its own ModList (the two
-		// grants-all-bonuses-of-unallocated funcs).
-		w.l.AddList(t.Mods())
-	default:
-		panic("calc: unsupported AddList argument in jewel func")
-	}
-}
-func (w listWriter) ModsList() []*modparser.Mod { return w.l.Mods }
+func (w listWriter) AddMod(m *modparser.Mod)       { w.l.AddMod(m) }
+func (w listWriter) MergeMod(m *modparser.Mod)     { w.l.MergeMod(m, false) }
+func (w listWriter) AddList(list []*modparser.Mod) { w.l.AddList(list) }
+func (w listWriter) Mods() []*modparser.Mod        { return w.l.Mods }
 
 // defaultRadiusFunc is the fallback for radius jewels without a funcList:
 // tally all attributes in radius (CalcSetup L775-782).
-func defaultRadiusFunc(node any, out modparser.JewelStoreWriter, data modparser.Tag) {
+func defaultRadiusFunc(node modparser.JewelNodeRef, out modparser.JewelStoreWriter, data *modparser.JewelFuncTag) {
 	if node != nil {
 		for _, stat := range []string{"Str", "Dex", "Int"} {
-			data[stat] = anyNum(data[stat]) + out.Sum("BASE", nil, stat)
+			data.AddStat(stat, out.Sum(modparser.Base, stat))
 		}
 	}
 }
@@ -95,21 +72,19 @@ func deriveFuncList(item *Item) []struct {
 	for _, line := range lines {
 		// Item.lua parses continuation lines joined by a SPACE but stores
 		// them joined by \n (Item.lua L1171-1176)
-		mods, _ := modparser.Parse(strings.ReplaceAll(line, "\n", " "))
-		for _, mv := range mods {
-			mod, ok := mv.(*modparser.Mod)
-			if !ok || mod.Name != "JewelFunc" {
+		mods, _, _ := modparser.Parse(strings.ReplaceAll(line, "\n", " "))
+		for _, mod := range mods {
+			if mod.Name != "JewelFunc" {
 				continue
 			}
-			tag, _ := mod.Value.(modparser.Tag)
-			fn, ok := tag["func"].(modparser.JewelNodeFn)
-			if !ok {
+			fn, ok := mod.Value.(modparser.JewelFn)
+			if !ok || fn.Func == nil {
 				panic("calc: JewelFunc value without a function for line " + line)
 			}
 			out = append(out, struct {
 				Typ string
 				Fn  modparser.JewelNodeFn
-			}{Typ: str(tag["type"]), Fn: fn})
+			}{Typ: fn.Type, Fn: fn.Func})
 		}
 	}
 	// assert against the reference's recorded funcList types
@@ -147,7 +122,7 @@ func (env *Env) addRadiusJewel(slot *SlotInput, item *Item) {
 			Item:       item,
 			NodeID:     int(*slot.NodeID),
 			Attributes: slot.RadiusAttributes,
-			Data:       modparser.Tag{},
+			Data:       &modparser.JewelFuncTag{},
 		})
 		if fn.Typ != "Self" && slot.RadiusNodes != nil {
 			// Add nearby unallocated nodes to the extra node list

@@ -57,26 +57,13 @@ type ctDoc struct {
 	Passives  []ctPassive  `json:"passives"`
 }
 
-func ctListLen(v any) int {
-	list, _ := v.([]any)
-	return len(list)
-}
-
-func intList(v any) []int64 {
-	list, _ := v.([]any)
-	out := make([]int64, 0, len(list))
-	for _, e := range list {
-		out = append(out, e.(int64))
+// treeVersionID is the row id of the AlternateTreeVersions ref.
+func treeVersionID(r *Row) (int64, error) {
+	tv := r.Ref("AlternateTreeVersionsKey")
+	if tv == nil {
+		return 0, fmt.Errorf("row %d: null AlternateTreeVersionsKey", r.ID)
 	}
-	return out
-}
-
-func keyIndex(v any) (int64, error) {
-	r, ok := v.(*Row)
-	if !ok {
-		return 0, fmt.Errorf("expected key row, got %T", v)
-	}
-	return int64(r.Index - 1), nil // dat row ids are 0-based; Row.Index is 1-based
+	return int64(tv.ID), nil
 }
 
 // smallAttributeStat mirrors the client's small-attribute stat window
@@ -92,19 +79,35 @@ func smallAttributeStat(statIdx int64) bool {
 func BuildConquerTables(x *Ctx, nodeIDs []int64) ([]byte, error) {
 	doc := ctDoc{}
 
-	tvDat := x.Dat("AlternateTreeVersions")
-	tvDat.Rows(func(r *Row) bool {
-		k := r.Index - 1
+	tvDat, err := x.Dat("AlternateTreeVersions")
+	if err != nil {
+		return nil, err
+	}
+	altSkills, err := x.Dat("AlternatePassiveSkills")
+	if err != nil {
+		return nil, err
+	}
+	altAdditions, err := x.Dat("AlternatePassiveAdditions")
+	if err != nil {
+		return nil, err
+	}
+	passiveSkills, err := x.Dat("PassiveSkills")
+	if err != nil {
+		return nil, err
+	}
+
+	for r := range tvDat.Rows() {
+		k := r.ID
 		if k < 1 || k > 11 {
-			return true
+			continue
 		}
 		v := ctVersion{
 			K:             k,
-			SmallAttr:     r.Get("SmallAttributeReplaced").(bool),
-			SmallNorm:     r.Get("SmallNormalPassiveReplaced ").(bool),
-			MinAdd:        r.Get("NotableAdditions").(Interval)[0],
-			MaxAdd:        r.Get("NotableAdditions").(Interval)[1],
-			NotableWeight: r.Get("NotableReplacementSpawnWeight ").(int64),
+			SmallAttr:     r.Bool("SmallAttributeReplaced"),
+			SmallNorm:     r.Bool("SmallNormalPassiveReplaced "),
+			MinAdd:        r.Ivl("NotableAdditions")[0],
+			MaxAdd:        r.Ivl("NotableAdditions")[1],
+			NotableWeight: r.Int("NotableReplacementSpawnWeight "),
 		}
 		// The abyss generator (TimelessJewelData AlternateTreeVersion.cs)
 		// overrides the dat's 0/0 addition counts to 1/1 for types 7-11;
@@ -113,71 +116,58 @@ func BuildConquerTables(x *Ctx, nodeIDs []int64) ([]byte, error) {
 			v.MinAdd, v.MaxAdd = 1, 1
 		}
 		doc.Versions = append(doc.Versions, v)
-		return true
-	})
+	}
 
-	var buildErr error
-	x.Dat("AlternatePassiveSkills").Rows(func(r *Row) bool {
-		tv, err := keyIndex(r.Get("AlternateTreeVersionsKey"))
+	for r := range altSkills.Rows() {
+		tv, err := treeVersionID(r)
 		if err != nil {
-			buildErr = fmt.Errorf("AlternatePassiveSkills row %d: %w", r.Index, err)
-			return false
+			return nil, fmt.Errorf("AlternatePassiveSkills %w", err)
 		}
 		s := ctSkill{
-			ID:    r.Get("Id").(string),
+			ID:    r.Str("Id"),
 			TV:    tv,
-			Types: intList(r.Get("PassiveType")),
-			Stats: ctListLen(r.Get("StatsKeys")),
-			W:     r.Get("SpawnWeight").(int64),
-			RMin:  r.Get("Random").(Interval)[0],
-			RMax:  r.Get("Random").(Interval)[1],
+			Types: r.Ints("PassiveType"),
+			Stats: len(r.Refs("StatsKeys")),
+			W:     r.Int("SpawnWeight"),
+			RMin:  r.Ivl("Random")[0],
+			RMax:  r.Ivl("Random")[1],
 		}
 		for i, col := range []string{"Stat1", "Stat2", "Stat3", "Stat4"} {
-			iv := r.Get(col).(Interval)
+			iv := r.Ivl(col)
 			s.Min[i], s.Max[i] = iv[0], iv[1]
 		}
 		doc.Skills = append(doc.Skills, s)
-		return true
-	})
-	if buildErr != nil {
-		return nil, buildErr
 	}
 
-	x.Dat("AlternatePassiveAdditions").Rows(func(r *Row) bool {
-		tv, err := keyIndex(r.Get("AlternateTreeVersionsKey"))
+	for r := range altAdditions.Rows() {
+		tv, err := treeVersionID(r)
 		if err != nil {
-			buildErr = fmt.Errorf("AlternatePassiveAdditions row %d: %w", r.Index, err)
-			return false
+			return nil, fmt.Errorf("AlternatePassiveAdditions %w", err)
 		}
 		a := ctAddition{
-			ID:    r.Get("Id").(string),
+			ID:    r.Str("Id"),
 			TV:    tv,
-			Types: intList(r.Get("PassiveType")),
-			Stats: ctListLen(r.Get("StatsKeys")),
+			Types: r.Ints("PassiveType"),
+			Stats: len(r.Refs("StatsKeys")),
 			// The spec names two columns "SpawnWeight" (as the reference
 			// spec.lua does); the weight the shipped LUT bins agree with is
 			// the FIRST (column 2), which name lookup (last-wins) misses.
-			W: r.GetAt(2).(int64),
+			W: r.IntAt(2),
 		}
 		for i, col := range []string{"Stat1", "Stat2"} {
-			iv := r.Get(col).(Interval)
+			iv := r.Ivl(col)
 			a.Min[i], a.Max[i] = iv[0], iv[1]
 		}
 		doc.Additions = append(doc.Additions, a)
-		return true
-	})
-	if buildErr != nil {
-		return nil, buildErr
 	}
 
 	// Passive classification for the modifiable-node set.
 	byGraph := map[int64]*Row{}
-	x.Dat("PassiveSkills").Rows(func(r *Row) bool {
-		if _, seen := byGraph[r.Get("PassiveSkillNodeId").(int64)]; !seen {
-			byGraph[r.Get("PassiveSkillNodeId").(int64)] = r
+	for r := range passiveSkills.Rows() {
+		if _, seen := byGraph[r.Int("PassiveSkillNodeId")]; !seen {
+			byGraph[r.Int("PassiveSkillNodeId")] = r
 		}
-		return true
-	})
+	}
 	sorted := append([]int64{}, nodeIDs...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
 	for _, gid := range sorted {
@@ -185,19 +175,15 @@ func BuildConquerTables(x *Ctx, nodeIDs []int64) ([]byte, error) {
 		if r == nil {
 			return nil, fmt.Errorf("no PassiveSkills row for graph id %d", gid)
 		}
-		if r.Get("Keystone").(bool) || r.Get("JewelSocket").(bool) {
+		if r.Bool("Keystone") || r.Bool("JewelSocket") {
 			return nil, fmt.Errorf("graph id %d is a keystone/socket — not modifiable", gid)
 		}
 		t := 2 // SmallNormal
-		stats := r.Get("Stats").([]any)
-		if r.Get("Notable").(bool) {
+		stats := r.Refs("Stats")
+		if r.Bool("Notable") {
 			t = 3
 		} else if len(stats) == 1 {
-			idx, err := keyIndex(stats[0])
-			if err != nil {
-				return nil, fmt.Errorf("graph id %d stat: %w", gid, err)
-			}
-			if smallAttributeStat(idx) {
+			if smallAttributeStat(int64(stats[0].ID)) {
 				t = 1
 			}
 		}

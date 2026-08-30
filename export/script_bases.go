@@ -3,10 +3,11 @@
 package export
 
 import (
+	"fmt"
 	"math"
 	"regexp"
+	"slices"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
@@ -23,21 +24,13 @@ var basesItemTypes = []string{
 }
 
 var (
-	reBaseArgs     = regexp.MustCompile(`([0-9A-Za-z/_]+) (.+)`)
-	reItExtends    = regexp.MustCompile(`extends "(.+)"`)
-	reItRemoveTag  = regexp.MustCompile(`remove_tag = "(.+)"`)
-	reItTag        = regexp.MustCompile(`tag = "(.+)"`)
-	reBestBase4    = regexp.MustCompile(`^([^,]+), ([^,]+), ([^,]+), \[([^\]]+)\]`)
-	reBestBase3    = regexp.MustCompile(`^([^)]+), ([^)]+), \[ ([^)]+)\]`)
-	reBaseGroupArg = regexp.MustCompile(`^([^)]+), \[ ([^)]+)\]`)
-	reSetBase3     = regexp.MustCompile(`^([^,]+), ([^,]+), \[([^\]]+)\]`)
-	reSetBase2     = regexp.MustCompile(`([^,]+), \[([^\]]+)\]`)
-	reCommaField   = regexp.MustCompile(`[^,]+`)
-	reLeadingSpace = regexp.MustCompile(`^ `)
-	reFmtS         = regexp.MustCompile(`%s`)
+	reItExtends   = regexp.MustCompile(`extends "(.+)"`)
+	reItRemoveTag = regexp.MustCompile(`remove_tag = "(.+)"`)
+	reItTag       = regexp.MustCompile(`tag = "(.+)"`)
+	reFmtS        = regexp.MustCompile(`%s`)
 )
 
-func buildBases(x *Ctx) (any, error) {
+func buildBases(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("tincture_stat_descriptions.txt")
 
 	type baseState struct {
@@ -56,7 +49,7 @@ func buildBases(x *Ctx) (any, error) {
 	}
 	bases := map[string]map[string]bestBase{}
 	basesAll := map[string]allBase{}
-	baseMods := map[string]string{}
+	baseMods := map[string][]string{}
 
 	var getBaseItemTags func(base string) []string
 	getBaseItemTags = func(base string) []string {
@@ -102,22 +95,37 @@ func buildBases(x *Ctx) (any, error) {
 
 	var state *baseState
 
-	buildBase := func(args string) *schema.ItemBase {
-		baseTypeId := args
-		displayName := ""
-		if m := reBaseArgs.FindStringSubmatch(args); m != nil {
-			baseTypeId, displayName = m[1], m[2]
+	var (
+		baseItemTypes, weaponTypes, armourTypes, shieldTypes, flasks *DatFile
+		componentCharges, tinctures, componentAttributes             *DatFile
+	)
+	for name, dst := range map[string]**DatFile{
+		"BaseItemTypes":                  &baseItemTypes,
+		"WeaponTypes":                    &weaponTypes,
+		"ArmourTypes":                    &armourTypes,
+		"ShieldTypes":                    &shieldTypes,
+		"Flasks":                         &flasks,
+		"ComponentCharges":               &componentCharges,
+		"tinctures":                      &tinctures,
+		"ComponentAttributeRequirements": &componentAttributes,
+	} {
+		var err error
+		if *dst, err = x.Dat(name); err != nil {
+			return nil, err
 		}
-		baseItemType := x.Dat("BaseItemTypes").GetRow("Id", baseTypeId)
+	}
+
+	buildBase := func(baseTypeId, displayName string) (*schema.ItemBase, error) {
+		baseItemType := baseItemTypes.GetRow("Id", baseTypeId)
 		if baseItemType == nil {
-			return nil // the Lua printfs "Invalid Id"
+			return nil, nil // the Lua printfs "Invalid Id"
 		}
-		baseItemTags := getBaseItemTags(luaStr(baseItemType.Get("BaseType")))
+		baseItemTags := getBaseItemTags(baseItemType.Str("BaseType"))
 		if displayName == "" {
-			displayName = luaStr(baseItemType.Get("Name"))
+			displayName = baseItemType.Str("Name")
 		}
 		displayName = strings.ReplaceAll(displayName, "\xc3\xb6", "o")
-		displayName = luaTrim(displayName)
+		displayName = strings.TrimSpace(displayName)
 		if displayName == "Energy Blade" {
 			if state.typ == "One Handed Sword" {
 				displayName = "Energy Blade One Handed"
@@ -135,8 +143,8 @@ func buildBases(x *Ctx) (any, error) {
 		for _, tag := range baseItemTags {
 			combinedTags[tag] = true
 		}
-		for _, tag := range listRows(baseItemType.Get("Tags")) {
-			combinedTags[luaStr(tag.Get("Id"))] = true
+		for _, tag := range baseItemType.Refs("Tags") {
+			combinedTags[tag.Str("Id")] = true
 		}
 		sortedTags := make([]string, 0, len(combinedTags))
 		for t := range combinedTags {
@@ -146,52 +154,58 @@ func buildBases(x *Ctx) (any, error) {
 		b.Tags = sortedTags
 		b.InfluenceBaseTag = state.influenceBaseTag
 
-		implicitRows := listRows(baseItemType.Get("ImplicitMods"))
+		implicitRows := baseItemType.Refs("ImplicitMods")
 		for _, mod := range implicitRows {
-			modDesc := x.DescribeMod(mod)
+			modDesc, err := x.DescribeMod(mod)
+			if err != nil {
+				return nil, err
+			}
 			for _, line := range modDesc.Lines {
 				b.Implicit = append(b.Implicit, line)
 				b.ImplicitModTypes = append(b.ImplicitModTypes, modDesc.ModTags)
 			}
 			if len(modDesc.Lines) > 0 {
-				b.ImplicitIds = append(b.ImplicitIds, luaStr(mod.Get("Id")))
+				b.ImplicitIds = append(b.ImplicitIds, mod.Str("Id"))
 			}
 		}
-		enchantRows := listRows(baseItemType.Get("EnchantMods"))
+		enchantRows := baseItemType.Refs("EnchantMods")
 		for _, mod := range enchantRows {
-			modDesc := x.DescribeMod(mod)
+			modDesc, err := x.DescribeMod(mod)
+			if err != nil {
+				return nil, err
+			}
 			for _, line := range modDesc.Lines {
 				b.Enchant = append(b.Enchant, line)
 				b.EnchantModTypes = append(b.EnchantModTypes, modDesc.ModTags)
 			}
 			if len(modDesc.Lines) > 0 {
-				b.EnchantIds = append(b.EnchantIds, luaStr(mod.Get("Id")))
+				b.EnchantIds = append(b.EnchantIds, mod.Str("Id"))
 			}
 		}
 		b.CannotBeAnointed = len(enchantRows) > 0
 
 		itemValueSum := int64(0)
-		weaponType := x.Dat("WeaponTypes").GetRow("BaseItemType", baseItemType)
+		weaponType := weaponTypes.GetRow("BaseItemType", baseItemType)
 		if weaponType != nil {
 			b.Weapon = &schema.WeaponBase{
-				PhysicalMin:    weaponType.Get("DamageMin").(int64),
-				PhysicalMax:    weaponType.Get("DamageMax").(int64),
-				CritChanceBase: float64(weaponType.Get("CritChance").(int64)) / 100,
-				AttackRateBase: round(1000/float64(weaponType.Get("Speed").(int64)), 2),
-				Range:          weaponType.Get("Range").(int64),
+				PhysicalMin:    weaponType.Int("DamageMin"),
+				PhysicalMax:    weaponType.Int("DamageMax"),
+				CritChanceBase: float64(weaponType.Int("CritChance")) / 100,
+				AttackRateBase: round(1000/float64(weaponType.Int("Speed")), 2),
+				Range:          weaponType.Int("Range"),
 			}
 			itemValueSum = b.Weapon.PhysicalMin + b.Weapon.PhysicalMax
 		}
-		armourType := x.Dat("ArmourTypes").GetRow("BaseItemType", baseItemType)
+		armourType := armourTypes.GetRow("BaseItemType", baseItemType)
 		if armourType != nil {
 			ab := &schema.ArmourBase{}
-			if shield := x.Dat("ShieldTypes").GetRow("BaseItemType", baseItemType); shield != nil {
-				v := shield.Get("Block").(int64)
+			if shield := shieldTypes.GetRow("BaseItemType", baseItemType); shield != nil {
+				v := shield.Int("Block")
 				ab.BlockChance = &v
 			}
 			set := func(minP, maxP **int64, col string) {
-				mn := armourType.Get(col + "Min").(int64)
-				mx := armourType.Get(col + "Max").(int64)
+				mn := armourType.Int(col + "Min")
+				mx := armourType.Int(col + "Max")
 				if mn > 0 {
 					*minP, *maxP = &mn, &mx
 					itemValueSum += mn + mx
@@ -200,51 +214,55 @@ func buildBases(x *Ctx) (any, error) {
 			set(&ab.ArmourMin, &ab.ArmourMax, "Armour")
 			set(&ab.EvasionMin, &ab.EvasionMax, "Evasion")
 			set(&ab.EnergyShieldMin, &ab.EnergyShieldMax, "EnergyShield")
-			if mp := armourType.Get("MovementPenalty").(int64); mp != 0 {
+			if mp := armourType.Int("MovementPenalty"); mp != 0 {
 				v := -mp
 				ab.MovementPenalty = &v
 			}
 			set(&ab.WardMin, &ab.WardMax, "Ward")
 			b.Armour = ab
 		}
-		flask := x.Dat("Flasks").GetRow("BaseItemType", baseItemType)
+		flask := flasks.GetRow("BaseItemType", baseItemType)
 		if flask != nil {
-			compCharges := x.Dat("ComponentCharges").GetRow("BaseItemType", luaStr(baseItemType.Get("Id")))
+			compCharges := componentCharges.GetRow("BaseItemType", baseItemType.Str("Id"))
 			fb := &schema.FlaskBase{
-				Duration:    float64(flask.Get("RecoveryTime").(int64)) / 10,
-				ChargesUsed: compCharges.Get("PerUse").(int64),
-				ChargesMax:  compCharges.Get("Max").(int64),
+				Duration:    float64(flask.Int("RecoveryTime")) / 10,
+				ChargesUsed: compCharges.Int("PerUse"),
+				ChargesMax:  compCharges.Int("Max"),
 			}
-			if v := flask.Get("LifePerUse").(int64); v > 0 {
+			if v := flask.Int("LifePerUse"); v > 0 {
 				fb.Life = &v
 			}
-			if v := flask.Get("ManaPerUse").(int64); v > 0 {
+			if v := flask.Int("ManaPerUse"); v > 0 {
 				fb.Mana = &v
 			}
-			if buff, ok := flask.Get("Buff").(*Row); ok {
+			if buff := flask.Ref("Buff"); buff != nil {
 				fb.HasBuff = true
 				stats := map[string]*statVal{}
-				mags := flask.Get("BuffMagnitudes").([]any)
-				for i, stat := range listRows(buff.Get("Stats")) {
-					v := float64(mags[i].(int64))
-					stats[luaStr(stat.Get("Id"))] = &statVal{min: v, max: v}
+				mags := flask.Ints("BuffMagnitudes")
+				for i, stat := range buff.Refs("Stats") {
+					v := float64(mags[i])
+					stats[stat.Str("Id")] = &statVal{min: v, max: v}
 				}
-				for _, stat := range listRows(buff.Get("GrantedFlags")) {
-					stats[luaStr(stat.Get("Id"))] = &statVal{min: 1, max: 1}
+				for _, stat := range buff.Refs("GrantedFlags") {
+					stats[stat.Str("Id")] = &statVal{min: 1, max: 1}
 				}
-				fb.Buff = x.DescribeStats(stats).Lines
+				lines, err := x.DescribeStats(stats)
+				if err != nil {
+					return nil, err
+				}
+				fb.Buff = lines.Lines
 			}
 			b.Flask = fb
 		}
-		tincture := x.Dat("tinctures").GetRow("BaseItemType", baseItemType)
+		tincture := tinctures.GetRow("BaseItemType", baseItemType)
 		if tincture != nil {
 			b.Tincture = &schema.TinctureBase{
-				ManaBurn: float64(tincture.Get("ManaBurn").(int64)) / 1000,
-				Cooldown: float64(tincture.Get("CoolDown").(int64)) / 1000,
+				ManaBurn: float64(tincture.Int("ManaBurn")) / 1000,
+				Cooldown: float64(tincture.Int("CoolDown")) / 1000,
 			}
 		}
 		reqLevel := int64(1)
-		dropLevel := baseItemType.Get("DropLevel").(int64)
+		dropLevel := baseItemType.Int("DropLevel")
 		if weaponType != nil || armourType != nil {
 			if dropLevel > 4 {
 				reqLevel = dropLevel
@@ -256,7 +274,7 @@ func buildBases(x *Ctx) (any, error) {
 			}
 		}
 		for _, mod := range implicitRows {
-			lvl := int64(math.Floor(float64(mod.Get("Level").(int64)) * 0.8))
+			lvl := int64(math.Floor(float64(mod.Int("Level")) * 0.8))
 			if lvl > reqLevel {
 				reqLevel = lvl
 			}
@@ -264,18 +282,18 @@ func buildBases(x *Ctx) (any, error) {
 		if reqLevel > 1 {
 			b.ReqLevel = &reqLevel
 		}
-		if compAtt := x.Dat("ComponentAttributeRequirements").GetRow("BaseItemType", luaStr(baseItemType.Get("Id"))); compAtt != nil {
+		if compAtt := componentAttributes.GetRow("BaseItemType", baseItemType.Str("Id")); compAtt != nil {
 			for _, attr := range []struct {
 				col string
 				dst **int64
 			}{{"Str", &b.ReqStr}, {"Dex", &b.ReqDex}, {"Int", &b.ReqInt}} {
-				if v := compAtt.Get(attr.col).(int64); v > 0 {
+				if v := compAtt.Int(attr.col); v > 0 {
 					*attr.dst = &v
 				}
 			}
 		}
-		if ft, ok := baseItemType.Get("FlavourTextKey").(*Row); ok {
-			if text := luaStr(ft.Get("Text")); text != "" {
+		if ft := baseItemType.Ref("FlavourTextKey"); ft != nil {
+			if text := ft.Str("Text"); text != "" {
 				b.FlavourText = cleanAndSplit(text)
 			}
 		}
@@ -293,7 +311,7 @@ func buildBases(x *Ctx) (any, error) {
 			}
 			basesAll[displayName] = allBase{class: state.typ, subType: state.subType}
 		}
-		return b
+		return b, nil
 	}
 
 	doc := schema.BasesData{Types: map[string][][]schema.ItemBase{}}
@@ -317,87 +335,62 @@ func buildBases(x *Ctx) (any, error) {
 		raresStream = append(raresStream, "]],")
 	}
 
-	directives := map[string]func(args string){}
-	directives["type"] = func(args string) { state.typ = args }
-	directives["subType"] = func(args string) { s := args; state.subType = &s }
-	directives["influenceBaseTag"] = func(args string) { state.influenceBaseTag = args }
-	directives["forceShow"] = func(args string) { state.forceShow = args == "true" }
-	directives["forceHide"] = func(args string) { state.forceHide = args == "true" }
-	directives["socketLimit"] = func(args string) {
-		if n, err := strconv.ParseFloat(args, 64); err == nil {
-			state.socketLimit = &n
-		} else {
-			state.socketLimit = nil
-		}
-	}
-	directives["base"] = func(args string) {
+	addBase := func(id, name string) error {
 		var ev []schema.ItemBase
-		if b := buildBase(args); b != nil {
+		b, err := buildBase(id, name)
+		if err != nil {
+			return err
+		}
+		if b != nil {
 			ev = append(ev, *b)
 		}
 		*curEvents = append(*curEvents, ev)
+		return nil
 	}
-	directives["baseMatch"] = func(argstr string) {
-		key := "Id"
-		args := strings.Fields(argstr)
-		value := args[0]
-		if len(args) > 1 {
-			key = args[0]
-			value = args[1]
+	addBaseMatch := func(column, pattern string) error {
+		if column == "" {
+			column = "Id"
 		}
-		re := regexp.MustCompile(value) // Go regex in the template
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return fmt.Errorf("bases: #baseMatch %q: %w", pattern, err)
+		}
 		var ev []schema.ItemBase
-		for _, baseItemType := range x.Dat("BaseItemTypes").GetRowListMatch(key, re.MatchString) {
-			id := luaStr(baseItemType.Get("Id"))
+		for _, baseItemType := range baseItemTypes.GetRowListMatch(column, re.MatchString) {
+			id := baseItemType.Str("Id")
 			if !strings.Contains(id, "Royale") {
-				if b := buildBase(id); b != nil {
+				b, err := buildBase(id, "")
+				if err != nil {
+					return err
+				}
+				if b != nil {
 					ev = append(ev, *b)
 				}
 			}
 		}
 		*curEvents = append(*curEvents, ev)
+		return nil
 	}
-	directives["baseGroup"] = func(args string) {
-		if m := reBaseGroupArg.FindStringSubmatch(args); m != nil {
-			baseMods[m[1]] = m[2]
-		}
-	}
-	valueLines := func(lines *[]string, values string) {
-		for _, line := range reCommaField.FindAllString(values, -1) {
-			*lines = append(*lines, reLeadingSpace.ReplaceAllString(line, ""))
-		}
-	}
-	directives["setBestBase"] = func(args string) {
-		var baseClass, baseSubType, itemNameOverride, values string
-		if m := reBestBase4.FindStringSubmatch(args); m != nil {
-			baseClass, baseSubType, itemNameOverride, values = m[1], m[2], m[3], m[4]
-		} else if m := reBestBase3.FindStringSubmatch(args); m != nil {
-			baseClass, baseSubType, values = m[1], m[2], m[3]
-		}
-		itemName := itemNameOverride
+	setBestBase := func(d *setBestBaseDirective) {
+		itemName := d.Name
 		if itemName == "" {
-			itemName = baseSubType + " " + baseClass
+			itemName = d.SubType + " " + d.Class
 		}
-		base := bases[baseClass][baseSubType].displayName
+		base := bases[d.Class][d.SubType].displayName
 		lines := []string{itemName, base}
-		if !strings.Contains(values, "Crafted: true") {
+		if !slices.Contains(d.Mods, "Crafted: true") {
 			lines = append(lines, "Crafted: true")
 		}
-		if values != " " {
-			valueLines(&lines, values)
+		if len(d.Mods) > 0 {
+			lines = append(lines, d.Mods...)
 		} else if _, ok := baseMods[itemName]; ok {
-			valueLines(&lines, values)
+			lines = append(lines, "") // the reference re-splits its blank list, not the group
 		}
 		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
 		streamBlob(lines)
 	}
-	directives["setBase"] = func(args string) {
-		var baseName, itemName, values string
-		if m := reSetBase3.FindStringSubmatch(args); m != nil {
-			baseName, itemName, values = m[1], m[2], m[3]
-		} else if m := reSetBase2.FindStringSubmatch(args); m != nil {
-			baseName, values = m[1], m[2]
-		}
+	setBase := func(d *setBaseDirective) {
+		baseName, itemName := d.Base, d.Name
 		all, ok := basesAll[baseName]
 		if baseName != "" && !ok {
 			// the Lua prints "Missing base"
@@ -430,13 +423,13 @@ func buildBases(x *Ctx) (any, error) {
 			}
 		}
 		lines = append(lines, baseName)
-		if !strings.Contains(values, "Crafted: true") {
+		if !slices.Contains(d.Mods, "Crafted: true") {
 			lines = append(lines, "Crafted: true")
 		}
-		if values != " " {
-			valueLines(&lines, values)
+		if len(d.Mods) > 0 {
+			lines = append(lines, d.Mods...)
 		} else if group, ok := baseMods[groupName]; ok {
-			valueLines(&lines, group)
+			lines = append(lines, group...)
 		}
 		doc.Rares = append(doc.Rares, &schema.RareItem{Lines: lines})
 		streamBlob(lines)
@@ -446,31 +439,58 @@ func buildBases(x *Ctx) (any, error) {
 		state = &baseState{}
 		var events [][]schema.ItemBase
 		curEvents = &events
-		if name == "Rares" {
-			// The rare list is the directive-generated best-base blobs (in
-			// directive order) followed by the template's hand-written
-			// blocks — the same order the generated file carries them.
-			inRares = true
-			err := x.WalkTemplate(name, "Bases/", directives)
-			inRares = false
-			if err != nil {
-				return nil, err
-			}
-			f := splitUniqueFile(raresStream)
-			for _, sec := range f.Sections {
-				doc.RareBlobs = append(doc.RareBlobs, sec.Items...)
-			}
-			tpl, err := readTemplate("Bases/", "Rares")
-			if err != nil {
-				return nil, err
-			}
-			doc.RareBlobs = append(doc.RareBlobs, tpl.Items...)
-			continue
-		}
-		if err := x.WalkTemplate(name, "Bases/", directives); err != nil {
+		tpl, err := readTemplate("Bases/", name, baseDirectives)
+		if err != nil {
 			return nil, err
 		}
-		doc.Types[name] = events
+		inRares = name == "Rares"
+		for _, d := range tpl.Directives {
+			switch d := d.(type) {
+			case *typeDirective:
+				state.typ = d.Name
+			case *subTypeDirective:
+				s := d.Name
+				state.subType = &s
+			case *influenceBaseTagDirective:
+				state.influenceBaseTag = d.Tag
+			case *forceShowDirective:
+				state.forceShow = d.Value
+			case *forceHideDirective:
+				state.forceHide = d.Value
+			case *socketLimitDirective:
+				n := d.Limit
+				state.socketLimit = &n
+			case *baseItemDirective:
+				err = addBase(d.ID, d.Name)
+			case *baseMatchDirective:
+				err = addBaseMatch(d.Column, d.Pattern)
+			case *baseGroupDirective:
+				baseMods[d.Name] = d.Mods
+			case *setBestBaseDirective:
+				setBestBase(d)
+			case *setBaseDirective:
+				setBase(d)
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+		if !inRares {
+			doc.Types[name] = events
+			continue
+		}
+		// The rare list is the directive-generated best-base blobs (in
+		// directive order) followed by the template's hand-written
+		// blocks — the same order the generated file carries them.
+		inRares = false
+		f, err := splitUniqueFile(raresStream)
+		if err != nil {
+			return nil, fmt.Errorf("Rares: %w", err)
+		}
+		for _, sec := range f.Sections {
+			doc.RareBlobs = append(doc.RareBlobs, sec.Items...)
+		}
+		doc.RareBlobs = append(doc.RareBlobs, tpl.Items...)
 	}
 	return doc, nil
 }

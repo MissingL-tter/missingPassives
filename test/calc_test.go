@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	calcitem "github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 	"github.com/MissingL-tter/missingPassives/test/luacanon"
@@ -23,7 +25,7 @@ func decodeCalcModList(v any) []*modparser.Mod {
 	m := v.(map[string]any)
 	out := make([]*modparser.Mod, len(m))
 	for i := 1; i <= len(m); i++ {
-		out[i-1] = decodeCanonMod(m[strconv.Itoa(i)].(map[string]any))
+		out[i-1] = luacanon.ModFromTable(m[strconv.Itoa(i)].(map[string]any))
 	}
 	return out
 }
@@ -50,6 +52,13 @@ func decodeCalcCounts(v any) map[string]float64 {
 		out[k] = e.(float64)
 	}
 	return out
+}
+
+func optCalcNum(m map[string]any, k string) util.Opt[float64] {
+	if v, ok := m[k]; ok {
+		return util.Some(v.(float64))
+	}
+	return util.Opt[float64]{}
 }
 
 func optCalcFloat(m map[string]any, k string) *float64 {
@@ -85,6 +94,15 @@ func decodeCalcStrings(v any) []string {
 	return out
 }
 
+func decodeCalcGrantedSkills(v any) []calcitem.GrantedSkill {
+	arr := decodeCalcArray(v)
+	out := make([]calcitem.GrantedSkill, len(arr))
+	for i, e := range arr {
+		out[i] = luacanon.GrantedSkillFromTable(e.(map[string]any))
+	}
+	return out
+}
+
 func decodeCalcScalarMaps(v any) []map[string]any {
 	arr := decodeCalcArray(v)
 	out := make([]map[string]any, len(arr))
@@ -115,7 +133,7 @@ func decodeCalcItem(m map[string]any) *calc.ItemInput {
 		AbyssalSocketCount:          optCalcFloat(m, "abyssalSocketCount"),
 		SocketedJewelEffectModifier: optCalcFloat(m, "socketedJewelEffectModifier"),
 		JewelRadiusIndex:            optCalcFloat(m, "jewelRadiusIndex"),
-		GrantedSkills:               decodeCalcScalarMaps(m["grantedSkills"]),
+		GrantedSkills:               decodeCalcGrantedSkills(m["grantedSkills"]),
 		ExplicitLines:               decodeCalcStrings(m["explicitLines"]),
 		OtherLines:                  decodeCalcStrings(m["otherLines"]),
 	}
@@ -125,7 +143,7 @@ func decodeCalcItem(m map[string]any) *calc.ItemInput {
 		item.Base = &calc.ItemBaseInput{SubType: optCalcString(b, "subType"), Type: optCalcString(b, "type")}
 		if fv, ok := b["flask"]; ok {
 			f := fv.(map[string]any)
-			item.Base.Flask = &calc.FlaskBaseInput{Life: f["life"], Mana: f["mana"]}
+			item.Base.Flask = &calc.FlaskBaseInput{Life: optCalcNum(f, "life"), Mana: optCalcNum(f, "mana")}
 		}
 	}
 	if v, ok := m["modList"]; ok {
@@ -148,30 +166,34 @@ func decodeCalcItem(m map[string]any) *calc.ItemInput {
 		item.BuffModList = decodeCalcModList(v)
 	}
 	if v, ok := m["requirements"]; ok {
-		item.Requirements = decodeCalcCounts(v)
+		item.Requirements = luacanon.RequirementsFromTable(v.(map[string]any))
 	}
 	if v, ok := m["sockets"]; ok {
 		item.Sockets = decodeCalcScalarMaps(v)
 	}
-	for key, dst := range map[string]*map[string]any{
-		"jewelData": &item.JewelData, "flaskData": &item.FlaskData,
-		"tinctureData": &item.TinctureData, "armourData": &item.ArmourData,
-	} {
-		if v, ok := m[key]; ok {
-			*dst = v.(map[string]any)
-		}
+	if v, ok := m["jewelData"]; ok {
+		item.JewelData = luacanon.JewelDataFromTable(v.(map[string]any))
+	}
+	if v, ok := m["flaskData"]; ok {
+		item.FlaskData = luacanon.FlaskDataFromTable(v.(map[string]any))
+	}
+	if v, ok := m["tinctureData"]; ok {
+		item.TinctureData = luacanon.TinctureDataFromTable(v.(map[string]any))
+	}
+	if v, ok := m["armourData"]; ok {
+		item.ArmourData = luacanon.ArmourDataFromTable(v.(map[string]any))
 	}
 	if v, ok := m["funcTypes"]; ok {
 		item.FuncTypes = decodeCalcStrings(v)
 	}
 	if v, ok := m["weaponData"]; ok {
-		item.WeaponData = map[int]map[string]any{}
+		item.WeaponData = map[int]*calcitem.WeaponData{}
 		for idx, side := range v.(map[string]any) {
 			n, err := strconv.Atoi(idx)
 			if err != nil {
 				panic("bad weaponData index " + idx)
 			}
-			item.WeaponData[n] = side.(map[string]any)
+			item.WeaponData[n] = luacanon.WeaponDataFromTable(side.(map[string]any))
 		}
 	}
 	return item
@@ -207,7 +229,7 @@ func decodeCalcItemsTab(v any) *calc.ItemsTabInput {
 			}
 		}
 		if av, ok := s["radiusAttributes"]; ok {
-			slot.RadiusAttributes = av.(map[string]any)
+			slot.RadiusAttributes = decodeCalcCounts(av)
 		}
 		tab.Slots = append(tab.Slots, slot)
 	}
@@ -253,7 +275,7 @@ func decodeCalcNode(n map[string]any) *calc.NodeInput {
 		node.DistanceToClassStart = &v
 	}
 	if kv, ok := n["keystoneMod"]; ok {
-		node.KeystoneMod = decodeCanonMod(kv.(map[string]any))
+		node.KeystoneMod = luacanon.ModFromTable(kv.(map[string]any))
 	}
 	return node
 }
@@ -270,13 +292,13 @@ func decodeCalcSkillsTab(v any) *calc.SkillsTabInput {
 	for _, gv := range decodeCalcArray(m["socketGroupList"]) {
 		g := gv.(map[string]any)
 		sg := &calc.SocketGroupInput{
-			KV:      g["kv"].(map[string]any),
-			GemList: []*calc.SocketGemInput{},
+			SocketGroup: luacanon.SocketGroupFromTable(g["kv"].(map[string]any)),
+			GemList:     []*calc.SocketGemInput{},
 		}
 		for _, gemv := range decodeCalcArray(g["gemList"]) {
 			gm := gemv.(map[string]any)
 			sg.GemList = append(sg.GemList, &calc.SocketGemInput{
-				KV:                  gm["kv"].(map[string]any),
+				Gem:                 luacanon.GemInstanceFromTable(gm["kv"].(map[string]any)),
 				GemDataID:           optCalcString(gm, "gemDataId"),
 				GrantedEffectID:     optCalcString(gm, "grantedEffectId"),
 				ExplodeSourceItemID: optCalcFloat(gm, "explodeSourceItemId"),
@@ -331,8 +353,8 @@ func decodeCalcFixture(c map[string]any) *calc.BuildInput {
 		ItemsTab:           decodeCalcItemsTab(c["itemsTab"]),
 		SkillsTab:          decodeCalcSkillsTab(c["skillsTab"]),
 		SpectreList:        decodeCalcStrings(c["spectreList"]),
-		ConfigInput:        c["configInput"].(map[string]any),
-		ConfigPlaceholder:  c["configPlaceholder"].(map[string]any),
+		ConfigInput:        luacanon.ConfigInputFromTable(c["configInput"].(map[string]any), false),
+		ConfigPlaceholder:  luacanon.ConfigInputFromTable(c["configPlaceholder"].(map[string]any), true),
 		ConfigModList:      decodeCalcModList(c["configModList"]),
 		ConfigEnemyModList: decodeCalcModList(c["configEnemyModList"]),
 		PartyEnemyModList:  decodeCalcModList(c["partyEnemyModList"]),
@@ -368,7 +390,10 @@ func forEachCalcRecord(t *testing.T, path string, fn func(k, c string)) {
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
 			t.Fatal(err)
 		}
-		fn(rec.K, rec.C)
+		// Mod lists in the archive carry the reference's coerced numeric tag
+		// text; this is the one reference-side normalisation point for
+		// every fixture read through here (calc, item, tree tests).
+		fn(rec.K, luacanon.NormalizeArchiveMods(rec.C))
 	}
 	if err := sc.Err(); err != nil {
 		t.Fatal(err)
@@ -412,7 +437,7 @@ func TestCalcFixtureEcho(t *testing.T) {
 // dbShadow re-canonicalises one DB the way dump_calc.lua's dbState does.
 type dbShadow struct {
 	Mods        map[string][]*modparser.Mod `lua:"mods"`
-	Conditions  map[string]any              `lua:"conditions"`
+	Conditions  modstore.Conditions         `lua:"conditions"`
 	Multipliers map[string]float64          `lua:"multipliers"`
 }
 
@@ -453,22 +478,19 @@ func cfgScalars(cfg *modstore.Cfg) map[string]any {
 	if cfg.SocketNum != nil {
 		m["socketNum"] = *cfg.SocketNum
 	}
-	if cfg.SkillPart != nil {
-		m["skillPart"] = cfg.SkillPart
+	if cfg.SkillPart.Set {
+		m["skillPart"] = cfg.SkillPart.V
 	}
 	return m
 }
 
-// scalarsOnly keeps string/number/bool values (dump-side scalars()).
-func scalarsOnly(m map[string]any) map[string]any {
-	out := map[string]any{}
-	for k, v := range m {
-		switch v.(type) {
-		case string, float64, int64, int, bool:
-			out[k] = v
-		}
+// weaponShadow is a minion weapon table's scalar projection ({} when the
+// minion has none).
+func weaponShadow(wd *calcitem.WeaponData) map[string]any {
+	if wd == nil {
+		return map[string]any{}
 	}
-	return out
+	return luacanon.WeaponDataTable(wd)
 }
 
 func nonNilMods(mods []*modparser.Mod) []*modparser.Mod {
@@ -479,23 +501,23 @@ func nonNilMods(mods []*modparser.Mod) []*modparser.Mod {
 }
 
 type skillListShadow struct {
-	ModList           []*modparser.Mod `lua:"modList"`
-	Cfg               map[string]any   `lua:"cfg"`
-	Flags             map[string]bool  `lua:"flags"`
-	Data              map[string]any   `lua:"data"`
-	Buffs             []map[string]any `lua:"buffs"`
-	Weapon1Flags      *int64           `lua:"weapon1Flags"`
-	Weapon2Flags      *int64           `lua:"weapon2Flags"`
-	Weapon1Cfg        map[string]any   `lua:"weapon1Cfg"`
-	Weapon1Cond       map[string]bool  `lua:"weapon1Cond"`
-	Weapon2Cfg        map[string]any   `lua:"weapon2Cfg"`
-	Weapon2Cond       map[string]bool  `lua:"weapon2Cond"`
-	DisableReason     string           `lua:"disableReason,omitempty"`
-	SkillPartName     string           `lua:"skillPartName,omitempty"`
-	SkillTotemId      *float64         `lua:"skillTotemId"`
-	ExtraSkillModList []*modparser.Mod `lua:"extraSkillModList"`
-	MinionList        []string         `lua:"minionList"`
-	Minion            map[string]any   `lua:"minion"`
+	ModList           []*modparser.Mod   `lua:"modList"`
+	Cfg               map[string]any     `lua:"cfg"`
+	Flags             map[string]bool    `lua:"flags"`
+	Data              *calc.SkillData    `lua:"data"`
+	Buffs             []map[string]any   `lua:"buffs"`
+	Weapon1Flags      *modparser.ModFlag `lua:"weapon1Flags"`
+	Weapon2Flags      *modparser.ModFlag `lua:"weapon2Flags"`
+	Weapon1Cfg        map[string]any     `lua:"weapon1Cfg"`
+	Weapon1Cond       map[string]bool    `lua:"weapon1Cond"`
+	Weapon2Cfg        map[string]any     `lua:"weapon2Cfg"`
+	Weapon2Cond       map[string]bool    `lua:"weapon2Cond"`
+	DisableReason     string             `lua:"disableReason,omitempty"`
+	SkillPartName     string             `lua:"skillPartName,omitempty"`
+	SkillTotemId      *float64           `lua:"skillTotemId"`
+	ExtraSkillModList []*modparser.Mod   `lua:"extraSkillModList"`
+	MinionList        []string           `lua:"minionList"`
+	Minion            map[string]any     `lua:"minion"`
 }
 
 func skillListShadowOf(env *calc.Env, as *calc.ActiveSkill) skillListShadow {
@@ -503,7 +525,7 @@ func skillListShadowOf(env *calc.Env, as *calc.ActiveSkill) skillListShadow {
 		ModList:           nonNilMods(as.SkillModList.Mods),
 		Cfg:               cfgScalars(as.SkillCfg),
 		Flags:             as.SkillFlags,
-		Data:              scalarsOnly(as.SkillData),
+		Data:              as.SkillData,
 		Buffs:             []map[string]any{},
 		Weapon1Flags:      as.Weapon1Flags,
 		Weapon2Flags:      as.Weapon2Flags,
@@ -513,7 +535,7 @@ func skillListShadowOf(env *calc.Env, as *calc.ActiveSkill) skillListShadow {
 		ExtraSkillModList: nonNilMods(as.ExtraSkillModList),
 	}
 	for _, buff := range as.BuffListTyped {
-		b := scalarsOnly(buff.KV)
+		b := luacanon.BuffTable(buff)
 		b["modList"] = nonNilMods(buff.ModList)
 		sh.Buffs = append(sh.Buffs, b)
 	}
@@ -532,8 +554,8 @@ func skillListShadowOf(env *calc.Env, as *calc.ActiveSkill) skillListShadow {
 			"type":        as.Minion.Type,
 			"level":       as.Minion.Level,
 			"hostile":     as.Minion.Hostile,
-			"weaponData1": scalarsOnly(as.Minion.WeaponData1),
-			"weaponData2": scalarsOnly(as.Minion.WeaponData2),
+			"weaponData1": weaponShadow(as.Minion.WeaponData1),
+			"weaponData2": weaponShadow(as.Minion.WeaponData2),
 		}
 	}
 	return sh
@@ -911,11 +933,11 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if os.Getenv("MP_NODRIVER") == "" {
 			replay.GlobalCache = calc.BuildOutput(in, "MAIN", replay).GlobalCache
 		}
-		env := calc.InitEnv(in, "MAIN", replay)
 		// The checkpoint phase mirrors the dump's stubbed defence/offence
 		// handoff, so nested performs (mirage sub-environments) stay
 		// body-only exactly as the dump's did.
-		env.StubHandoff = true
+		replay.StubHandoff = true
+		env := calc.InitEnv(in, "MAIN", replay)
 		got := luacanon.Encode(dbsShadow{
 			Mod:   shadowOf(env.ModDB),
 			Enemy: shadowOf(env.EnemyDB),
@@ -963,7 +985,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if gotPerform != performDbs {
 			t.Errorf("%s performDbs diverged:\n%s", variant, diffWindow(gotPerform, performDbs))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != performOutput {
+		if got := luacanon.Encode(env.Player.Output); got != performOutput {
 			t.Errorf("%s performOutput diverged:\n%s", variant, diffWindow(got, performOutput))
 		}
 		if env.Minion != nil {
@@ -973,7 +995,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 				if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != performMinionDb {
 					t.Errorf("%s performMinionDb diverged:\n%s", variant, diffWindow(got, performMinionDb))
 				}
-				if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != performMinionOutput {
+				if got := luacanon.Encode(env.Minion.Output); got != performMinionOutput {
 					t.Errorf("%s performMinionOutput diverged:\n%s", variant, diffWindow(got, performMinionOutput))
 				}
 			}
@@ -995,14 +1017,14 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if gotDefence != defenceDbs {
 			t.Errorf("%s defenceDbs diverged:\n%s", variant, diffWindow(gotDefence, defenceDbs))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != defenceOutput {
+		if got := luacanon.Encode(env.Player.Output); got != defenceOutput {
 			t.Errorf("%s defenceOutput diverged:\n%s", variant, diffWindow(got, defenceOutput))
 		}
 		if env.Minion != nil {
 			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != defenceMinionDb {
 				t.Errorf("%s defenceMinionDb diverged:\n%s", variant, diffWindow(got, defenceMinionDb))
 			}
-			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != defenceMinionOutput {
+			if got := luacanon.Encode(env.Minion.Output); got != defenceMinionOutput {
 				t.Errorf("%s defenceMinionOutput diverged:\n%s", variant, diffWindow(got, defenceMinionOutput))
 			}
 		}
@@ -1016,14 +1038,14 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if gotEHP != ehpDbs {
 			t.Errorf("%s ehpDbs diverged:\n%s", variant, diffWindow(gotEHP, ehpDbs))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != ehpOutput {
+		if got := luacanon.Encode(env.Player.Output); got != ehpOutput {
 			t.Errorf("%s ehpOutput diverged:\n%s", variant, diffWindow(got, ehpOutput))
 		}
 		if env.Minion != nil {
 			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != ehpMinionDb {
 				t.Errorf("%s ehpMinionDb diverged:\n%s", variant, diffWindow(got, ehpMinionDb))
 			}
-			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != ehpMinionOutput {
+			if got := luacanon.Encode(env.Minion.Output); got != ehpMinionOutput {
 				t.Errorf("%s ehpMinionOutput diverged:\n%s", variant, diffWindow(got, ehpMinionOutput))
 			}
 		}
@@ -1047,10 +1069,10 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if gotTrig != triggersDbs {
 			t.Errorf("%s triggersDbs diverged:\n%s", variant, diffWindow(gotTrig, triggersDbs))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != triggersOutput {
+		if got := luacanon.Encode(env.Player.Output); got != triggersOutput {
 			t.Errorf("%s triggersOutput diverged:\n%s", variant, diffWindow(got, triggersOutput))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.PlayerMainSkill.SkillData)); got != triggersSkillData {
+		if got := luacanon.Encode(env.PlayerMainSkill.SkillData); got != triggersSkillData {
 			t.Errorf("%s triggersSkillData diverged:\n%s", variant, diffWindow(got, triggersSkillData))
 		}
 		env.RunOffencePlayer()
@@ -1062,25 +1084,25 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if gotOffence != offenceDbs {
 			t.Errorf("%s offenceDbs diverged:\n%s", variant, diffWindow(gotOffence, offenceDbs))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.Player.Output)); got != offenceOutput {
+		if got := luacanon.Encode(env.Player.Output); got != offenceOutput {
 			t.Errorf("%s offenceOutput diverged:\n%s", variant, diffWindow(got, offenceOutput))
 		}
-		if got := luacanon.Encode(scalarsOnly(env.PlayerMainSkill.SkillData)); got != offenceSkillOutput {
+		if got := luacanon.Encode(env.PlayerMainSkill.SkillData); got != offenceSkillOutput {
 			t.Errorf("%s offenceSkillOutput diverged:\n%s", variant, diffWindow(got, offenceSkillOutput))
 		}
 		if env.Minion != nil {
 			env.RunTriggersMinion()
-			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != triggersMinionOutput {
+			if got := luacanon.Encode(env.Minion.Output); got != triggersMinionOutput {
 				t.Errorf("%s triggersMinionOutput diverged:\n%s", variant, diffWindow(got, triggersMinionOutput))
 			}
-			if got := luacanon.Encode(scalarsOnly(env.Minion.MainSkill.SkillData)); got != triggersMinionSkillData {
+			if got := luacanon.Encode(env.Minion.MainSkill.SkillData); got != triggersMinionSkillData {
 				t.Errorf("%s triggersMinionSkillData diverged:\n%s", variant, diffWindow(got, triggersMinionSkillData))
 			}
 			env.RunOffenceMinion()
 			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != offenceMinionDb {
 				t.Errorf("%s offenceMinionDb diverged:\n%s", variant, diffWindow(got, offenceMinionDb))
 			}
-			if got := luacanon.Encode(scalarsOnly(env.Minion.Output)); got != offenceMinionOutput {
+			if got := luacanon.Encode(env.Minion.Output); got != offenceMinionOutput {
 				t.Errorf("%s offenceMinionOutput diverged:\n%s", variant, diffWindow(got, offenceMinionOutput))
 			}
 		}
@@ -1097,8 +1119,8 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 					"count":   m.Count,
 					"handled": env.MirageHandled,
 				}
-				if m.SkillPart != nil {
-					shadow["skillPart"] = m.SkillPart
+				if m.SkillPart.Set {
+					shadow["skillPart"] = m.SkillPart.V
 				}
 				if m.SkillPartName != "" {
 					shadow["skillPartName"] = m.SkillPartName
@@ -1106,7 +1128,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 				if got := luacanon.Encode(shadow); got != mirage {
 					t.Errorf("%s mirage diverged:\n%s", variant, diffWindow(got, mirage))
 				}
-				if got := luacanon.Encode(scalarsOnly(m.Output)); got != mirageOutput {
+				if got := luacanon.Encode(m.Output); got != mirageOutput {
 					t.Errorf("%s mirageOutput diverged:\n%s", variant, diffWindow(got, mirageOutput))
 				}
 			}
@@ -1159,7 +1181,7 @@ func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
 		"nodeModValue": func(in *calc.BuildInput) {
 			for _, node := range in.Spec.AllocNodes {
 				for _, mod := range node.ModList {
-					if v, ok := mod.Value.(float64); ok {
+					if v, ok := mod.Value.(modparser.Num); ok {
 						mod.Value = v + 1
 						return
 					}
@@ -1185,23 +1207,23 @@ func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
 // snapshot time -- which is why they show stages that ran after the entry was
 // cached.
 type cacheShadow struct {
-	Name                   string         `lua:"Name"`
-	Speed                  *float64       `lua:"Speed"`
-	HitSpeed               *float64       `lua:"HitSpeed"`
-	ManaCost               *float64       `lua:"ManaCost"`
-	LifeCost               *float64       `lua:"LifeCost"`
-	ESCost                 *float64       `lua:"ESCost"`
-	RageCost               *float64       `lua:"RageCost"`
-	HitChance              *float64       `lua:"HitChance"`
-	AccuracyHitChance      *float64       `lua:"AccuracyHitChance"`
-	PreEffectiveCritChance *float64       `lua:"PreEffectiveCritChance"`
-	CritChance             *float64       `lua:"CritChance"`
-	TotalDPS               *float64       `lua:"TotalDPS"`
-	Output                 map[string]any `lua:"output"`
-	OutputMainHand         map[string]any `lua:"outputMainHand"`
-	OutputOffHand          map[string]any `lua:"outputOffHand"`
-	MainSkillData          map[string]any `lua:"mainSkillData"`
-	ActiveSkillData        map[string]any `lua:"activeSkillData"`
+	Name                   string          `lua:"Name"`
+	Speed                  *float64        `lua:"Speed"`
+	HitSpeed               *float64        `lua:"HitSpeed"`
+	ManaCost               *float64        `lua:"ManaCost"`
+	LifeCost               *float64        `lua:"LifeCost"`
+	ESCost                 *float64        `lua:"ESCost"`
+	RageCost               *float64        `lua:"RageCost"`
+	HitChance              *float64        `lua:"HitChance"`
+	AccuracyHitChance      *float64        `lua:"AccuracyHitChance"`
+	PreEffectiveCritChance *float64        `lua:"PreEffectiveCritChance"`
+	CritChance             *float64        `lua:"CritChance"`
+	TotalDPS               *float64        `lua:"TotalDPS"`
+	Output                 modstore.Output `lua:"output"`
+	OutputMainHand         modstore.Output `lua:"outputMainHand"`
+	OutputOffHand          modstore.Output `lua:"outputOffHand"`
+	MainSkillData          *calc.SkillData `lua:"mainSkillData"`
+	ActiveSkillData        *calc.SkillData `lua:"activeSkillData"`
 }
 
 func cacheShadowOf(cache map[string]*calc.CachedSkill) map[string]*cacheShadow {
@@ -1216,20 +1238,21 @@ func cacheShadowOf(cache map[string]*calc.CachedSkill) map[string]*cacheShadow {
 			CritChance:             e.CritChance, TotalDPS: e.TotalDPS,
 		}
 		if env := e.Env; env != nil && env.Player != nil {
-			po := env.Player.Output
-			sub := func(k string) map[string]any {
-				t, _ := po[k].(map[string]any)
-				return scalarsOnly(t)
+			sh.Output = env.Player.Output
+			// absent weapon-pass tables render as {} (dump-side scalars(nil))
+			sh.OutputMainHand, sh.OutputOffHand = env.PlayerWeaponOutputs()
+			if sh.OutputMainHand == nil {
+				sh.OutputMainHand = modstore.Output{}
 			}
-			sh.Output = scalarsOnly(po)
-			sh.OutputMainHand = sub("MainHand")
-			sh.OutputOffHand = sub("OffHand")
+			if sh.OutputOffHand == nil {
+				sh.OutputOffHand = modstore.Output{}
+			}
 			if env.PlayerMainSkill != nil {
-				sh.MainSkillData = scalarsOnly(env.PlayerMainSkill.SkillData)
+				sh.MainSkillData = env.PlayerMainSkill.SkillData
 			}
 		}
 		if e.ActiveSkill != nil {
-			sh.ActiveSkillData = scalarsOnly(e.ActiveSkill.SkillData)
+			sh.ActiveSkillData = e.ActiveSkill.SkillData
 		}
 		out[uuid] = sh
 	}

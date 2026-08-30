@@ -34,3 +34,17 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | LuaJIT number-key table pairs() order (mods.lua tradeHashes) | `test/luarender/luatab.go` (artifact carries stat order; render test replays the hash walk) |
 | LuaJIT math.random stream (legionPassives.lua layout offsets) | `test/luarender/luaprng.go` (artifact has no oidx; render test redraws the stream) |
 | Lua patterns (baseMatch specs, table-archive keys) | Go regex in export/templates; `test/luapat` converts test-side only |
+| minions.lua / skills.lua mod-constructor text (mod()/skill()/flag() calls) | structured mods (modparser codec) built at export; runtime decodes (`modparser.DecodeMods`); render test reprints the text (test/luarender) and takes hand-written lines from the archive templates |
+| Data/SkillStatMap.lua | `data/skillstatmap.go` (converted once, typed, Go-maintained; export builds minion mods from `data.StatMapTable()`) |
+| ModParser tag tables (`{ type = "Condition", var = ... }` maps) | typed `modparser.Tag` kinds (`Kind()` switch); one upstream typo tag type kept as `RawTag` |
+| `mod.value` (number/string/table/function) | `modparser.Value` (typed record kinds; `Actor` stays a string) |
+| `modDB:Combine(...)` | `modstore` typed `Sum`/`More`/`Flag`/`Override`/`List` |
+| tools/gen_skilldata.lua, tools/gen_datatables.lua (retired generators) | converted-once typed tables in `data/` (`skills_custom.go`, `mapmods.go`, `tables.go`, `timeless.go`); no regeneration path |
+| `string.lower` (ASCII) | `strings.ToLower`; `(?i)` in scan patterns |
+| Item.lua `sanitiseText` / SkillsTab's copy | `item.FoldText` (one copy) |
+| Export dat `row:Get(col)` | typed column accessors on the spec-generated row types |
+| Export template `#directive` lines | structured JSON directives under `export/templates/` |
+| `data.TrimTreeDependentUniques` (test expedient) | `data.Sources.SkipTreeDependentUniques` |
+| `Env.StubHandoff` (fixture-mode flag) | `calc.ReplayInput.StubHandoff` |
+| `%.14g` / `tostring(number)` helpers (`luaNumStr`, `luaNum`, `luaTostring`…) | `util.FormatG14` / `util.FormatIntOrG14` (`internal/util`, with `Quantize14`, `RoundHalfUp`, `Tonumber`) |
+| Export/spec.lua | `export/spec.go` (transformed once, Go-maintained) |

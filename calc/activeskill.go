@@ -5,6 +5,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -17,19 +18,19 @@ type ActiveSkill struct {
 	Actor            *modstore.Actor
 	SummonSkill      *ActiveSkill
 	SocketGroup      *SocketGroupInput
-	SkillData        map[string]any
-	SkillTypes       map[int64]bool
-	MinionSkillTypes map[int64]bool
+	SkillData        *SkillData
+	SkillTypes       map[modparser.SkillTypeID]bool
+	MinionSkillTypes map[modparser.SkillTypeID]bool
 	SkillFlags       map[string]bool
 	EffectList       []*ActiveEffect
 	SlotName         string
 
 	// buildActiveSkillModList state
-	SkillPart         any // number when multipart
+	SkillPart         util.Opt[float64] // set when multipart
 	SkillPartName     string
 	DisableReason     string
-	Weapon1Flags      *int64
-	Weapon2Flags      *int64
+	Weapon1Flags      *modparser.ModFlag
+	Weapon2Flags      *modparser.ModFlag
 	SkillCfg          *modstore.Cfg
 	Weapon1Cfg        *modstore.Cfg
 	Weapon2Cfg        *modstore.Cfg
@@ -73,19 +74,14 @@ func (env *Env) geFromItem(ge *data.GrantedEffect) bool {
 	if env.geFromItemMark[ge] {
 		return true
 	}
-	return truthy(ge.Custom["fromItem"])
-}
-
-// geUnsupported is grantedEffect.unsupported — no skill in the data sets
-// it (vestigial in the reference), read from the custom keys for safety.
-func geUnsupported(ge *data.GrantedEffect) bool {
-	return truthy(ge.Custom["unsupported"])
+	return ge.Custom.FromItem
 }
 
 // CanGrantedEffectSupportActiveSkill ports the calcLib check (deferred
-// from tools.go until ActiveSkill existed).
+// from tools.go until ActiveSkill existed). The reference's first test,
+// `grantedEffect.unsupported`, is vestigial: no template sets the key.
 func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEffect, activeSkill *ActiveSkill, imbuedSupport bool) bool {
-	if geUnsupported(grantedEffect) || activeSkill.ActiveEffect.GrantedEffect.CannotBeSupported {
+	if activeSkill.ActiveEffect.GrantedEffect.CannotBeSupported {
 		return false
 	}
 	if grantedEffect.SupportGemsOnly && activeSkill.ActiveEffect.GemData == nil {
@@ -96,14 +92,14 @@ func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEf
 	// support item-granted skills
 	if env.geFromItem(grantedEffect) && grantedEffect.Support {
 		ae := activeSkill.ActiveEffect
-		srcFromItem := ae.SrcInstance != nil && truthy(ae.SrcInstance.KV["fromItem"])
+		srcFromItem := ae.SrcInstance != nil && ae.SrcInstance.FromItem.V
 		if env.geFromItem(ae.GrantedEffect) || len(ae.GrantedEffect.ModSource) >= 4 && ae.GrantedEffect.ModSource[:4] == "Item" || srcFromItem {
 			return false
 		}
 	}
 
-	var effectiveSkillTypes map[int64]bool
-	var effectiveMinionTypes map[int64]bool
+	var effectiveSkillTypes map[modparser.SkillTypeID]bool
+	var effectiveMinionTypes map[modparser.SkillTypeID]bool
 	if imbuedSupport {
 		// Use the skillTypes from the gem so it ignores any support added types
 		if activeSkill.SummonSkill != nil {
@@ -133,7 +129,7 @@ func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEf
 		}
 	}
 
-	if len(grantedEffect.ExcludeSkillTypes) > 0 && grantedEffect.ExcludeSkillTypes[0] != nil &&
+	if len(grantedEffect.ExcludeSkillTypes) > 0 && grantedEffect.ExcludeSkillTypes[0] != 0 &&
 		DoesTypeExpressionMatch(grantedEffect.ExcludeSkillTypes, effectiveSkillTypes, nil) {
 		return false
 	}
@@ -141,8 +137,8 @@ func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEf
 		return false
 	}
 	// Sacred Wisps / Varunastra weapon type matching
-	actorHasAllOneHand := (activeSkill.Actor.WeaponData1 != nil && truthy(activeSkill.Actor.WeaponData1["countsAsAll1H"])) ||
-		(activeSkill.Actor.WeaponData2 != nil && truthy(activeSkill.Actor.WeaponData2["countsAsAll1H"]))
+	actorHasAllOneHand := (activeSkill.Actor.WeaponData1 != nil && activeSkill.Actor.WeaponData1.CountsAsAll1H()) ||
+		(activeSkill.Actor.WeaponData2 != nil && activeSkill.Actor.WeaponData2.CountsAsAll1H())
 	if grantedEffect.WeaponTypes != nil {
 		activeTypeLookup := map[string]bool{}
 		for activeType := range activeSkill.ActiveEffect.GrantedEffect.WeaponTypes {
@@ -169,7 +165,7 @@ func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEf
 			return false
 		}
 	}
-	if len(grantedEffect.RequireSkillTypes) > 0 && grantedEffect.RequireSkillTypes[0] != nil {
+	if len(grantedEffect.RequireSkillTypes) > 0 && grantedEffect.RequireSkillTypes[0] != 0 {
 		return DoesTypeExpressionMatch(grantedEffect.RequireSkillTypes, effectiveSkillTypes, effectiveMinionTypes)
 	}
 	return true
@@ -183,18 +179,18 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 		Actor:        actor,
 		SummonSkill:  summonSkill,
 		SocketGroup:  socketGroup,
-		SkillData:    map[string]any{},
+		SkillData:    newSkillData(),
 	}
 
 	activeGrantedEffect := activeEffect.GrantedEffect
 
 	// Initialise skill types
-	activeSkill.SkillTypes = map[int64]bool{}
+	activeSkill.SkillTypes = map[modparser.SkillTypeID]bool{}
 	for k, v := range activeGrantedEffect.SkillTypes {
 		activeSkill.SkillTypes[k] = v
 	}
 	if activeGrantedEffect.MinionSkillTypes != nil {
-		activeSkill.MinionSkillTypes = map[int64]bool{}
+		activeSkill.MinionSkillTypes = map[modparser.SkillTypeID]bool{}
 		for k, v := range activeGrantedEffect.MinionSkillTypes {
 			activeSkill.MinionSkillTypes[k] = v
 		}
@@ -207,24 +203,24 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 	}
 	activeSkill.SkillFlags = skillFlags
 	// hit = hit or Attack or Damage or Projectile: all-nil stays absent
-	if !skillFlags["hit"] && (activeSkill.SkillTypes[modparser.SkillType.Attack] ||
-		activeSkill.SkillTypes[modparser.SkillType.Damage] ||
-		activeSkill.SkillTypes[modparser.SkillType.Projectile]) {
+	if !skillFlags["hit"] && (activeSkill.SkillTypes[modparser.SkillTypeAttack] ||
+		activeSkill.SkillTypes[modparser.SkillTypeDamage] ||
+		activeSkill.SkillTypes[modparser.SkillTypeProjectile]) {
 		skillFlags["hit"] = true
 	}
 
 	// Process support skills
 	activeSkill.EffectList = []*ActiveEffect{activeEffect}
 	// rejectedSupportsIndices with Lua array-hole semantics: removing an
-	// entry leaves a hole, and the next repeat pass's ipairs stops there.
-	var rejected []any
+	// entry leaves a nil hole, and the next repeat pass's ipairs stops there.
+	var rejected []*ActiveEffect
 
 	for _, supportEffect := range supportList {
 		// Pass 1: Add skill types from compatible supports
 		if supportEffect.GrantedEffect.Support {
 			if env.canGrantedEffectSupportActiveSkill(supportEffect.GrantedEffect, activeSkill, false) {
-				for _, st := range supportEffect.GrantedEffect.AddSkillTypes {
-					if id, ok := st.(int64); ok {
+				for _, id := range supportEffect.GrantedEffect.AddSkillTypes {
+					if id != 0 {
 						activeSkill.SkillTypes[id] = true
 					}
 				}
@@ -237,13 +233,13 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 	for {
 		notAddedNewSupport := true
 		for i := 0; i < len(rejected) && rejected[i] != nil; i++ {
-			supportEffect := rejected[i].(*ActiveEffect)
+			supportEffect := rejected[i]
 			if supportEffect.GrantedEffect.Support {
 				if env.canGrantedEffectSupportActiveSkill(supportEffect.GrantedEffect, activeSkill, false) {
 					notAddedNewSupport = false
 					rejected[i] = nil
-					for _, st := range supportEffect.GrantedEffect.AddSkillTypes {
-						if id, ok := st.(int64); ok {
+					for _, id := range supportEffect.GrantedEffect.AddSkillTypes {
+						if id != 0 {
 							activeSkill.SkillTypes[id] = true
 						}
 					}
@@ -264,10 +260,8 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 					supportEffect.IsSupporting[activeEffect.SrcInstance] = true
 				}
 				if summonSkill == nil {
-					if addFlags, ok := supportEffect.GrantedEffect.Custom["addFlags"].(map[string]any); ok {
-						for k := range addFlags {
-							skillFlags[k] = true
-						}
+					for k := range supportEffect.GrantedEffect.Custom.AddFlags {
+						skillFlags[k] = true
 					}
 				}
 			}
@@ -281,21 +275,21 @@ func (env *Env) createActiveSkill(activeEffect *ActiveEffect, supportList []*Act
 // result. (effect.gemPropertyInfo is tooltip-only and skipped.)
 func (env *Env) applyGemMods(effect *ActiveEffect, modList []modstore.TabEntry) {
 	for _, entry := range modList {
-		value, _ := entry.Value.(modparser.Tag)
+		value, _ := entry.Value.(modparser.GemPropertyRef)
 		match := true
-		if kl, ok := value["keywordList"].([]any); ok {
-			for _, kw := range kl {
-				if !GemIsType(effect.GemData, str(kw), true) {
+		if value.KeywordList != nil {
+			for _, kw := range value.KeywordList {
+				if !GemIsType(effect.GemData, kw, true) {
 					match = false
 					break
 				}
 			}
-		} else if !GemIsType(effect.GemData, str(value["keyword"]), true) {
+		} else if !GemIsType(effect.GemData, value.Keyword, true) {
 			match = false
 		}
 		if match {
-			key := str(value["key"])
-			v := anyNum(value["value"])
+			key := value.Key
+			v := value.Value.Or(0)
 			if key == "quality" {
 				if modHasSocketedInTag(entry.Mod) {
 					effect.ItemQuality += v
@@ -330,12 +324,12 @@ func (env *Env) applyGemMods(effect *ActiveEffect, modList []modstore.TabEntry) 
 // applySocketMods ports CalcSetup's applySocketMods.
 func (env *Env) applySocketMods(gem *data.Gem, groupCfg *modstore.Cfg, socketNum int, modSource string) {
 	socketCfg := *groupCfg
-	socketCfg.SkillGem = gem
+	socketCfg.SkillGem = gemRef{gem}
 	sn := float64(socketNum)
 	socketCfg.SocketNum = &sn
 	for _, v := range env.ModDB.List(&socketCfg, "SocketProperty") {
-		tag, _ := v.(modparser.Tag)
-		mod, _ := tag["value"].(*modparser.Mod)
+		ref, _ := v.(modparser.PropertyModRef)
+		mod := ref.Mod
 		if mod == nil {
 			continue
 		}

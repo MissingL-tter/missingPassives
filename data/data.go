@@ -7,12 +7,13 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -44,6 +45,11 @@ type Sources struct {
 	// pre-parsed entries, which PoB (and this port) serve instead of
 	// parsing those lines.
 	ModCacheJSONL []byte
+	// SkipTreeDependentUniques leaves Uniques["generated"] at its load-time
+	// state: BuildTreeDependentUniques (called by tree.Load) becomes a
+	// no-op. The game-data differential loads with it, since the archive
+	// dump captured the pre-tree state.
+	SkipTreeDependentUniques bool
 }
 
 // Data mirrors the Lua `data` table (the logic-bearing parts).
@@ -87,7 +93,7 @@ var (
 	NonDamagingAilment          map[string]Ailment
 
 	DefaultHighPrecision int
-	HighPrecisionMods    map[string]map[string]int
+	HighPrecisionMods    map[string]map[modparser.ModType]int
 	ModScalability       map[string][]Scalability
 
 	WeaponTypeInfo    map[string]weaponTypeDef
@@ -105,16 +111,19 @@ var (
 	TimelessJewelSeedMin   map[int]float64
 	TimelessJewelSeedMax   map[int]float64
 	TimelessJewelAdditions int
-	// One-time-converted timeless jewel tables (typed by the
-	// timeless-jewel-data module later).
-	NodeIDList            map[string]any
-	AbyssNotableNames     map[string]any
-	TimelessJewelTradeIDs map[string]any
-	TimelessJewelLUTs     map[string]any
+	// NodeIDList is the shipped NodeIndexMapping: modifiable graph node ->
+	// its row in the legion LUTs. NodeIDListSize/SizeNotable are the row
+	// counts (all nodes / notables first); LocalIDToGlobalID maps each
+	// jewel type's LUT-local ids to graph ids.
+	NodeIDList            map[int64]NodeIndex
+	NodeIDListSize        int
+	NodeIDListSizeNotable int
+	LocalIDToGlobalID     []LocalIDMap
+	AbyssNotableNames     map[string]string
+	TimelessJewelTradeIDs map[int]TradeIDs
 
-	// MapMods is Data/ModMap.lua's table; the apply closures are Unported
-	// markers until the config module lands.
-	MapMods map[string]any
+	// MapMods is Data/ModMap.lua's table.
+	MapMods MapModData
 
 	ItemTagSpecial                 map[string]map[string][]string
 	ItemTagSpecialExclusionPattern map[string]map[string][]string
@@ -155,7 +164,9 @@ var (
 	BossSkills         map[string]BossSkillData
 	BossSkillsList     []ValLabel
 
-	FoulbornMap map[string]any
+	// FoulbornMap is Data/ModFoulbornMap.jsonc: unique title -> original mod
+	// id -> foulborn mod id.
+	FoulbornMap map[string]map[string]string
 
 	Minions  map[string]*Minion
 	Spectres map[string]*Minion
@@ -212,23 +223,24 @@ type bossStats struct {
 // works without Load — the export pipeline uses it to build conquertables.
 func NodeGraphIDs() []int64 {
 	ids := make([]int64, 0, len(nodeIDListTable))
-	for k := range nodeIDListTable {
-		// The table also carries localIdToGlobalId/size/sizeNotable metadata.
-		if n, err := strconv.ParseInt(k, 10, 64); err == nil {
-			ids = append(ids, n)
-		}
+	for id := range nodeIDListTable {
+		ids = append(ids, id)
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	return ids
 }
 
-// Load assembles the runtime data set.
-func Load(src Sources) {
+// Load assembles the runtime data set. An error is malformed input; the
+// panics left in the package mirror reference errors or guard unported
+// branches.
+func Load(src Sources) error {
 	// Install the shipped mod cache: PoB preloads Data/ModCache.lua and
 	// serves parses from it (modparser/modcache.go).
 	LoadedModCache = src.ModCacheJSONL
 	modparser.SetModCache(src.ModCacheJSONL)
-	loadMisc(src.Misc)
+	if err := loadMisc(src.Misc); err != nil {
+		return err
+	}
 	Misc = miscTable(CharacterConstants, MonsterConstants)
 	PowerStatList = buildPowerStatList()
 	SkillColorMap = []string{colorStrength, colorDexterity, colorIntelligence, colorNormal}
@@ -248,9 +260,7 @@ func Load(src Sources) {
 		for i, v := range vals {
 			list[i] = Scalability{IsScalable: v.IsScalable, Formats: v.Formats}
 		}
-		// The reference loads these keys from a Lua string literal, so \n
-		// sequences in the described text become real newlines.
-		ModScalability[luaUnescape(line)] = list
+		ModScalability[line] = list
 	}
 	WeaponTypeInfo = weaponTypeInfo
 	UnarmedWeaponData = unarmedWeaponData
@@ -261,15 +271,18 @@ func Load(src Sources) {
 	TimelessJewelSeedMax = timelessJewelSeedMax
 	TimelessJewelAdditions = 337 // #conqueredAdditions
 	NodeIDList = nodeIDListTable
+	NodeIDListSize = nodeIDListSize
+	NodeIDListSizeNotable = nodeIDListSizeNotable
+	LocalIDToGlobalID = localIDToGlobalIDTable
 	AbyssNotableNames = abyssNotableNamesTable
 	TimelessJewelTradeIDs = timelessJewelTradeIDsTable
-	TimelessJewelLUTs = map[string]any{}
 	MapMods = mapModsTable
 	ItemTagSpecial = itemTagSpecial
 	ItemTagSpecialExclusionPattern = itemTagSpecialExclusionPattern
 	CasterTagCrucibleUniques = casterTagCrucibleUniques
 	MinionTagCrucibleUniques = minionTagCrucibleUniques
 
+	Costs = nil
 	for _, c := range src.Costs {
 		cost := Cost{Resource: c.Resource, ResourceString: c.ResourceString, Divisor: float64(c.Divisor)}
 		cost.Stat = c.Stat
@@ -291,12 +304,21 @@ func Load(src Sources) {
 	ClusterJewelInfoForNotable = computeClusterJewelInfo(ItemMods["JewelCluster"], ClusterJewels)
 
 	loadBosses(src.Boss)
-	BossSkills, BossSkillsList = loadBossSkills(src.Boss)
+	var err error
+	if BossSkills, BossSkillsList, err = loadBossSkills(src.Boss); err != nil {
+		return err
+	}
 
 	SkillStatMap = skillStatMap
-	loadSkills(src.Skills, src.StatMapCopies)
-	loadGems(src.Skills)
-	loadMinions(src.MinionsDoc)
+	if err := loadSkills(src.Skills, src.StatMapCopies); err != nil {
+		return err
+	}
+	if err := loadGems(src.Skills); err != nil {
+		return err
+	}
+	if err := loadMinions(src.MinionsDoc); err != nil {
+		return err
+	}
 
 	Uniques = map[string][]string{}
 	for typ, f := range src.Uniques {
@@ -315,13 +337,15 @@ func Load(src Sources) {
 	Uniques["graft"] = []string{}
 	buildGeneratedUniques()
 	generatedBaseLen = len(Uniques["generated"])
+	skipTreeDependentUniques = src.SkipTreeDependentUniques
 
 	if len(src.FoulbornMapJSONC) > 0 {
-		FoulbornMap = map[string]any{}
+		FoulbornMap = map[string]map[string]string{}
 		if err := json.Unmarshal(stripJSONCComments(src.FoulbornMapJSONC), &FoulbornMap); err != nil {
-			panic("data: foulborn map: " + err.Error())
+			return fmt.Errorf("data: foulborn map: %w", err)
 		}
 	}
+	return nil
 }
 
 // stripJSONCComments removes full-line // comments (the only kind the file
@@ -339,7 +363,7 @@ func stripJSONCComments(b []byte) []byte {
 }
 
 // loadMisc unpacks the Data/Misc.lua document.
-func loadMisc(m schema.MiscData) {
+func loadMisc(m schema.MiscData) error {
 	MonsterEvasionTable = m.Misc.MonsterEvasion
 	MonsterAccuracyTable = m.Misc.MonsterAccuracy
 	MonsterLifeTable = m.Misc.MonsterLife
@@ -355,8 +379,13 @@ func loadMisc(m schema.MiscData) {
 	for _, c := range m.Misc.GameConstants {
 		GameConstants[c.Id] = c.Value
 	}
-	CharacterConstants = otConstantMap(m.Misc.CharacterConstants)
-	MonsterConstants = otConstantMap(m.Misc.MonsterConstants)
+	var err error
+	if CharacterConstants, err = otConstantMap(m.Misc.CharacterConstants); err != nil {
+		return err
+	}
+	if MonsterConstants, err = otConstantMap(m.Misc.MonsterConstants); err != nil {
+		return err
+	}
 	TotemLifeMult = map[int64]float64{}
 	for _, t := range m.Misc.TotemLifeMult {
 		TotemLifeMult[t.Id] = t.Mult
@@ -376,23 +405,20 @@ func loadMisc(m schema.MiscData) {
 	MapLevelBossLifeMult = levelMap(m.Misc.MapLevelBossLifeMult)
 	MapLevelBossAilmentMult = levelMap(m.Misc.MapLevelBossAilmentMult)
 	GoldRespecPrices = m.Misc.GoldRespecPrices
+	return nil
 }
 
 // otConstantMap evaluates the .ot constants' raw value text as Lua numbers.
-func otConstantMap(kvs []schema.KV) map[string]float64 {
+func otConstantMap(kvs []schema.KV) (map[string]float64, error) {
 	out := map[string]float64{}
 	for _, kv := range kvs {
-		out[kv.Key] = luaTonumber(kv.Value)
+		n, ok := util.Tonumber(kv.Value)
+		if !ok {
+			return nil, fmt.Errorf("data: non-numeric .ot constant %s = %q", kv.Key, kv.Value)
+		}
+		out[kv.Key] = n
 	}
-	return out
-}
-
-func luaTonumber(s string) float64 {
-	s = strings.TrimSpace(s)
-	if n, err := parseLuaNumber(s); err == nil {
-		return n
-	}
-	panic("data: non-numeric .ot constant " + s)
+	return out, nil
 }
 
 func buildMonsterExperienceLevelMap(misc misc) map[int]float64 {
@@ -443,7 +469,7 @@ func loadBosses(b schema.BossData) {
 }
 
 func bossTooltip(misc misc, stats bossStats) string {
-	fs := func(v float64) string { return luaIntString(math.Floor(v)) }
+	fs := func(v float64) string { return util.FormatInt(math.Floor(v)) }
 	return "Bosses' damage is monster damage scaled to an average damage of their attacks\n" +
 		"This is divided by 4.40 to represent 4 damage types + some (40% as much) ^xD02090chaos\n" +
 		"^7Fill in the exact damage numbers if more precision is needed\n\n" +
@@ -460,7 +486,7 @@ func bossTooltip(misc misc, stats bossStats) string {
 		"\t" + fs(stats.PinnacleEvasionMean) + "% of monster ^x33FF77Evasion\n" +
 		"\t^7" + fs(misc.PinnacleBossDPSMult*100) + "% of monster Damage of each type\n" +
 		"\t" + fs(misc.PinnacleBossDPSMult*4.4*100) + "% of monster Damage total\n" +
-		"\t" + luaNumString(misc.PinnacleBossPen) + "% penetration\n\n" +
+		"\t" + util.FormatIntOrG14(misc.PinnacleBossPen) + "% penetration\n\n" +
 		"Uber Pinnacle Boss adds the following modifiers:\n" +
 		"\t+50% to enemy Elemental Resistances\n" +
 		"\t+30% to enemy ^xD02090Chaos Resistance\n" +
@@ -469,5 +495,5 @@ func bossTooltip(misc misc, stats bossStats) string {
 		"\t^770% less to enemy Damage taken\n" +
 		"\t" + fs(misc.UberBossDPSMult*100) + "% of monster Damage of each type\n" +
 		"\t" + fs(misc.UberBossDPSMult*4.25*100) + "% of monster Damage total\n" +
-		"\t" + luaNumString(misc.UberBossPen) + "% penetration"
+		"\t" + util.FormatIntOrG14(misc.UberBossPen) + "% penetration"
 }

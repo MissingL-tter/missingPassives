@@ -1,8 +1,8 @@
 {
 	"directives": [
-		"#type Bow",
-		"#influenceBaseTag bow",
-		"#socketLimit 6",
-		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/Bows/AbstractBow"
+		{"directive":"type","name":"Bow"},
+		{"directive":"influenceBaseTag","tag":"bow"},
+		{"directive":"socketLimit","limit":6},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/TwoHandWeapons/Bows/AbstractBow"}
 	]
 }

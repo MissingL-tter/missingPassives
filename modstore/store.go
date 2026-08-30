@@ -10,6 +10,8 @@ package modstore
 import (
 	"math"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
+
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -20,12 +22,12 @@ type Store interface {
 	base() *ModStore
 	// The ModStore aggregation surface, promoted from the embedded base so
 	// callers (calcLib) can hold either container behind one type.
-	Sum(modType string, cfg *Cfg, names ...string) float64
+	Sum(modType modparser.ModType, cfg *Cfg, names ...string) float64
 	More(cfg *Cfg, names ...string) float64
 	Flag(cfg *Cfg, names ...string) bool
-	Override(cfg *Cfg, names ...string) any
-	List(cfg *Cfg, names ...string) []any
-	Tabulate(modType string, cfg *Cfg, names ...string) []TabEntry
+	Override(cfg *Cfg, names ...string) (modparser.Value, bool)
+	List(cfg *Cfg, names ...string) []modparser.Value
+	Tabulate(modType modparser.ModType, cfg *Cfg, names ...string) []TabEntry
 	TabulateAll(cfg *Cfg, names ...string) []TabEntry
 	GetCondition(varName string, cfg *Cfg) bool
 	GetMultiplier(varName string, cfg *Cfg) float64
@@ -33,19 +35,45 @@ type Store interface {
 	AddList(list []*modparser.Mod)
 	ReplaceModInternal(mod *modparser.Mod) bool
 	ConvertModInternal(oldName string, mod *modparser.Mod) bool
-	SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64
-	MoreInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64
-	FlagInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) bool
-	OverrideInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) any
-	ListInternal(ctx Store, result *[]any, cfg *Cfg, flags, keywordFlags int64, source string, names ...string)
-	TabulateInternal(ctx Store, result *[]TabEntry, modType string, hasType bool, cfg *Cfg, flags, keywordFlags int64, source string, names ...string)
+	SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
+	MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64
+	FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool
+	OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value
+	ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value
+	TabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry
 }
 
 // TabEntry is one Tabulate result: { value = ..., mod = ... }.
 type TabEntry struct {
-	Value any
+	Value modparser.Value
 	Mod   *modparser.Mod
 }
+
+// CondValue is one condition entry: a bool, or the class-name string the
+// Forbidden jewels store (only ever tested for truthiness).
+type CondValue struct {
+	isClass bool
+	on      bool
+	class   string
+}
+
+func CondBool(on bool) CondValue       { return CondValue{on: on} }
+func CondClass(class string) CondValue { return CondValue{isClass: true, class: class} }
+
+// True is Lua truthiness: false only for a false bool (or an absent key).
+func (c CondValue) True() bool { return c.isClass || c.on }
+
+// Class reads the class-name string, if that is what the entry holds.
+func (c CondValue) Class() (string, bool) { return c.class, c.isClass }
+
+// Conditions is the store's direct condition table (Lua conditions).
+type Conditions map[string]CondValue
+
+func (c Conditions) Set(name string, on bool)           { c[name] = CondBool(on) }
+func (c Conditions) SetClass(name string, class string) { c[name] = CondClass(class) }
+
+// Get reads a condition's truthiness (absent is false).
+func (c Conditions) Get(name string) bool { return c[name].True() }
 
 // ModStore carries the shared state: parent chain, actor, and the direct
 // multiplier/condition maps.
@@ -54,7 +82,7 @@ type ModStore struct {
 	Parent      Store
 	Actor       *Actor
 	Multipliers map[string]float64
-	Conditions  map[string]any // Lua truthiness: bools normally, class-name strings for Forbidden jewels
+	Conditions  Conditions
 }
 
 func newModStore(self, parent Store) ModStore {
@@ -62,7 +90,7 @@ func newModStore(self, parent Store) ModStore {
 		self:        self,
 		Parent:      parent,
 		Multipliers: map[string]float64{},
-		Conditions:  map[string]any{},
+		Conditions:  Conditions{},
 	}
 	if parent != nil {
 		ms.Actor = parent.base().Actor
@@ -92,27 +120,14 @@ func (ms *ModStore) getActor(actorType string) *Actor {
 	return a.byType(actorType)
 }
 
-// truthy is Lua truthiness.
-func truthy(v any) bool {
-	if v == nil {
-		return false
+// compareNum is a MAX/MIN candidate under Lua `<`/`>`: only a number
+// compares; nil (a rejected re-evaluation), a bool or a string errors.
+func compareNum(v modparser.Value) float64 {
+	n, ok := numValue(v)
+	if !ok {
+		panic("modstore: MAX/MIN comparison on a non-number (the Lua errors)")
 	}
-	if b, ok := v.(bool); ok {
-		return b
-	}
-	return true
-}
-
-func toNum(v any) float64 {
-	switch n := v.(type) {
-	case float64:
-		return n
-	case int64:
-		return float64(n)
-	case int:
-		return float64(n)
-	}
-	panic("modstore: number expected")
+	return n
 }
 
 // round is Common.lua's round.
@@ -122,9 +137,9 @@ func round(val float64, dec int) float64 {
 }
 
 // matchKeywordFlags is Data/Global.lua's MatchKeywordFlags (uncached).
-func matchKeywordFlags(keywordFlags, modKeywordFlags int64) bool {
-	matchAllMask := ^modparser.KeywordFlag.MatchAll
-	matchAll := modKeywordFlags&modparser.KeywordFlag.MatchAll != 0
+func matchKeywordFlags(keywordFlags, modKeywordFlags modparser.KeywordFlag) bool {
+	matchAllMask := ^modparser.KeywordMatchAll
+	matchAll := modKeywordFlags&modparser.KeywordMatchAll != 0
 	modMasked := modKeywordFlags & matchAllMask
 	keywordMasked := keywordFlags & matchAllMask
 	if matchAll {
@@ -166,7 +181,7 @@ func sourceMatch(modSource, source string) bool {
 func (ms *ModStore) ScaleAddMod(mod *modparser.Mod, scale float64, replace bool) {
 	unscalable := false
 	for _, tag := range modparser.ModTags(mod) {
-		if truthy(tag["unscalable"]) {
+		if tagUnscalable(tag) {
 			unscalable = true
 			break
 		}
@@ -175,13 +190,19 @@ func (ms *ModStore) ScaleAddMod(mod *modparser.Mod, scale float64, replace bool)
 		ms.self.AddMod(mod)
 		return
 	}
-	scaledMod := modparser.CopyMod(mod)
+	scaledMod := mod.Clone()
 	subMod := scaledMod
-	if valueTable, ok := scaledMod.Value.(modparser.Tag); ok {
-		if vm, ok := valueTable["mod"].(*modparser.Mod); ok {
-			subMod = vm
-		} else if key, ok := valueTable["keyOfScaledMod"].(string); ok {
-			valueTable[key] = round(toNum(valueTable[key])*scale, 2)
+	switch v := scaledMod.Value.(type) {
+	case modparser.ModRef:
+		subMod = v.Mod
+	case modparser.ExplodeRef:
+		// keyOfScaledMod names the scaled field: "chance" here.
+		v.Chance = round(v.Chance*scale, 2)
+		scaledMod.Value = v
+	case modparser.GemPropertyRef:
+		if v.KeyOfScaledMod == "value" {
+			v.Value = optOf(round(v.Value.Or(0)*scale, 2))
+			scaledMod.Value = v
 		}
 	}
 	if v, ok := numValue(subMod.Value); ok {
@@ -191,9 +212,9 @@ func (ms *ModStore) ScaleAddMod(mod *modparser.Mod, scale float64, replace bool)
 		}
 		if has {
 			power := math.Pow(10, float64(precision))
-			subMod.Value = math.Floor(v*scale*power) / power
+			subMod.Value = modparser.Num(math.Floor(v*scale*power) / power)
 		} else {
-			subMod.Value = math.Trunc(round(v*scale, 2))
+			subMod.Value = modparser.Num(math.Trunc(round(v*scale, 2)))
 		}
 	}
 	if replace {
@@ -203,19 +224,26 @@ func (ms *ModStore) ScaleAddMod(mod *modparser.Mod, scale float64, replace bool)
 	}
 }
 
-func numValue(v any) (float64, bool) {
-	switch n := v.(type) {
-	case float64:
-		return n, true
-	case int64:
-		return float64(n), true
-	case int:
-		return float64(n), true
-	}
-	return 0, false
+// numValue reads a Num value (`type(v) == "number"`).
+func numValue(v modparser.Value) (float64, bool) {
+	n, ok := v.(modparser.Num)
+	return float64(n), ok
 }
 
-func highPrecision(name, modType string) (int, bool) {
+func optOf(v float64) util.Opt[float64] { return util.Some(v) }
+
+// tagUnscalable reads the unscalable flag ScaleAddMod checks on every tag.
+func tagUnscalable(tag modparser.Tag) bool {
+	switch t := tag.(type) {
+	case *modparser.GlobalEffectTag:
+		return t.Unscalable
+	case *modparser.CondTag:
+		return t.Unscalable
+	}
+	return false
+}
+
+func highPrecision(name string, modType modparser.ModType) (int, bool) {
 	if m, ok := highPrecisionMods[name]; ok {
 		if p, ok := m[modType]; ok {
 			return p, true
@@ -227,7 +255,7 @@ func highPrecision(name, modType string) (int, bool) {
 // CopyList ports ModStore:CopyList.
 func (ms *ModStore) CopyList(modList []*modparser.Mod) {
 	for _, mod := range modList {
-		ms.self.AddMod(modparser.CopyMod(mod))
+		ms.self.AddMod(mod.Clone())
 	}
 }
 
@@ -257,7 +285,7 @@ func (ms *ModStore) ConvertMod(oldName string, mod *modparser.Mod) {
 	}
 }
 
-func cfgParts(cfg *Cfg) (flags, keywordFlags int64, source string) {
+func cfgParts(cfg *Cfg) (flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string) {
 	if cfg != nil {
 		if cfg.Flags != nil {
 			flags = *cfg.Flags
@@ -270,30 +298,7 @@ func cfgParts(cfg *Cfg) (flags, keywordFlags int64, source string) {
 	return
 }
 
-// Combine ports ModStore:Combine. MORE/FLAG/OVERRIDE/LIST/MAX dispatch to
-// their aggregations; everything else sums.
-func (ms *ModStore) Combine(modType string, cfg *Cfg, names ...string) any {
-	switch modType {
-	case "MORE":
-		return ms.More(cfg, names...)
-	case "FLAG":
-		return ms.Flag(cfg, names...)
-	case "OVERRIDE":
-		return ms.Override(cfg, names...)
-	case "LIST":
-		return ms.List(cfg, names...)
-	case "MAX":
-		v, ok := ms.Max(cfg, names...)
-		if !ok {
-			return nil
-		}
-		return v
-	default:
-		return ms.Sum(modType, cfg, names...)
-	}
-}
-
-func (ms *ModStore) Sum(modType string, cfg *Cfg, names ...string) float64 {
+func (ms *ModStore) Sum(modType modparser.ModType, cfg *Cfg, names ...string) float64 {
 	flags, keywordFlags, source := cfgParts(cfg)
 	return ms.self.SumInternal(ms.self, modType, cfg, flags, keywordFlags, source, names...)
 }
@@ -308,31 +313,30 @@ func (ms *ModStore) Flag(cfg *Cfg, names ...string) bool {
 	return ms.self.FlagInternal(ms.self, cfg, flags, keywordFlags, source, names...)
 }
 
-func (ms *ModStore) Override(cfg *Cfg, names ...string) any {
+// Override returns the first truthy OVERRIDE value; ok is false when none.
+func (ms *ModStore) Override(cfg *Cfg, names ...string) (modparser.Value, bool) {
 	flags, keywordFlags, source := cfgParts(cfg)
-	return ms.self.OverrideInternal(ms.self, cfg, flags, keywordFlags, source, names...)
+	v := ms.self.OverrideInternal(ms.self, cfg, flags, keywordFlags, source, names...)
+	return v, v != nil
 }
 
-func (ms *ModStore) List(cfg *Cfg, names ...string) []any {
+func (ms *ModStore) List(cfg *Cfg, names ...string) []modparser.Value {
 	flags, keywordFlags, source := cfgParts(cfg)
-	result := []any{}
-	ms.self.ListInternal(ms.self, &result, cfg, flags, keywordFlags, source, names...)
-	return result
+	result := []modparser.Value{}
+	return append(result, ms.self.ListInternal(ms.self, cfg, flags, keywordFlags, source, names...)...)
 }
 
-func (ms *ModStore) Tabulate(modType string, cfg *Cfg, names ...string) []TabEntry {
+func (ms *ModStore) Tabulate(modType modparser.ModType, cfg *Cfg, names ...string) []TabEntry {
 	flags, keywordFlags, source := cfgParts(cfg)
 	result := []TabEntry{}
-	ms.self.TabulateInternal(ms.self, &result, modType, modType != "", cfg, flags, keywordFlags, source, names...)
-	return result
+	return append(result, ms.self.TabulateInternal(ms.self, modType, modType != 0, cfg, flags, keywordFlags, source, names...)...)
 }
 
 // TabulateAll is Tabulate with a nil modType in the Lua (match every type).
 func (ms *ModStore) TabulateAll(cfg *Cfg, names ...string) []TabEntry {
 	flags, keywordFlags, source := cfgParts(cfg)
 	result := []TabEntry{}
-	ms.self.TabulateInternal(ms.self, &result, "", false, cfg, flags, keywordFlags, source, names...)
-	return result
+	return append(result, ms.self.TabulateInternal(ms.self, 0, false, cfg, flags, keywordFlags, source, names...)...)
 }
 
 // Max ports ModStore:Max; ok reports whether any value was found.
@@ -341,9 +345,8 @@ func (ms *ModStore) TabulateAll(cfg *Cfg, names ...string) []TabEntry {
 func (ms *ModStore) Max(cfg *Cfg, names ...string) (float64, bool) {
 	var max float64
 	found := false
-	for _, entry := range ms.Tabulate("MAX", cfg, names...) {
-		val := evalMod(ms.self, entry.Mod, cfg, nil)
-		v := toNum(val)
+	for _, entry := range ms.Tabulate(modparser.Max, cfg, names...) {
+		v := compareNum(evalMod(ms.self, entry.Mod, cfg, nil))
 		cur := 0.0
 		if found {
 			cur = max
@@ -360,9 +363,8 @@ func (ms *ModStore) Max(cfg *Cfg, names ...string) (float64, bool) {
 func (ms *ModStore) Min(cfg *Cfg, names ...string) (float64, bool) {
 	var min float64
 	found := false
-	for _, entry := range ms.Tabulate("MIN", cfg, names...) {
-		val := evalMod(ms.self, entry.Mod, cfg, nil)
-		v := toNum(val)
+	for _, entry := range ms.Tabulate(modparser.Min, cfg, names...) {
+		v := compareNum(evalMod(ms.self, entry.Mod, cfg, nil))
 		if !found || v < min {
 			min = v
 			found = true
@@ -374,7 +376,7 @@ func (ms *ModStore) Min(cfg *Cfg, names ...string) (float64, bool) {
 // HasMod ports ModStore:HasMod.
 // #EVAL: archive parity — only ModDB implements HasModInternal; calling it
 // on (or through) a ModList errors in the reference, so this panics.
-func (ms *ModStore) HasMod(modType string, cfg *Cfg, names ...string) bool {
+func (ms *ModStore) HasMod(modType modparser.ModType, cfg *Cfg, names ...string) bool {
 	flags, keywordFlags, source := cfgParts(cfg)
 	db, ok := ms.self.(*DB)
 	if !ok {
@@ -390,7 +392,7 @@ func (ms *ModStore) GetCondition(varName string, cfg *Cfg) bool {
 
 func getCondition(s Store, varName string, cfg *Cfg, noMod bool) bool {
 	b := s.base()
-	if truthy(b.Conditions[varName]) {
+	if b.Conditions.Get(varName) {
 		return true
 	}
 	if b.Parent != nil && getCondition(b.Parent, varName, cfg, true) {
@@ -410,8 +412,8 @@ func (ms *ModStore) GetMultiplier(varName string, cfg *Cfg) float64 {
 func getMultiplier(s Store, varName string, cfg *Cfg, noMod bool) float64 {
 	b := s.base()
 	if !noMod {
-		if ov := b.Override(cfg, "Multiplier:"+varName); truthy(ov) {
-			return toNum(ov)
+		if ov, ok := b.Override(cfg, "Multiplier:"+varName); ok {
+			return valueNum(ov)
 		}
 	}
 	result := b.Multipliers[varName]
@@ -419,7 +421,7 @@ func getMultiplier(s Store, varName string, cfg *Cfg, noMod bool) float64 {
 		result += getMultiplier(b.Parent, varName, cfg, true)
 	}
 	if !noMod {
-		result += b.Sum("BASE", cfg, "Multiplier:"+varName)
+		result += b.Sum(modparser.Base, cfg, "Multiplier:"+varName)
 	}
 	return result
 }

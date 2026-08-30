@@ -5,6 +5,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -59,35 +60,35 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 		return math.Inf(1)
 	}
 
-	wardAvoidBreakChance := math.Min(modDB.Sum("BASE", nil, "WardAvoidBreakChance")/100, 1)
+	wardAvoidBreakChance := math.Min(modDB.Sum(modparser.Base, nil, "WardAvoidBreakChance")/100, 1)
 	if modDB.Flag(nil, "Condition:WardNotBreak") {
 		wardAvoidBreakChance = 1
 	}
-	if wardAvoidBreakChance == 1 && outNum(output, "Ward") > 0 && numHits < outNum(output, "Ward") {
+	if wardAvoidBreakChance == 1 && output.N("Ward") > 0 && numHits < output.N("Ward") {
 		return math.Inf(1)
 	}
 	numHits = 0
 
-	ward := outNum(output, "Ward")
+	ward := output.N("Ward")
 	// don't apply non-perma ward for speed up calcs as it won't zero it
 	// correctly per hit
 	if wardAvoidBreakChance < 1 && in.cycles > 1 {
 		ward = 0
 	}
 	aegis := map[string]float64{
-		"shared":          outNum(output, "sharedAegis"),
-		"sharedElemental": outNum(output, "sharedElementalAegis"),
+		"shared":          output.N("sharedAegis"),
+		"sharedElemental": output.N("sharedElementalAegis"),
 	}
-	guard := map[string]float64{"shared": outNum(output, "sharedGuardAbsorb")}
+	guard := map[string]float64{"shared": output.N("sharedGuardAbsorb")}
 	for _, damageType := range dmgTypeList {
-		aegis[damageType] = outNum(output, damageType+"Aegis")
-		guard[damageType] = outNum(output, damageType+"GuardAbsorb")
+		aegis[damageType] = output.N(damageType + "Aegis")
+		guard[damageType] = output.N(damageType + "GuardAbsorb")
 	}
 	alliesTakenBeforeYou := buildAllyLifePools(output)
 
-	esCap := outNum(output, "EnergyShieldRecoveryCap")
-	manaStart := outNum(output, "ManaUnreserved")
-	lifeStart := outNum(output, "LifeRecoverable")
+	esCap := output.N("EnergyShieldRecoveryCap")
+	manaStart := output.N("ManaUnreserved")
+	lifeStart := output.N("LifeRecoverable")
 	poolTable := &poolSet{
 		AlliesTakenBeforeYou:          alliesTakenBeforeYou,
 		Aegis:                         aegis,
@@ -96,8 +97,8 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 		EnergyShield:                  &esCap,
 		Mana:                          &manaStart,
 		Life:                          &lifeStart,
-		LifeLossLostOverTime:          outNum(output, "LifeLossLostOverTime"),
-		LifeBelowHalfLossLostOverTime: outNum(output, "LifeBelowHalfLossLostOverTime"),
+		LifeLossLostOverTime:          output.N("LifeLossLostOverTime"),
+		LifeBelowHalfLossLostOverTime: output.N("LifeBelowHalfLossLostOverTime"),
 		damageTakenThatCanBeRecouped:  map[string]float64{},
 	}
 	// live pool values threaded through the loop
@@ -115,11 +116,11 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 		in.TrackLifeLossOverTime = false
 	}
 	if !in.wardBypassSet {
-		in.wardBypass = modDB.Sum("BASE", nil, "WardBypass")
+		in.wardBypass = modDB.Sum(modparser.Base, nil, "WardBypass")
 		in.wardBypassSet = true
 	}
 
-	vaalArcticArmourHitsLeft := outNum(output, "VaalArcticArmourLife")
+	vaalArcticArmourHitsLeft := output.N("VaalArcticArmourLife")
 	if in.cycles > 1 {
 		vaalArcticArmourHitsLeft = 0
 	}
@@ -134,7 +135,7 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 		damageTotal = 0
 		vaalArcticArmourMultiplier := 1.0
 		if vaalArcticArmourHitsLeft > 0 {
-			vaalArcticArmourMultiplier = 1 - outNum(output, "VaalArcticArmourMitigation")*math.Min(vaalArcticArmourHitsLeft/iterationMultiplier, 1)
+			vaalArcticArmourMultiplier = 1 - output.N("VaalArcticArmourMitigation")*math.Min(vaalArcticArmourHitsLeft/iterationMultiplier, 1)
 		}
 		vaalArcticArmourHitsLeft -= iterationMultiplier
 		for _, damageType := range dmgTypeList {
@@ -148,26 +149,26 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 			(iterationMultiplier > 1 || in.cycles > 1) {
 			gainMult := iterationMultiplier * in.cycles
 			if in.MissingLifeBeforeEnemyHit != nil {
-				poolLife = math.Min(poolLife+*in.MissingLifeBeforeEnemyHit*(outNum(output, "LifeUnreserved")-poolLife)*(gainMult-1)/100,
-					gainMult*outNum(output, "LifeRecoverable"))
+				poolLife = math.Min(poolLife+*in.MissingLifeBeforeEnemyHit*(output.N("LifeUnreserved")-poolLife)*(gainMult-1)/100,
+					gainMult*output.N("LifeRecoverable"))
 			}
 			if in.MissingManaBeforeEnemyHit != nil {
-				poolMana = math.Min(poolMana+*in.MissingManaBeforeEnemyHit*(outNum(output, "ManaUnreserved")-poolMana)*(gainMult-1)/100,
-					gainMult*outNum(output, "ManaUnreserved"))
+				poolMana = math.Min(poolMana+*in.MissingManaBeforeEnemyHit*(output.N("ManaUnreserved")-poolMana)*(gainMult-1)/100,
+					gainMult*output.N("ManaUnreserved"))
 			}
 			if in.GainWhenHit {
-				poolLife = math.Min(poolLife+in.LifeWhenHit*(gainMult-1), gainMult*outNum(output, "LifeRecoverable"))
-				poolMana = math.Min(poolMana+in.ManaWhenHit*(gainMult-1), gainMult*outNum(output, "ManaUnreserved"))
-				poolES = math.Min(poolES+in.EnergyShieldWhenHit*(gainMult-1), gainMult*outNum(output, "EnergyShieldRecoveryCap"))
+				poolLife = math.Min(poolLife+in.LifeWhenHit*(gainMult-1), gainMult*output.N("LifeRecoverable"))
+				poolMana = math.Min(poolMana+in.ManaWhenHit*(gainMult-1), gainMult*output.N("ManaUnreserved"))
+				poolES = math.Min(poolES+in.EnergyShieldWhenHit*(gainMult-1), gainMult*output.N("EnergyShieldRecoveryCap"))
 			}
 		}
 		if in.MissingLifeBeforeEnemyHit != nil && poolLife > 0 {
-			poolLife = math.Min(poolLife+*in.MissingLifeBeforeEnemyHit*(outNum(output, "LifeUnreserved")-poolLife)/100,
-				outNum(output, "LifeRecoverable"))
+			poolLife = math.Min(poolLife+*in.MissingLifeBeforeEnemyHit*(output.N("LifeUnreserved")-poolLife)/100,
+				output.N("LifeRecoverable"))
 		}
 		if in.MissingManaBeforeEnemyHit != nil && poolMana > 0 {
-			poolMana = math.Min(poolMana+*in.MissingManaBeforeEnemyHit*(outNum(output, "ManaUnreserved")-poolMana)/100,
-				outNum(output, "ManaUnreserved"))
+			poolMana = math.Min(poolMana+*in.MissingManaBeforeEnemyHit*(output.N("ManaUnreserved")-poolMana)/100,
+				output.N("ManaUnreserved"))
 		}
 		poolTable.Life = &poolLife
 		poolTable.Mana = &poolMana
@@ -196,9 +197,9 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 			return math.Inf(1)
 		}
 		if in.GainWhenHit && poolLife > 0 {
-			poolLife = math.Min(poolLife+in.LifeWhenHit, outNum(output, "LifeRecoverable"))
-			poolMana = math.Min(poolMana+in.ManaWhenHit, outNum(output, "ManaUnreserved"))
-			poolES = math.Min(poolES+in.EnergyShieldWhenHit, outNum(output, "EnergyShieldRecoveryCap"))
+			poolLife = math.Min(poolLife+in.LifeWhenHit, output.N("LifeRecoverable"))
+			poolMana = math.Min(poolMana+in.ManaWhenHit, output.N("ManaUnreserved"))
+			poolES = math.Min(poolES+in.EnergyShieldWhenHit, output.N("EnergyShieldRecoveryCap"))
 		}
 		iterationMultiplier = 1
 		// to speed it up, run recursively but accelerated.
@@ -238,12 +239,12 @@ func (env *Env) numberOfHitsToDie(in *damageIn, actor *performActor) float64 {
 	if lastResult != nil {
 		if in.TrackRecoupable {
 			for damageType, recoupable := range lastResult.damageTakenThatCanBeRecouped {
-				output[damageType+"RecoupableDamageTaken"] = outNum(output, damageType+"RecoupableDamageTaken") + recoupable
+				output.SetN(damageType+"RecoupableDamageTaken", output.N(damageType+"RecoupableDamageTaken")+recoupable)
 			}
 		}
 		if in.TrackLifeLossOverTime {
-			output["LifeLossLostOverTime"] = outNum(output, "LifeLossLostOverTime") + lastResult.LifeLossLostOverTime
-			output["LifeBelowHalfLossLostOverTime"] = outNum(output, "LifeBelowHalfLossLostOverTime") + lastResult.LifeBelowHalfLossLostOverTime
+			output.SetN("LifeLossLostOverTime", output.N("LifeLossLostOverTime")+lastResult.LifeLossLostOverTime)
+			output.SetN("LifeBelowHalfLossLostOverTime", output.N("LifeBelowHalfLossLostOverTime")+lastResult.LifeBelowHalfLossLostOverTime)
 		}
 		// Don't count overkill damage and only on final pass as to not
 		// break speedup.

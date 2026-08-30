@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -25,55 +26,55 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 	for _, pass := range c.passList {
 		source, output, cfg := pass.source, pass.output, pass.cfg
 
-		if truthy(skillData["averageBurstHits"]) {
-			output["AverageBurstHits"] = skillData["averageBurstHits"]
-		} else if truthy(output["Repeats"]) && anyNum(output["Repeats"]) > 1 {
-			output["AverageBurstHits"] = output["Repeats"]
+		if skillData.Flag("averageBurstHits") {
+			output.Set("AverageBurstHits", skillData.Get("averageBurstHits"))
+		} else if output.Has("Repeats") && output.N("Repeats") > 1 {
+			output.Set("AverageBurstHits", output.Get("Repeats"))
 		}
 
 		// Calculate hit chance
-		base := skillModList.Sum("BASE", cfg, "Accuracy")
-		baseVsEnemy := skillModList.Sum("BASE", cfg, "Accuracy", "AccuracyVsEnemy")
-		inc := skillModList.Sum("INC", cfg, "Accuracy")
-		incVsEnemy := skillModList.Sum("INC", cfg, "Accuracy", "AccuracyVsEnemy")
+		base := skillModList.Sum(modparser.Base, cfg, "Accuracy")
+		baseVsEnemy := skillModList.Sum(modparser.Base, cfg, "Accuracy", "AccuracyVsEnemy")
+		inc := skillModList.Sum(modparser.Inc, cfg, "Accuracy")
+		incVsEnemy := skillModList.Sum(modparser.Inc, cfg, "Accuracy", "AccuracyVsEnemy")
 		// #EVAL: the reference calls More("MORE", cfg, "Accuracy") — the
 		// "MORE" string lands in the cfg slot and the real cfg becomes a
 		// (never-matching) modifier name, so this is a cfg-less More.
 		more := skillModList.More(&modstore.Cfg{}, "Accuracy")
 		moreVsEnemy := skillModList.More(&modstore.Cfg{}, "Accuracy", "AccuracyVsEnemy")
 
-		output["Accuracy"] = math.Max(0, math.Floor(base*(1+inc/100)*more))
+		output.SetN("Accuracy", math.Max(0, math.Floor(base*(1+inc/100)*more)))
 		accuracyVsEnemy := math.Max(0, math.Floor(baseVsEnemy*(1+incVsEnemy/100)*moreVsEnemy))
 		if skillModList.Flag(nil, "Condition:OffHandAccuracyIsMainHandAccuracy") && pass.label == "Main Hand" {
-			storedMainHandAccuracy = outNum(output, "Accuracy")
+			storedMainHandAccuracy = output.N("Accuracy")
 			storedMainHandAccuracyVsEnemy = accuracyVsEnemy
 			haveStoredMainHandAccuracy = true
 		} else if skillModList.Flag(nil, "Condition:OffHandAccuracyIsMainHandAccuracy") && pass.label == "Off Hand" && haveStoredMainHandAccuracy {
-			output["Accuracy"] = storedMainHandAccuracy
+			output.SetN("Accuracy", storedMainHandAccuracy)
 			accuracyVsEnemy = storedMainHandAccuracyVsEnemy
 		}
-		if !isAttack || skillModList.Flag(cfg, "CannotBeEvaded") || truthy(skillData["cannotBeEvaded"]) ||
+		if !isAttack || skillModList.Flag(cfg, "CannotBeEvaded") || skillData.Flag("cannotBeEvaded") ||
 			(env.ModeEffective && enemyDB.Flag(nil, "CannotEvade")) {
-			output["AccuracyHitChance"] = 100.0
+			output.SetN("AccuracyHitChance", 100.0)
 		} else {
-			enemyEvasion := math.Max(roundDec(Val(enemyDB, "Evasion", nil), 0), 0)
-			output["AccuracyHitChance"] = hitChance(enemyEvasion, accuracyVsEnemy) * Mod(skillModList, cfg, "HitChance")
+			enemyEvasion := math.Max(util.RoundHalfUp(Val(enemyDB, "Evasion", nil), 0), 0)
+			output.SetN("AccuracyHitChance", hitChance(enemyEvasion, accuracyVsEnemy)*Mod(skillModList, cfg, "HitChance"))
 		}
 		// enemy block chance
-		output["enemyBlockChance"] = math.Max(math.Min(enemyDB.Sum("BASE", cfg, "BlockChance"), 100)-skillModList.Sum("BASE", cfg, "reduceEnemyBlock"), 0)
+		output.SetN("enemyBlockChance", math.Max(math.Min(enemyDB.Sum(modparser.Base, cfg, "BlockChance"), 100)-skillModList.Sum(modparser.Base, cfg, "reduceEnemyBlock"), 0))
 		if enemyDB.Flag(nil, "CannotBlockAttacks") && isAttack {
-			output["enemyBlockChance"] = 0.0
+			output.SetN("enemyBlockChance", 0.0)
 		}
 
-		output["HitChance"] = outNum(output, "AccuracyHitChance") * (1 - outNum(output, "enemyBlockChance")/100)
-		if outNum(output, "enemyBlockChance") > 0 && !isAttack {
-			globalOutput["enemyHasSpellBlock"] = true
+		output.SetN("HitChance", output.N("AccuracyHitChance")*(1-output.N("enemyBlockChance")/100))
+		if output.N("enemyBlockChance") > 0 && !isAttack {
+			globalOutput.SetFlag("enemyHasSpellBlock", true)
 		}
 
 		// Check Precise Technique Keystone condition per pass as MH/OH might
 		// have different values
 		condName := strings.Replace(pass.label, " ", "", -1) + "AccRatingHigherThanMaxLife"
-		skillModList.Conditions[condName] = outNum(output, "Accuracy") > outNum(env.Player.Output, "Life")
+		skillModList.Conditions.Set(condName, output.N("Accuracy") > env.Player.Output.N("Life"))
 
 		// Calculate attack/cast speed
 		castTime := 0.0
@@ -82,52 +83,52 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 			castTime, hasCastTime = *ct, true
 		}
 		switch {
-		case hasCastTime && castTime == 0 && !truthy(skillData["castTimeOverride"]) && !truthy(skillData["triggered"]):
-			output["Time"] = 0.0
-			output["Speed"] = 0.0
-		case truthy(skillData["timeOverride"]):
-			output["Time"] = skillData["timeOverride"]
-			output["Speed"] = 1 / outNum(output, "Time")
-		case truthy(skillData["fixedCastTime"]):
-			output["Time"] = castTime
-			output["Speed"] = 1 / outNum(output, "Time")
-		case truthy(skillData["triggerTime"]) && truthy(skillData["triggered"]):
-			activeSkillsLinked := skillModList.Sum("BASE", cfg, "ActiveSkillsLinkedToTrigger")
-			t := anyNum(skillData["triggerTime"]) / (1 + skillModList.Sum("INC", cfg, "CooldownRecovery")/100)
+		case hasCastTime && castTime == 0 && !skillData.Flag("castTimeOverride") && !skillData.Flag("triggered"):
+			output.SetN("Time", 0.0)
+			output.SetN("Speed", 0.0)
+		case skillData.Has("timeOverride"):
+			output.Set("Time", skillData.Get("timeOverride"))
+			output.SetN("Speed", 1/output.N("Time"))
+		case skillData.Flag("fixedCastTime"):
+			output.SetN("Time", castTime)
+			output.SetN("Speed", 1/output.N("Time"))
+		case skillData.Has("triggerTime") && skillData.Flag("triggered"):
+			activeSkillsLinked := skillModList.Sum(modparser.Base, cfg, "ActiveSkillsLinkedToTrigger")
+			t := skillData.N("triggerTime") / (1 + skillModList.Sum(modparser.Inc, cfg, "CooldownRecovery")/100)
 			if activeSkillsLinked > 0 {
 				t *= activeSkillsLinked
 			}
-			output["Time"] = t
-			output["TriggerTime"] = t
-			output["Speed"] = 1 / t
-		case truthy(skillData["triggerRate"]) && truthy(skillData["triggered"]):
-			output["Time"] = 1 / anyNum(skillData["triggerRate"])
-			output["TriggerTime"] = output["Time"]
-			output["Speed"] = anyNum(skillData["triggerRate"])
-			skillData["showAverage"] = false
+			output.SetN("Time", t)
+			output.SetN("TriggerTime", t)
+			output.SetN("Speed", 1/t)
+		case skillData.Flag("triggerRate") && skillData.Flag("triggered"):
+			output.SetN("Time", 1/skillData.N("triggerRate"))
+			output.Set("TriggerTime", output.Get("Time"))
+			output.SetN("Speed", skillData.N("triggerRate"))
+			skillData.SetFlag("showAverage", false)
 		default:
 			var baseTime float64
 			if isAttack {
-				if truthy(skillData["attackSpeedMultiplier"]) && truthy(source["AttackRate"]) {
-					source["AttackRate"] = anyNum(source["AttackRate"]) * (1 + anyNum(skillData["attackSpeedMultiplier"])/100)
+				if skillData.Has("attackSpeedMultiplier") && source.Has("AttackRate") {
+					source.SetN("AttackRate", source.N("AttackRate")*(1+skillData.N("attackSpeedMultiplier")/100))
 				}
 				attackRate := 1.0
-				if truthy(source["AttackRate"]) {
-					attackRate = anyNum(source["AttackRate"])
+				if source.Has("AttackRate") {
+					attackRate = source.N("AttackRate")
 				}
 				switch {
-				case truthy(skillData["castTimeOverridesAttackTime"]):
+				case skillData.Flag("castTimeOverridesAttackTime"):
 					// Skill is overriding weapon attack speed
-					baseTime = castTime / (1 + anyNum(source["AttackSpeedInc"])/100)
+					baseTime = castTime / (1 + source.N("AttackSpeedInc")/100)
 				case Mod(skillModList, skillCfg, "SkillAttackTime") > 0:
-					baseTime = (1/attackRate + skillModList.Sum("BASE", cfg, "Speed")) * Mod(skillModList, skillCfg, "SkillAttackTime")
+					baseTime = (1/attackRate + skillModList.Sum(modparser.Base, cfg, "Speed")) * Mod(skillModList, skillCfg, "SkillAttackTime")
 				default:
-					baseTime = 1/attackRate + skillModList.Sum("BASE", cfg, "Speed")
+					baseTime = 1/attackRate + skillModList.Sum(modparser.Base, cfg, "Speed")
 				}
 			} else {
 				switch {
-				case truthy(skillData["castTimeOverride"]):
-					baseTime = anyNum(skillData["castTimeOverride"])
+				case skillData.Flag("castTimeOverride"):
+					baseTime = skillData.N("castTimeOverride")
 				case hasCastTime:
 					// a present 0 wins the `or` chain, as in Lua
 					baseTime = castTime
@@ -137,99 +138,98 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 			}
 			more := skillModList.More(cfg, "Speed")
 			repeats := 1.0
-			if truthy(globalOutput["Repeats"]) {
-				repeats = anyNum(globalOutput["Repeats"])
+			if globalOutput.Has("Repeats") {
+				repeats = globalOutput.N("Repeats")
 			}
-			output["Repeats"] = repeats
+			output.SetN("Repeats", repeats)
 
 			// Calculates the max number of trauma stacks you can sustain
 			if skillModList.Flag(nil, "HasTrauma") {
 				effectiveAttackRateCap := data.Misc.ServerTickRate * repeats
-				duration := skillModList.Sum("BASE", cfg, "TraumaDuration") * Mod(skillModList, skillCfg, "Duration")
-				traumaPerAttack := 1 + math.Min(skillModList.Sum("BASE", cfg, "ExtraTrauma"), 100)/100
-				incAttackSpeedPerTrauma := skillModList.Sum("INC", skillCfg, "SpeedPerTrauma")
+				duration := skillModList.Sum(modparser.Base, cfg, "TraumaDuration") * Mod(skillModList, skillCfg, "Duration")
+				traumaPerAttack := 1 + math.Min(skillModList.Sum(modparser.Base, cfg, "ExtraTrauma"), 100)/100
+				incAttackSpeedPerTrauma := skillModList.Sum(modparser.Inc, skillCfg, "SpeedPerTrauma")
 				// compute trauma using an exact form.
-				configTrauma := skillModList.Sum("BASE", skillCfg, "Multiplier:TraumaStacks")
+				configTrauma := skillModList.Sum(modparser.Base, skillCfg, "Multiplier:TraumaStacks")
 				// remove trauma attack speed added by config.
-				incTrauma := skillModList.Sum("INC", cfg, "Speed") - incAttackSpeedPerTrauma*configTrauma
-				attackSpeedBeforeInc := 1 / baseTime * outNum(globalOutput, "ActionSpeedMod") * more
+				incTrauma := skillModList.Sum(modparser.Inc, cfg, "Speed") - incAttackSpeedPerTrauma*configTrauma
+				attackSpeedBeforeInc := 1 / baseTime * globalOutput.N("ActionSpeedMod") * more
 				incAttackSpeedPerTraumaCap := (effectiveAttackRateCap - attackSpeedBeforeInc*(1+incTrauma/100)) / attackSpeedBeforeInc * 100
-				traumaRateBeforeInc := traumaPerAttack * (outNum(output, "HitChance") / 100) * attackSpeedBeforeInc / repeats
+				traumaRateBeforeInc := traumaPerAttack * (output.N("HitChance") / 100) * attackSpeedBeforeInc / repeats
 				trauma := traumaRateBeforeInc * (1 + incTrauma/100) / (1/duration - traumaRateBeforeInc*incAttackSpeedPerTrauma/100)
 				if trauma < 0 || incAttackSpeedPerTrauma*trauma > incAttackSpeedPerTraumaCap {
 					// invalid long term trauma generation as maximum attack
 					// rate is once per tick.
-					trauma = traumaPerAttack * (outNum(output, "HitChance") / 100) * effectiveAttackRateCap / repeats * duration
+					trauma = traumaPerAttack * (output.N("HitChance") / 100) * effectiveAttackRateCap / repeats * duration
 				}
 				if skillFlags["bothWeaponAttack"] {
 					// halve trauma rate when dual wielding so pass 2 doesn't
 					// double your trauma rate
 					trauma = trauma / 2
 				}
-				skillModList.AddMod(newMod("Multiplier:SustainableTraumaStacks", "BASE", trauma, "Maximum Sustainable Trauma Stacks"))
+				skillModList.AddMod(newModS("Multiplier:SustainableTraumaStacks", modparser.Base, modparser.Num(trauma), "Maximum Sustainable Trauma Stacks"))
 			}
-			if skillModList.Sum("BASE", skillCfg, "Multiplier:TraumaStacks") == 0 {
-				skillModList.AddMod(newMod("Multiplier:TraumaStacks", "BASE",
-					skillModList.Sum("BASE", skillCfg, "Multiplier:SustainableTraumaStacks"), "Maximum Sustainable Trauma Stacks"))
+			if skillModList.Sum(modparser.Base, skillCfg, "Multiplier:TraumaStacks") == 0 {
+				skillModList.AddMod(newModS("Multiplier:TraumaStacks", modparser.Base, modparser.Num(skillModList.Sum(modparser.Base, skillCfg, "Multiplier:SustainableTraumaStacks")), "Maximum Sustainable Trauma Stacks"))
 			}
-			incSpeed := skillModList.Sum("INC", cfg, "Speed")
+			incSpeed := skillModList.Sum(modparser.Inc, cfg, "Speed")
 
 			if skillFlags["warcry"] {
-				output["Speed"] = 1 / outNum(globalOutput, "WarcryCastTime")
+				output.SetN("Speed", 1/globalOutput.N("WarcryCastTime"))
 			} else {
-				output["Speed"] = 1 / (baseTime/roundDec((1+incSpeed/100)*more, 2) +
-					skillModList.Sum("BASE", cfg, "TotalAttackTime") + skillModList.Sum("BASE", cfg, "TotalCastTime"))
+				output.SetN("Speed", 1/(baseTime/util.RoundHalfUp((1+incSpeed/100)*more, 2)+
+					skillModList.Sum(modparser.Base, cfg, "TotalAttackTime")+skillModList.Sum(modparser.Base, cfg, "TotalCastTime")))
 			}
-			output["CastRate"] = output["Speed"]
+			output.Set("CastRate", output.Get("Speed"))
 			if skillFlags["selfCast"] {
 				// Self-cast skill; apply action speed
-				output["Speed"] = outNum(output, "Speed") * outNum(globalOutput, "ActionSpeedMod")
-				output["CastRate"] = output["Speed"]
+				output.SetN("Speed", output.N("Speed")*globalOutput.N("ActionSpeedMod"))
+				output.Set("CastRate", output.Get("Speed"))
 			}
 			if skillFlags["totem"] {
 				// Totem skill. Apply action speed
-				totemActionSpeed := 1 + modDB.Sum("INC", nil, "TotemActionSpeed")/100
-				output["TotemActionSpeed"] = totemActionSpeed
-				output["Speed"] = outNum(output, "Speed") * totemActionSpeed
-				output["CastRate"] = output["Speed"]
-				if truthy(skillData["totemFireOnce"]) {
-					output["HitTime"] = 1/outNum(output, "Speed") + outNum(globalOutput, "TotemPlacementTime")
-					output["HitSpeed"] = 1 / outNum(output, "HitTime")
+				totemActionSpeed := 1 + modDB.Sum(modparser.Inc, nil, "TotemActionSpeed")/100
+				output.SetN("TotemActionSpeed", totemActionSpeed)
+				output.SetN("Speed", output.N("Speed")*totemActionSpeed)
+				output.Set("CastRate", output.Get("Speed"))
+				if skillData.Flag("totemFireOnce") {
+					output.SetN("HitTime", 1/output.N("Speed")+globalOutput.N("TotemPlacementTime"))
+					output.SetN("HitSpeed", 1/output.N("HitTime"))
 				}
 			}
-			if truthy(globalOutput["Cooldown"]) {
-				output["Cooldown"] = globalOutput["Cooldown"]
-				output["Speed"] = math.Min(outNum(output, "Speed"), 1/outNum(output, "Cooldown")*repeats)
+			if globalOutput.Flag("Cooldown") {
+				output.Set("Cooldown", globalOutput.Get("Cooldown"))
+				output.SetN("Speed", math.Min(output.N("Speed"), 1/output.N("Cooldown")*repeats))
 			}
-			if truthy(output["Cooldown"]) && skillFlags["selfCast"] {
+			if output.Flag("Cooldown") && skillFlags["selfCast"] {
 				skillFlags["notAverage"] = true
 				skillFlags["showAverage"] = false
-				skillData["showAverage"] = false
+				skillData.SetFlag("showAverage", false)
 			}
-			if !activeSkill.SkillTypes[modparser.SkillType.Channel] {
-				output["Speed"] = math.Min(outNum(output, "Speed"), data.Misc.ServerTickRate*repeats)
+			if !activeSkill.SkillTypes[modparser.SkillTypeChannel] {
+				output.SetN("Speed", math.Min(output.N("Speed"), data.Misc.ServerTickRate*repeats))
 			}
-			if outNum(output, "Speed") == 0 {
-				output["Time"] = 0.0
+			if output.N("Speed") == 0 {
+				output.SetN("Time", 0.0)
 			} else {
-				output["Time"] = 1 / outNum(output, "Speed")
+				output.SetN("Time", 1/output.N("Speed"))
 			}
 		}
-		if truthy(skillData["hitTimeOverride"]) && !truthy(skillData["triggeredOnDeath"]) {
-			output["HitTime"] = skillData["hitTimeOverride"]
-			output["HitSpeed"] = 1 / outNum(output, "HitTime")
+		if skillData.Flag("hitTimeOverride") && !skillData.Flag("triggeredOnDeath") {
+			output.Set("HitTime", skillData.Get("hitTimeOverride"))
+			output.SetN("HitSpeed", 1/output.N("HitTime"))
 			// Brands always have hitTimeOverride
-			if activeSkill.SkillTypes[modparser.SkillType.Brand] && !skillModList.Flag(nil, "UnlimitedBrandDuration") {
-				output["BrandTicks"] = math.Floor(outNum(output, "Duration") * outNum(output, "HitSpeed"))
+			if activeSkill.SkillTypes[modparser.SkillTypeBrand] && !skillModList.Flag(nil, "UnlimitedBrandDuration") {
+				output.SetN("BrandTicks", math.Floor(output.N("Duration")*output.N("HitSpeed")))
 			}
-		} else if truthy(skillData["hitTimeMultiplier"]) && truthy(output["Time"]) && !truthy(skillData["triggeredOnDeath"]) {
-			output["HitTime"] = outNum(output, "Time") * anyNum(skillData["hitTimeMultiplier"])
-			if truthy(output["Cooldown"]) && truthy(skillData["triggered"]) {
-				output["HitSpeed"] = 1 / math.Max(outNum(output, "HitTime"), outNum(output, "Cooldown"))
-			} else if truthy(output["Cooldown"]) {
-				output["HitSpeed"] = 1 / (outNum(output, "HitTime") + outNum(output, "Cooldown"))
+		} else if skillData.Has("hitTimeMultiplier") && output.Flag("Time") && !skillData.Flag("triggeredOnDeath") {
+			output.SetN("HitTime", output.N("Time")*skillData.N("hitTimeMultiplier"))
+			if output.Flag("Cooldown") && skillData.Flag("triggered") {
+				output.SetN("HitSpeed", 1/math.Max(output.N("HitTime"), output.N("Cooldown")))
+			} else if output.Flag("Cooldown") {
+				output.SetN("HitSpeed", 1/(output.N("HitTime")+output.N("Cooldown")))
 			} else {
-				output["HitSpeed"] = 1 / outNum(output, "HitTime")
+				output.SetN("HitSpeed", 1/output.N("HitTime"))
 			}
 		}
 	}

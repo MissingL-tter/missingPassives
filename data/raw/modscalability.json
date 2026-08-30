@@ -138,7 +138,7 @@
 			"formats": null
 		}
 	],
-	"# Enemy Writhing Worms escape the Flask when used\\nWrithing Worms are destroyed when Hit": [
+	"# Enemy Writhing Worms escape the Flask when used\nWrithing Worms are destroyed when Hit": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -232,7 +232,7 @@
 			"formats": null
 		}
 	],
-	"# Lightning Damage taken per second per Power Charge if\\nyour Skills have dealt a Critical Strike Recently": [
+	"# Lightning Damage taken per second per Power Charge if\nyour Skills have dealt a Critical Strike Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -2908,7 +2908,7 @@
 			"formats": null
 		}
 	],
-	"# to maximum number of Sacred Wisps\\n# to number of Sacred Wisps Summoned": [
+	"# to maximum number of Sacred Wisps\n# to number of Sacred Wisps Summoned": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -3620,13 +3620,13 @@
 			"formats": null
 		}
 	],
-	"#% additional Physical Damage Reduction for each Hit you've taken Recently up to a maximum of 5%": [
+	"#% additional Physical Damage Reduction for each\nnearby Enemy, up to 8%": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"#% additional Physical Damage Reduction for each\\nnearby Enemy, up to 8%": [
+	"#% additional Physical Damage Reduction for each Hit you've taken Recently up to a maximum of 5%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -3758,7 +3758,7 @@
 			"formats": null
 		}
 	],
-	"#% additional Physical Damage Reduction while there\\nis only one nearby Enemy": [
+	"#% additional Physical Damage Reduction while there\nis only one nearby Enemy": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -3860,7 +3860,7 @@
 			"formats": null
 		}
 	],
-	"#% chance for Elemental Ailments inflicted on you to\\nbe inflicted on a nearby Minion instead": [
+	"#% chance for Elemental Ailments inflicted on you to\nbe inflicted on a nearby Minion instead": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -4546,7 +4546,7 @@
 			"formats": null
 		}
 	],
-	"#% chance on Hit to remove all Impales from Enemy\\nImpales removed this way multiply their Reflected Damage for this Hit by the number of Hits they have left": [
+	"#% chance on Hit to remove all Impales from Enemy\nImpales removed this way multiply their Reflected Damage for this Hit by the number of Hits they have left": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -4576,7 +4576,7 @@
 			"formats": null
 		}
 	],
-	"#% chance on Skill use to not Sacrifice Life but\\nstill gain benefits as though you had": [
+	"#% chance on Skill use to not Sacrifice Life but\nstill gain benefits as though you had": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -4600,7 +4600,7 @@
 			"formats": null
 		}
 	],
-	"#% chance that if you would gain Power Charges, you instead gain up to\\nyour maximum number of Power Charges": [
+	"#% chance that if you would gain Power Charges, you instead gain up to\nyour maximum number of Power Charges": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -4612,7 +4612,7 @@
 			"formats": null
 		}
 	],
-	"#% chance that if you would gain a Crab Barrier, you instead gain up to\\nyour maximum number of Crab Barriers": [
+	"#% chance that if you would gain a Crab Barrier, you instead gain up to\nyour maximum number of Crab Barriers": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -5224,7 +5224,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Defend with 200% of Armour for each\\ntime you've been Hit by an Enemy Recently, up to 30%": [
+	"#% chance to Defend with 200% of Armour for each\ntime you've been Hit by an Enemy Recently, up to 30%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -5242,7 +5242,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Evade Attack Hits if you've\\ntaken a Savage Hit Recently": [
+	"#% chance to Evade Attack Hits if you've\ntaken a Savage Hit Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -5670,7 +5670,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Summon a Lesser Elemental Golem when\\nyou Kill an Enemy using Elemental Damage": [
+	"#% chance to Summon a Lesser Elemental Golem when\nyou Kill an Enemy using Elemental Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -5700,6 +5700,12 @@
 			"formats": null
 		}
 	],
+	"#% chance to Suppress Spell Damage if you've\ntaken Spell Damage Recently": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"#% chance to Suppress Spell Damage if you've Hit an Enemy Recently": [
 		{
 			"isScalable": true,
@@ -5707,12 +5713,6 @@
 		}
 	],
 	"#% chance to Suppress Spell Damage if you've Suppressed Spell Damage Recently": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"#% chance to Suppress Spell Damage if you've\\ntaken Spell Damage Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -6204,7 +6204,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Trigger Socketed Minion Spells on Kill with this Weapon\\nMinion Spells Triggered by this Item have a 0.25 second Cooldown with 5 Uses": [
+	"#% chance to Trigger Socketed Minion Spells on Kill with this Weapon\nMinion Spells Triggered by this Item have a 0.25 second Cooldown with 5 Uses": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -6228,7 +6228,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Trigger Socketed Spells when you Spend at least # Life on an\\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
+	"#% chance to Trigger Socketed Spells when you Spend at least # Life on an\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -6240,7 +6240,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to Trigger Socketed Spells when you Spend at least # Mana on an\\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
+	"#% chance to Trigger Socketed Spells when you Spend at least # Mana on an\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -6414,13 +6414,13 @@
 			"formats": null
 		}
 	],
-	"#% chance to Trigger a Socketed Lightning Spell on Hit, with a 0.25 second Cooldown\\nSocketed Lightning Spells have no Cost if Triggered": [
+	"#% chance to Trigger a Socketed Lightning Spell on Hit, with a 0.25 second Cooldown\nSocketed Lightning Spells have no Cost if Triggered": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"#% chance to Trigger a Socketed Spell on Using a Skill, with a 8 second Cooldown\\nSpells Triggered this way have 150% more Cost": [
+	"#% chance to Trigger a Socketed Spell on Using a Skill, with a 8 second Cooldown\nSpells Triggered this way have 150% more Cost": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -6684,7 +6684,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to create Profane Ground on Critical\\nStrike if Intelligence is your highest Attribute": [
+	"#% chance to create Profane Ground on Critical\nStrike if Intelligence is your highest Attribute": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -7934,7 +7934,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to gain Adrenaline for 2 Seconds when Leech is\\nremoved by Filling Unreserved Life": [
+	"#% chance to gain Adrenaline for 2 Seconds when Leech is\nremoved by Filling Unreserved Life": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -8006,7 +8006,7 @@
 			]
 		}
 	],
-	"#% chance to gain Onslaught for 10 Seconds when you Hit a Rare\\nor Unique Enemy": [
+	"#% chance to gain Onslaught for 10 Seconds when you Hit a Rare\nor Unique Enemy": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -8024,7 +8024,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to gain Onslaught for 4 Seconds when Leech is\\nremoved by Filling Unreserved Life": [
+	"#% chance to gain Onslaught for 4 Seconds when Leech is\nremoved by Filling Unreserved Life": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -8632,7 +8632,7 @@
 			"formats": null
 		}
 	],
-	"#% chance to gain an Endurance, Frenzy or Power Charge when any\\nof your Traps are Triggered by an Enemy": [
+	"#% chance to gain an Endurance, Frenzy or Power Charge when any\nof your Traps are Triggered by an Enemy": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -9060,7 +9060,7 @@
 			"formats": null
 		}
 	],
-	"#% chance when you Kill a Scorched Enemy to Burn Each surrounding\\nEnemy for 4 seconds, dealing 8% of the Killed Enemy's Life as Fire Damage per second": [
+	"#% chance when you Kill a Scorched Enemy to Burn Each surrounding\nEnemy for 4 seconds, dealing 8% of the Killed Enemy's Life as Fire Damage per second": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -9650,7 +9650,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Armour and Energy Shield from Equipped Body Armour if Equipped Helmet,\\nGloves and Boots all have Armour and Energy Shield": [
+	"#% increased Armour and Energy Shield from Equipped Body Armour if Equipped Helmet,\nGloves and Boots all have Armour and Energy Shield": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -9674,7 +9674,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Armour and Evasion Rating if your Main Hand Weapon\\nhas a Red and Green Socket": [
+	"#% increased Armour and Evasion Rating if your Main Hand Weapon\nhas a Red and Green Socket": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -10492,7 +10492,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Attack and Cast Speed if Energy\\nShield Recharge has started Recently": [
+	"#% increased Attack and Cast Speed if Energy\nShield Recharge has started Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -10534,7 +10534,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Attack and Cast Speed if you've taken a Savage\\nHit Recently": [
+	"#% increased Attack and Cast Speed if you've taken a Savage\nHit Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -11496,7 +11496,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Cold Damage taken if you've\\nbeen Hit Recently": [
+	"#% increased Cold Damage taken if you've\nbeen Hit Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -11898,7 +11898,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Critical Strike Chance against Enemies affected\\nby Elemental Ailments": [
+	"#% increased Critical Strike Chance against Enemies affected\nby Elemental Ailments": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -11916,7 +11916,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Critical Strike Chance against Enemies that are affected\\nby no Elemental Ailments": [
+	"#% increased Critical Strike Chance against Enemies that are affected\nby no Elemental Ailments": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -12000,7 +12000,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Critical Strike Chance for each Mine Detonated\\nRecently, up to 100%": [
+	"#% increased Critical Strike Chance for each Mine Detonated\nRecently, up to 100%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -12354,7 +12354,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Damage Taken from Hits from Labyrinth Traps\\n#% increased effectiveness of Damage over Time Debuffs from Labyrinth Traps on Players": [
+	"#% increased Damage Taken from Hits from Labyrinth Traps\n#% increased effectiveness of Damage over Time Debuffs from Labyrinth Traps on Players": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -12526,7 +12526,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Damage of each Damage Type for which you\\nhave a matching Golem": [
+	"#% increased Damage of each Damage Type for which you\nhave a matching Golem": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -13966,13 +13966,13 @@
 			"formats": null
 		}
 	],
-	"#% increased Effect of Arcane Surge on you per\\n200 Mana spent Recently, up to 50%": [
+	"#% increased Effect of Arcane Surge on you per\n200 Mana spent Recently, up to 50%": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"#% increased Effect of Arcane Surge on you per\\nHypnotic Eye Jewel affecting you, up to a maximum of 40%": [
+	"#% increased Effect of Arcane Surge on you per\nHypnotic Eye Jewel affecting you, up to a maximum of 40%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -14648,7 +14648,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Elemental Damage per 1% Missing\\nFire, Cold, or Lightning Resistance, up to a maximum of 450%": [
+	"#% increased Elemental Damage per 1% Missing\nFire, Cold, or Lightning Resistance, up to a maximum of 450%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -14738,7 +14738,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Elemental Damage taken if you haven't\\nbeen Hit Recently": [
+	"#% increased Elemental Damage taken if you haven't\nbeen Hit Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -14804,7 +14804,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Elemental Damage with Hits and Ailments for\\neach type of Elemental Ailment on Enemy": [
+	"#% increased Elemental Damage with Hits and Ailments for\neach type of Elemental Ailment on Enemy": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -16846,7 +16846,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Main Hand Critical Strike Chance per\\nMurderous Eye Jewel affecting you, up to a maximum of 200%": [
+	"#% increased Main Hand Critical Strike Chance per\nMurderous Eye Jewel affecting you, up to a maximum of 200%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -17334,6 +17334,12 @@
 			"formats": null
 		}
 	],
+	"#% increased Maximum total Life Recovery per second from\nLeech if you've dealt a Critical Strike recently": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"#% increased Maximum total Life Recovery per second from Leech": [
 		{
 			"isScalable": true,
@@ -17353,12 +17359,6 @@
 		}
 	],
 	"#% increased Maximum total Life Recovery per second from Leech while you have Defiance": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"#% increased Maximum total Life Recovery per second from\\nLeech if you've dealt a Critical Strike recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -17732,6 +17732,12 @@
 			]
 		}
 	],
+	"#% increased Movement Speed for each\nnearby Enemy, up to 8%": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"#% increased Movement Speed for each Poison on you": [
 		{
 			"isScalable": true,
@@ -17751,12 +17757,6 @@
 		}
 	],
 	"#% increased Movement Speed for each time you've Blocked in the past 10 seconds": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"#% increased Movement Speed for each\\nnearby Enemy, up to 8%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -18374,7 +18374,7 @@
 			"formats": null
 		}
 	],
-	"#% increased Poison Duration for each Poison you have inflicted Recently, up\\nto a maximum of 100%": [
+	"#% increased Poison Duration for each Poison you have inflicted Recently, up\nto a maximum of 100%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -19016,6 +19016,12 @@
 			"formats": null
 		}
 	],
+	"#% increased Recovery Rate of Life, Mana and Energy Shield\nper Tribe for which you have an allocated Tattoo": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"#% increased Recovery Rate of Life, Mana and Energy Shield if you've Killed an Enemy affected by your Damage Over Time Recently": [
 		{
 			"isScalable": true,
@@ -19023,12 +19029,6 @@
 		}
 	],
 	"#% increased Recovery Rate of Life, Mana and Energy Shield per Endurance Charge": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"#% increased Recovery Rate of Life, Mana and Energy Shield\\nper Tribe for which you have an allocated Tattoo": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -21164,7 +21164,7 @@
 			]
 		}
 	],
-	"#% less Basic Currency Items found from Beyond Demons in your Maps\\nthat are followers of Beidat": [
+	"#% less Basic Currency Items found from Beyond Demons in your Maps\nthat are followers of Beidat": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -21586,7 +21586,7 @@
 			]
 		}
 	],
-	"#% less Divination Cards found from Beyond Demons in your Maps\\nthat are followers of K'Tash": [
+	"#% less Divination Cards found from Beyond Demons in your Maps\nthat are followers of K'Tash": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -22082,7 +22082,7 @@
 			]
 		}
 	],
-	"#% less Unique Items found from Beyond Demons in your Maps\\nthat are followers of Ghorr": [
+	"#% less Unique Items found from Beyond Demons in your Maps\nthat are followers of Ghorr": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -22362,7 +22362,7 @@
 			"formats": null
 		}
 	],
-	"#% more Basic Currency Items found from Beyond Demons in your Maps\\nthat are followers of Beidat": [
+	"#% more Basic Currency Items found from Beyond Demons in your Maps\nthat are followers of Beidat": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -22704,7 +22704,7 @@
 			"formats": null
 		}
 	],
-	"#% more Divination Cards found from Beyond Demons in your Maps\\nthat are followers of K'Tash": [
+	"#% more Divination Cards found from Beyond Demons in your Maps\nthat are followers of K'Tash": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -23124,7 +23124,7 @@
 			"formats": null
 		}
 	],
-	"#% more Unique Items found from Beyond Demons in your Maps\\nthat are followers of Ghorr": [
+	"#% more Unique Items found from Beyond Demons in your Maps\nthat are followers of Ghorr": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -24104,7 +24104,7 @@
 			"formats": null
 		}
 	],
-	"#% of Fire and Cold Damage taken as Lightning Damage while\\naffected by Purity of Lightning": [
+	"#% of Fire and Cold Damage taken as Lightning Damage while\naffected by Purity of Lightning": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -24822,7 +24822,7 @@
 			"formats": null
 		}
 	],
-	"#% of Physical Damage gained as Extra Chaos Damage against\\nBleeding Enemies": [
+	"#% of Physical Damage gained as Extra Chaos Damage against\nBleeding Enemies": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -24834,7 +24834,7 @@
 			"formats": null
 		}
 	],
-	"#% of Physical Damage prevented from Hits in the past\\n10 seconds is Regenerated as Life per second": [
+	"#% of Physical Damage prevented from Hits in the past\n10 seconds is Regenerated as Life per second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -25630,7 +25630,7 @@
 			]
 		}
 	],
-	"#% reduced Armour and Energy Shield from Equipped Body Armour if Equipped Helmet,\\nGloves and Boots all have Armour and Energy Shield": [
+	"#% reduced Armour and Energy Shield from Equipped Body Armour if Equipped Helmet,\nGloves and Boots all have Armour and Energy Shield": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -25662,7 +25662,7 @@
 			]
 		}
 	],
-	"#% reduced Armour and Evasion Rating if your Main Hand Weapon\\nhas a Red and Green Socket": [
+	"#% reduced Armour and Evasion Rating if your Main Hand Weapon\nhas a Red and Green Socket": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -26606,7 +26606,7 @@
 			]
 		}
 	],
-	"#% reduced Attack and Cast Speed if Energy\\nShield Recharge has started Recently": [
+	"#% reduced Attack and Cast Speed if Energy\nShield Recharge has started Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -26654,7 +26654,7 @@
 			]
 		}
 	],
-	"#% reduced Attack and Cast Speed if you've taken a Savage\\nHit Recently": [
+	"#% reduced Attack and Cast Speed if you've taken a Savage\nHit Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -27836,7 +27836,7 @@
 			]
 		}
 	],
-	"#% reduced Cold Damage taken if you've\\nbeen Hit Recently": [
+	"#% reduced Cold Damage taken if you've\nbeen Hit Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -28364,7 +28364,7 @@
 			]
 		}
 	],
-	"#% reduced Critical Strike Chance against Enemies affected\\nby Elemental Ailments": [
+	"#% reduced Critical Strike Chance against Enemies affected\nby Elemental Ailments": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -28380,7 +28380,7 @@
 			]
 		}
 	],
-	"#% reduced Critical Strike Chance against Enemies that are affected\\nby no Elemental Ailments": [
+	"#% reduced Critical Strike Chance against Enemies that are affected\nby no Elemental Ailments": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -28492,7 +28492,7 @@
 			]
 		}
 	],
-	"#% reduced Critical Strike Chance for each Mine Detonated\\nRecently, up to 100%": [
+	"#% reduced Critical Strike Chance for each Mine Detonated\nRecently, up to 100%": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -28916,7 +28916,7 @@
 			]
 		}
 	],
-	"#% reduced Damage Taken from Hits from Labyrinth Traps\\n#% reduced effectiveness of Damage over Time Debuffs from Labyrinth Traps on Players": [
+	"#% reduced Damage Taken from Hits from Labyrinth Traps\n#% reduced effectiveness of Damage over Time Debuffs from Labyrinth Traps on Players": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -30882,7 +30882,7 @@
 			]
 		}
 	],
-	"#% reduced Effect of Arcane Surge on you per\\n200 Mana spent Recently": [
+	"#% reduced Effect of Arcane Surge on you per\n200 Mana spent Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -30890,7 +30890,7 @@
 			]
 		}
 	],
-	"#% reduced Effect of Arcane Surge on you per\\nHypnotic Eye Jewel affecting you": [
+	"#% reduced Effect of Arcane Surge on you per\nHypnotic Eye Jewel affecting you": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -31732,7 +31732,7 @@
 			]
 		}
 	],
-	"#% reduced Elemental Damage per 1% Missing\\nFire, Cold, or Lightning Resistance, up to a maximum of 450%": [
+	"#% reduced Elemental Damage per 1% Missing\nFire, Cold, or Lightning Resistance, up to a maximum of 450%": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -31836,7 +31836,7 @@
 			]
 		}
 	],
-	"#% reduced Elemental Damage taken if you haven't\\nbeen Hit Recently": [
+	"#% reduced Elemental Damage taken if you haven't\nbeen Hit Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -31924,7 +31924,7 @@
 			]
 		}
 	],
-	"#% reduced Elemental Damage with Hits and Ailments for\\neach type of Elemental Ailment on Enemy": [
+	"#% reduced Elemental Damage with Hits and Ailments for\neach type of Elemental Ailment on Enemy": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -34439,7 +34439,7 @@
 			]
 		}
 	],
-	"#% reduced Main Hand Critical Strike Chance per\\nMurderous Eye Jewel affecting you": [
+	"#% reduced Main Hand Critical Strike Chance per\nMurderous Eye Jewel affecting you": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -35069,6 +35069,14 @@
 			]
 		}
 	],
+	"#% reduced Maximum total Life Recovery per second from\nLeech if you've dealt a Critical Strike recently": [
+		{
+			"isScalable": true,
+			"formats": [
+				"negate"
+			]
+		}
+	],
 	"#% reduced Maximum total Life Recovery per second from Leech": [
 		{
 			"isScalable": true,
@@ -35094,14 +35102,6 @@
 		}
 	],
 	"#% reduced Maximum total Life Recovery per second from Leech while you have Defiance": [
-		{
-			"isScalable": true,
-			"formats": [
-				"negate"
-			]
-		}
-	],
-	"#% reduced Maximum total Life Recovery per second from\\nLeech if you've dealt a Critical Strike recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -36983,7 +36983,7 @@
 			]
 		}
 	],
-	"#% reduced Recovery Rate of Life, Mana and Energy Shield per Endurance Charge": [
+	"#% reduced Recovery Rate of Life, Mana and Energy Shield\nper Tribe for which you have an allocated Tattoo": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -36991,7 +36991,7 @@
 			]
 		}
 	],
-	"#% reduced Recovery Rate of Life, Mana and Energy Shield\\nper Tribe for which you have an allocated Tattoo": [
+	"#% reduced Recovery Rate of Life, Mana and Energy Shield per Endurance Charge": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -39737,7 +39737,7 @@
 			"formats": null
 		}
 	],
-	"#% to Critical Strike Multiplier against Enemies that are affected\\nby Elemental Ailments": [
+	"#% to Critical Strike Multiplier against Enemies that are affected\nby Elemental Ailments": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -39821,7 +39821,7 @@
 			"formats": null
 		}
 	],
-	"#% to Critical Strike Multiplier for each Mine Detonated\\nRecently, up to 40%": [
+	"#% to Critical Strike Multiplier for each Mine Detonated\nRecently, up to 40%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -40443,13 +40443,13 @@
 			]
 		}
 	],
-	"#% to Off Hand Critical Strike Multiplier per 10 Maximum Energy Shield on Shield": [
+	"#% to Off Hand Critical Strike Multiplier per\nMurderous Eye Jewel affecting you, up to a maximum of +100%": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"#% to Off Hand Critical Strike Multiplier per\\nMurderous Eye Jewel affecting you, up to a maximum of +100%": [
+	"#% to Off Hand Critical Strike Multiplier per 10 Maximum Energy Shield on Shield": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -42624,7 +42624,7 @@
 			"formats": null
 		}
 	],
-	"Adds # to # Physical Damage to Attacks if you've\\ndealt a Critical Strike Recently": [
+	"Adds # to # Physical Damage to Attacks if you've\ndealt a Critical Strike Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -42936,7 +42936,7 @@
 	"Always inflict Scorch, Brittle and Sapped with Elemental Hit and Wild Strike Hits": [],
 	"An Abyss Pit in Area will spawn an Abyssal Consort": [],
 	"An Enemy Writhing Worm spawns every 2 seconds": [],
-	"An Enemy Writhing Worms escape the Flask when used\\nWrithing Worms are destroyed when Hit": [],
+	"An Enemy Writhing Worms escape the Flask when used\nWrithing Worms are destroyed when Hit": [],
 	"An additional Basic Currency Item drops when the first Invasion Boss is slain": [],
 	"An additional Conqueror Map drops on Completing Area (Tier 14+)": [],
 	"An additional Curse can be applied to you": [],
@@ -43195,7 +43195,7 @@
 			"formats": null
 		}
 	],
-	"Animated and Manifested Minions' Melee Strikes deal Splash\\nDamage to surrounding targets": [],
+	"Animated and Manifested Minions' Melee Strikes deal Splash\nDamage to surrounding targets": [],
 	"Applies # Memory Modifiers to Memories placed on or next to this location": [
 		{
 			"isScalable": true,
@@ -43400,7 +43400,7 @@
 			"formats": null
 		}
 	],
-	"Area contains # Temporal Incursions\\nTemporal Incursion Portals have their direction reversed": [
+	"Area contains # Temporal Incursions\nTemporal Incursion Portals have their direction reversed": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -43430,7 +43430,7 @@
 			"formats": null
 		}
 	],
-	"Area contains # additional Abysses that have already fully opened\\nAbysses contain monsters from Beyond this realm": [
+	"Area contains # additional Abysses that have already fully opened\nAbysses contain monsters from Beyond this realm": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -43880,7 +43880,7 @@
 			"formats": null
 		}
 	],
-	"Area contains 3 additional Magic Packs which\\nhave #% increased Attack, Cast and Movement Speed, and drop #% more items": [
+	"Area contains 3 additional Magic Packs which\nhave #% increased Attack, Cast and Movement Speed, and drop #% more items": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -43890,7 +43890,7 @@
 			"formats": null
 		}
 	],
-	"Area contains 3 additional Magic Packs which\\nhave #% reduced Attack, Cast and Movement Speed, and drop #% less items": [
+	"Area contains 3 additional Magic Packs which\nhave #% reduced Attack, Cast and Movement Speed, and drop #% less items": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -44247,8 +44247,8 @@
 	"Area is haunted by an additional Tormented Heretic": [],
 	"Area is incredibly Alluring": [],
 	"Area is incredibly Repulsive": [],
-	"Area is infested with Fungal Growths\\nMap's Item Quantity Modifiers also affect Blight Chest count at 25% value\\nCan be Anointed up to 3 times": [],
-	"Area is infested with Fungal Growths\\nMap's Item Quantity Modifiers also affect Blight Chest count at 50% value\\nCan be Anointed up to # times": [
+	"Area is infested with Fungal Growths\nMap's Item Quantity Modifiers also affect Blight Chest count at 25% value\nCan be Anointed up to 3 times": [],
+	"Area is infested with Fungal Growths\nMap's Item Quantity Modifiers also affect Blight Chest count at 50% value\nCan be Anointed up to # times": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -44313,7 +44313,7 @@
 	"Area is very Repulsive": [],
 	"Area's inhabitants are lying in ambush": [],
 	"Areas Have the Same Layout for all Players": [],
-	"Areas are Breached\\nAreas contain additional Large Breach Hands\\nBreach Bosses have a chance to drop a Breachstone": [],
+	"Areas are Breached\nAreas contain additional Large Breach Hands\nBreach Bosses have a chance to drop a Breachstone": [],
 	"Areas can contain Imprisoned Monsters": [],
 	"Areas contain # additional Shrines guarded by Pantheon Monsters": [
 		{
@@ -44323,25 +44323,25 @@
 	],
 	"Areas contain Abysses": [],
 	"Areas contain Beasts to hunt": [],
-	"Areas contain Einhar\\nAreas can contain capturable Harvest Beasts": [],
+	"Areas contain Einhar\nAreas can contain capturable Harvest Beasts": [],
 	"Areas contain Memory Fragments": [],
 	"Areas contain Ritual Altars": [],
 	"Areas contain Temporal Incursions": [],
-	"Areas contain The Sacred Grove\\nCrops are larger in size\\nCrops contain higher tier seeds": [],
+	"Areas contain The Sacred Grove\nCrops are larger in size\nCrops contain higher tier seeds": [],
 	"Areas contain a Mirror of Delirium": [],
-	"Areas contain additional Abysses\\nAbysses have already fully opened\\nAbysses contain monsters from Beyond this realm": [],
-	"Areas contain additional Essences\\nEssences contain Rogue Exiles": [],
-	"Areas contain additional Harbinger Portals\\nHarbinger Portals drop additional Currency Shards when destroyed": [],
+	"Areas contain additional Abysses\nAbysses have already fully opened\nAbysses contain monsters from Beyond this realm": [],
+	"Areas contain additional Essences\nEssences contain Rogue Exiles": [],
+	"Areas contain additional Harbinger Portals\nHarbinger Portals drop additional Currency Shards when destroyed": [],
 	"Areas contain additional Metamorph monsters": [],
-	"Areas contain additional Shrines\\nArea contains Shrines guarded by Pantheon Monsters": [],
-	"Areas contain additional Shrines\\nShrines grant multiple Effects when activated\\nShrine Monsters drop Currency Items": [],
-	"Areas contain additional Strongboxes\\nStrongboxes are found in Sequences\\nStrongboxes in a Sequence open when the previous Strongbox in the Sequence has unlocked": [],
-	"Areas contain additional Strongboxes\\nStrongboxes contain Unique Map Bosses": [],
-	"Areas contain additional Temporal Incursions\\nTemporal Incursion Portals have their direction reversed": [],
+	"Areas contain additional Shrines\nArea contains Shrines guarded by Pantheon Monsters": [],
+	"Areas contain additional Shrines\nShrines grant multiple Effects when activated\nShrine Monsters drop Currency Items": [],
+	"Areas contain additional Strongboxes\nStrongboxes are found in Sequences\nStrongboxes in a Sequence open when the previous Strongbox in the Sequence has unlocked": [],
+	"Areas contain additional Strongboxes\nStrongboxes contain Unique Map Bosses": [],
+	"Areas contain additional Temporal Incursions\nTemporal Incursion Portals have their direction reversed": [],
 	"Areas contain an Ultimatum Encounter": [],
 	"Areas contain deposits of Voltaxic Sulphite": [],
-	"Areas contain many additional Breaches\\nBreaches open and close faster": [],
-	"Areas contain many additional Rogue Exiles\\nRogues Exiles are found in Groups\\nRogue Exiles can drop Fractured Items": [],
+	"Areas contain many additional Breaches\nBreaches open and close faster": [],
+	"Areas contain many additional Rogue Exiles\nRogues Exiles are found in Groups\nRogue Exiles can drop Fractured Items": [],
 	"Armageddon Brand Damage Penetrates #% of Branded Enemy's Fire Resistance": [
 		{
 			"isScalable": true,
@@ -45055,7 +45055,7 @@
 			"formats": null
 		}
 	],
-	"Attacks with this Weapon deal # to # added Chaos Damage against\\nEnemies affected by at least 5 Poisons": [
+	"Attacks with this Weapon deal # to # added Chaos Damage against\nEnemies affected by at least 5 Poisons": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -45198,7 +45198,7 @@
 			"formats": null
 		}
 	],
-	"Auras from your Skills grant #% increased Attack and Cast\\nSpeed to you and Allies": [
+	"Auras from your Skills grant #% increased Attack and Cast\nSpeed to you and Allies": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -45210,13 +45210,13 @@
 			"formats": null
 		}
 	],
-	"Auras from your Skills grant #% increased Recovery Rate of Life,\\nMana and Energy Shield to you and Allies": [
+	"Auras from your Skills grant #% increased Recovery Rate of Life,\nMana and Energy Shield to you and Allies": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Auras from your Skills grant #% of Life Regenerated per second to\\nyou and Allies": [
+	"Auras from your Skills grant #% of Life Regenerated per second to\nyou and Allies": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -45224,7 +45224,7 @@
 			]
 		}
 	],
-	"Auras from your Skills grant #% reduced Recovery Rate of Life,\\nMana and Energy Shield to you and Allies": [
+	"Auras from your Skills grant #% reduced Recovery Rate of Life,\nMana and Energy Shield to you and Allies": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -45238,7 +45238,7 @@
 			"formats": null
 		}
 	],
-	"Auras from your Skills have #% increased Effect on you for\\neach Herald affecting you, up to a maximum of 40%": [
+	"Auras from your Skills have #% increased Effect on you for\neach Herald affecting you, up to a maximum of 40%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -45252,7 +45252,7 @@
 			]
 		}
 	],
-	"Auras from your Skills have #% reduced Effect on you for\\neach Herald affecting you": [
+	"Auras from your Skills have #% reduced Effect on you for\neach Herald affecting you": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -45497,25 +45497,25 @@
 		}
 	],
 	"Basic Currency drops in Heists are Duplicated": [],
-	"Bathed in the blood of # sacrificed in the name of Ahuana\\nPassives in radius are Conquered by the Vaal": [
+	"Bathed in the blood of # sacrificed in the name of Ahuana\nPassives in radius are Conquered by the Vaal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Bathed in the blood of # sacrificed in the name of Doryani\\nPassives in radius are Conquered by the Vaal": [
+	"Bathed in the blood of # sacrificed in the name of Doryani\nPassives in radius are Conquered by the Vaal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Bathed in the blood of # sacrificed in the name of Xibaqua\\nPassives in radius are Conquered by the Vaal": [
+	"Bathed in the blood of # sacrificed in the name of Xibaqua\nPassives in radius are Conquered by the Vaal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Bathed in the blood of # sacrificed in the name of Zerphi\\nPassives in radius are Conquered by the Vaal": [
+	"Bathed in the blood of # sacrificed in the name of Zerphi\nPassives in radius are Conquered by the Vaal": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -45670,9 +45670,9 @@
 			"formats": null
 		}
 	],
-	"Beyond Portals in your Maps cannot spawn Unique Bosses\\nBeyond Portals in your Maps have 50% less Merging Radius": [],
+	"Beyond Portals in your Maps cannot spawn Unique Bosses\nBeyond Portals in your Maps have 50% less Merging Radius": [],
 	"Beyond Portals spawn an additional Beyond Demon": [],
-	"Binding # souls to phylacteries to sustain Zorath\\nPassives affected are Conquered by the Abyssal": [
+	"Binding # souls to phylacteries to sustain Zorath\nPassives affected are Conquered by the Abyssal": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -46164,7 +46164,7 @@
 		}
 	],
 	"Blazing Salvo fires an additional Projectile": [],
-	"Bleeding Enemies you Kill Explode, dealing #% of\\ntheir Maximum Life as Physical Damage": [
+	"Bleeding Enemies you Kill Explode, dealing #% of\ntheir Maximum Life as Physical Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -46236,7 +46236,7 @@
 			"formats": null
 		}
 	],
-	"Blight Monsters in your Maps take 75% less Damage from Players and their Minions\\nBlight Towers and their Minions in your Maps deal 300% more Damage": [],
+	"Blight Monsters in your Maps take 75% less Damage from Players and their Minions\nBlight Towers and their Minions in your Maps deal 300% more Damage": [],
 	"Blight Monsters spawn #% faster": [
 		{
 			"isScalable": true,
@@ -46894,7 +46894,7 @@
 	],
 	"Call to Arms": [],
 	"Can Scout nearby Enemy Patrols and Elite Patrols during Heists": [],
-	"Can be Allflame Crafted as if Rare\\nCannot gain Intangibility": [],
+	"Can be Allflame Crafted as if Rare\nCannot gain Intangibility": [],
 	"Can be Anointed": [],
 	"Can be Enchanted by a Kalguuran Runesmith": [],
 	"Can be Runesmithed as though it were all One Handed Melee Weapon Types": [],
@@ -47171,25 +47171,25 @@
 	"Cannot take Reflected Elemental Damage if 4 Shaper Items are Equipped": [],
 	"Cannot take Reflected Physical Damage": [],
 	"Cannot take Reflected Physical Damage if 4 Elder Items are Equipped": [],
-	"Carved to glorify # new faithful converted by High Templar Avarius\\nPassives in radius are Conquered by the Templars": [
+	"Carved to glorify # new faithful converted by High Templar Avarius\nPassives in radius are Conquered by the Templars": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Carved to glorify # new faithful converted by High Templar Dominus\\nPassives in radius are Conquered by the Templars": [
+	"Carved to glorify # new faithful converted by High Templar Dominus\nPassives in radius are Conquered by the Templars": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Carved to glorify # new faithful converted by High Templar Maxarius\\nPassives in radius are Conquered by the Templars": [
+	"Carved to glorify # new faithful converted by High Templar Maxarius\nPassives in radius are Conquered by the Templars": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Carved to glorify # new faithful converted by High Templar Venarius\\nPassives in radius are Conquered by the Templars": [
+	"Carved to glorify # new faithful converted by High Templar Venarius\nPassives in radius are Conquered by the Templars": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -47334,7 +47334,7 @@
 	"Chance to Block Attack or Spell Damage is Lucky if you've Blocked Recently": [],
 	"Chance to Block Spell Damage is Lucky": [],
 	"Chance to Block Spell Damage is Unlucky": [],
-	"Chance to Block Spell Damage is equal to Chance to Block Attack Damage\\nMaximum Chance to Block Spell Damage is equal to Maximum Chance to Block Attack Damage": [],
+	"Chance to Block Spell Damage is equal to Chance to Block Attack Damage\nMaximum Chance to Block Spell Damage is equal to Maximum Chance to Block Attack Damage": [],
 	"Chance to Block is Lucky": [],
 	"Chance to Block is Unlucky": [],
 	"Chance to Suppress Spell Damage is Lucky": [],
@@ -47823,7 +47823,7 @@
 		}
 	],
 	"Cold Snap and Creeping Frost always Sap Enemies in Chilling Areas": [],
-	"Cold Snap grants Power Charges instead of Frenzy Charges when Enemies die in its Area\\nCold Snap's Cooldown can be bypassed by Power Charges instead of Frenzy Charges": [],
+	"Cold Snap grants Power Charges instead of Frenzy Charges when Enemies die in its Area\nCold Snap's Cooldown can be bypassed by Power Charges instead of Frenzy Charges": [],
 	"Cold Snap has #% increased Cooldown Recovery Rate": [
 		{
 			"isScalable": true,
@@ -47857,31 +47857,31 @@
 		}
 	],
 	"Combust is Disabled": [],
-	"Commanded leadership over # warriors under Akoya\\nPassives in radius are Conquered by the Karui": [
+	"Commanded leadership over # warriors under Akoya\nPassives in radius are Conquered by the Karui": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Commanded leadership over # warriors under Kaom\\nPassives in radius are Conquered by the Karui": [
+	"Commanded leadership over # warriors under Kaom\nPassives in radius are Conquered by the Karui": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Commanded leadership over # warriors under Kiloava\\nPassives in radius are Conquered by the Karui": [
+	"Commanded leadership over # warriors under Kiloava\nPassives in radius are Conquered by the Karui": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Commanded leadership over # warriors under Rakiata\\nPassives in radius are Conquered by the Karui": [
+	"Commanded leadership over # warriors under Rakiata\nPassives in radius are Conquered by the Karui": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Commissioned # coins to commemorate Cadiro\\nPassives in radius are Conquered by the Eternal Empire": [
+	"Commissioned # coins to commemorate Cadiro\nPassives in radius are Conquered by the Eternal Empire": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -47889,7 +47889,7 @@
 			]
 		}
 	],
-	"Commissioned # coins to commemorate Caspiro\\nPassives in radius are Conquered by the Eternal Empire": [
+	"Commissioned # coins to commemorate Caspiro\nPassives in radius are Conquered by the Eternal Empire": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -47897,7 +47897,7 @@
 			]
 		}
 	],
-	"Commissioned # coins to commemorate Chitus\\nPassives in radius are Conquered by the Eternal Empire": [
+	"Commissioned # coins to commemorate Chitus\nPassives in radius are Conquered by the Eternal Empire": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -47905,7 +47905,7 @@
 			]
 		}
 	],
-	"Commissioned # coins to commemorate Victario\\nPassives in radius are Conquered by the Eternal Empire": [
+	"Commissioned # coins to commemorate Victario\nPassives in radius are Conquered by the Eternal Empire": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -47913,10 +47913,10 @@
 			]
 		}
 	],
-	"Complete all Abysses to successfully complete Maps within this Shaped Region\\nAbyss Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
-	"Complete all Harvest Plots to successfully complete Maps within this Shaped Region\\nHarvest Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
-	"Complete all Rituals to successfully complete Maps within this Shaped Region\\nRitual Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
-	"Complete at least 7 Ultimatum waves to successfully complete Maps within this Shaped Region\\nUltimatum Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Complete all Abysses to successfully complete Maps within this Shaped Region\nAbyss Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
+	"Complete all Harvest Plots to successfully complete Maps within this Shaped Region\nHarvest Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
+	"Complete all Rituals to successfully complete Maps within this Shaped Region\nRitual Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
+	"Complete at least 7 Ultimatum waves to successfully complete Maps within this Shaped Region\nUltimatum Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Completing a Heist generates # additional Reveals": [
 		{
 			"isScalable": true,
@@ -47978,13 +47978,13 @@
 			]
 		}
 	],
-	"Consecrated Ground you create also grants\\n#% increased duration of Damaging Ailments on you": [
+	"Consecrated Ground you create also grants\n#% increased duration of Damaging Ailments on you": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Consecrated Ground you create also grants\\n#% reduced duration of Damaging Ailments on you": [
+	"Consecrated Ground you create also grants\n#% reduced duration of Damaging Ailments on you": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -48006,7 +48006,7 @@
 			]
 		}
 	],
-	"Consecrated Ground you create causes Life Regeneration to\\nalso Recover Energy Shield for you and Allies": [],
+	"Consecrated Ground you create causes Life Regeneration to\nalso Recover Energy Shield for you and Allies": [],
 	"Consecrated Ground you create grants #% Physical Damage Reduction to you and Allies": [
 		{
 			"isScalable": true,
@@ -48025,7 +48025,7 @@
 			"formats": null
 		}
 	],
-	"Consecrated Ground you create grants #% increased Mana Regeneration\\nRate to you and Allies": [
+	"Consecrated Ground you create grants #% increased Mana Regeneration\nRate to you and Allies": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -48038,7 +48038,7 @@
 		}
 	],
 	"Consecrated Ground you create grants Immunity to Curses to you and Allies": [],
-	"Consecrated Ground you create grants Immunity to Elemental Ailments\\nto you and Allies": [],
+	"Consecrated Ground you create grants Immunity to Elemental Ailments\nto you and Allies": [],
 	"Consecrated Ground you create while affected by Zealotry causes enemies to take #% increased Damage": [
 		{
 			"isScalable": false,
@@ -48113,25 +48113,25 @@
 	"Consumes Frenzy Charges on use": [],
 	"Consumes Maximum Charges to use": [],
 	"Consumes Power Charges on use": [],
-	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\\nCan Consume # Uncorrupted Support Gem\\nHas not Consumed any Gems": [
+	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\nCan Consume # Uncorrupted Support Gem\nHas not Consumed any Gems": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\\nCan Consume # Uncorrupted Support Gems\\nHas not Consumed any Gems": [
+	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\nCan Consume # Uncorrupted Support Gems\nHas not Consumed any Gems": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\\nCan Consume # additional Uncorrupted Support Gem": [
+	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\nCan Consume # additional Uncorrupted Support Gem": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\\nCan Consume # additional Uncorrupted Support Gems": [
+	"Consumes Socketed Uncorrupted Support Gems when they reach Maximum Level\nCan Consume # additional Uncorrupted Support Gems": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -48160,7 +48160,7 @@
 	"Contains additional waves of Undead Monsters": [],
 	"Contains an Expedition Encounter": [],
 	"Contains an additional Pirate Unique item": [],
-	"Contains the Immortalised Grandmasters\\nPvP damage scaling in effect": [],
+	"Contains the Immortalised Grandmasters\nPvP damage scaling in effect": [],
 	"Contains waves of Monsters": [],
 	"Conversion Trap #% increased Cooldown Recovery Rate": [
 		{
@@ -48274,7 +48274,7 @@
 	"Cost of Building and Upgrading Blight Towers is doubled": [],
 	"Count as Blocking Attack Damage from the first target Hit with each Shield Attack": [],
 	"Count as having maximum number of Endurance Charges": [],
-	"Count as having maximum number of Endurance Charges\\nCount as having maximum number of Frenzy Charges\\nCount as having maximum number of Power Charges": [],
+	"Count as having maximum number of Endurance Charges\nCount as having maximum number of Frenzy Charges\nCount as having maximum number of Power Charges": [],
 	"Count as having maximum number of Frenzy Charges": [],
 	"Count as having maximum number of Power Charges": [],
 	"Counts as Dual Wielding": [],
@@ -48640,7 +48640,7 @@
 			"formats": null
 		}
 	],
-	"Damage Penetrates #% Cold Resistance if you've\\nused a Fire Skill in the past 10 seconds": [
+	"Damage Penetrates #% Cold Resistance if you've\nused a Fire Skill in the past 10 seconds": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -48718,7 +48718,7 @@
 			"formats": null
 		}
 	],
-	"Damage Penetrates #% Fire Resistance if you've\\nused a Lightning Skill in the past 10 seconds": [
+	"Damage Penetrates #% Fire Resistance if you've\nused a Lightning Skill in the past 10 seconds": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -48742,7 +48742,7 @@
 			"formats": null
 		}
 	],
-	"Damage Penetrates #% Lightning Resistance if you've\\nused a Cold Skill in the past 10 seconds": [
+	"Damage Penetrates #% Lightning Resistance if you've\nused a Cold Skill in the past 10 seconds": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -48810,7 +48810,7 @@
 			"formats": null
 		}
 	],
-	"Damage taken from Blocked Hits cannot bypass Energy Shield\\nDamage taken from Unblocked hits always bypasses Energy Shield": [],
+	"Damage taken from Blocked Hits cannot bypass Energy Shield\nDamage taken from Unblocked hits always bypasses Energy Shield": [],
 	"Damage taken from Enemy Hits is recovered as Life by your Ancestral Totem": [],
 	"Damage with Hits from Socketed Vaal Skills is Lucky": [],
 	"Damage with Hits from Socketed Vaal Skills is Unlucky": [],
@@ -48846,13 +48846,13 @@
 			"formats": null
 		}
 	],
-	"Damageable Minions deal #% increased Damage for each second they have been alive,\\nup to a maximum of 150%": [
+	"Damageable Minions deal #% increased Damage for each second they have been alive,\nup to a maximum of 150%": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Damageable Minions deal #% reduced Damage for each second they have been alive,\\nup to a maximum of 150%": [
+	"Damageable Minions deal #% reduced Damage for each second they have been alive,\nup to a maximum of 150%": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -48860,13 +48860,13 @@
 			]
 		}
 	],
-	"Damageable Minions take #% increased Damage for each second they have been alive,\\nup to a maximum of 50%": [
+	"Damageable Minions take #% increased Damage for each second they have been alive,\nup to a maximum of 50%": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Damageable Minions take #% reduced Damage for each second they have been alive,\\nup to a maximum of 50%": [
+	"Damageable Minions take #% reduced Damage for each second they have been alive,\nup to a maximum of 50%": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -49202,7 +49202,7 @@
 	"Defences are Zero": [],
 	"Defences from Equipped Body Armour are doubled if it has no Socketed Gems": [],
 	"Defences of Items attached to Animated Guardian also apply to Animated Weapons": [],
-	"Defend Cassia to successfully complete Maps within this Shaped Region\\nBlight Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Defend Cassia to successfully complete Maps within this Shaped Region\nBlight Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Defend with #% of Armour against Projectile Attacks": [
 		{
 			"isScalable": true,
@@ -49258,7 +49258,7 @@
 			]
 		}
 	],
-	"Delirium Fog in your Maps never dissipates\\nDelirium Orbs cannot be found in your Maps\\nSimulacrum Splinters cannot be found in your Maps": [],
+	"Delirium Fog in your Maps never dissipates\nDelirium Orbs cannot be found in your Maps\nSimulacrum Splinters cannot be found in your Maps": [],
 	"Delirium Monsters in Area have #% increased Pack Size": [
 		{
 			"isScalable": true,
@@ -49296,25 +49296,25 @@
 		}
 	],
 	"Demigod Footprints": [],
-	"Denoted service of # dekhara in the akhara of Asenath\\nPassives in radius are Conquered by the Maraketh": [
+	"Denoted service of # dekhara in the akhara of Asenath\nPassives in radius are Conquered by the Maraketh": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Denoted service of # dekhara in the akhara of Balbala\\nPassives in radius are Conquered by the Maraketh": [
+	"Denoted service of # dekhara in the akhara of Balbala\nPassives in radius are Conquered by the Maraketh": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Denoted service of # dekhara in the akhara of Deshret\\nPassives in radius are Conquered by the Maraketh": [
+	"Denoted service of # dekhara in the akhara of Deshret\nPassives in radius are Conquered by the Maraketh": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Denoted service of # dekhara in the akhara of Nasima\\nPassives in radius are Conquered by the Maraketh": [
+	"Denoted service of # dekhara in the akhara of Nasima\nPassives in radius are Conquered by the Maraketh": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -49996,7 +49996,7 @@
 			]
 		}
 	],
-	"Each Projectile created by Attacks you make with a Melee Weapon has\\nbetween #% more and #% less Projectile Speed at random": [
+	"Each Projectile created by Attacks you make with a Melee Weapon has\nbetween #% more and #% less Projectile Speed at random": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -50006,7 +50006,7 @@
 			"formats": null
 		}
 	],
-	"Each Projectile from Spectral Helix or Spectral Throw has\\nbetween #% more and #% less Projectile Speed at random": [
+	"Each Projectile from Spectral Helix or Spectral Throw has\nbetween #% more and #% less Projectile Speed at random": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -50047,7 +50047,7 @@
 			]
 		}
 	],
-	"Earn at least 5 Delirium Rewards to successfully complete Maps within this Shaped Region\\nDelirium Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Earn at least 5 Delirium Rewards to successfully complete Maps within this Shaped Region\nDelirium Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Earthquake deals #% increased Damage per 0.1 seconds Duration": [
 		{
 			"isScalable": true,
@@ -50112,7 +50112,7 @@
 	],
 	"Eat a Soul when you Hit a Rare or Unique Enemy, no more than once every second": [],
 	"Eat a Soul when you Kill a Rare or Unique Enemy with this Weapon": [],
-	"Effect is not removed when Unreserved Mana is Filled\\nEffect does not Queue": [],
+	"Effect is not removed when Unreserved Mana is Filled\nEffect does not Queue": [],
 	"Effect is removed when Hit by a Player": [],
 	"Effect is removed when Ward Breaks": [],
 	"Effects of Consecrated Ground you create Linger for # seconds": [
@@ -50342,7 +50342,7 @@
 	"Enemies Chilled by your Hits have Damage taken increased by Chill Effect": [],
 	"Enemies Chilled by your Hits lessen their Damage dealt by half of Chill Effect": [],
 	"Enemies Cursed by you are Hindered if 25% of Curse Duration expired": [],
-	"Enemies Cursed by you are Hindered with #% reduced Movement\\nSpeed if 25% of Curse Duration expired": [
+	"Enemies Cursed by you are Hindered with #% reduced Movement\nSpeed if 25% of Curse Duration expired": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -50618,7 +50618,7 @@
 			]
 		}
 	],
-	"Enemies Taunted by you deal #% less Damage with Hits and\\nAilments against other targets": [
+	"Enemies Taunted by you deal #% less Damage with Hits and\nAilments against other targets": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -50632,7 +50632,7 @@
 			"formats": null
 		}
 	],
-	"Enemies Taunted by you deal #% more Damage with Hits and\\nAilments against other targets": [
+	"Enemies Taunted by you deal #% more Damage with Hits and\nAilments against other targets": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -50827,7 +50827,7 @@
 			"formats": null
 		}
 	],
-	"Enemies near corpses affected by your Curses are Blinded\\nEnemies Killed near corpses affected by your Curses explode, dealing\\n#% of their Life as Physical Damage": [
+	"Enemies near corpses affected by your Curses are Blinded\nEnemies Killed near corpses affected by your Curses explode, dealing\n#% of their Life as Physical Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -50936,7 +50936,7 @@
 			"formats": null
 		}
 	],
-	"Enemies take #% increased Elemental Damage from your Hits for\\neach Withered you have inflicted on them": [
+	"Enemies take #% increased Elemental Damage from your Hits for\neach Withered you have inflicted on them": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -50958,7 +50958,7 @@
 			]
 		}
 	],
-	"Enemies take #% reduced Elemental Damage from your Hits for\\neach Withered you have inflicted on them": [
+	"Enemies take #% reduced Elemental Damage from your Hits for\neach Withered you have inflicted on them": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -51076,13 +51076,13 @@
 			"formats": null
 		}
 	],
-	"Enemies you Kill that are affected by Elemental Ailments\\ngrant #% increased Flask Charges": [
+	"Enemies you Kill that are affected by Elemental Ailments\ngrant #% increased Flask Charges": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Enemies you Kill that are affected by Elemental Ailments\\ngrant #% reduced Flask Charges": [
+	"Enemies you Kill that are affected by Elemental Ailments\ngrant #% reduced Flask Charges": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -51240,7 +51240,7 @@
 	"Energy Shield Leech Effects from Attacks are not removed at Full Energy Shield": [],
 	"Energy Shield Leech effects are not removed when Energy Shield is Filled": [],
 	"Energy Shield Recharge is not delayed by Damage during Effect": [],
-	"Energy Shield Recharge is not interrupted by Damage if Recharge\\nbegan Recently": [],
+	"Energy Shield Recharge is not interrupted by Damage if Recharge\nbegan Recently": [],
 	"Energy Shield Recharge not delayed by Damage": [],
 	"Energy Shield Recharge starts when you Suppress Spell Damage": [],
 	"Energy Shield Recharge starts when you are Stunned": [],
@@ -51376,7 +51376,7 @@
 			"formats": null
 		}
 	],
-	"Every 10 seconds, gain #% of Physical Damage\\nas Extra Fire Damage for 4 seconds": [
+	"Every 10 seconds, gain #% of Physical Damage\nas Extra Fire Damage for 4 seconds": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -51414,8 +51414,8 @@
 			]
 		}
 	],
-	"Every 10 seconds:\\nGain 2% of Life per Enemy Hit with Attacks for 5 seconds\\nGain 5% of Life per Enemy Killed for 5 seconds": [],
-	"Every 10 seconds:\\nTake #% less Damage from Hits for 5 seconds\\nTake #% less Damage over Time for 5 seconds": [
+	"Every 10 seconds:\nGain 2% of Life per Enemy Hit with Attacks for 5 seconds\nGain 5% of Life per Enemy Killed for 5 seconds": [],
+	"Every 10 seconds:\nTake #% less Damage from Hits for 5 seconds\nTake #% less Damage over Time for 5 seconds": [
 		{
 			"isScalable": false,
 			"formats": [
@@ -51429,7 +51429,7 @@
 			]
 		}
 	],
-	"Every 10 seconds:\\nTake #% more Damage from Hits for 5 seconds\\nTake #% more Damage over Time for 5 seconds": [
+	"Every 10 seconds:\nTake #% more Damage from Hits for 5 seconds\nTake #% more Damage over Time for 5 seconds": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -51439,7 +51439,7 @@
 			"formats": null
 		}
 	],
-	"Every 14 seconds:\\nGain Chilling Conflux for 4 seconds\\nGain Shocking Conflux for 4 seconds\\nGain Igniting Conflux for 4 seconds\\nGain Chilling, Shocking and Igniting Conflux for 2 seconds": [],
+	"Every 14 seconds:\nGain Chilling Conflux for 4 seconds\nGain Shocking Conflux for 4 seconds\nGain Igniting Conflux for 4 seconds\nGain Chilling, Shocking and Igniting Conflux for 2 seconds": [],
 	"Every 16 seconds you gain Elemental Overload for 8 seconds": [],
 	"Every 16 seconds you gain Iron Reflexes for 8 seconds": [],
 	"Every 3 seconds, Consume a nearby Corpse to Lose #% of Life": [
@@ -51499,7 +51499,7 @@
 		}
 	],
 	"Every 4 seconds, remove Curses and Ailments from you": [],
-	"Every 5 seconds, gain one of the following for 5 seconds:\\nYour Hits are always Critical Strikes\\nHits against you are always Critical Strikes\\nAttacks cannot Hit you\\nAttacks against you always Hit\\nYour Damage with Hits is Lucky\\nDamage of Hits against you is Lucky": [],
+	"Every 5 seconds, gain one of the following for 5 seconds:\nYour Hits are always Critical Strikes\nHits against you are always Critical Strikes\nAttacks cannot Hit you\nAttacks against you always Hit\nYour Damage with Hits is Lucky\nDamage of Hits against you is Lucky": [],
 	"Every 8 seconds, gain Avatar of Fire for 4 seconds": [],
 	"Every Rage also grants #% increased Armour": [
 		{
@@ -52155,20 +52155,20 @@
 		}
 	],
 	"Flammability has no Reservation if Cast as an Aura": [],
-	"Flasks adjacent to active Tinctures gain # charges when you Hit an\\nEnemy with a Melee Weapon, no more than once every second": [
+	"Flasks adjacent to active Tinctures gain # charges when you Hit an\nEnemy with a Melee Weapon, no more than once every second": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Flasks adjacent to active Tinctures gain a charge when you Hit an\\nEnemy with a Melee Weapon, no more than once every second": [],
-	"Flasks adjacent to applied Tincture have #% increased Effect when\\nused if you've Hit an enemy with a Weapon Recently": [
+	"Flasks adjacent to active Tinctures gain a charge when you Hit an\nEnemy with a Melee Weapon, no more than once every second": [],
+	"Flasks adjacent to applied Tincture have #% increased Effect when\nused if you've Hit an enemy with a Weapon Recently": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Flasks adjacent to applied Tincture have #% reduced Effect when\\nused if you've Hit an enemy with a Weapon Recently": [
+	"Flasks adjacent to applied Tincture have #% reduced Effect when\nused if you've Hit an enemy with a Weapon Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -52395,7 +52395,7 @@
 			]
 		}
 	],
-	"For each nearby corpse, you and nearby Allies Regenerate # Mana\\nper second, up to 50 per second": [
+	"For each nearby corpse, you and nearby Allies Regenerate # Mana\nper second, up to 50 per second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -52819,7 +52819,7 @@
 			"formats": null
 		}
 	],
-	"Gain # Endurance Charge every second if you've been Hit Recently and\\n4 Warlord Items are Equipped": [
+	"Gain # Endurance Charge every second if you've been Hit Recently and\n4 Warlord Items are Equipped": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -52867,7 +52867,7 @@
 			"formats": null
 		}
 	],
-	"Gain # Endurance Charges every second if you've been Hit Recently and\\n4 Warlord Items are Equipped": [
+	"Gain # Endurance Charges every second if you've been Hit Recently and\n4 Warlord Items are Equipped": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53625,7 +53625,7 @@
 			"formats": null
 		}
 	],
-	"Gain #% of Physical Damage as Extra Chaos Damage against\\nPoisoned Enemies": [
+	"Gain #% of Physical Damage as Extra Chaos Damage against\nPoisoned Enemies": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53637,7 +53637,7 @@
 			"formats": null
 		}
 	],
-	"Gain #% of Physical Damage as Extra Chaos Damage if you've\\nused an Amethyst Flask Recently": [
+	"Gain #% of Physical Damage as Extra Chaos Damage if you've\nused an Amethyst Flask Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53667,7 +53667,7 @@
 			"formats": null
 		}
 	],
-	"Gain #% of Physical Damage as Extra Cold Damage if you've\\nused a Sapphire Flask Recently": [
+	"Gain #% of Physical Damage as Extra Cold Damage if you've\nused a Sapphire Flask Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53685,7 +53685,7 @@
 			"formats": null
 		}
 	],
-	"Gain #% of Physical Damage as Extra Damage of each Element if\\n6 Shaper Items are Equipped": [
+	"Gain #% of Physical Damage as Extra Damage of each Element if\n6 Shaper Items are Equipped": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53709,6 +53709,12 @@
 			"formats": null
 		}
 	],
+	"Gain #% of Physical Damage as Extra Fire Damage if you've\nused a Ruby Flask Recently": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"Gain #% of Physical Damage as Extra Fire Damage if you've Killed Recently": [
 		{
 			"isScalable": true,
@@ -53716,12 +53722,6 @@
 		}
 	],
 	"Gain #% of Physical Damage as Extra Fire Damage if you've dealt a Critical Strike Recently": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"Gain #% of Physical Damage as Extra Fire Damage if you've\\nused a Ruby Flask Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53745,7 +53745,7 @@
 			"formats": null
 		}
 	],
-	"Gain #% of Physical Damage as Extra Lightning Damage if you've\\nused a Topaz Flask Recently": [
+	"Gain #% of Physical Damage as Extra Lightning Damage if you've\nused a Topaz Flask Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -53845,13 +53845,13 @@
 		}
 	],
 	"Gain 1 Fragile Regrowth each second": [],
-	"Gain 1 Gale Force when you use a Skill\\n#% increased Effect of Tailwind on you per Gale Force": [
+	"Gain 1 Gale Force when you use a Skill\n#% increased Effect of Tailwind on you per Gale Force": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Gain 1 Gale Force when you use a Skill\\n#% reduced Effect of Tailwind on you per Gale Force": [
+	"Gain 1 Gale Force when you use a Skill\n#% reduced Effect of Tailwind on you per Gale Force": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -53870,13 +53870,13 @@
 		}
 	],
 	"Gain 1 Rage when you Hit a Rare or Unique Enemy": [],
-	"Gain 1 Remembrance when you spend a total of # Energy\\nShield with no Shaper Memory Summoned": [
+	"Gain 1 Remembrance when you spend a total of # Energy\nShield with no Shaper Memory Summoned": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Gain 1 Unbound Fury when you inflict an Elemental Ailment with a Hit on an Enemy, no more than once every 0.2 seconds for each type of Ailment\\nCannot gain Unbound Fury while Unbound": [],
+	"Gain 1 Unbound Fury when you inflict an Elemental Ailment with a Hit on an Enemy, no more than once every 0.2 seconds for each type of Ailment\nCannot gain Unbound Fury while Unbound": [],
 	"Gain Absorption Charges instead of Power Charges": [],
 	"Gain Accuracy Rating equal to twice your Strength": [],
 	"Gain Accuracy Rating equal to your Intelligence": [],
@@ -53972,7 +53972,7 @@
 	"Gain Chaotic Might for 10 seconds on Kill": [],
 	"Gain Chaotic Might for 4 seconds on Critical Strike": [],
 	"Gain Convergence when you Hit a Unique Enemy, no more than once every 8 seconds": [],
-	"Gain Defiance for 10 seconds on losing Life to an Enemy Hit, no\\nmore than once every # seconds": [
+	"Gain Defiance for 10 seconds on losing Life to an Enemy Hit, no\nmore than once every # seconds": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -53991,7 +53991,7 @@
 	"Gain Elusive on Critical Strike": [],
 	"Gain Elusive on Kill": [],
 	"Gain Elusive on reaching Low Life": [],
-	"Gain Exposed to Corruption stacks twice as frequently\\nLose 1 stack of Exposed to Corruption every 5 seconds": [],
+	"Gain Exposed to Corruption stacks twice as frequently\nLose 1 stack of Exposed to Corruption every 5 seconds": [],
 	"Gain Fanaticism for 5 seconds on reaching Maximum Fanatic Charges": [],
 	"Gain Flaming, Icy or Crackling Runesurge at random for # second every 10 seconds": [
 		{
@@ -54036,7 +54036,7 @@
 	],
 	"Gain Maddening Presence for 10 seconds when you Kill a Rare or Unique Enemy": [],
 	"Gain Maximum Life instead of Maximum Energy Shield from Equipped Armour Items": [],
-	"Gain Maximum Life instead of Maximum Energy Shield from Equipped Armour Items\\nat #% of the value": [
+	"Gain Maximum Life instead of Maximum Energy Shield from Equipped Armour Items\nat #% of the value": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -54178,7 +54178,7 @@
 		}
 	],
 	"Gain Unholy Might on Block for 3 seconds": [],
-	"Gain Vaal Soul on Hit\\nYou can only generate a Soul every # seconds": [
+	"Gain Vaal Soul on Hit\nYou can only generate a Soul every # seconds": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -54724,7 +54724,7 @@
 	"Grant a Frenzy Charge to nearby Allies on Kill": [],
 	"Grant a Power Charge to nearby Allies on Kill": [],
 	"Grant an Endurance Charge to nearby Allies on Hit": [],
-	"Grant bonuses to Non-Channelling Skills you use by consuming # Charges from a Flask of\\neach of the following types, if possible:": [
+	"Grant bonuses to Non-Channelling Skills you use by consuming # Charges from a Flask of\neach of the following types, if possible:": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -54833,7 +54833,7 @@
 		}
 	],
 	"Grants Call of Steel": [],
-	"Grants Immunity to Bleeding for # seconds if used while Bleeding\\nGrants Immunity to Corrupted Blood for # seconds if used while affected by Corrupted Blood": [
+	"Grants Immunity to Bleeding for # seconds if used while Bleeding\nGrants Immunity to Corrupted Blood for # seconds if used while affected by Corrupted Blood": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -54843,8 +54843,8 @@
 			"formats": null
 		}
 	],
-	"Grants Immunity to Bleeding for 4 seconds if used while Bleeding\\nGrants Immunity to Corrupted Blood for 4 seconds if used while affected by Corrupted Blood": [],
-	"Grants Immunity to Chill for # seconds if used while Chilled\\nGrants Immunity to Freeze for # seconds if used while Frozen": [
+	"Grants Immunity to Bleeding for 4 seconds if used while Bleeding\nGrants Immunity to Corrupted Blood for 4 seconds if used while affected by Corrupted Blood": [],
+	"Grants Immunity to Chill for # seconds if used while Chilled\nGrants Immunity to Freeze for # seconds if used while Frozen": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -54854,20 +54854,20 @@
 			"formats": null
 		}
 	],
-	"Grants Immunity to Chill for 4 seconds if used while Chilled\\nGrants Immunity to Freeze for 4 seconds if used while Frozen": [],
+	"Grants Immunity to Chill for 4 seconds if used while Chilled\nGrants Immunity to Freeze for 4 seconds if used while Frozen": [],
 	"Grants Immunity to Hinder for # seconds if used while Hindered": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Grants Immunity to Ignite for # seconds if used while Ignited\\nRemoves all Burning when used": [
+	"Grants Immunity to Ignite for # seconds if used while Ignited\nRemoves all Burning when used": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Grants Immunity to Ignite for 4 seconds if used while Ignited\\nRemoves all Burning when used": [],
+	"Grants Immunity to Ignite for 4 seconds if used while Ignited\nRemoves all Burning when used": [],
 	"Grants Immunity to Maim for # seconds if used while Maimed": [
 		{
 			"isScalable": true,
@@ -55350,13 +55350,13 @@
 			"formats": null
 		}
 	],
-	"Grants Level # Summon Doedre's Effigy Skill\\nSocketed Hex Curse Skills are Triggered by Doedre's Effigy when Summoned\\nHexes from Socketed Skills can apply 5 additional Curses": [
+	"Grants Level # Summon Doedre's Effigy Skill\nSocketed Hex Curse Skills are Triggered by Doedre's Effigy when Summoned\nHexes from Socketed Skills can apply 5 additional Curses": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Grants Level # Summon Doedre's Effigy Skill\\nSocketed Hex Curse Skills are Triggered by Doedre's Effigy when Summoned\\nHexes from Socketed Skills can apply 5 additional Curses\\n20% less Effect of Curses from Socketed Hex Skills": [
+	"Grants Level # Summon Doedre's Effigy Skill\nSocketed Hex Curse Skills are Triggered by Doedre's Effigy when Summoned\nHexes from Socketed Skills can apply 5 additional Curses\n20% less Effect of Curses from Socketed Hex Skills": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -55473,9 +55473,9 @@
 	"Grants Level 20 Summon Bestial Rhoa Skill": [],
 	"Grants Level 20 Summon Bestial Snake Skill": [],
 	"Grants Level 20 Summon Bestial Ursa Skill": [],
-	"Grants Level 20 Summon Shaper Memory\\nGrants Level 20 Shaper's Despair, which will be used by Shaper Memory": [],
-	"Grants Level 20 Summon Shaper Memory\\nGrants Level 20 Shaper's Devastation, which will be used by Shaper Memory": [],
-	"Grants Level 20 Summon Shaper Memory\\nGrants Level 20 Shaper's Ire, which will be used by Shaper Memory": [],
+	"Grants Level 20 Summon Shaper Memory\nGrants Level 20 Shaper's Despair, which will be used by Shaper Memory": [],
+	"Grants Level 20 Summon Shaper Memory\nGrants Level 20 Shaper's Devastation, which will be used by Shaper Memory": [],
+	"Grants Level 20 Summon Shaper Memory\nGrants Level 20 Shaper's Ire, which will be used by Shaper Memory": [],
 	"Grants Malachai's Endurance, Frenzy and Power for 6 seconds each, in sequence": [],
 	"Grants Perfect Agony during effect": [],
 	"Grants Summon Greater Harbinger of Brutality Skill": [],
@@ -55535,14 +55535,14 @@
 			"formats": null
 		}
 	],
-	"Grants maximum Energy Shield equal to #% of your Reserved Mana to\\nyou and nearby Allies": [
+	"Grants maximum Energy Shield equal to #% of your Reserved Mana to\nyou and nearby Allies": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
 	"Ground Slam grants an Endurance Charge on Stun": [],
-	"Ground Slam has a #% chance to grant an Endurance Charge when\\nyou Stun an Enemy": [
+	"Ground Slam has a #% chance to grant an Endurance Charge when\nyou Stun an Enemy": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -55755,9 +55755,9 @@
 	"Has 1 White Socket": [],
 	"Has Consumed 1 Gem": [],
 	"Has Elder, Shaper and all Conqueror Influences": [],
-	"Has a Crucible Passive Skill Tree with only Support Passive Skills\\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
-	"Has a Crucible Passive Skill Tree\\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
-	"Has a Two Handed Sword Crucible Passive Skill Tree\\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
+	"Has a Crucible Passive Skill Tree\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
+	"Has a Crucible Passive Skill Tree with only Support Passive Skills\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
+	"Has a Two Handed Sword Crucible Passive Skill Tree\nCrucible Passive Skill Tree is removed if this Modifier is removed": [],
 	"Has an additional Implicit Mod": [],
 	"Has maximum Quality": [],
 	"Has no Attribute Requirements": [],
@@ -56378,7 +56378,7 @@
 		}
 	],
 	"Historic": [],
-	"Hit Damage with your Off Hand treats Enemy Monster\\nElemental Resistance values as inverted": [],
+	"Hit Damage with your Off Hand treats Enemy Monster\nElemental Resistance values as inverted": [],
 	"Hits Knockback during Effect": [],
 	"Hits Overwhelm #% of Physical Damage Reduction while you have Sacrificial Zeal": [
 		{
@@ -56909,7 +56909,7 @@
 			"formats": null
 		}
 	],
-	"If you've Blocked in the past 10 seconds, you\\nand Allies within # metre cannot be Stunned": [
+	"If you've Blocked in the past 10 seconds, you\nand Allies within # metre cannot be Stunned": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -56917,7 +56917,7 @@
 			]
 		}
 	],
-	"If you've Blocked in the past 10 seconds, you\\nand Allies within # metres cannot be Stunned": [
+	"If you've Blocked in the past 10 seconds, you\nand Allies within # metres cannot be Stunned": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -56953,7 +56953,13 @@
 			]
 		}
 	],
-	"If you've Impaled an Enemy Recently, you\\nand nearby Allies have # to Armour": [
+	"If you've Impaled an Enemy Recently, you\nand nearby Allies have # to Armour": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
+	"If you've Warcried Recently, you and nearby allies\nhave #% increased Attack Speed": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -56971,15 +56977,9 @@
 			"formats": null
 		}
 	],
-	"If you've Warcried Recently, you and nearby allies\\nhave #% increased Attack Speed": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
 	"If you've used a Skill Recently, you and nearby Allies have Tailwind": [],
 	"If your Linked Mercenary dies, the Link owner does not also die": [],
-	"If your Mercenary's Life is higher than your own, #% of Damage from Hits is\\ntaken from your Mercenary's Life before you": [
+	"If your Mercenary's Life is higher than your own, #% of Damage from Hits is\ntaken from your Mercenary's Life before you": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -57179,7 +57179,7 @@
 	"Immunity to Damage during Effect": [],
 	"Immunity to Freeze and Chill during Effect": [],
 	"Immunity to Freeze, Chill, Curses and Stuns during Effect": [],
-	"Immunity to Ignite during Effect\\nRemoves Burning on use": [],
+	"Immunity to Ignite during Effect\nRemoves Burning on use": [],
 	"Immunity to Poison during Effect": [],
 	"Immunity to Shock during Effect": [],
 	"Impale Damage dealt to Enemies Impaled by you Overwhelms #% Physical Damage Reduction": [
@@ -57350,13 +57350,13 @@
 			"formats": null
 		}
 	],
-	"Increases and Reductions to Armour also apply to Energy Shield Recharge Rate": [],
-	"Increases and Reductions to Armour also apply to Energy\\nShield Recharge Rate at #% of their value": [
+	"Increases and Reductions to Armour also apply to Energy\nShield Recharge Rate at #% of their value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
+	"Increases and Reductions to Armour also apply to Energy Shield Recharge Rate": [],
 	"Increases and Reductions to Armour in Radius are Transformed to apply to Evasion Rating": [],
 	"Increases and Reductions to Cast Speed also Apply to Trap Throwing Speed": [],
 	"Increases and Reductions to Cast Speed apply to Attack Speed": [],
@@ -57366,13 +57366,13 @@
 			"formats": null
 		}
 	],
-	"Increases and Reductions to Chaos Damage also apply to Effect of\\nAuras from Chaos Skills at #% of their value, up to a maximum of 150%": [
+	"Increases and Reductions to Chaos Damage also apply to Effect of\nAuras from Chaos Skills at #% of their value, up to a maximum of 150%": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Increases and Reductions to Cold Damage also apply to Effect of\\nAuras from Cold Skills at #% of their value, up to a maximum of 150%": [
+	"Increases and Reductions to Cold Damage also apply to Effect of\nAuras from Cold Skills at #% of their value, up to a maximum of 150%": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -57380,8 +57380,8 @@
 	],
 	"Increases and Reductions to Cold Damage in Radius are Transformed to apply to Physical Damage": [],
 	"Increases and Reductions to Damage with Vaal Skills also apply to Non-Vaal Skills": [],
-	"Increases and Reductions to Effect of Flasks applied to you\\nalso applies to Effect of Arcane Surge on you": [],
-	"Increases and Reductions to Effect of Flasks applied to you\\nalso applies to Effect of Arcane Surge on you at #% of their value": [
+	"Increases and Reductions to Effect of Flasks applied to you\nalso applies to Effect of Arcane Surge on you": [],
+	"Increases and Reductions to Effect of Flasks applied to you\nalso applies to Effect of Arcane Surge on you at #% of their value": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -57389,7 +57389,7 @@
 	],
 	"Increases and Reductions to Energy Shield in Radius are Transformed to apply to Armour at 200% of their value": [],
 	"Increases and Reductions to Evasion Rating in Radius are Transformed to apply to Armour": [],
-	"Increases and Reductions to Fire Damage also apply to Effect of\\nAuras from Fire Skills at #% of their value, up to a maximum of 150%": [
+	"Increases and Reductions to Fire Damage also apply to Effect of\nAuras from Fire Skills at #% of their value, up to a maximum of 150%": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -57406,8 +57406,8 @@
 		}
 	],
 	"Increases and Reductions to Light Radius also apply to Damage": [],
-	"Increases and Reductions to Light Radius also apply to Effect\\nof your Link Skill Buffs on your Mercenary": [],
-	"Increases and Reductions to Lightning Damage also apply to Effect of\\nAuras from Lightning Skills at #% of their value, up to a maximum of 150%": [
+	"Increases and Reductions to Light Radius also apply to Effect\nof your Link Skill Buffs on your Mercenary": [],
+	"Increases and Reductions to Lightning Damage also apply to Effect of\nAuras from Lightning Skills at #% of their value, up to a maximum of 150%": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -57425,7 +57425,7 @@
 			"formats": null
 		}
 	],
-	"Increases and Reductions to Physical Damage also apply to Effect of\\nAuras from Physical Skills at #% of their value, up to a maximum of 150%": [
+	"Increases and Reductions to Physical Damage also apply to Effect of\nAuras from Physical Skills at #% of their value, up to a maximum of 150%": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -57522,7 +57522,7 @@
 			"formats": null
 		}
 	],
-	"Inflict # additional Poisons on the same Target\\nwhen you inflict Poison with this weapon": [
+	"Inflict # additional Poisons on the same Target\nwhen you inflict Poison with this weapon": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -57546,7 +57546,7 @@
 		}
 	],
 	"Inflict Fire Exposure on Hit": [],
-	"Inflict Fire Exposure on Hit against Enemies with\\n5 Cinderflame, applying #% to Fire Resistance": [
+	"Inflict Fire Exposure on Hit against Enemies with\n5 Cinderflame, applying #% to Fire Resistance": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -57578,14 +57578,14 @@
 	"Inflict Withered for 2 seconds on Hit if you've cast Despair in the past 10 seconds": [],
 	"Inflict Withered for 2 seconds on Hit with this Weapon": [],
 	"Inflict Withered for two seconds on Hit if there are 5 or fewer Withered Debuffs on Enemy": [],
-	"Inflict a Grasping Vine on Hit against Enemies with fewer than\\n# Grasping Vines during Effect of any Life Flask": [
+	"Inflict a Grasping Vine on Hit against Enemies with fewer than\n# Grasping Vines during Effect of any Life Flask": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
 	"Inflict an additional Impale on Enemies you Impale": [],
-	"Inflict an additional Poison on the same Target when\\nyou inflict Poison with this weapon": [],
+	"Inflict an additional Poison on the same Target when\nyou inflict Poison with this weapon": [],
 	"Inflict non-Damaging Ailments as though dealing #% less Damage": [
 		{
 			"isScalable": true,
@@ -58074,12 +58074,12 @@
 		}
 	],
 	"Karui Stone Hook": [],
-	"Keystone Passive Skills in Radius can be Allocated without being connected to your tree\\nPassage": [],
+	"Keystone Passive Skills in Radius can be Allocated without being connected to your tree\nPassage": [],
 	"Kill Enemies that have 15% or lower Life on Hit if The Searing Exarch is dominant": [],
 	"Kill Enemies that have 15% or lower Life when Hit by your Skills": [],
 	"Kill Enemies that have 20% or lower Life when Hit by your Skills": [],
-	"Kill all Runic Monsters after detonating at least half the Remnants to\\nsuccessfully complete Maps within this Shaped Region\\nExpedition Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
-	"Kill at least one General in each Legion Encounter to successfully\\ncomplete Maps within this Shaped Region\\nLegion Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Kill all Runic Monsters after detonating at least half the Remnants to\nsuccessfully complete Maps within this Shaped Region\nExpedition Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
+	"Kill at least one General in each Legion Encounter to successfully\ncomplete Maps within this Shaped Region\nLegion Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Killing Blows from Smite and Static Strike Consume corpses to Recover #% of Life": [
 		{
 			"isScalable": true,
@@ -58536,7 +58536,7 @@
 			"formats": null
 		}
 	],
-	"Legion Encounters in your Maps have no Timer\\nBreaking out Monsters and Chests that are in stasis progressively causes a Schism\\nLegion Encounters in your Maps begin once the Schism has occurred": [],
+	"Legion Encounters in your Maps have no Timer\nBreaking out Monsters and Chests that are in stasis progressively causes a Schism\nLegion Encounters in your Maps begin once the Schism has occurred": [],
 	"Legion Encounters with a General in Area have both Generals": [],
 	"Legion Monsters have #% less Life": [
 		{
@@ -58554,7 +58554,7 @@
 	],
 	"Legion Monsters in Area have a Volatile Core": [],
 	"Lethe Shade": [],
-	"Life Flask Effects are not removed when Unreserved Life is Filled\\nLife Flask Effects do not Queue": [],
+	"Life Flask Effects are not removed when Unreserved Life is Filled\nLife Flask Effects do not Queue": [],
 	"Life Flasks gain # Charge every 3 seconds": [
 		{
 			"isScalable": true,
@@ -58590,7 +58590,7 @@
 	"Life Flasks used while on Low Life apply Recovery Instantly": [],
 	"Life Leech effects Recover Energy Shield instead": [],
 	"Life Leech effects are not removed when Unreserved Life is Filled": [],
-	"Life Leech effects are not removed when Unreserved Life is Filled\\nLife Leech effects Recover Energy Shield instead while on Full Life": [],
+	"Life Leech effects are not removed when Unreserved Life is Filled\nLife Leech effects Recover Energy Shield instead while on Full Life": [],
 	"Life Leech from Exerted Attacks is instant": [],
 	"Life Leech from Hits with this Weapon is instant": [],
 	"Life Leech is instant": [],
@@ -58602,7 +58602,7 @@
 	"Life and Mana Leech are instant during effect": [],
 	"Life and Mana Leech from Critical Strikes are instant": [],
 	"Life and Mana Recovery from Flasks are instant": [],
-	"Life that would be lost by taking Damage is instead Reserved\\nuntil you take no Damage to Life for # second": [
+	"Life that would be lost by taking Damage is instead Reserved\nuntil you take no Damage to Life for # second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -58610,7 +58610,7 @@
 			]
 		}
 	],
-	"Life that would be lost by taking Damage is instead Reserved\\nuntil you take no Damage to Life for # seconds": [
+	"Life that would be lost by taking Damage is instead Reserved\nuntil you take no Damage to Life for # seconds": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -58948,7 +58948,7 @@
 			"formats": null
 		}
 	],
-	"Linked Targets always count as in range of Non-Curse Auras from your Skills\\nNon-Curse Auras from your Skills only apply to you and Linked Targets": [],
+	"Linked Targets always count as in range of Non-Curse Auras from your Skills\nNon-Curse Auras from your Skills only apply to you and Linked Targets": [],
 	"Linked Targets and Allies in your Link Beams have #% to all Maximum Elemental Resistances": [
 		{
 			"isScalable": true,
@@ -59437,7 +59437,7 @@
 	"Lose all Power Charges on Critical Strike": [],
 	"Lose all Power Charges on reaching Maximum Power Charges": [],
 	"Lose all Power Charges when you Block": [],
-	"Lose all Rage on reaching Maximum Rage and gain Wild Savagery\\nfor 1 second per # Rage lost this way": [
+	"Lose all Rage on reaching Maximum Rage and gain Wild Savagery\nfor 1 second per # Rage lost this way": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -59607,7 +59607,7 @@
 		}
 	],
 	"Malevolence has no Reservation": [],
-	"Mana Flask Effects are not removed when Unreserved Mana is Filled\\nMana Flask Effects do not Queue": [],
+	"Mana Flask Effects are not removed when Unreserved Mana is Filled\nMana Flask Effects do not Queue": [],
 	"Mana Flasks gain # Charge every 3 seconds": [
 		{
 			"isScalable": true,
@@ -59683,10 +59683,10 @@
 	],
 	"Map Crafting options for this Map have no cost": [],
 	"Map Portals do not expire": [],
-	"Map contains Al-Hezmin's Citadel\\nItem Quantity increases amount of Rewards Al-Hezmin drops by 20% of its value": [],
-	"Map contains Baran's Citadel\\nItem Quantity increases amount of Rewards Baran drops by 20% of its value": [],
-	"Map contains Drox's Citadel\\nItem Quantity increases amount of Rewards Drox drops by 20% of its value": [],
-	"Map contains Veritania's Citadel\\nItem Quantity increases amount of Rewards Veritania drops by 20% of its value": [],
+	"Map contains Al-Hezmin's Citadel\nItem Quantity increases amount of Rewards Al-Hezmin drops by 20% of its value": [],
+	"Map contains Baran's Citadel\nItem Quantity increases amount of Rewards Baran drops by 20% of its value": [],
+	"Map contains Drox's Citadel\nItem Quantity increases amount of Rewards Drox drops by 20% of its value": [],
+	"Map contains Veritania's Citadel\nItem Quantity increases amount of Rewards Veritania drops by 20% of its value": [],
 	"Map drops are Duplicated": [],
 	"Map has # additional Synthesis Global Modifier": [
 		{
@@ -59939,9 +59939,9 @@
 	"Maximum Rage is Halved": [],
 	"Maximum Recovery per Energy Shield Leech is Doubled": [],
 	"Maximum number of Animated Weapons is Doubled": [],
-	"Maximum number of Animated Weapons is Doubled\\nCannot have Minions other than Animated Weapons": [],
-	"Maximum number of Holy Armaments is Doubled\\nCannot have Minions other than Holy Armaments": [],
-	"Maximum number of Living Lightning is Doubled\\nCannot have Minions other than Living Lightning": [],
+	"Maximum number of Animated Weapons is Doubled\nCannot have Minions other than Animated Weapons": [],
+	"Maximum number of Holy Armaments is Doubled\nCannot have Minions other than Holy Armaments": [],
+	"Maximum number of Living Lightning is Doubled\nCannot have Minions other than Living Lightning": [],
 	"Maximum number of Players in Area is one": [],
 	"Maximum number of Raised Spectres is #": [
 		{
@@ -59949,21 +59949,21 @@
 			"formats": null
 		}
 	],
-	"Maximum number of Raised Spectres is Doubled\\nCannot have Minions other than Raised Spectres": [],
-	"Maximum number of Raised Spiders is Doubled\\nCannot have Minions other than Raised Spiders": [],
-	"Maximum number of Raised Zombies is Doubled\\nCannot have Minions other than Raised Zombies": [],
-	"Maximum number of Sentinels of Absolution is Doubled\\nCannot have Minions other than Sentinels of Absolution": [],
-	"Maximum number of Sentinels of Dominance is Doubled\\nCannot have Minions other than Sentinels of Dominance": [],
-	"Maximum number of Sentinels of Purity is Doubled\\nCannot have Minions other than Sentinels of Purity": [],
-	"Maximum number of Summoned Golems is Doubled\\nCannot have Minions other than Summoned Golems": [],
-	"Maximum number of Summoned Holy Relics is Doubled\\nCannot have Minions other than Summoned Holy Relics": [],
+	"Maximum number of Raised Spectres is Doubled\nCannot have Minions other than Raised Spectres": [],
+	"Maximum number of Raised Spiders is Doubled\nCannot have Minions other than Raised Spiders": [],
+	"Maximum number of Raised Zombies is Doubled\nCannot have Minions other than Raised Zombies": [],
+	"Maximum number of Sentinels of Absolution is Doubled\nCannot have Minions other than Sentinels of Absolution": [],
+	"Maximum number of Sentinels of Dominance is Doubled\nCannot have Minions other than Sentinels of Dominance": [],
+	"Maximum number of Sentinels of Purity is Doubled\nCannot have Minions other than Sentinels of Purity": [],
+	"Maximum number of Summoned Golems is Doubled\nCannot have Minions other than Summoned Golems": [],
+	"Maximum number of Summoned Holy Relics is Doubled\nCannot have Minions other than Summoned Holy Relics": [],
 	"Maximum number of Summoned Phantasms is 3": [],
-	"Maximum number of Summoned Phantasms is Doubled\\nCannot have Minions other than Summoned Phantasms": [],
+	"Maximum number of Summoned Phantasms is Doubled\nCannot have Minions other than Summoned Phantasms": [],
 	"Maximum number of Summoned Raging Spirits is 3": [],
-	"Maximum number of Summoned Raging Spirits is Doubled\\nCannot have Minions other than Summoned Raging Spirits": [],
-	"Maximum number of Summoned Reapers is Doubled\\nCannot have Minions other than Summoned Reapers": [],
-	"Maximum number of Summoned Skeletons is Doubled\\nCannot have Minions other than Summoned Skeletons": [],
-	"Maximum number of Summoned Spectral Wolves is Doubled\\nCannot have Minions other than Summoned Spectral Wolves": [],
+	"Maximum number of Summoned Raging Spirits is Doubled\nCannot have Minions other than Summoned Raging Spirits": [],
+	"Maximum number of Summoned Reapers is Doubled\nCannot have Minions other than Summoned Reapers": [],
+	"Maximum number of Summoned Skeletons is Doubled\nCannot have Minions other than Summoned Skeletons": [],
+	"Maximum number of Summoned Spectral Wolves is Doubled\nCannot have Minions other than Summoned Spectral Wolves": [],
 	"Maximum of # Bladestorms at a time": [
 		{
 			"isScalable": true,
@@ -60010,7 +60010,7 @@
 	],
 	"Melee Hits Fortify": [],
 	"Melee Hits Fortify if 6 Warlord Items are Equipped": [],
-	"Melee Hits count as Rampage Kills\\nRampage": [],
+	"Melee Hits count as Rampage Kills\nRampage": [],
 	"Melee Hits from Strike Skills Fortify": [],
 	"Melee Hits have #% chance to Fortify": [
 		{
@@ -60169,7 +60169,7 @@
 		}
 	],
 	"Minimap is Revealed": [],
-	"Minimum Endurance Charges equal to Maximum while stationary\\nMinimum Frenzy Charges equal to Maximum while stationary\\nMinimum Power Charges equal to Maximum while stationary": [],
+	"Minimum Endurance Charges equal to Maximum while stationary\nMinimum Frenzy Charges equal to Maximum while stationary\nMinimum Power Charges equal to Maximum while stationary": [],
 	"Minion Critical Strikes do not deal extra Damage": [],
 	"Minion Instability": [],
 	"Minion Life is increased by their Overcapped Fire Resistance": [],
@@ -60180,7 +60180,7 @@
 		}
 	],
 	"Minions Blind on Hit with Attacks": [],
-	"Minions Convert #% of their Maximum Life to Maximum Energy\\nShield per 1% Chaos Resistance they have": [
+	"Minions Convert #% of their Maximum Life to Maximum Energy\nShield per 1% Chaos Resistance they have": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -60403,7 +60403,7 @@
 			"formats": null
 		}
 	],
-	"Minions count as having the same number of\\nEndurance, Frenzy and Power Charges as you": [],
+	"Minions count as having the same number of\nEndurance, Frenzy and Power Charges as you": [],
 	"Minions created Recently cannot be Damaged": [],
 	"Minions created Recently have #% increased Attack and Cast Speed": [
 		{
@@ -61267,7 +61267,7 @@
 			"formats": null
 		}
 	],
-	"Minions have #% to Damage over Time Multiplier per\\nGhastly Eye Jewel affecting you, up to a maximum of +30%": [
+	"Minions have #% to Damage over Time Multiplier per\nGhastly Eye Jewel affecting you, up to a maximum of +30%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -61483,7 +61483,7 @@
 		}
 	],
 	"Minions' Accuracy Rating is equal to yours": [],
-	"Minions' Base Attack Critical Strike Chance is equal to the Critical\\nStrike Chance of your Main Hand Weapon": [],
+	"Minions' Base Attack Critical Strike Chance is equal to the Critical\nStrike Chance of your Main Hand Weapon": [],
 	"Minions' Base Attack time is equal to the Attack time of your Main Hand Weapon": [],
 	"Minions' Hits can only Kill Ignited Enemies": [],
 	"Minions' Hits can't be Evaded": [],
@@ -61585,7 +61585,7 @@
 	"Modifiers to Minion Movement Speed also affect you": [],
 	"Modifiers to Spell Damage also apply to Attack Damage": [],
 	"Modifiers to number of Projectiles do not apply to Fireball and Rolling Magma": [],
-	"Modifiers to number of Projectiles instead apply\\nto the number of targets Projectiles Split towards": [],
+	"Modifiers to number of Projectiles instead apply\nto the number of targets Projectiles Split towards": [],
 	"Molten Shell Reflected Damage Penetrates #% of Enemy Fire Resistance": [
 		{
 			"isScalable": true,
@@ -61765,7 +61765,7 @@
 	"Monsters are Revived as Allies on Kill": [],
 	"Monsters are Unaffected by Curses": [],
 	"Monsters are Unaffected by Shock": [],
-	"Monsters can only be Damaged while within # metres of a Player\\nPlayers' modifiers to Light Radius also apply to this range": [
+	"Monsters can only be Damaged while within # metres of a Player\nPlayers' modifiers to Light Radius also apply to this range": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -61839,7 +61839,7 @@
 		}
 	],
 	"Monsters from Abysses have increased Difficulty and Reward for each prior Pit in that Abyss": [],
-	"Monsters from Beyond create Desecrated Ground\\n Beyond Bosses cannot spawn": [],
+	"Monsters from Beyond create Desecrated Ground\n Beyond Bosses cannot spawn": [],
 	"Monsters from Beyond have #% less Quantity and Rarity of Dropped Items": [
 		{
 			"isScalable": true,
@@ -62641,7 +62641,7 @@
 		}
 	],
 	"Monsters' Action Speed cannot be modified to below Base Value": [],
-	"Monsters' Action Speed cannot be modified to below Base Value\\nMonsters' Movement Speed cannot be modified to below Base Value": [],
+	"Monsters' Action Speed cannot be modified to below Base Value\nMonsters' Movement Speed cannot be modified to below Base Value": [],
 	"Monsters' Attack Hits inflict Bleeding": [],
 	"Monsters' Attacks Impale on Hit": [],
 	"Monsters' Attacks have #% chance to Impale on Hit": [
@@ -63033,8 +63033,8 @@
 			"formats": null
 		}
 	],
-	"Nearby Enemy Monsters have no Fire Resistance against\\nDamage over Time while you are Stationary": [],
-	"Nearby Enemy Monsters' Fire Resistance against\\nDamage over Time is #% while you are Stationary": [
+	"Nearby Enemy Monsters have no Fire Resistance against\nDamage over Time while you are Stationary": [],
+	"Nearby Enemy Monsters' Fire Resistance against\nDamage over Time is #% while you are Stationary": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -63237,7 +63237,7 @@
 			"formats": null
 		}
 	],
-	"Non-Spectre Minions' Base Attack time is equal to\\nthe Attack time of your Main Hand Weapon": [],
+	"Non-Spectre Minions' Base Attack time is equal to\nthe Attack time of your Main Hand Weapon": [],
 	"Non-Travel Attack Skills Repeat # additional Times": [
 		{
 			"isScalable": true,
@@ -63268,7 +63268,7 @@
 	],
 	"Non-Unique Heist Contracts found in Area have an additional Implicit Modifier": [],
 	"Non-Unique Jewels cause Increases and Reductions to other Damage Types in a Large Radius to be Transformed to apply to Fire Damage": [],
-	"Non-Unique Jewels cause Small and Notable Passive Skills in a Large Radius to\\nalso grant # to Strength": [
+	"Non-Unique Jewels cause Small and Notable Passive Skills in a Large Radius to\nalso grant # to Strength": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -63319,7 +63319,7 @@
 			]
 		}
 	],
-	"Notable Passive Skills in Radius are Transformed to\\ninstead grant: #% increased Mana Cost of Skills and #% increased Spell Damage": [
+	"Notable Passive Skills in Radius are Transformed to\ninstead grant: #% increased Mana Cost of Skills and #% increased Spell Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -63329,13 +63329,13 @@
 			"formats": null
 		}
 	],
-	"Notable Passive Skills in Radius are Transformed to\\ninstead grant: Minions have #% increased Movement Speed": [
+	"Notable Passive Skills in Radius are Transformed to\ninstead grant: Minions have #% increased Movement Speed": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Notable Passive Skills in Radius are Transformed to\\ninstead grant: Minions have #% reduced Movement Speed": [
+	"Notable Passive Skills in Radius are Transformed to\ninstead grant: Minions have #% reduced Movement Speed": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -63343,13 +63343,13 @@
 			]
 		}
 	],
-	"Notable Passive Skills in Radius are Transformed to\\ninstead grant: Minions take #% increased Damage": [
+	"Notable Passive Skills in Radius are Transformed to\ninstead grant: Minions take #% increased Damage": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Notable Passive Skills in Radius are Transformed to\\ninstead grant: Minions take #% reduced Damage": [
+	"Notable Passive Skills in Radius are Transformed to\ninstead grant: Minions take #% reduced Damage": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -63399,7 +63399,7 @@
 			"formats": null
 		}
 	],
-	"On Killing a Poisoned Enemy, Enemies within 3 metres are Poisoned, and you and\\nAllies Regenerate 400 Life per second for the Poison's duration if within 3 metres": [],
+	"On Killing a Poisoned Enemy, Enemies within 3 metres are Poisoned, and you and\nAllies Regenerate 400 Life per second for the Poison's duration if within 3 metres": [],
 	"On Killing a Poisoned Enemy, nearby Allies Regenerate Life": [],
 	"On Killing a Rare Monster gain 1 of its Modifiers for 20 seconds": [],
 	"On Killing a Rare monster, a random Linked Minion gains its Modifiers for # seconds": [
@@ -63410,7 +63410,7 @@
 			]
 		}
 	],
-	"On non-channelling Attack, set a Life Flask with greater than 50% of maximum Charges remaining to 50%\\nFor each Charge removed this way, that Attack gains #% to Damage over time Multiplier": [
+	"On non-channelling Attack, set a Life Flask with greater than 50% of maximum Charges remaining to 50%\nFor each Charge removed this way, that Attack gains #% to Damage over time Multiplier": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -63441,7 +63441,7 @@
 			"formats": null
 		}
 	],
-	"Only shift into Nightmare on reaching maximum Blood\\nLose Blood from Blood Crucible 90% slower\\nLose 0.4% of Blood on Killing a Scourge Monster\\nLose all Blood when you shift out of Nightmare": [],
+	"Only shift into Nightmare on reaching maximum Blood\nLose Blood from Blood Crucible 90% slower\nLose 0.4% of Blood on Killing a Scourge Monster\nLose all Blood when you shift out of Nightmare": [],
 	"Onslaught": [],
 	"Orb of Storms deals #% increased Damage": [
 		{
@@ -63681,14 +63681,14 @@
 			"formats": null
 		}
 	],
-	"Passive Skills in Radius can be Allocated without being connected to your tree\\n#% to all Elemental Resistances\\nPassage": [
+	"Passive Skills in Radius can be Allocated without being connected to your tree\n#% to all Elemental Resistances\nPassage": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passive Skills in Radius can be Allocated without being connected to your tree\\nPassage": [],
-	"Passive Skills in Radius of # can be Allocated\\nwithout being connected to your tree\\nPassage": [
+	"Passive Skills in Radius can be Allocated without being connected to your tree\nPassage": [],
+	"Passive Skills in Radius of # can be Allocated\nwithout being connected to your tree\nPassage": [
 		{
 			"isScalable": false,
 			"formats": [
@@ -63696,58 +63696,58 @@
 			]
 		}
 	],
-	"Passives granting Cold Resistance or all Elemental Resistances in Radius\\nalso grant Chance to Suppress Spell Damage at #% of its value": [
+	"Passives granting Cold Resistance or all Elemental Resistances in Radius\nalso grant Chance to Suppress Spell Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Cold Resistance or all Elemental Resistances in Radius\\nalso grant Cold Damage Converted to Chaos Damage at #% of its value": [
+	"Passives granting Cold Resistance or all Elemental Resistances in Radius\nalso grant Cold Damage Converted to Chaos Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Cold Resistance or all Elemental Resistances in Radius\\nalso grant an equal chance to gain a Frenzy Charge on Kill": [],
-	"Passives granting Cold Resistance or all Elemental Resistances in Radius\\nalso grant increased Maximum Mana at #% of its value": [
+	"Passives granting Cold Resistance or all Elemental Resistances in Radius\nalso grant an equal chance to gain a Frenzy Charge on Kill": [],
+	"Passives granting Cold Resistance or all Elemental Resistances in Radius\nalso grant increased Maximum Mana at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Fire Resistance or all Elemental Resistances in Radius\\nalso grant Chance to Block Attack Damage at #% of its value": [
+	"Passives granting Fire Resistance or all Elemental Resistances in Radius\nalso grant Chance to Block Attack Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Fire Resistance or all Elemental Resistances in Radius\\nalso grant Fire Damage Converted to Chaos Damage at #% of its value": [
+	"Passives granting Fire Resistance or all Elemental Resistances in Radius\nalso grant Fire Damage Converted to Chaos Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Fire Resistance or all Elemental Resistances in Radius\\nalso grant an equal chance to gain an Endurance Charge on Kill": [],
-	"Passives granting Fire Resistance or all Elemental Resistances in Radius\\nalso grant increased Maximum Life at #% of its value": [
+	"Passives granting Fire Resistance or all Elemental Resistances in Radius\nalso grant an equal chance to gain an Endurance Charge on Kill": [],
+	"Passives granting Fire Resistance or all Elemental Resistances in Radius\nalso grant increased Maximum Life at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\\nalso grant Chance to Block Spell Damage at #% of its value": [
+	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\nalso grant Chance to Block Spell Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\\nalso grant Lightning Damage Converted to Chaos Damage at #% of its value": [
+	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\nalso grant Lightning Damage Converted to Chaos Damage at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\\nalso grant an equal chance to gain a Power Charge on Kill": [],
-	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\\nalso grant increased Maximum Energy Shield at #% of its value": [
+	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\nalso grant an equal chance to gain a Power Charge on Kill": [],
+	"Passives granting Lightning Resistance or all Elemental Resistances in Radius\nalso grant increased Maximum Energy Shield at #% of its value": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -64291,7 +64291,7 @@
 	"Players are Cursed with Temporal Chains": [],
 	"Players are Cursed with Vulnerability": [],
 	"Players are Cursed with a random Hex every 10 seconds": [],
-	"Players are Marked for Death for # second\\nafter killing a Rare or Unique monster": [
+	"Players are Marked for Death for # second\nafter killing a Rare or Unique monster": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -64299,7 +64299,7 @@
 			]
 		}
 	],
-	"Players are Marked for Death for # seconds\\nafter killing a Rare or Unique monster": [
+	"Players are Marked for Death for # seconds\nafter killing a Rare or Unique monster": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -64309,7 +64309,7 @@
 	],
 	"Players are Poisoned while moving": [],
 	"Players are assaulted by Bloodstained Sawblades": [],
-	"Players are assaulted by Ruinous Ghosts\\nReaching seven Ruin prevents Reward from being claimed": [],
+	"Players are assaulted by Ruinous Ghosts\nReaching seven Ruin prevents Reward from being claimed": [],
 	"Players are assaulted by apparitions of Al-Hezmin, the Hunter": [],
 	"Players are assaulted by apparitions of Atziri, Queen of the Vaal": [],
 	"Players are assaulted by apparitions of Baran, the Crusader": [],
@@ -64453,7 +64453,7 @@
 			]
 		}
 	],
-	"Players gain Instability on Kill\\nUnstable Players eventually detonate": [],
+	"Players gain Instability on Kill\nUnstable Players eventually detonate": [],
 	"Players gain Modifiers from Slain Rare Monsters for # seconds": [
 		{
 			"isScalable": true,
@@ -64969,8 +64969,8 @@
 		}
 	],
 	"Players in Area take on the form of Harbingers": [],
-	"Players in Areas are Possessed\\nPlayers in Areas Touch monsters on Hit": [],
-	"Players in Areas take on the form of Harbingers\\nItems found in Areas are replaced by stacks of Currency Shards": [],
+	"Players in Areas are Possessed\nPlayers in Areas Touch monsters on Hit": [],
+	"Players in Areas take on the form of Harbingers\nItems found in Areas are replaced by stacks of Currency Shards": [],
 	"Players in the Labyrinth will be affected by Acceleration Shrine": [],
 	"Players in the Labyrinth will be affected by Brutal Shrine": [],
 	"Players in the Labyrinth will be affected by Burning Shrine": [],
@@ -65149,7 +65149,7 @@
 			"formats": null
 		}
 	],
-	"Poison you inflict with Travel Skills is Reflected to you if you\\nhave fewer than 5 Poisons on you": [],
+	"Poison you inflict with Travel Skills is Reflected to you if you\nhave fewer than 5 Poisons on you": [],
 	"Poisoned Enemies you Kill with Hits Shatter": [],
 	"Poisonous Concoction and Explosive Concoction also consume Charges from 1 Sulphur Flask, if possible": [],
 	"Poisonous Concoction uses #% increased Flask Charges": [
@@ -65314,7 +65314,7 @@
 			"formats": null
 		}
 	],
-	"Prevent #% of Reflected Elemental Damage you would take while\\naffected by Purity of Elements": [
+	"Prevent #% of Reflected Elemental Damage you would take while\naffected by Purity of Elements": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -65330,7 +65330,7 @@
 			]
 		}
 	],
-	"Prevent #% of Reflected Lightning Damage you would take while\\naffected by Purity of Lightning": [
+	"Prevent #% of Reflected Lightning Damage you would take while\naffected by Purity of Lightning": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -65538,6 +65538,12 @@
 			"formats": null
 		}
 	],
+	"Projectiles deal #% increased Damage with Hits and Ailments for\neach remaining Chain, up to a maximum of 100%": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"Projectiles deal #% increased Damage with Hits and Ailments for each Enemy Pierced": [
 		{
 			"isScalable": true,
@@ -65550,19 +65556,13 @@
 			"formats": null
 		}
 	],
-	"Projectiles deal #% increased Damage with Hits and Ailments for\\neach remaining Chain, up to a maximum of 100%": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
 	"Projectiles deal #% increased Damage with Hits and Ailments to targets they Chain from": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Projectiles deal #% increased Damage with Hits to targets at the start\\nof their movement, reducing to 0% as they travel farther": [
+	"Projectiles deal #% increased Damage with Hits to targets at the start\nof their movement, reducing to 0% as they travel farther": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -65576,7 +65576,7 @@
 			]
 		}
 	],
-	"Projectiles deal #% reduced Damage with Hits and Ailments for\\neach remaining Chain": [
+	"Projectiles deal #% reduced Damage with Hits and Ailments for\neach remaining Chain": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -65592,7 +65592,7 @@
 			]
 		}
 	],
-	"Projectiles deal #% reduced Damage with Hits to targets at the start\\nof their movement, increasing to 0% as they travel farther": [
+	"Projectiles deal #% reduced Damage with Hits to targets at the start\nof their movement, increasing to 0% as they travel farther": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -65616,19 +65616,19 @@
 			"formats": null
 		}
 	],
-	"Projectiles from Attacks have #% chance to Maim on Hit while\\nyou have a Bestial Minion": [
+	"Projectiles from Attacks have #% chance to Maim on Hit while\nyou have a Bestial Minion": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Projectiles from Attacks have #% chance to Poison on Hit while\\nyou have a Bestial Minion": [
+	"Projectiles from Attacks have #% chance to Poison on Hit while\nyou have a Bestial Minion": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Projectiles from Attacks have #% chance to inflict Bleeding on Hit while\\nyou have a Bestial Minion": [
+	"Projectiles from Attacks have #% chance to inflict Bleeding on Hit while\nyou have a Bestial Minion": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -65643,13 +65643,13 @@
 			"formats": null
 		}
 	],
-	"Projectiles gain Damage as they travel farther, dealing up\\nto #% increased Damage with Hits to targets": [
+	"Projectiles gain Damage as they travel farther, dealing up\nto #% increased Damage with Hits to targets": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Projectiles gain Damage as they travel farther, dealing up\\nto #% more Damage with Hits and Ailments": [
+	"Projectiles gain Damage as they travel farther, dealing up\nto #% more Damage with Hits and Ailments": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -65697,7 +65697,7 @@
 			"formats": null
 		}
 	],
-	"Projectiles have #% chance to be able to Chain when colliding with terrain per\\nSearching Eye Jewel affecting you, up to a maximum of 20%": [
+	"Projectiles have #% chance to be able to Chain when colliding with terrain per\nSearching Eye Jewel affecting you, up to a maximum of 20%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -66142,7 +66142,7 @@
 			"formats": null
 		}
 	],
-	"Raised Spectres have a Base Duration of # seconds\\nSpectres do not travel between Areas": [
+	"Raised Spectres have a Base Duration of # seconds\nSpectres do not travel between Areas": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -66714,19 +66714,19 @@
 	"Rare and Unique Crucible Monsters drop a Melee Weapon with a Crucible Passive Skill Tree": [],
 	"Rare and Unique Crucible Monsters drop a Ranged Weapon with a Crucible Passive Skill Tree": [],
 	"Rare and Unique Crucible Monsters drop a Shield with a Crucible Passive Skill Tree": [],
-	"Rare and Unique Crucible Monsters have #% chance to drop a Melee Weapon with\\na Crucible Passive Skill Tree": [
+	"Rare and Unique Crucible Monsters have #% chance to drop a Melee Weapon with\na Crucible Passive Skill Tree": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Rare and Unique Crucible Monsters have #% chance to drop a Ranged Weapon with\\na Crucible Passive Skill Tree": [
+	"Rare and Unique Crucible Monsters have #% chance to drop a Ranged Weapon with\na Crucible Passive Skill Tree": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Rare and Unique Crucible Monsters have #% chance to drop a Shield with\\na Crucible Passive Skill Tree": [
+	"Rare and Unique Crucible Monsters have #% chance to drop a Shield with\na Crucible Passive Skill Tree": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -67046,7 +67046,7 @@
 			"formats": null
 		}
 	],
-	"Recover #% of Life per Endurance Charge on use\\nLose all Endurance Charges on use": [
+	"Recover #% of Life per Endurance Charge on use\nLose all Endurance Charges on use": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -67751,7 +67751,7 @@
 			"formats": null
 		}
 	],
-	"Regenerate #% of Energy Shield per Second for\\nevery 10 Intelligence on Allocated Passives in Radius": [
+	"Regenerate #% of Energy Shield per Second for\nevery 10 Intelligence on Allocated Passives in Radius": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -67775,7 +67775,7 @@
 			]
 		}
 	],
-	"Regenerate #% of Energy Shield per second for each\\nEnemy you or your Minions have Killed Recently, up to 10% per second": [
+	"Regenerate #% of Energy Shield per second for each\nEnemy you or your Minions have Killed Recently, up to 10% per second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -68229,7 +68229,7 @@
 			"formats": null
 		}
 	],
-	"Regenerate 1 Rage per second for every # Life Recovery per second from Regeneration\\nDoes not delay Inherent Loss of Rage": [
+	"Regenerate 1 Rage per second for every # Life Recovery per second from Regeneration\nDoes not delay Inherent Loss of Rage": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -68296,19 +68296,19 @@
 			"formats": null
 		}
 	],
-	"Remembrancing # songworthy deeds by the line of Medved\\nPassives in radius are Conquered by the Kalguur": [
+	"Remembrancing # songworthy deeds by the line of Medved\nPassives in radius are Conquered by the Kalguur": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Remembrancing # songworthy deeds by the line of Uhtred\\nPassives in radius are Conquered by the Kalguur": [
+	"Remembrancing # songworthy deeds by the line of Uhtred\nPassives in radius are Conquered by the Kalguur": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Remembrancing # songworthy deeds by the line of Vorana\\nPassives in radius are Conquered by the Kalguur": [
+	"Remembrancing # songworthy deeds by the line of Vorana\nPassives in radius are Conquered by the Kalguur": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -68441,7 +68441,7 @@
 	"Removes all Energy Shield": [],
 	"Removes all Evasion": [],
 	"Removes all Mana": [],
-	"Removes all but one Life on use\\nRemoved life is Regenerated as Energy Shield over # seconds": [
+	"Removes all but one Life on use\nRemoved life is Regenerated as Energy Shield over # seconds": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -68810,6 +68810,7 @@
 			]
 		}
 	],
+	"Righteous Fire\nEnemies in the Righteous Fire have -10% to maximum Fire Resistance": [],
 	"Righteous Fire grants #% increased Spell Damage": [
 		{
 			"isScalable": true,
@@ -68824,7 +68825,6 @@
 			]
 		}
 	],
-	"Righteous Fire\\nEnemies in the Righteous Fire have -10% to maximum Fire Resistance": [],
 	"Rightmost # Magic Utility Flask constantly applies its Flask Effect to you": [
 		{
 			"isScalable": true,
@@ -69493,7 +69493,7 @@
 			]
 		}
 	],
-	"Shocked Enemies you Kill Explode, dealing #% of\\ntheir Life as Lightning Damage which cannot Shock": [
+	"Shocked Enemies you Kill Explode, dealing #% of\ntheir Life as Lightning Damage which cannot Shock": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -69840,13 +69840,13 @@
 	],
 	"Skills Cost Life instead of Mana": [],
 	"Skills Cost no Mana during Effect": [],
-	"Skills Fire # additional Projectile for 4 seconds after\\nyou consume a total of 8 Steel Shards": [
+	"Skills Fire # additional Projectile for 4 seconds after\nyou consume a total of 8 Steel Shards": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Skills Fire # additional Projectiles for 4 seconds after\\nyou consume a total of 8 Steel Shards": [
+	"Skills Fire # additional Projectiles for 4 seconds after\nyou consume a total of 8 Steel Shards": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -70296,7 +70296,7 @@
 		}
 	],
 	"Slain Enemies have +1 second to their Time to Revive": [],
-	"Slay the Map Boss to successfully complete Maps within this Shaped Region\\nMap Bosses have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Slay the Map Boss to successfully complete Maps within this Shaped Region\nMap Bosses have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Slaying Enemies close together can attract monsters from Beyond this realm": [],
 	"Slaying Enemies has a #% increased chance to spawn a Beyond Portal": [
 		{
@@ -72222,7 +72222,7 @@
 	"Socketed Gems have Elemental Equilibrium": [],
 	"Socketed Gems have Iron Will": [],
 	"Socketed Gems have Secrets of Suffering": [],
-	"Socketed Gems have no Reservation\\nYour Blessing Skills are Disabled": [],
+	"Socketed Gems have no Reservation\nYour Blessing Skills are Disabled": [],
 	"Socketed Golem Skills gain #% of Maximum Life as Extra Maximum Energy Shield": [
 		{
 			"isScalable": false,
@@ -72270,7 +72270,7 @@
 		}
 	],
 	"Socketed Movement Skills Cost no Mana": [],
-	"Socketed Non-Channelling Bow Skills are Triggered by Snipe\\nSocketed Triggered Bow Skills gain a 0.05 second Cooldown": [],
+	"Socketed Non-Channelling Bow Skills are Triggered by Snipe\nSocketed Triggered Bow Skills gain a 0.05 second Cooldown": [],
 	"Socketed Non-Curse Aura Gems have #% increased Aura Effect": [
 		{
 			"isScalable": false,
@@ -72327,7 +72327,7 @@
 			"formats": null
 		}
 	],
-	"Socketed Rare Abyssal Jewels will be Consumed\\nOne modifier from Consumed Jewels will be retained": [],
+	"Socketed Rare Abyssal Jewels will be Consumed\nOne modifier from Consumed Jewels will be retained": [],
 	"Socketed Red Gems get #% Physical Damage as Extra Fire Damage": [
 		{
 			"isScalable": false,
@@ -72759,7 +72759,7 @@
 			]
 		}
 	],
-	"Spells cause you to gain Energy Shield equal to their Upfront\\nCost every third time you Pay it": [],
+	"Spells cause you to gain Energy Shield equal to their Upfront\nCost every third time you Pay it": [],
 	"Spells cause you to gain Mana equal to their Upfront Cost every fifth time you Pay it": [],
 	"Spells deal added Chaos Damage equal to #% of your maximum Life": [
 		{
@@ -72794,7 +72794,7 @@
 			]
 		}
 	],
-	"Spells have Added Spell Damage equal to #% of Physical Damage of\\nyour Equipped Two handed Weapon": [
+	"Spells have Added Spell Damage equal to #% of Physical Damage of\nyour Equipped Two handed Weapon": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -72969,7 +72969,7 @@
 	"Spread when affected Enemy is Hit": [],
 	"Spreads Tar when you Block": [],
 	"Spreads Tar when you take a Critical Strike": [],
-	"Stabilise and close all Unstable Breaches to successfully\\ncomplete Maps within this Shaped Region\\nBreach Monsters have increased Difficulty and Reward for each\\ncompleted Map within the Shaped Region": [],
+	"Stabilise and close all Unstable Breaches to successfully\ncomplete Maps within this Shaped Region\nBreach Monsters have increased Difficulty and Reward for each\ncompleted Map within the Shaped Region": [],
 	"Staff Attacks deal #% increased Damage with Ailments": [
 		{
 			"isScalable": true,
@@ -73213,7 +73213,7 @@
 	"Strength from Passives in Radius is Transformed to Dexterity": [],
 	"Strength from Passives in Radius is Transformed to Intelligence": [],
 	"Strength provides no bonus to Maximum Life": [],
-	"Strength's Damage Bonus instead grants 3% increased Melee\\nPhysical Damage per 10 Strength": [],
+	"Strength's Damage Bonus instead grants 3% increased Melee\nPhysical Damage per 10 Strength": [],
 	"Strength's Damage bonus also applies to Reeling Speed at 20% of its value": [],
 	"Strike Skills also target the previous location they were used": [],
 	"Strike Skills which target additional Enemies can do so from #% further away": [
@@ -73311,25 +73311,25 @@
 			"formats": null
 		}
 	],
-	"Subjugating # souls in the thrall of Amanamu\\nPassives affected are Conquered by the Abyssal": [
+	"Subjugating # souls in the thrall of Amanamu\nPassives affected are Conquered by the Abyssal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Subjugating # souls in the thrall of Kurgal\\nPassives affected are Conquered by the Abyssal": [
+	"Subjugating # souls in the thrall of Kurgal\nPassives affected are Conquered by the Abyssal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Subjugating # souls in the thrall of Tecrod\\nPassives affected are Conquered by the Abyssal": [
+	"Subjugating # souls in the thrall of Tecrod\nPassives affected are Conquered by the Abyssal": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Subjugating # souls in the thrall of Ulaman\\nPassives affected are Conquered by the Abyssal": [
+	"Subjugating # souls in the thrall of Ulaman\nPassives affected are Conquered by the Abyssal": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -73735,7 +73735,7 @@
 		}
 	],
 	"Summoned Raging Spirits' Hits always Ignite": [],
-	"Summoned Raging Spirits' Melee Strikes deal Fire-only Splash\\nDamage to Surrounding Targets": [],
+	"Summoned Raging Spirits' Melee Strikes deal Fire-only Splash\nDamage to Surrounding Targets": [],
 	"Summoned Reaper deals #% increased Damage": [
 		{
 			"isScalable": true,
@@ -73813,9 +73813,9 @@
 		}
 	],
 	"Summoned Sentinels use Crusade Slam": [],
-	"Summoned Skeleton Warriors and Soldiers deal Triple Damage with this\\nWeapon if you've Hit with this Weapon Recently": [],
+	"Summoned Skeleton Warriors and Soldiers deal Triple Damage with this\nWeapon if you've Hit with this Weapon Recently": [],
 	"Summoned Skeleton Warriors and Soldiers wield this Weapon while in your Main Hand": [],
-	"Summoned Skeleton Warriors are Permanent and Follow you\\nSummon Skeletons cannot Summon more than 1 Skeleton Warrior": [],
+	"Summoned Skeleton Warriors are Permanent and Follow you\nSummon Skeletons cannot Summon more than 1 Skeleton Warrior": [],
 	"Summoned Skeletons Cover Enemies in Ash on Hit": [],
 	"Summoned Skeletons and Holy Relics convert #% of their Physical Damage to a random Element": [
 		{
@@ -74530,7 +74530,7 @@
 			]
 		}
 	],
-	"Take Physical Damage equal to #% of Life plus #% of Energy Shield per Second per\\n1% Blood in the Blood Crucible while you are able to Shift into Nightmare": [
+	"Take Physical Damage equal to #% of Life plus #% of Energy Shield per Second per\n1% Blood in the Blood Crucible while you are able to Shift into Nightmare": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -74823,7 +74823,7 @@
 			]
 		}
 	],
-	"This Jewel's Socket has #% increased effect per Allocated Passive Skill between\\nit and your Class' starting location": [
+	"This Jewel's Socket has #% increased effect per Allocated Passive Skill between\nit and your Class' starting location": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -74991,7 +74991,7 @@
 			]
 		}
 	],
-	"Tormented Spirits can Possess Players for 20 seconds\\nTormented Spirits cannot Possess Monsters": [],
+	"Tormented Spirits can Possess Players for 20 seconds\nTormented Spirits cannot Possess Monsters": [],
 	"Tormented Spirits drop # additional Rare Items": [
 		{
 			"isScalable": true,
@@ -75028,7 +75028,7 @@
 			]
 		}
 	],
-	"Tormented Spirits in your Maps can Possess Players for 20 seconds\\nTormented Spirits in your Maps cannot Possess Monsters": [],
+	"Tormented Spirits in your Maps can Possess Players for 20 seconds\nTormented Spirits in your Maps cannot Possess Monsters": [],
 	"Tornado Shot fires # additional secondary Projectiles": [
 		{
 			"isScalable": true,
@@ -75429,7 +75429,7 @@
 	"Trigger Edict of the Grave when your Skills or Minions Kill": [],
 	"Trigger Edict of the Tempest on Hit": [],
 	"Trigger Ghost Furnace when you Ignite an Enemy": [],
-	"Trigger Level # Assassin's Mark on Attack Critical Strike against\\na Rare or Unique Enemy and you have no Mark": [
+	"Trigger Level # Assassin's Mark on Attack Critical Strike against\na Rare or Unique Enemy and you have no Mark": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75447,7 +75447,7 @@
 			"formats": null
 		}
 	],
-	"Trigger Level # Bone Offering, Flesh Offering, Spirit Offering every 5 seconds in sequence\\nOffering Skills Triggered this way also affect you": [
+	"Trigger Level # Bone Offering, Flesh Offering, Spirit Offering every 5 seconds in sequence\nOffering Skills Triggered this way also affect you": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75645,7 +75645,7 @@
 			"formats": null
 		}
 	],
-	"Trigger Level # Tawhoa's Chosen when you Attack with\\na Non-Vaal Slam or Strike Skill near an Enemy": [
+	"Trigger Level # Tawhoa's Chosen when you Attack with\na Non-Vaal Slam or Strike Skill near an Enemy": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75722,16 +75722,16 @@
 	"Trigger Level 25 Summon Spectral Wolf on Critical Strike with this Weapon": [],
 	"Trigger Level 30 Shade Form when Hit": [],
 	"Trigger Socketed Curse Spell when you Cast a Curse Spell, with a 0.25 second Cooldown": [],
-	"Trigger Socketed Minion Spells on Kill with this Weapon\\nMinion Spells Triggered by this Item have a 0.25 second Cooldown with 5 Uses": [],
+	"Trigger Socketed Minion Spells on Kill with this Weapon\nMinion Spells Triggered by this Item have a 0.25 second Cooldown with 5 Uses": [],
 	"Trigger Socketed Spell on Kill, with a 0.5 second Cooldown": [],
 	"Trigger Socketed Spells when you Focus, with a 0.25 second Cooldown": [],
-	"Trigger Socketed Spells when you Spend at least # Life on an\\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
+	"Trigger Socketed Spells when you Spend at least # Life on an\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Trigger Socketed Spells when you Spend at least # Mana on an\\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
+	"Trigger Socketed Spells when you Spend at least # Mana on an\nUpfront Cost to Use or Trigger a Skill, with a 0.1 second Cooldown": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -75753,7 +75753,7 @@
 	"Trigger Word of the Grave when your Skills or Minions Kill": [],
 	"Trigger Word of the Tempest on Hit": [],
 	"Trigger a Socketed Bow Skill when you Attack with a Bow, with a 1 second Cooldown": [],
-	"Trigger a Socketed Bow Skill when you Cast a Spell while\\nwielding a Bow, with a 1 second Cooldown": [],
+	"Trigger a Socketed Bow Skill when you Cast a Spell while\nwielding a Bow, with a 1 second Cooldown": [],
 	"Trigger a Socketed Cold Spell on Melee Critical Strike, with a 0.25 second Cooldown": [],
 	"Trigger a Socketed Elemental Spell on Block, with a # second Cooldown": [
 		{
@@ -75771,7 +75771,7 @@
 			]
 		}
 	],
-	"Trigger a Socketed Lightning Spell on Hit, with a 0.25 second Cooldown\\nSocketed Lightning Spells have no Cost if Triggered": [],
+	"Trigger a Socketed Lightning Spell on Hit, with a 0.25 second Cooldown\nSocketed Lightning Spells have no Cost if Triggered": [],
 	"Trigger a Socketed Spell every second while Channelling Blade Flurry or Charged Dash": [],
 	"Trigger a Socketed Spell on Unarmed Melee Critical Strike, with a # second Cooldown": [
 		{
@@ -75781,7 +75781,7 @@
 			]
 		}
 	],
-	"Trigger a Socketed Spell on Using a Skill, with a # second Cooldown\\nSpells Triggered this way have 150% more Cost": [
+	"Trigger a Socketed Spell on Using a Skill, with a # second Cooldown\nSpells Triggered this way have 150% more Cost": [
 		{
 			"isScalable": false,
 			"formats": [
@@ -75789,11 +75789,11 @@
 			]
 		}
 	],
-	"Trigger a Socketed Spell when a Hit from this\\nWeapon Freezes a Target, with a 0.25 second Cooldown": [],
+	"Trigger a Socketed Spell when a Hit from this\nWeapon Freezes a Target, with a 0.25 second Cooldown": [],
 	"Trigger a Socketed Spell when you Attack with a Bow, with a 0.3 second Cooldown": [],
 	"Trigger a Socketed Spell when you Attack with this Weapon, with a 0.25 second Cooldown": [],
 	"Trigger a Socketed Spell when you Block, with a 0.25 second Cooldown": [],
-	"Trigger a Socketed Spell when you Use a Skill, with a 8 second Cooldown\\nSpells Triggered this way have 150% more Cost": [],
+	"Trigger a Socketed Spell when you Use a Skill, with a 8 second Cooldown\nSpells Triggered this way have 150% more Cost": [],
 	"Trigger a Socketed Warcry Skill on losing Endurance Charges, with a 0.25 second Cooldown": [],
 	"Trigger level # Ceaseless Flesh once every second": [
 		{
@@ -75807,31 +75807,31 @@
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Ahuana Skill when you Suppress\\nSpell Damage from a Unique Enemy": [
+	"Trigger level # Summon Spirit of Ahuana Skill when you Suppress\nSpell Damage from a Unique Enemy": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Akoya Skill when you reach Maximum Rage while\\na Unique Enemy is in your Presence": [
+	"Trigger level # Summon Spirit of Akoya Skill when you reach Maximum Rage while\na Unique Enemy is in your Presence": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Ikiaho Skill when you use a Travel\\nSkill while a Unique Enemy is in your Presence": [
+	"Trigger level # Summon Spirit of Ikiaho Skill when you use a Travel\nSkill while a Unique Enemy is in your Presence": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Kahuturoa Skill when you take\\na Critical Strike from a Unique Enemy": [
+	"Trigger level # Summon Spirit of Kahuturoa Skill when you take\na Critical Strike from a Unique Enemy": [
 		{
 			"isScalable": false,
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Kaom Skill when a Totem dies while\\na Unique Enemy is in your Presence": [
+	"Trigger level # Summon Spirit of Kaom Skill when a Totem dies while\na Unique Enemy is in your Presence": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75843,7 +75843,7 @@
 			"formats": null
 		}
 	],
-	"Trigger level # Summon Spirit of Maata Skill when you reach Low Life while\\na Unique Enemy is in your Presence": [
+	"Trigger level # Summon Spirit of Maata Skill when you reach Low Life while\na Unique Enemy is in your Presence": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75950,7 +75950,7 @@
 			"formats": null
 		}
 	],
-	"Triggers Level # Primal Aegis when Allocated\\nPrimal Aegis can take 75 Elemental Damage per Allocated Notable Passive Skill": [
+	"Triggers Level # Primal Aegis when Allocated\nPrimal Aegis can take 75 Elemental Damage per Allocated Notable Passive Skill": [
 		{
 			"isScalable": false,
 			"formats": null
@@ -75980,7 +75980,7 @@
 			"formats": null
 		}
 	],
-	"Triggers Level 20 Spectral Spirits when Equipped\\n# to maximum number of Spectral Spirits": [
+	"Triggers Level 20 Spectral Spirits when Equipped\n# to maximum number of Spectral Spirits": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -76010,31 +76010,31 @@
 		}
 	],
 	"Ultimatum Encounters in Area grant rewards as though you completed an additional Round": [],
-	"Ultimatum Encounters in your Maps have #% increased chance to\\nonly require you to Survive": [
+	"Ultimatum Encounters in your Maps have #% increased chance to\nonly require you to Survive": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% increased chance to\\nrequire you to Stand in the Stone Circles": [
+	"Ultimatum Encounters in your Maps have #% increased chance to\nrequire you to Stand in the Stone Circles": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% increased chance to\\nrequire you to defeat waves of Enemies": [
+	"Ultimatum Encounters in your Maps have #% increased chance to\nrequire you to defeat waves of Enemies": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% increased chance to\\nrequire you to protect the Altar": [
+	"Ultimatum Encounters in your Maps have #% increased chance to\nrequire you to protect the Altar": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% reduced chance to\\nonly require you to Survive": [
+	"Ultimatum Encounters in your Maps have #% reduced chance to\nonly require you to Survive": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76042,7 +76042,7 @@
 			]
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% reduced chance to\\nrequire you to Stand in the Stone Circles": [
+	"Ultimatum Encounters in your Maps have #% reduced chance to\nrequire you to Stand in the Stone Circles": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76050,7 +76050,7 @@
 			]
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% reduced chance to\\nrequire you to defeat waves of Enemies": [
+	"Ultimatum Encounters in your Maps have #% reduced chance to\nrequire you to defeat waves of Enemies": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76058,7 +76058,7 @@
 			]
 		}
 	],
-	"Ultimatum Encounters in your Maps have #% reduced chance to\\nrequire you to protect the Altar": [
+	"Ultimatum Encounters in your Maps have #% reduced chance to\nrequire you to protect the Altar": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76067,13 +76067,13 @@
 		}
 	],
 	"Ultimatum Encounters in your Maps last up to 13 Rounds": [],
-	"Ultimatum Encounters in your Maps only requiring you to Survive\\nhave #% increased duration": [
+	"Ultimatum Encounters in your Maps only requiring you to Survive\nhave #% increased duration": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps only requiring you to Survive\\nhave #% reduced duration": [
+	"Ultimatum Encounters in your Maps only requiring you to Survive\nhave #% reduced duration": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76081,13 +76081,13 @@
 			]
 		}
 	],
-	"Ultimatum Encounters in your Maps requiring you to Defeat waves of Enemies\\nrequire killing #% increased number of Enemies": [
+	"Ultimatum Encounters in your Maps requiring you to Defeat waves of Enemies\nrequire killing #% increased number of Enemies": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Ultimatum Encounters in your Maps requiring you to Defeat waves of Enemies\\nrequire killing #% reduced number of Enemies": [
+	"Ultimatum Encounters in your Maps requiring you to Defeat waves of Enemies\nrequire killing #% reduced number of Enemies": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -76445,7 +76445,7 @@
 	"Unaffected by Temporal Chains": [],
 	"Unaffected by Temporal Chains while affected by Haste": [],
 	"Unaffected by Vulnerability while affected by Determination": [],
-	"Unattached Brands gain #% increased Brand Attachment Range per\\nsecond, up to a maximum of 100%": [
+	"Unattached Brands gain #% increased Brand Attachment Range per\nsecond, up to a maximum of 100%": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -76701,7 +76701,7 @@
 	"Unique Crucible Monsters drop a Unique Melee Weapon": [],
 	"Unique Crucible Monsters drop a Unique Ranged Weapon": [],
 	"Unique Crucible Monsters drop a Unique Shield": [],
-	"Unique Crucible Monsters have #% chance to drop a Unique Item with\\na Crucible Passive Skill Tree": [
+	"Unique Crucible Monsters have #% chance to drop a Unique Item with\na Crucible Passive Skill Tree": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -76732,7 +76732,7 @@
 		}
 	],
 	"Unique Monsters drop Corrupted Items": [],
-	"Unique Monsters from Beyond have a #% chance to Summon\\nanother Unique Monster from Beyond when Slain": [
+	"Unique Monsters from Beyond have a #% chance to Summon\nanother Unique Monster from Beyond when Slain": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -76784,13 +76784,13 @@
 			"formats": null
 		}
 	],
-	"Unstable Breaches are #% faster for each Unstable Breach already opened\\nMonsters from Unstable Breaches have increased Difficulty and Reward for each Breach already opened": [
+	"Unstable Breaches are #% faster for each Unstable Breach already opened\nMonsters from Unstable Breaches have increased Difficulty and Reward for each Breach already opened": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Unstable Breaches are #% slower for each Unstable Breach already opened\\nMonsters from Unstable Breaches have increased Difficulty and Reward for each Breach already opened": [
+	"Unstable Breaches are #% slower for each Unstable Breach already opened\nMonsters from Unstable Breaches have increased Difficulty and Reward for each Breach already opened": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77467,13 +77467,13 @@
 	],
 	"Warcries Exert twice as many Attacks": [],
 	"Warcries Knock Back and Interrupt Enemies in a smaller Area": [],
-	"Warcries Sacrifice 10 Rage if you have at least 25 Rage\\nExerted Attacks deal #% less Attack Damage if a Warcry Sacrificed Rage Recently": [
+	"Warcries Sacrifice 10 Rage if you have at least 25 Rage\nExerted Attacks deal #% less Attack Damage if a Warcry Sacrificed Rage Recently": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"Warcries Sacrifice 10 Rage if you have at least 25 Rage\\nExerted Attacks deal #% more Attack Damage if a Warcry Sacrificed Rage Recently": [
+	"Warcries Sacrifice 10 Rage if you have at least 25 Rage\nExerted Attacks deal #% more Attack Damage if a Warcry Sacrificed Rage Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77619,7 +77619,7 @@
 			"formats": null
 		}
 	],
-	"When Hit, Players gain a random Movement Speed\\nmodifier from #% less to #% more, until Hit again": [
+	"When Hit, Players gain a random Movement Speed\nmodifier from #% less to #% more, until Hit again": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77672,13 +77672,13 @@
 	],
 	"When an Enemy Hit deals Elemental Damage to you, their Resistance to those Elements becomes zero for 4 seconds": [],
 	"When used in the Synthesiser, the new item will have an additional Herald Modifier": [],
-	"When you Attack, take #% of Life as Physical Damage for\\neach Warcry Exerting the Attack": [
+	"When you Attack, take #% of Life as Physical Damage for\neach Warcry Exerting the Attack": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"When you Cast a Spell, Sacrifice all Mana to gain Added Maximum Lightning Damage\\nequal to #% of Sacrificed Mana for 4 seconds": [
+	"When you Cast a Spell, Sacrifice all Mana to gain Added Maximum Lightning Damage\nequal to #% of Sacrificed Mana for 4 seconds": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77699,8 +77699,8 @@
 	],
 	"When you Kill a Rare monster, you gain its Modifiers for 60 seconds": [],
 	"When you Kill a Shocked Enemy, inflict an equivalent Shock on each nearby Enemy": [],
-	"When you Kill an Enemy Cursed with a Non-Aura Hex, become Immune to\\nCurses for remaining Hex Duration": [],
-	"When you Kill an Enemy, for each Curse on that Enemy, gain #%\\nof Non-Chaos Damage as extra Chaos Damage for 4 seconds": [
+	"When you Kill an Enemy Cursed with a Non-Aura Hex, become Immune to\nCurses for remaining Hex Duration": [],
+	"When you Kill an Enemy, for each Curse on that Enemy, gain #%\nof Non-Chaos Damage as extra Chaos Damage for 4 seconds": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77717,7 +77717,7 @@
 		}
 	],
 	"When you lose Temporal Chains you gain maximum Rage": [],
-	"When you or your Totems Kill a Burning Enemy, #% chance for you\\nand your Totems to each gain an Endurance Charge": [
+	"When you or your Totems Kill a Burning Enemy, #% chance for you\nand your Totems to each gain an Endurance Charge": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77810,7 +77810,7 @@
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to a class' starting location, you gain:\\nMarauder: #% of Life Regenerated per second\\nDuelist: # metres to Melee Strike Range\\nRanger: #% increased Flask Charges gained\\nShadow: #% increased Attack and Cast Speed\\nWitch: #% increased Skill Effect Duration\\nTemplar: #% Chance to Block Attack and Spell Damage\\nScion: #% increased Damage": [
+	"While your Passive Skill Tree connects to a class' starting location, you gain:\nMarauder: #% of Life Regenerated per second\nDuelist: # metres to Melee Strike Range\nRanger: #% increased Flask Charges gained\nShadow: #% increased Attack and Cast Speed\nWitch: #% increased Skill Effect Duration\nTemplar: #% Chance to Block Attack and Spell Damage\nScion: #% increased Damage": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77844,7 +77844,7 @@
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to a class' starting location, you gain:\\nMarauder: Melee Skills have #% increased Area of Effect\\nDuelist: #% of Attack Damage Leeched as Life\\nRanger: #% increased Movement Speed\\nShadow: #% to Critical Strike Chance\\nWitch: #% of Mana Regenerated per second\\nTemplar: Damage Penetrates #% Elemental Resistances\\nScion: # to All Attributes": [
+	"While your Passive Skill Tree connects to a class' starting location, you gain:\nMarauder: Melee Skills have #% increased Area of Effect\nDuelist: #% of Attack Damage Leeched as Life\nRanger: #% increased Movement Speed\nShadow: #% to Critical Strike Chance\nWitch: #% of Mana Regenerated per second\nTemplar: Damage Penetrates #% Elemental Resistances\nScion: # to All Attributes": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -77880,7 +77880,7 @@
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Duelist's starting location, you gain:\\n# metres to Melee Strike Range": [
+	"While your Passive Skill Tree connects to the Duelist's starting location, you gain:\n# metres to Melee Strike Range": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77888,7 +77888,7 @@
 			]
 		}
 	],
-	"While your Passive Skill Tree connects to the Duelist's starting location, you gain:\\n#% of Attack Damage Leeched as Life": [
+	"While your Passive Skill Tree connects to the Duelist's starting location, you gain:\n#% of Attack Damage Leeched as Life": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77896,7 +77896,7 @@
 			]
 		}
 	],
-	"While your Passive Skill Tree connects to the Marauder's starting location, you gain:\\n#% of Life Regenerated per second": [
+	"While your Passive Skill Tree connects to the Marauder's starting location, you gain:\n#% of Life Regenerated per second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77904,43 +77904,43 @@
 			]
 		}
 	],
-	"While your Passive Skill Tree connects to the Marauder's starting location, you gain:\\nMelee Skills have #% increased Area of Effect": [
+	"While your Passive Skill Tree connects to the Marauder's starting location, you gain:\nMelee Skills have #% increased Area of Effect": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Ranger's starting location, you gain:\\n#% increased Flask Charges gained": [
+	"While your Passive Skill Tree connects to the Ranger's starting location, you gain:\n#% increased Flask Charges gained": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Ranger's starting location, you gain:\\n#% increased Movement Speed": [
+	"While your Passive Skill Tree connects to the Ranger's starting location, you gain:\n#% increased Movement Speed": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Scion's starting location, you gain:\\n# to All Attributes": [
+	"While your Passive Skill Tree connects to the Scion's starting location, you gain:\n# to All Attributes": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Scion's starting location, you gain:\\n#% increased Damage": [
+	"While your Passive Skill Tree connects to the Scion's starting location, you gain:\n#% increased Damage": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Shadow's starting location, you gain:\\n#% increased Attack and Cast Speed": [
+	"While your Passive Skill Tree connects to the Shadow's starting location, you gain:\n#% increased Attack and Cast Speed": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Shadow's starting location, you gain:\\n#% to Critical Strike Chance": [
+	"While your Passive Skill Tree connects to the Shadow's starting location, you gain:\n#% to Critical Strike Chance": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -77948,25 +77948,25 @@
 			]
 		}
 	],
-	"While your Passive Skill Tree connects to the Templar's starting location, you gain:\\n#% Chance to Block Attack and Spell Damage": [
+	"While your Passive Skill Tree connects to the Templar's starting location, you gain:\n#% Chance to Block Attack and Spell Damage": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Templar's starting location, you gain:\\nDamage Penetrates #% Elemental Resistances": [
+	"While your Passive Skill Tree connects to the Templar's starting location, you gain:\nDamage Penetrates #% Elemental Resistances": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Witch's starting location, you gain:\\n#% increased Skill Effect Duration": [
+	"While your Passive Skill Tree connects to the Witch's starting location, you gain:\n#% increased Skill Effect Duration": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"While your Passive Skill Tree connects to the Witch's starting location, you gain:\\n#% of Mana Regenerated per second": [
+	"While your Passive Skill Tree connects to the Witch's starting location, you gain:\n#% of Mana Regenerated per second": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -78084,7 +78084,7 @@
 			"formats": null
 		}
 	],
-	"With 40 Intelligence in Radius, #% of Glacial Cascade Physical Damage\\nConverted to Cold Damage": [
+	"With 40 Intelligence in Radius, #% of Glacial Cascade Physical Damage\nConverted to Cold Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78138,7 +78138,7 @@
 			"formats": null
 		}
 	],
-	"With a Ghastly Eye Jewel Socketed, Minions have #% chance to\\ngain Unholy Might on Hit with Spells": [
+	"With a Ghastly Eye Jewel Socketed, Minions have #% chance to\ngain Unholy Might on Hit with Spells": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78241,23 +78241,23 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike Hits Intimidate Enemies for\\n4 seconds while wielding an Axe": [],
+	"With at least 40 Dexterity in Radius, Dual Strike Hits Intimidate Enemies for\n4 seconds while wielding an Axe": [],
 	"With at least 40 Dexterity in Radius, Dual Strike deals Double Damage with the Main-Hand Weapon": [],
-	"With at least 40 Dexterity in Radius, Dual Strike deals Off Hand Splash Damage\\nto surrounding targets": [],
-	"With at least 40 Dexterity in Radius, Dual Strike deals Splash Damage\\nto surrounding targets while wielding a Mace": [],
-	"With at least 40 Dexterity in Radius, Dual Strike has #% increased Attack\\nSpeed while wielding a Claw": [
+	"With at least 40 Dexterity in Radius, Dual Strike deals Off Hand Splash Damage\nto surrounding targets": [],
+	"With at least 40 Dexterity in Radius, Dual Strike deals Splash Damage\nto surrounding targets while wielding a Mace": [],
+	"With at least 40 Dexterity in Radius, Dual Strike has #% increased\nAccuracy Rating while wielding a Sword": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike has #% increased\\nAccuracy Rating while wielding a Sword": [
+	"With at least 40 Dexterity in Radius, Dual Strike has #% increased Attack\nSpeed while wielding a Claw": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike has #% reduced Attack\\nSpeed while wielding a Claw": [
+	"With at least 40 Dexterity in Radius, Dual Strike has #% reduced\nAccuracy Rating while wielding a Sword": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -78265,7 +78265,7 @@
 			]
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike has #% reduced\\nAccuracy Rating while wielding a Sword": [
+	"With at least 40 Dexterity in Radius, Dual Strike has #% reduced Attack\nSpeed while wielding a Claw": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -78273,13 +78273,13 @@
 			]
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike has #% to Critical Strike\\nMultiplier while wielding a Dagger": [
+	"With at least 40 Dexterity in Radius, Dual Strike has #% to Critical Strike\nMultiplier while wielding a Dagger": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Dexterity in Radius, Dual Strike has a #% chance\\nto deal Double Damage with the Main-Hand Weapon": [
+	"With at least 40 Dexterity in Radius, Dual Strike has a #% chance\nto deal Double Damage with the Main-Hand Weapon": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78347,7 +78347,7 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Dexterity in Radius, Melee Damage\\ndealt by Frost Blades Penetrates #% Cold Resistance": [
+	"With at least 40 Dexterity in Radius, Melee Damage\ndealt by Frost Blades Penetrates #% Cold Resistance": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78384,7 +78384,7 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Intelligence in Radius, #% increased Freezing Pulse Damage if\\nyou've Shattered an Enemy Recently": [
+	"With at least 40 Intelligence in Radius, #% increased Freezing Pulse Damage if\nyou've Shattered an Enemy Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78396,7 +78396,7 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Intelligence in Radius, #% reduced Freezing Pulse Damage if\\nyou've Shattered an Enemy Recently": [
+	"With at least 40 Intelligence in Radius, #% reduced Freezing Pulse Damage if\nyou've Shattered an Enemy Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -78440,13 +78440,13 @@
 		}
 	],
 	"With at least 40 Intelligence in Radius, Blight inflicts Withered for 2 seconds": [],
-	"With at least 40 Intelligence in Radius, Cold Snap grants Power Charges instead of Frenzy Charges when Enemies die in its Area\\nWith at least 40 Intelligence in Radius, Cold Snap's Cooldown can be bypassed by Power Charges instead of Frenzy Charges": [],
-	"With at least 40 Intelligence in Radius, Cold Snap\\nhas a #% chance to grant a Power Charge on Killing Blow": [
+	"With at least 40 Intelligence in Radius, Cold Snap\nhas a #% chance to grant a Power Charge on Killing Blow": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
+	"With at least 40 Intelligence in Radius, Cold Snap grants Power Charges instead of Frenzy Charges when Enemies die in its Area\nWith at least 40 Intelligence in Radius, Cold Snap's Cooldown can be bypassed by Power Charges instead of Frenzy Charges": [],
 	"With at least 40 Intelligence in Radius, Discharge Cooldown is # ms": [
 		{
 			"isScalable": true,
@@ -78481,7 +78481,7 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Intelligence in Radius, Enemies Hindered by\\nBlight take #% increased Chaos Damage": [
+	"With at least 40 Intelligence in Radius, Enemies Hindered by\nBlight take #% increased Chaos Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78552,22 +78552,36 @@
 			]
 		}
 	],
+	"With at least 40 Intelligence in Radius, Raised\nZombies' Slam Attack has #% increased Cooldown Recovery Rate": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
 	"With at least 40 Intelligence in Radius, Raised Spectres have a #% chance to gain Soul Eater for 20 seconds on Kill": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Intelligence in Radius, Raised Zombies' Slam\\nAttack deals #% increased Damage": [
+	"With at least 40 Intelligence in Radius, Raised Zombies' Slam\nAttack deals #% increased Damage": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Intelligence in Radius, Raised\\nZombies' Slam Attack has #% increased Cooldown Recovery Rate": [
+	"With at least 40 Intelligence in Radius, Rolling Magma\nhas #% increased Area of Effect per Chain": [
 		{
 			"isScalable": true,
 			"formats": null
+		}
+	],
+	"With at least 40 Intelligence in Radius, Rolling Magma\nhas #% reduced Area of Effect per Chain": [
+		{
+			"isScalable": true,
+			"formats": [
+				"negate"
+			]
 		}
 	],
 	"With at least 40 Intelligence in Radius, Rolling Magma deals #% less Damage": [
@@ -78605,20 +78619,6 @@
 		}
 	],
 	"With at least 40 Intelligence in Radius, Rolling Magma fires an additional Projectile": [],
-	"With at least 40 Intelligence in Radius, Rolling Magma\\nhas #% increased Area of Effect per Chain": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"With at least 40 Intelligence in Radius, Rolling Magma\\nhas #% reduced Area of Effect per Chain": [
-		{
-			"isScalable": true,
-			"formats": [
-				"negate"
-			]
-		}
-	],
 	"With at least 40 Intelligence in Radius, Spark Projectiles chain # additional times": [
 		{
 			"isScalable": true,
@@ -78646,13 +78646,13 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Strength in Radius, #% increased\\nRarity of Items dropped by Enemies Shattered by Glacial Hammer": [
+	"With at least 40 Strength in Radius, #% increased\nRarity of Items dropped by Enemies Shattered by Glacial Hammer": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Strength in Radius, #% of Glacial\\nHammer Physical Damage Converted to Cold Damage": [
+	"With at least 40 Strength in Radius, #% of Glacial\nHammer Physical Damage Converted to Cold Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78664,23 +78664,16 @@
 			"formats": null
 		}
 	],
-	"With at least 40 Strength in Radius, Cleave has +0.1 metres to Radius per Nearby\\nEnemy, up to a maximum of +1 metre": [],
+	"With at least 40 Strength in Radius, Cleave has +0.1 metres to Radius per Nearby\nEnemy, up to a maximum of +1 metre": [],
 	"With at least 40 Strength in Radius, Combust is Disabled": [],
-	"With at least 40 Strength in Radius, Glacial Hammer deals\\nCold-only Splash Damage to surrounding targets": [],
-	"With at least 40 Strength in Radius, Ground Slam grants an Endurance Charge on Stun": [],
-	"With at least 40 Strength in Radius, Ground Slam has a #% chance\\nto grant an Endurance Charge when you Stun an Enemy": [
+	"With at least 40 Strength in Radius, Glacial Hammer deals\nCold-only Splash Damage to surrounding targets": [],
+	"With at least 40 Strength in Radius, Ground Slam\nhas a #% increased angle": [
 		{
 			"isScalable": true,
 			"formats": null
 		}
 	],
-	"With at least 40 Strength in Radius, Ground Slam\\nhas a #% increased angle": [
-		{
-			"isScalable": true,
-			"formats": null
-		}
-	],
-	"With at least 40 Strength in Radius, Ground Slam\\nhas a #% reduced angle": [
+	"With at least 40 Strength in Radius, Ground Slam\nhas a #% reduced angle": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -78688,7 +78681,14 @@
 			]
 		}
 	],
-	"With at least 40 Strength in Radius, Heavy Strike has a \\n#% chance to deal Double Damage": [
+	"With at least 40 Strength in Radius, Ground Slam grants an Endurance Charge on Stun": [],
+	"With at least 40 Strength in Radius, Ground Slam has a #% chance\nto grant an Endurance Charge when you Stun an Enemy": [
+		{
+			"isScalable": true,
+			"formats": null
+		}
+	],
+	"With at least 40 Strength in Radius, Heavy Strike has a \n#% chance to deal Double Damage": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -78925,7 +78925,7 @@
 			]
 		}
 	],
-	"You and Allies near your Banner have #% to Damage over Time Multiplier per\\n2 Valour consumed for that Banner": [
+	"You and Allies near your Banner have #% to Damage over Time Multiplier per\n2 Valour consumed for that Banner": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -79114,7 +79114,7 @@
 			"formats": null
 		}
 	],
-	"You and your Minions have #% increased Attack and Cast Speed if\\nyou've Consumed a corpse Recently": [
+	"You and your Minions have #% increased Attack and Cast Speed if\nyou've Consumed a corpse Recently": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -79126,7 +79126,7 @@
 			"formats": null
 		}
 	],
-	"You and your Minions have #% reduced Attack and Cast Speed if\\nyou've Consumed a corpse Recently": [
+	"You and your Minions have #% reduced Attack and Cast Speed if\nyou've Consumed a corpse Recently": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -79309,7 +79309,7 @@
 			"formats": null
 		}
 	],
-	"You can inflict Bleeding on an Enemy up to # times\\nYour Bleeding does not deal extra Damage while the Enemy is moving": [
+	"You can inflict Bleeding on an Enemy up to # times\nYour Bleeding does not deal extra Damage while the Enemy is moving": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -79322,7 +79322,7 @@
 	"You can only deal Damage with this Weapon or Ignite": [],
 	"You can't deal Damage with your Skills yourself": [],
 	"You cannot Cast Curse Spells": [],
-	"You cannot Cast Socketed Hex Curse Skills\\nInflict Socketed Hexes on Enemies that trigger your Traps": [],
+	"You cannot Cast Socketed Hex Curse Skills\nInflict Socketed Hexes on Enemies that trigger your Traps": [],
 	"You cannot Recharge Energy Shield": [],
 	"You cannot Recharge or Regenerate Energy Shield": [],
 	"You cannot Regenerate Energy Shield": [],
@@ -79481,7 +79481,7 @@
 			]
 		}
 	],
-	"You gain Divinity for # seconds on reaching maximum Divine Charges\\nLose all Divine Charges when you gain Divinity": [
+	"You gain Divinity for # seconds on reaching maximum Divine Charges\nLose all Divine Charges when you gain Divinity": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -79637,8 +79637,8 @@
 	"You have Arcane Surge during Effect of any Mana Flask": [],
 	"You have Brutal Shrine Buff while affected by no Flasks": [],
 	"You have Chilling Conflux for 3 seconds every 8 seconds": [],
+	"You have Consecrated Ground around you while\nstationary if Strength is your highest Attribute": [],
 	"You have Consecrated Ground around you while stationary": [],
-	"You have Consecrated Ground around you while\\nstationary if Strength is your highest Attribute": [],
 	"You have Crimson Dance if you have dealt a Critical Strike Recently": [],
 	"You have Crimson Dance while you have Cat's Stealth": [],
 	"You have Culling Strike against Cursed Enemies": [],
@@ -80572,8 +80572,8 @@
 		}
 	],
 	"Your Lucky or Unlucky effects are instead Unexciting": [],
-	"Your Lucky or Unlucky effects use the best or\\nworst from three rolls instead of two": [],
-	"Your Maps with Ore Deposits have #% increased chance\\nto contain at least two Ore Deposits": [
+	"Your Lucky or Unlucky effects use the best or\nworst from three rolls instead of two": [],
+	"Your Maps with Ore Deposits have #% increased chance\nto contain at least two Ore Deposits": [
 		{
 			"isScalable": true,
 			"formats": null
@@ -80608,7 +80608,7 @@
 			"formats": null
 		}
 	],
-	"Your Mercenary and their Minions deal #% less Damage for\\neach Unique item they have equipped": [
+	"Your Mercenary and their Minions deal #% less Damage for\neach Unique item they have equipped": [
 		{
 			"isScalable": true,
 			"formats": [
@@ -80616,7 +80616,7 @@
 			]
 		}
 	],
-	"Your Mercenary and their Minions deal #% more Damage for\\neach Unique item they have equipped": [
+	"Your Mercenary and their Minions deal #% more Damage for\neach Unique item they have equipped": [
 		{
 			"isScalable": true,
 			"formats": null

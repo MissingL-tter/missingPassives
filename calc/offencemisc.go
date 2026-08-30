@@ -18,50 +18,50 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 
 	// Other Misc DPS multipliers (like custom source)
 	dpsMultiplier := 1.0
-	if truthy(skillData["dpsMultiplier"]) {
-		dpsMultiplier = anyNum(skillData["dpsMultiplier"])
+	if skillData.Has("dpsMultiplier") {
+		dpsMultiplier = skillData.N("dpsMultiplier")
 	}
-	dpsMultiplier = dpsMultiplier * (1 + skillModList.Sum("INC", skillCfg, "DPS")/100) * skillModList.More(skillCfg, "DPS")
-	skillData["dpsMultiplier"] = dpsMultiplier
-	if activeSkill.SkillTypes[modparser.SkillType.Brand] && !truthy(skillData["countsAttachedBrandsInDamage"]) {
-		dpsMultiplier *= outNum(output, "AttachedBrandCount")
-		skillData["dpsMultiplier"] = dpsMultiplier
+	dpsMultiplier = dpsMultiplier * (1 + skillModList.Sum(modparser.Inc, skillCfg, "DPS")/100) * skillModList.More(skillCfg, "DPS")
+	skillData.SetN("dpsMultiplier", dpsMultiplier)
+	if activeSkill.SkillTypes[modparser.SkillTypeBrand] && !skillData.Flag("countsAttachedBrandsInDamage") {
+		dpsMultiplier *= output.N("AttachedBrandCount")
+		skillData.SetN("dpsMultiplier", dpsMultiplier)
 		skillDPSMult := 1.0
-		if truthy(output["SkillDPSMultiplier"]) {
-			skillDPSMult = anyNum(output["SkillDPSMultiplier"])
+		if output.Has("SkillDPSMultiplier") {
+			skillDPSMult = output.N("SkillDPSMultiplier")
 		}
-		output["SkillDPSMultiplier"] = skillDPSMult * outNum(output, "AttachedBrandCount")
+		output.SetN("SkillDPSMultiplier", skillDPSMult*output.N("AttachedBrandCount"))
 	}
-	if str(env.ConfigInput["repeatMode"]) == "FINAL" || skillModList.Flag(nil, "OnlyFinalRepeat") {
+	if env.ConfigInput.RepeatMode == "FINAL" || skillModList.Flag(nil, "OnlyFinalRepeat") {
 		repeats := 1.0
-		if truthy(output["Repeats"]) {
-			repeats = anyNum(output["Repeats"])
+		if output.Has("Repeats") {
+			repeats = output.N("Repeats")
 		}
 		dpsMultiplier /= repeats
-		skillData["dpsMultiplier"] = dpsMultiplier
+		skillData.SetN("dpsMultiplier", dpsMultiplier)
 	}
 	// Returning Projectiles hit the enemy again on the way back, at reduced
 	// damage for some sources of Return. Skipped while viewing a skill part
 	// that already represents the returning Projectile, as that would count
 	// it twice.
 	if skillFlags["projectile"] && skillModList.Flag(skillCfg, "ProjectilesReturn") &&
-		!activeSkill.SkillTypes[modparser.SkillType.ProjectileCannotReturn] &&
+		!activeSkill.SkillTypes[modparser.SkillTypeProjectileCannotReturn] &&
 		!skillModList.Flag(skillCfg, "Condition:ReturningProjectile") {
-		returnHits := skillModList.Sum("BASE", skillCfg, "Multiplier:ReturningProjectileHits")
+		returnHits := skillModList.Sum(modparser.Base, skillCfg, "Multiplier:ReturningProjectileHits")
 		if returnHits > 0 {
-			output["ReturningProjectileHits"] = returnHits
+			output.SetN("ReturningProjectileHits", returnHits)
 			// calcLib.mod so that "increased/reduced" sources that apply only
 			// while Returning are picked up alongside the "more/less" ones,
 			// rather than silently ignored
-			output["ReturningProjectileDamageMod"] = Mod(skillModList, skillCfg, "ReturningProjectileDamage")
-			returnMultiplier := 1 + returnHits*outNum(output, "ReturningProjectileDamageMod")
+			output.SetN("ReturningProjectileDamageMod", Mod(skillModList, skillCfg, "ReturningProjectileDamage"))
+			returnMultiplier := 1 + returnHits*output.N("ReturningProjectileDamageMod")
 			dpsMultiplier *= returnMultiplier
-			skillData["dpsMultiplier"] = dpsMultiplier
+			skillData.SetN("dpsMultiplier", dpsMultiplier)
 			skillDPSMult := 1.0
-			if truthy(output["SkillDPSMultiplier"]) {
-				skillDPSMult = anyNum(output["SkillDPSMultiplier"])
+			if output.Has("SkillDPSMultiplier") {
+				skillDPSMult = output.N("SkillDPSMultiplier")
 			}
-			output["SkillDPSMultiplier"] = skillDPSMult * returnMultiplier
+			output.SetN("SkillDPSMultiplier", skillDPSMult*returnMultiplier)
 		}
 	}
 	if skillModList.Flag(nil, "TriggeredBySnipe") {
@@ -70,15 +70,15 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 	// `Flag(...) and Sum(...)` — Flag yields nil when unset, so the key is
 	// absent rather than false.
 	if skillModList.Flag(nil, "HasTrauma") {
-		output["SustainableTrauma"] = skillModList.Sum("BASE", skillCfg, "Multiplier:SustainableTraumaStacks")
+		output.SetN("SustainableTrauma", skillModList.Sum(modparser.Base, skillCfg, "Multiplier:SustainableTraumaStacks"))
 	} else {
-		delete(output, "SustainableTrauma")
+		output.Del("SustainableTrauma")
 	}
 	// Mantra of Flames buff count.
 	// #EVAL: `cfg` here is not the pass cfg (that local died with the loop
 	// above) but an undeclared global, i.e. nil.
-	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum("BASE", nil, "Multiplier:TraumaStacks")
-	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum("BASE", nil, "Multiplier:VoltaxicWaitingStages")
+	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum(modparser.Base, nil, "Multiplier:TraumaStacks")
+	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum(modparser.Base, nil, "Multiplier:VoltaxicWaitingStages")
 
 	if isAttack {
 		// Combine hit chance and attack speed
@@ -87,39 +87,39 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 		env.combineStat(c, "Speed", "HARMONICMEAN", "")
 		env.combineStat(c, "HitSpeed", "OR", "")
 		env.combineStat(c, "HitTime", "OR", "")
-		if outNum(output, "Speed") == 0 {
-			output["Time"] = 0.0
+		if output.N("Speed") == 0 {
+			output.SetN("Time", 0.0)
 		} else {
-			output["Time"] = 1 / outNum(output, "Speed")
+			output.SetN("Time", 1/output.N("Speed"))
 		}
 
-		if outNum(output, "Time") > 1 {
-			modDB.AddMod(newMod("Condition:OneSecondAttackTime", "FLAG", true))
+		if output.N("Time") > 1 {
+			modDB.AddMod(newMod("Condition:OneSecondAttackTime", modparser.Flag, modparser.Bool(true)))
 		}
 		if skillModList.Flag(nil, "UseOffhandAttackSpeed") && !skillFlags["forceMainHand"] {
-			output["Speed"] = c.offHandStats["Speed"]
-			output["Time"] = c.offHandStats["Time"]
+			output.Set("Speed", c.offHandStats.Get("Speed"))
+			output.Set("Time", c.offHandStats.Get("Time"))
 		}
-		if truthy(skillData["hitTimeOverride"]) && !truthy(skillData["triggeredOnDeath"]) {
-			output["HitTime"] = skillData["hitTimeOverride"]
-			output["HitSpeed"] = 1 / outNum(output, "HitTime")
-		} else if truthy(skillData["hitTimeMultiplier"]) && truthy(output["Time"]) && !truthy(skillData["triggeredOnDeath"]) {
-			output["HitTime"] = outNum(output, "Time") * anyNum(skillData["hitTimeMultiplier"])
-			if truthy(output["Cooldown"]) && truthy(skillData["triggered"]) {
-				output["HitSpeed"] = 1 / math.Max(outNum(output, "HitTime"), outNum(output, "Cooldown"))
-			} else if truthy(output["Cooldown"]) {
-				output["HitSpeed"] = 1 / (outNum(output, "HitTime") + outNum(output, "Cooldown"))
+		if skillData.Flag("hitTimeOverride") && !skillData.Flag("triggeredOnDeath") {
+			output.Set("HitTime", skillData.Get("hitTimeOverride"))
+			output.SetN("HitSpeed", 1/output.N("HitTime"))
+		} else if skillData.Has("hitTimeMultiplier") && output.Flag("Time") && !skillData.Flag("triggeredOnDeath") {
+			output.SetN("HitTime", output.N("Time")*skillData.N("hitTimeMultiplier"))
+			if output.Flag("Cooldown") && skillData.Flag("triggered") {
+				output.SetN("HitSpeed", 1/math.Max(output.N("HitTime"), output.N("Cooldown")))
+			} else if output.Flag("Cooldown") {
+				output.SetN("HitSpeed", 1/(output.N("HitTime")+output.N("Cooldown")))
 			} else {
-				output["HitSpeed"] = math.Min(1/outNum(output, "HitTime"), data.Misc.ServerTickRate)
+				output.SetN("HitSpeed", math.Min(1/output.N("HitTime"), data.Misc.ServerTickRate))
 			}
 		}
 	}
 
 	// Grab quantity multiplier
-	quantityMultiplier := math.Max(activeSkill.SkillModList.Sum("BASE", activeSkill.SkillCfg, "QuantityMultiplier"), 1)
+	quantityMultiplier := math.Max(activeSkill.SkillModList.Sum(modparser.Base, activeSkill.SkillCfg, "QuantityMultiplier"), 1)
 	c.quantityMultiplier = quantityMultiplier
 	if quantityMultiplier > 1 {
-		output["QuantityMultiplier"] = quantityMultiplier
+		output.SetN("QuantityMultiplier", quantityMultiplier)
 	}
 
 	env.offenceDamage(c)

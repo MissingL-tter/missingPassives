@@ -25,7 +25,7 @@ type SpecNode struct {
 	Linked                      []*SpecNode
 	Depends                     []*SpecNode
 	IntuitiveLeapLikesAffecting []*SpecNode
-	ConqueredBy                 any
+	ConqueredBy                 *Conquest
 	Visited                     bool
 	ConnectedToStart            bool
 	PathDist                    int
@@ -33,14 +33,9 @@ type SpecNode struct {
 	HasPath                     bool
 	DistanceToClassStart        *float64
 
-	// Shadowable display/mod state (replaceNode resets these to a source
+	// The shadowed display/mod state (replaceNode resets it to a source
 	// node's).
-	Name              *string
-	Dn                string
-	Stats             Stats
-	KeystoneMod       *modparser.Mod
-	IsTattoo          bool
-	OverrideType      string
+	nodeOverride
 	ReminderText      []string
 	AllMasteryOptions bool
 
@@ -51,12 +46,26 @@ type SpecNode struct {
 	// order is LuaJIT hash-slot order; the differential uses this record
 	// to permute the mod list into the reference's order for comparison.
 	TimelessAdditions *TimelessAdditionsRecord
-
-	// sdIdentity tracks which source object the current sd came from, for
-	// replaceNode's identity short-circuit (the reference compares table
-	// identity).
-	sdIdentity any
 }
+
+// nodeOverride is the state a spec node shadows over its tree node (the
+// reference's __index metatable): the source it was copied from, and the
+// copied display and mod fields.
+type nodeOverride struct {
+	src          *Node          // the node the state came from; nil once the stats were rewritten in place
+	srcME        *MasteryEffect // the mastery effect the sd came from (third pass)
+	Dn           string
+	Name         *string
+	Stats        Stats
+	KeystoneMod  *modparser.Mod
+	IsTattoo     bool
+	OverrideType OverrideKind
+}
+
+// sameSource reports whether the state already comes from src (the
+// reference's table-identity short-circuit, which keeps a conquered
+// rewrite intact across the four-pass rebuild).
+func (o *nodeOverride) sameSource(src *Node) bool { return o.src == src }
 
 // TimelessAdditionsRecord — see SpecNode.TimelessAdditions.
 type TimelessAdditionsRecord struct {
@@ -71,7 +80,7 @@ type TimelessAdditionBlock struct {
 }
 
 func (n *SpecNode) ID() int64              { return n.T.ID }
-func (n *SpecNode) Type() string           { return n.T.Type }
+func (n *SpecNode) Type() NodeKind         { return n.T.Type }
 func (n *SpecNode) AscendancyName() string { return n.T.AscendancyName }
 
 // Spec is one build's passive spec.
@@ -112,7 +121,7 @@ type Spec struct {
 	AllocatedMasteryCount     float64
 	AllocatedMasteryTypeCount float64
 	AllocatedMasteryTypes     map[string]float64
-	AllocatedTattooTypes      map[string]float64
+	AllocatedTattooTypes      map[OverrideKind]float64
 
 	SplitPersonalityPath map[int64]bool
 }
@@ -151,17 +160,15 @@ func NewSpec(t *Tree, items map[int]*item.Item) *Spec {
 		HashOverrides:         map[int64]*Node{},
 		SubGraphs:             map[int64]*SubGraph{},
 		AllocatedMasteryTypes: map[string]float64{},
-		AllocatedTattooTypes:  map[string]float64{},
+		AllocatedTattooTypes:  map[OverrideKind]float64{},
 		SplitPersonalityPath:  map[int64]bool{},
 	}
 	for id, treeNode := range t.Nodes {
 		if treeNode.Group == nil || treeNode.IsProxy || treeNode.Group.IsProxy {
 			continue
 		}
-		if ej, ok := treeNode.Raw["expansionJewel"].(map[string]any); ok {
-			if _, hasParent := ej["parent"]; hasParent {
-				continue
-			}
+		if ej := treeNode.ExpansionJewel; ej != nil && ej.Parent != nil {
+			continue
 		}
 		node := &SpecNode{T: treeNode}
 		node.resetToSource(treeNode)
@@ -186,13 +193,22 @@ func (n *SpecNode) resetToSource(src *Node) {
 	// the spec node's own tree name — the reference's metatable behavior.
 	n.Name = src.NameStr
 	n.Stats = src.Stats
+	n.Stats.cloneSd()
 	n.Stats.ModList = append([]*modparser.Mod{}, src.ModList...)
 	n.KeystoneMod = src.KeystoneMod
 	n.IsTattoo = src.IsTattooFlag
-	n.OverrideType = src.OverrideTypeStr
+	n.OverrideType = src.OverrideTypeOf
 	n.ReminderText = nil
 	n.TimelessAdditions = nil
-	n.sdIdentity = src
+	n.src, n.srcME = src, nil
+}
+
+// cloneSd gives the stats their own sd backing so processStats' in-place
+// multiline splice can no longer reach the source node's lines.
+func (s *Stats) cloneSd() {
+	if s.Sd != nil {
+		s.Sd = append(make([]string, 0, len(s.Sd)), s.Sd...)
+	}
 }
 
 // EffectiveName is node.name through the reference's metatable: the shadow
@@ -207,7 +223,7 @@ func (n *SpecNode) EffectiveName() *string {
 
 // replaceNode ports PassiveSpecClass:ReplaceNode.
 func (s *Spec) replaceNode(old *SpecNode, src *Node) {
-	if old.sdIdentity == any(src) {
+	if old.sameSource(src) {
 		return
 	}
 	old.resetToSource(src)
@@ -224,7 +240,7 @@ func (s *Spec) LoadSaved(saved *SavedSpec) {
 		if s.Tree.Tattoo.Nodes[o.Dn] == nil {
 			for _, name := range sortedStringKeys(s.Tree.Tattoo.Nodes) {
 				dataNode := s.Tree.Tattoo.Nodes[name]
-				if str(dataNode.Raw["activeEffectImage"]) == o.ActiveEffectImage && dataNode.Icon == o.Icon {
+				if dataNode.ActiveEffectImage == o.ActiveEffectImage && dataNode.Icon == o.Icon {
 					s.Tree.Tattoo.Nodes[o.Dn] = dataNode
 				}
 			}
@@ -255,12 +271,12 @@ func (s *Spec) LoadSaved(saved *SavedSpec) {
 		if open < 0 {
 			break
 		}
-		close := strings.IndexByte(rest[open:], '}')
-		if close < 0 {
+		end := strings.IndexByte(rest[open:], '}')
+		if end < 0 {
 			break
 		}
-		pair := rest[open+1 : open+close]
-		rest = rest[open+close:]
+		pair := rest[open+1 : open+end]
+		rest = rest[open+end:]
 		comma := strings.IndexByte(pair, ',')
 		if comma > 0 {
 			mastery, err1 := strconv.ParseInt(pair[:comma], 10, 64)
@@ -297,7 +313,7 @@ func (s *Spec) importFromNodeList(classID, ascendClassID, secondaryAscendClassID
 	for _, id := range hashList {
 		node := s.Nodes[id]
 		if node != nil {
-			if node.Type() != "Mastery" || s.MasterySelections[id] != 0 {
+			if node.Type() != NodeMastery || s.MasterySelections[id] != 0 {
 				node.Alloc = true
 				s.AllocNodes[id] = node
 			}
@@ -321,7 +337,7 @@ func (s *Spec) PostLoad() {
 
 func (s *Spec) resetNodes() {
 	for id, node := range s.Nodes {
-		if node.Type() != "ClassStart" && node.Type() != "AscendClassStart" {
+		if !node.Type().IsStart() {
 			node.Alloc = false
 			delete(s.AllocNodes, id)
 		}
@@ -348,7 +364,7 @@ func (s *Spec) SelectClass(classID int64) {
 	s.CurClassID = classID
 	class := s.Tree.Classes[classID]
 	if class == nil {
-		panic("tree: unknown class id " + strconv.FormatInt(classID, 10))
+		panic("tree: unknown class id " + strconv.FormatInt(classID, 10)) // the Lua errors (indexes nil)
 	}
 	s.CurClass = class
 	s.CurClassName = class.Name
@@ -439,16 +455,23 @@ func (s *Spec) jewel(itemID int) *item.Item {
 	return s.Items[itemID]
 }
 
-func jd(it *item.Item, key string) any {
+// jewelData is the socketed item's jewel data, or an empty record for no
+// item / no jewel data (every field then reads as absent).
+func jewelData(it *item.Item) *item.JewelData {
 	if it == nil || it.JewelData == nil {
-		return nil
+		return &item.JewelData{}
 	}
-	return it.JewelData[key]
+	return it.JewelData
 }
 
-func jdTrue(it *item.Item, key string) bool { return truthyVal(jd(it, key)) }
-
-func truthyVal(v any) bool { return v != nil && v != false }
+// jewelConquest is the jewel's conqueredBy record as the node-level
+// Conquest (nil when the jewel conquers nothing).
+func jewelConquest(it *item.Item) *Conquest {
+	if cq := jewelData(it).ConqueredBy; cq != nil {
+		return conquestOf(cq)
+	}
+	return nil
+}
 
 func sortedNodeIDs[V any](m map[int64]V) []int64 {
 	ids := make([]int64, 0, len(m))

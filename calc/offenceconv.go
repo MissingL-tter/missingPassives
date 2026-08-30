@@ -4,19 +4,20 @@
 package calc
 
 import (
-	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/item"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // damagePass is one entry of the reference's passList.
 type damagePass struct {
 	label  string
-	source map[string]any
+	source *SkillData
 	cfg    *modstore.Cfg
-	output map[string]any
+	output modstore.Output
 }
 
 // convTable resolves `(cfg and cfg.conversionTable) or activeSkill.conversionTable`.
@@ -38,30 +39,30 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 
 	// Handle corpse and enemy explosions
 	monsterLife := 100.0
-	if truthy(skillData["corpseLife"]) {
-		monsterLife = anyNum(skillData["corpseLife"])
+	if skillData.Flag("corpseLife") {
+		monsterLife = skillData.N("corpseLife")
 	} else if env.EnemyLevel != 0 {
-		monsterLife = luaIndex("monsterLifeTable", data.MonsterLifeTable, int(env.EnemyLevel))
+		monsterLife = monsterLifeAtLevel(int(env.EnemyLevel))
 	}
 	c.monsterLife = monsterLife
-	if truthy(skillData["explodeCorpse"]) && (truthy(skillData["corpseLife"]) || env.EnemyLevel != 0) {
+	if skillData.Flag("explodeCorpse") && (skillData.Flag("corpseLife") || env.EnemyLevel != 0) {
 		damageType := "Fire"
-		if v := str(skillData["corpseExplosionDamageType"]); v != "" {
+		if v := skillData.Str("corpseExplosionDamageType"); v != "" {
 			damageType = v
 		}
-		mult := skillData["corpseExplosionLifeMultiplier"]
-		if !truthy(mult) {
-			mult = skillData["selfFireExplosionLifeMultiplier"]
+		mult := skillData.Get("corpseExplosionLifeMultiplier")
+		if !mult.Truthy() {
+			mult = skillData.Get("selfFireExplosionLifeMultiplier")
 		}
-		skillData[damageType+"BonusMin"] = monsterLife * anyNum(mult)
-		skillData[damageType+"BonusMax"] = monsterLife * anyNum(mult)
+		skillData.SetN(damageType+"BonusMin", monsterLife*mult.Num())
+		skillData.SetN(damageType+"BonusMax", monsterLife*mult.Num())
 	}
 	if skillFlags["monsterExplode"] {
 		for _, damageType := range dmgTypeList {
-			percentage := anyNum(skillData[damageType+"EffectiveExplodePercentage"])
+			percentage := skillData.N(damageType + "EffectiveExplodePercentage")
 			base := percentage * monsterLife / 100
-			skillData[damageType+"Min"] = base
-			skillData[damageType+"Max"] = base
+			skillData.SetN(damageType+"Min", base)
+			skillData.SetN(damageType+"Max", base)
 		}
 	}
 
@@ -84,24 +85,23 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 	// Configure damage passes
 	var passList []*damagePass
 	if c.isAttack {
-		mainHand := map[string]any{}
-		offHand := map[string]any{}
-		output["MainHand"] = mainHand
-		output["OffHand"] = offHand
+		mainHand := modstore.Output{}
+		offHand := modstore.Output{}
+		actor.mainHand, actor.offHand = mainHand, offHand
 		// env.keystonesAdded[...] is true-or-nil, so a missing keystone
 		// leaves the key absent rather than storing false.
 		if env.Keystone.KeystonesAdded["Precise Technique"] {
-			output["PreciseTechnique"] = true
+			output.SetFlag("PreciseTechnique", true)
 		} else {
-			delete(output, "PreciseTechnique")
+			output.Del("PreciseTechnique")
 		}
-		critOverride := skillModList.Override(skillCfg, "WeaponBaseCritChance")
+		critOverride, _ := skillModList.Override(skillCfg, "WeaponBaseCritChance")
 		if skillFlags["weapon1Attack"] {
 			activeSkill.Weapon1Cfg.SkillStats = mainHand
 			c.mainHandStats = mainHand
-			source := copyWeaponData(actor.ms.WeaponData1)
-			if truthy(critOverride) && truthy(source["type"]) && str(source["type"]) != "None" {
-				source["CritChance"] = anyNum(critOverride)
+			source := weaponPassSource(weaponOf(actor.ms.WeaponData1))
+			if modparser.Truthy(critOverride) && source.Has("type") && source.Str("type") != "None" {
+				source.SetN("CritChance", valueNum(critOverride))
 			}
 			passList = append(passList, &damagePass{
 				label: "Main Hand", source: source, cfg: activeSkill.Weapon1Cfg, output: mainHand,
@@ -110,27 +110,27 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 		if skillFlags["weapon2Attack"] {
 			activeSkill.Weapon2Cfg.SkillStats = offHand
 			c.offHandStats = offHand
-			source := copyWeaponData(actor.ms.WeaponData2)
-			if truthy(critOverride) && truthy(source["type"]) && str(source["type"]) != "None" {
-				source["CritChance"] = anyNum(critOverride)
+			source := weaponPassSource(weaponOf(actor.ms.WeaponData2))
+			if modparser.Truthy(critOverride) && source.Has("type") && source.Str("type") != "None" {
+				source.SetN("CritChance", valueNum(critOverride))
 			}
-			if truthy(skillData["CritChance"]) {
-				source["CritChance"] = skillData["CritChance"]
+			if skillData.Flag("CritChance") {
+				source.Set("CritChance", skillData.Get("CritChance"))
 			}
-			if truthy(skillData["setOffHandPhysicalMin"]) && truthy(skillData["setOffHandPhysicalMax"]) {
-				source["PhysicalMin"] = skillData["setOffHandPhysicalMin"]
-				source["PhysicalMax"] = skillData["setOffHandPhysicalMax"]
+			if skillData.Flag("setOffHandPhysicalMin") && skillData.Flag("setOffHandPhysicalMax") {
+				source.Set("PhysicalMin", skillData.Get("setOffHandPhysicalMin"))
+				source.Set("PhysicalMax", skillData.Get("setOffHandPhysicalMax"))
 			}
-			if truthy(skillData["setOffHandFireMin"]) && truthy(skillData["setOffHandFireMax"]) {
-				source["FireMin"] = skillData["setOffHandFireMin"]
-				source["FireMax"] = skillData["setOffHandFireMax"]
+			if skillData.Flag("setOffHandFireMin") && skillData.Flag("setOffHandFireMax") {
+				source.Set("FireMin", skillData.Get("setOffHandFireMin"))
+				source.Set("FireMax", skillData.Get("setOffHandFireMax"))
 			}
-			if truthy(skillData["setOffHandColdMin"]) && truthy(skillData["setOffHandColdMax"]) {
-				source["ColdMin"] = skillData["setOffHandColdMin"]
-				source["ColdMax"] = skillData["setOffHandColdMax"]
+			if skillData.Flag("setOffHandColdMin") && skillData.Flag("setOffHandColdMax") {
+				source.Set("ColdMin", skillData.Get("setOffHandColdMin"))
+				source.Set("ColdMax", skillData.Get("setOffHandColdMax"))
 			}
-			if truthy(skillData["attackTime"]) {
-				source["AttackRate"] = 1000 / anyNum(skillData["attackTime"])
+			if skillData.Has("attackTime") {
+				source.SetN("AttackRate", 1000/skillData.N("attackTime"))
 			}
 			passList = append(passList, &damagePass{
 				label: "Off Hand", source: source, cfg: activeSkill.Weapon2Cfg, output: offHand,
@@ -146,11 +146,39 @@ func (env *Env) offenceConversion(c *offenceCtx) {
 	env.offenceHitRate(c)
 }
 
-// copyWeaponData is copyTable(actor.weaponDataN): a shallow copy.
-func copyWeaponData(wd map[string]any) map[string]any {
-	out := make(map[string]any, len(wd))
-	for k, v := range wd {
-		out[k] = v
+// weaponPassSource is copyTable(actor.weaponDataN): the damage pass's
+// source bag, holding the weapon's stats under the pass keys.
+func weaponPassSource(wd *item.WeaponData) *SkillData {
+	out := newSkillData()
+	if wd == nil {
+		return out
+	}
+	set := func(key string, v float64, present bool) {
+		if present {
+			out.SetN(key, v)
+		}
+	}
+	if wd.Type != "" {
+		out.SetStr("type", wd.Type)
+	}
+	if wd.Name != "" {
+		out.SetStr("name", wd.Name)
+	}
+	set("AttackRate", wd.AttackRate, wd.AttackRate != 0)
+	set("range", wd.Range, wd.Range != 0)
+	set("AttackSpeedInc", wd.AttackSpeedInc.V, wd.AttackSpeedInc.Set)
+	set("rangeBonus", wd.RangeBonus.V, wd.RangeBonus.Set)
+	set("CritChance", wd.CritChance.V, wd.CritChance.Set)
+	set("TotalDPS", wd.TotalDPS.V, wd.TotalDPS.Set)
+	set("ElementalDPS", wd.ElementalDPS, wd.ElementalDPS != 0)
+	for _, dmgType := range dmgTypeList {
+		r := wd.Damage(dmgType)
+		set(dmgType+"Min", r.Min, r.Min != 0)
+		set(dmgType+"Max", r.Max, r.Max != 0)
+		set(dmgType+"DPS", r.DPS, r.DPS != 0)
+	}
+	for k, v := range wd.Extra {
+		out.Set(k, outValueOf(v))
 	}
 	return out
 }
@@ -162,67 +190,67 @@ func (env *Env) combineStat(c *offenceCtx, stat, mode string, extra string) {
 	output, skillFlags, skillData := c.output, c.skillFlags, c.skillData
 	main, off := c.mainHandStats, c.offHandStats
 	orElse := func() {
-		if v := main[stat]; truthy(v) {
-			output[stat] = v
-		} else if v := off[stat]; truthy(v) {
-			output[stat] = v
+		if v := main.Get(stat); v.Truthy() {
+			output.Set(stat, v)
+		} else if v := off.Get(stat); v.Truthy() {
+			output.Set(stat, v)
 		} else {
-			delete(output, stat)
+			output.Del(stat)
 		}
 	}
 	switch {
 	case mode == "OR" || !skillFlags["bothWeaponAttack"]:
 		orElse()
 	case mode == "ADD":
-		output[stat] = anyNum(main[stat]) + anyNum(off[stat])
+		output.SetN(stat, main.N(stat)+off.N(stat))
 	case mode == "AVERAGE":
-		output[stat] = (anyNum(main[stat]) + anyNum(off[stat])) / 2
+		output.SetN(stat, (main.N(stat)+off.N(stat))/2)
 	case mode == "HARMONICMEAN":
-		if anyNum(main[stat]) == 0 || anyNum(off[stat]) == 0 {
-			output[stat] = 0.0
+		if main.N(stat) == 0 || off.N(stat) == 0 {
+			output.SetN(stat, 0.0)
 		} else {
-			output[stat] = 2 / (1/anyNum(main[stat]) + 1/anyNum(off[stat]))
+			output.SetN(stat, 2/(1/main.N(stat)+1/off.N(stat)))
 		}
 	case mode == "CHANCE":
-		if truthy(main[stat]) && truthy(off[stat]) {
-			mainChance := anyNum(main[extra]) * anyNum(main["HitChance"])
-			offChance := anyNum(off[extra]) * anyNum(off["HitChance"])
-			if truthy(skillData["doubleHitsWhenDualWielding"]) {
+		if main.Flag(stat) && off.Flag(stat) {
+			mainChance := main.N(extra) * main.N("HitChance")
+			offChance := off.N(extra) * off.N("HitChance")
+			if skillData.Flag("doubleHitsWhenDualWielding") {
 				mainChance /= 10000
 				offChance /= 10000
-				output[stat] = anyNum(main[stat])*mainChance + anyNum(off[stat])*offChance
+				output.SetN(stat, main.N(stat)*mainChance+off.N(stat)*offChance)
 			} else {
 				mainPortion := mainChance / (mainChance + offChance)
 				offPortion := offChance / (mainChance + offChance)
-				output[stat] = anyNum(main[stat])*mainPortion + anyNum(off[stat])*offPortion
+				output.SetN(stat, main.N(stat)*mainPortion+off.N(stat)*offPortion)
 			}
 		} else {
 			orElse()
 		}
 	case mode == "CHANCE_AILMENT":
-		if truthy(main[stat]) && truthy(off[stat]) {
+		if main.Flag(stat) && off.Flag(stat) {
 			// The reference computes mainPortion/offPortion here and then
 			// never uses them; only the stack split below matters.
-			maxInstance := math.Max(anyNum(main[stat]), anyNum(off[stat]))
-			minInstance := math.Min(anyNum(main[stat]), anyNum(off[stat]))
+			maxInstance := math.Max(main.N(stat), off.N(stat))
+			minInstance := math.Min(main.N(stat), off.N(stat))
 			stackName := strings.Replace(stat, "DPS", "", -1) + "Stacks"
 			stacks, stacksMax := 1.0, 1.0
-			if truthy(output[stackName]) {
-				stacks = anyNum(output[stackName])
+			if output.Flag(stackName) {
+				stacks = output.N(stackName)
 			}
-			if truthy(output[stackName+"Max"]) {
-				stacksMax = anyNum(output[stackName+"Max"])
+			if output.Flag(stackName + "Max") {
+				stacksMax = output.N(stackName + "Max")
 			}
 			maxInstanceStacks := math.Min(1, stacks/stacksMax)
-			output[stat] = maxInstance*maxInstanceStacks + minInstance*(1-maxInstanceStacks)
+			output.SetN(stat, maxInstance*maxInstanceStacks+minInstance*(1-maxInstanceStacks))
 		} else {
 			orElse()
 		}
 	case mode == "DPS":
-		v := anyNum(main[stat]) + anyNum(off[stat])
-		if !truthy(skillData["doubleHitsWhenDualWielding"]) {
+		v := main.N(stat) + off.N(stat)
+		if !skillData.Flag("doubleHitsWhenDualWielding") {
 			v /= 2
 		}
-		output[stat] = v
+		output.SetN(stat, v)
 	}
 }

@@ -13,7 +13,8 @@ func init() { register("bossData", renderBossData) }
 
 func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error) {
 	nextSkill, nextList := 0, 0
-	writeStatSet := func(b *B, vals map[string]string) {
+	// Numbers spell as %.14g, flags as the quoted "flag" literal.
+	writeStatSet := func(b *B, vals map[string]schema.BossStatValue) {
 		keys := make([]string, 0, len(vals))
 		for k := range vals {
 			keys = append(keys, k)
@@ -23,7 +24,12 @@ func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error)
 			if i > 0 {
 				b.W(",")
 			}
-			b.W("\n\t\t\t\t", k, " = ", vals[k])
+			b.W("\n\t\t\t\t", k, " = ")
+			if v := vals[k]; v.Flag {
+				b.W("\"flag\"")
+			} else {
+				b.W(v.Value)
+			}
 		}
 	}
 	skillsDirectives := map[string]func(string, *B){
@@ -97,7 +103,7 @@ func renderBossData(d schema.BossData, tpl Templates) (map[string]string, error)
 			}
 		},
 		"tooltip": func(_ string, b *B) {
-			b.W(",\n		tooltip = ", d.Skills[nextSkill-1].Tooltip, "\n")
+			b.W(",\n		tooltip = ", "\"", luaEsc(d.Skills[nextSkill-1].Tooltip), "\"\n")
 			b.W("	},\n")
 		},
 		"skillList": func(_ string, b *B) {

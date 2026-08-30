@@ -3,17 +3,17 @@
 		"id": "UniqueOneHandAxe5",
 		"name": "Jack, the Axe",
 		"text": [
-			"\\\"More blood... hack open flesh... must drink...\\\""
+			"\"More blood... hack open flesh... must drink...\""
 		]
 	},
 	{
 		"id": "UniqueBootsDIY",
 		"name": "Doryani's Delusion",
 		"text": [
-			"\\\"Every day we choose safety or knowledge.",
+			"\"Every day we choose safety or knowledge.",
 			"Live and stagnate, or risk death for truth.",
 			"I would rather see the end of the Vaal",
-			"than help it tread water.\\\"",
+			"than help it tread water.\"",
 			"- Doryani, Queen's Thaumaturgist"
 		]
 	},
@@ -21,8 +21,8 @@
 		"id": "UniqueGlovesStrDex9",
 		"name": "Tombfist",
 		"text": [
-			"\\\"Ever watched a man crush another man's skull?",
-			"Hard to feel hope after that.\\\""
+			"\"Ever watched a man crush another man's skull?",
+			"Hard to feel hope after that.\""
 		]
 	},
 	{
@@ -81,9 +81,9 @@
 		"id": "Ring13",
 		"name": "Shavronne's Revelation",
 		"text": [
-			"\\\"Shavronne held Sanity in her right",
+			"\"Shavronne held Sanity in her right",
 			"hand and Revelation in her left.",
-			"Brutus chose the left hand.\\\"",
+			"Brutus chose the left hand.\"",
 			"- Kadavrus, Surgeon to the Umbra"
 		]
 	},
@@ -98,8 +98,8 @@
 		"id": "Amulet13",
 		"name": "Daresso's Salute",
 		"text": [
-			"\\\"A bit short in the arm, are you?",
-			"Then you'll be short of a head soon enough.\\\"",
+			"\"A bit short in the arm, are you?",
+			"Then you'll be short of a head soon enough.\"",
 			"- Daresso the Daring"
 		]
 	},
@@ -107,8 +107,8 @@
 		"id": "Amulet14",
 		"name": "Voll's Devotion",
 		"text": [
-			"\\\"We are the soldiers of Faith, armoured in devotion.",
-			"Let the sinners come, for we - the Pure - shall endure!\\\"",
+			"\"We are the soldiers of Faith, armoured in devotion.",
+			"Let the sinners come, for we - the Pure - shall endure!\"",
 			"- Voll of Thebrus, at the Battle of the Bridge"
 		]
 	},
@@ -116,8 +116,8 @@
 		"id": "Amulet15",
 		"name": "Victario's Acuity",
 		"text": [
-			"\\\"Grind your words into sharp thoughts.",
-			"Grind your thoughts into the sharpest of deeds.\\\"",
+			"\"Grind your words into sharp thoughts.",
+			"Grind your thoughts into the sharpest of deeds.\"",
 			"- Victario, the People's Poet"
 		]
 	},
@@ -125,10 +125,10 @@
 		"id": "UniqueAmulet27",
 		"name": "Star of Wraeclast",
 		"text": [
-			"\\\"I offer to you an eternal oath",
+			"\"I offer to you an eternal oath",
 			"that binds your heart to mine;",
 			"a bond that not even death will break.",
-			"Will you accept?\\\"",
+			"Will you accept?\"",
 			"- Daresso, to his beloved"
 		]
 	},
@@ -136,16 +136,16 @@
 		"id": "UniqueAmulet29x",
 		"name": "Replica Winterheart",
 		"text": [
-			"\\\"Researcher Graven spent eleven hours suffering electrocution in the lab",
-			"before he was found. Prototype #14 somehow kept him from dying.\\\""
+			"\"Researcher Graven spent eleven hours suffering electrocution in the lab",
+			"before he was found. Prototype #14 somehow kept him from dying.\""
 		]
 	},
 	{
 		"id": "UniqueJewel82x",
 		"name": "Replica Primordial Might",
 		"text": [
-			"\\\"The summoned golems immediately battered through the chamber wall",
-			"and killed several guards, but their fury only lasted a short time.\\\""
+			"\"The summoned golems immediately battered through the chamber wall",
+			"and killed several guards, but their fury only lasted a short time.\""
 		]
 	},
 	{
@@ -284,8 +284,8 @@
 		"id": "UniqueBodyDex7",
 		"name": "Briskwrap",
 		"text": [
-			"\\\"I carry neither food nor drink. I rely on the charity",
-			"of my fellow wayfarers. Dead men are generous men.\\\"",
+			"\"I carry neither food nor drink. I rely on the charity",
+			"of my fellow wayfarers. Dead men are generous men.\"",
 			"- Taruk of the Wildmen"
 		]
 	},
@@ -293,8 +293,8 @@
 		"id": "FatedUnique31",
 		"name": "Wildwrap",
 		"text": [
-			"\\\"Laws are for city folk.",
-			"Can't try a man for murder if you can't find him.\\\"",
+			"\"Laws are for city folk.",
+			"Can't try a man for murder if you can't find him.\"",
 			"- Taruk, Last of the Wildmen"
 		]
 	},
@@ -479,7 +479,7 @@
 		"id": "UniqueTwoHandMace2",
 		"name": "Geofri's Baptism",
 		"text": [
-			"\\\"One quick tap is all the persuasion you'll need.\\\"",
+			"\"One quick tap is all the persuasion you'll need.\"",
 			"- Archbishop Geofri of Phrecia Cathedral"
 		]
 	},
@@ -487,7 +487,7 @@
 		"id": "FatedUnique52",
 		"name": "Geofri's Devotion",
 		"text": [
-			"\\\"Confess your sins to me. My god will not be nearly so forgiving.\\\"",
+			"\"Confess your sins to me. My god will not be nearly so forgiving.\"",
 			"- Archbishop Geofri of Phrecia Cathedral"
 		]
 	},
@@ -513,8 +513,8 @@
 		"id": "UniqueBootsStrDex3",
 		"name": "Dusktoe",
 		"text": [
-			"\\\"A lick of shadow may ease",
-			"the petty frictions of one's life.\\\"",
+			"\"A lick of shadow may ease",
+			"the petty frictions of one's life.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -522,7 +522,7 @@
 		"id": "FatedUnique26",
 		"name": "Duskblight",
 		"text": [
-			"\\\"A taste of Midnight, and you may never see the dawn.\\\"",
+			"\"A taste of Midnight, and you may never see the dawn.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -544,10 +544,10 @@
 		"id": "UniqueBow11",
 		"name": "Doomfletch",
 		"text": [
-			"\\\"Toasted or frozen",
+			"\"Toasted or frozen",
 			"Or twitching in the light",
 			"I'm not fussy",
-			"And neither is Death.\\\"",
+			"And neither is Death.\"",
 			"- Koralus Doomfletch"
 		]
 	},
@@ -555,9 +555,9 @@
 		"id": "FatedUnique19",
 		"name": "Doomfletch's Prism",
 		"text": [
-			"\\\"The Vaal, a thousand years ago,",
+			"\"The Vaal, a thousand years ago,",
 			"came up with more delightful methods of murder",
-			"than I could ever wish for.\\\"",
+			"than I could ever wish for.\"",
 			"- Koralus Doomfletch"
 		]
 	},
@@ -616,17 +616,17 @@
 		"id": "UniqueOneHandMace4",
 		"name": "Cameria's Maul",
 		"text": [
-			"\\\"You'll have my riches when you pry them",
-			"from my cold, dead hands!\\\"",
-			"\\\"That's how I prefer it.\\\""
+			"\"You'll have my riches when you pry them",
+			"from my cold, dead hands!\"",
+			"\"That's how I prefer it.\""
 		]
 	},
 	{
 		"id": "FatedUnique53",
 		"name": "Cameria's Avarice",
 		"text": [
-			"\\\"Please, take whatever you want. Just don't kill me\\\"",
-			"\\\"But then I wouldn't have everything I want, would I?\\\""
+			"\"Please, take whatever you want. Just don't kill me\"",
+			"\"But then I wouldn't have everything I want, would I?\""
 		]
 	},
 	{
@@ -792,8 +792,8 @@
 		"id": "FatedUnique57",
 		"name": "The Iron Fortress",
 		"text": [
-			"\\\"Stand steadfast in the face of destruction.",
-			"The Council cannot afford to falter.\\\"",
+			"\"Stand steadfast in the face of destruction.",
+			"The Council cannot afford to falter.\"",
 			"- Mauritius, the Iron Heart"
 		]
 	},
@@ -801,8 +801,8 @@
 		"id": "UniqueBodyStr9",
 		"name": "Iron Heart",
 		"text": [
-			"\\\"The Council have a great many secrets.",
-			"Some are better kept that way, Cospri.\\\"",
+			"\"The Council have a great many secrets.",
+			"Some are better kept that way, Cospri.\"",
 			"- Mauritius, the Iron Heart"
 		]
 	},
@@ -825,7 +825,7 @@
 			"She paints her offer in wicked hues",
 			"An off-white grin, an elegant bruise.",
 			"To the nascent scourge she sings the ruse:",
-			"\\\"With me in hand, what else need you use?\\\""
+			"\"With me in hand, what else need you use?\""
 		]
 	},
 	{
@@ -846,7 +846,7 @@
 		"id": "FatedUnique27",
 		"name": "Atziri's Reflection",
 		"text": [
-			"\\\"At last, my beauty is beyond reproach.\\\"",
+			"\"At last, my beauty is beyond reproach.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -854,7 +854,7 @@
 		"id": "UniqueShieldDex3",
 		"name": "Atziri's Mirror",
 		"text": [
-			"\\\"As long as I see death in my mirror, so will Wraeclast.\\\"",
+			"\"As long as I see death in my mirror, so will Wraeclast.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -862,9 +862,9 @@
 		"id": "Ring11x",
 		"name": "Replica Gifts from Above",
 		"text": [
-			"\\\"Our first Prototype. Proof that it can be done.",
+			"\"Our first Prototype. Proof that it can be done.",
 			"The Templars will give us everything we need,",
-			"now... but we must keep our true goal secret.\\\""
+			"now... but we must keep our true goal secret.\""
 		]
 	},
 	{
@@ -889,8 +889,8 @@
 		"id": "UniqueAmulet10x",
 		"name": "Replica Atziri's Foible",
 		"text": [
-			"\\\"A rare unequivocal success, Prototype #11 causes wounds to heal so quickly",
-			"the type Delta test subject actually survived the entire testing regimen.\\\""
+			"\"A rare unequivocal success, Prototype #11 causes wounds to heal so quickly",
+			"the type Delta test subject actually survived the entire testing regimen.\""
 		]
 	},
 	{
@@ -904,8 +904,8 @@
 		"id": "UniqueAmulet17",
 		"name": "Marylene's Fallacy",
 		"text": [
-			"\\\"Marylene stroked the medallion at her breast",
-			"before every duel and every cast of the die.\\\"",
+			"\"Marylene stroked the medallion at her breast",
+			"before every duel and every cast of the die.\"",
 			"- Victario, the People's Poet"
 		]
 	},
@@ -1021,9 +1021,9 @@
 		"id": "UniqueAmulet31x",
 		"name": "Replica Hinekora's Sight",
 		"text": [
-			"\\\"I touched #2993, and I saw... how blind we've been. The visions",
+			"\"I touched #2993, and I saw... how blind we've been. The visions",
 			"weren't the future. They were the past! Our 'unforeseen",
-			"consequences' have already been happening!\\\"",
+			"consequences' have already been happening!\"",
 			"- Researcher Graven"
 		]
 	},
@@ -1038,9 +1038,9 @@
 		"id": "UniqueAmulet35",
 		"name": "Eye of Innocence",
 		"text": [
-			"\\\"...and so He said: 'Let only the good meet my gaze'",
+			"\"...and so He said: 'Let only the good meet my gaze'",
 			"and no eye met His. So He called down the cleansing flames",
-			"and let black smoke sweep the Sinners away.\\\"",
+			"and let black smoke sweep the Sinners away.\"",
 			"- Book of Innocence"
 		]
 	},
@@ -1122,9 +1122,9 @@
 		"id": "UniqueAmulet44",
 		"name": "Maligaro's Cruelty",
 		"text": [
-			"\\\"He does not love. He does not feel regret or remorse.",
+			"\"He does not love. He does not feel regret or remorse.",
 			"He does not think about consequences, only possibilities.",
-			"If that does not describe a monster, tell me: what does?\\\"",
+			"If that does not describe a monster, tell me: what does?\"",
 			"- Archbishop Geofri"
 		]
 	},
@@ -1162,7 +1162,7 @@
 		"id": "UniqueAmulet5",
 		"name": "Karui Charge",
 		"text": [
-			"\\\"Shoot first, ask no questions.\\\"",
+			"\"Shoot first, ask no questions.\"",
 			"- Karui wisdom"
 		]
 	},
@@ -1170,8 +1170,8 @@
 		"id": "UniqueAmulet50",
 		"name": "Replica Dragonfang's Flight",
 		"text": [
-			"\\\"Did we make this? Why do we have no record of it?",
-			"We were warned that there would be consequences...\\\"",
+			"\"Did we make this? Why do we have no record of it?",
+			"We were warned that there would be consequences...\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -1217,16 +1217,16 @@
 		"id": "UniqueAmulet55x",
 		"name": "Replica Hyrri's Truth",
 		"text": [
-			"\\\"The type Delta test subjects could have escaped with the power offered by",
-			"Prototype #15, but they suddenly chose to murder each other instead...\\\""
+			"\"The type Delta test subjects could have escaped with the power offered by",
+			"Prototype #15, but they suddenly chose to murder each other instead...\""
 		]
 	},
 	{
 		"id": "UniqueAmulet56",
 		"name": "Tavukai",
 		"text": [
-			"\\\"Hyrri and her arrows broke the sacred code, damning herself.",
-			"Kaom seized her sacrifice, and in doing so, seized victory.\\\"",
+			"\"Hyrri and her arrows broke the sacred code, damning herself.",
+			"Kaom seized her sacrifice, and in doing so, seized victory.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -1241,8 +1241,8 @@
 		"id": "UniqueAmulet57x",
 		"name": "Replica Badge of the Brotherhood",
 		"text": [
-			"\\\"I stood upon the tower's edge, and saw that we had cracked the sky.",
-			"There is nowhere we can run that our sins will not find us now.\\\"",
+			"\"I stood upon the tower's edge, and saw that we had cracked the sky.",
+			"There is nowhere we can run that our sins will not find us now.\"",
 			"- Researcher Arn, last recorded words"
 		]
 	},
@@ -1266,8 +1266,8 @@
 		"id": "UniqueAmulet5x",
 		"name": "Replica Karui Ward",
 		"text": [
-			"\\\"In testing, Prototype #9 had no effect on fired arrows. However,",
-			"an unknown spell did destroy the entire firing chamber.\\\""
+			"\"In testing, Prototype #9 had no effect on fired arrows. However,",
+			"an unknown spell did destroy the entire firing chamber.\""
 		]
 	},
 	{
@@ -1310,8 +1310,8 @@
 		"id": "UniqueAmulet65",
 		"name": "Leadership's Price",
 		"text": [
-			"\\\"Remain poised. Remain balanced. Keep all the emotions of a lifetime caged.",
-			"Let only your enemies see the truth of your rage.\\\""
+			"\"Remain poised. Remain balanced. Keep all the emotions of a lifetime caged.",
+			"Let only your enemies see the truth of your rage.\""
 		]
 	},
 	{
@@ -1389,8 +1389,8 @@
 		"id": "UniqueAmulet74",
 		"name": "Bloodsoaked Medallion",
 		"text": [
-			"\\\"Atziri ordained that we exploit the weaknesses inherent in our slaves.",
-			"With relish, we did exactly as she instructed.\\\"",
+			"\"Atziri ordained that we exploit the weaknesses inherent in our slaves.",
+			"With relish, we did exactly as she instructed.\"",
 			"- Guatelitzi, Architect of Flesh"
 		]
 	},
@@ -1428,9 +1428,9 @@
 		"id": "UniqueAmulet79",
 		"name": "Venarius' Astrolabe",
 		"text": [
-			"\\\"You grew up an orphan, and for that, you blame me.",
+			"\"You grew up an orphan, and for that, you blame me.",
 			"Fair enough. So... why not let me erase that pain from your mind?",
-			"Then we can all stand united against the demons at the door...\\\""
+			"Then we can all stand united against the demons at the door...\""
 		]
 	},
 	{
@@ -1454,8 +1454,8 @@
 		"id": "UniqueAmulet81",
 		"name": "Khatal's Geyser",
 		"text": [
-			"\\\"In a time of great need, the tale-man sacrificed his very",
-			"body to bring forth the waters of victory and salvation.\\\""
+			"\"In a time of great need, the tale-man sacrificed his very",
+			"body to bring forth the waters of victory and salvation.\""
 		]
 	},
 	{
@@ -1480,9 +1480,9 @@
 		"id": "UniqueAmulet85",
 		"name": "Khatal's Weeping",
 		"text": [
-			"\\\"We fought the Abyssals, too. That's the part they leave out.",
+			"\"We fought the Abyssals, too. That's the part they leave out.",
 			"Khatal was Faridun... and for saving all their lives, the Maraketh",
-			"made him drink the enemy's blood. He melted from the inside out.\\\"",
+			"made him drink the enemy's blood. He melted from the inside out.\"",
 			"- Toryal, of the Afarud"
 		]
 	},
@@ -1523,8 +1523,8 @@
 		"id": "UniqueBelt10x",
 		"name": "Replica Prismweave",
 		"text": [
-			"\\\"A legion of forty soldiers attempted to break into Outpost Five and",
-			"steal Prototype #659. What do they know that we do not?\\\""
+			"\"A legion of forty soldiers attempted to break into Outpost Five and",
+			"steal Prototype #659. What do they know that we do not?\""
 		]
 	},
 	{
@@ -1538,8 +1538,8 @@
 		"id": "UniqueBelt11x",
 		"name": "Replica Bated Breath",
 		"text": [
-			"\\\"I cannot fathom the mysteries of Prototype #16. It did nearly nothing until I",
-			"brought it to [RESTRICTED]. It makes no sense!\\\"",
+			"\"I cannot fathom the mysteries of Prototype #16. It did nearly nothing until I",
+			"brought it to [RESTRICTED]. It makes no sense!\"",
 			"- Researcher Graven"
 		]
 	},
@@ -1547,8 +1547,8 @@
 		"id": "UniqueBelt12",
 		"name": "Maligaro's Restraint",
 		"text": [
-			"\\\"Our genius will pave the way forward.",
-			"May all who are worthy be improved!\\\"",
+			"\"Our genius will pave the way forward.",
+			"May all who are worthy be improved!\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -1602,9 +1602,9 @@
 		"id": "UniqueBelt18",
 		"name": "Soulthirst",
 		"text": [
-			"\\\"They say a draught of fine spirits will ward off",
+			"\"They say a draught of fine spirits will ward off",
 			"the elements and promote a longer, merrier life.",
-			"I have found this to be true on all counts.\\\"",
+			"I have found this to be true on all counts.\"",
 			"- Zerphi of the Vaal"
 		]
 	},
@@ -1612,7 +1612,7 @@
 		"id": "UniqueBelt19",
 		"name": "Umbilicus Immortalis",
 		"text": [
-			"\\\"The power of rebirth rivals that of immortality.\\\"",
+			"\"The power of rebirth rivals that of immortality.\"",
 			"- Icius Perandus, Antiquities Collection, Item 3"
 		]
 	},
@@ -1646,16 +1646,16 @@
 		"id": "UniqueBelt21x",
 		"name": "Replica Soul Tether",
 		"text": [
-			"\\\"Curious. The test spike penetrated the subject's flesh, but the chest wound",
-			"was not as deep as expected. There is something here...\\\""
+			"\"Curious. The test spike penetrated the subject's flesh, but the chest wound",
+			"was not as deep as expected. There is something here...\""
 		]
 	},
 	{
 		"id": "UniqueBelt22",
 		"name": "Perseverance",
 		"text": [
-			"\\\"Some blows must be evaded. Some blows must be endured.",
-			"The trick is to tell them apart.\\\"",
+			"\"Some blows must be evaded. Some blows must be endured.",
+			"The trick is to tell them apart.\"",
 			"- Daresso, the Sword King"
 		]
 	},
@@ -1759,8 +1759,8 @@
 		"id": "UniqueBelt33x",
 		"name": "Replica Siegebreaker",
 		"text": [
-			"\\\"Recommend extreme caution on any prototypes that can lead to a chain reaction",
-			"of deaths. Lab Twelve has been lost to the flames.\\\"",
+			"\"Recommend extreme caution on any prototypes that can lead to a chain reaction",
+			"of deaths. Lab Twelve has been lost to the flames.\"",
 			"- Lead Researcher Ksaret"
 		]
 	},
@@ -1801,8 +1801,8 @@
 		"id": "UniqueBelt39",
 		"name": "The Druggery",
 		"text": [
-			"\\\"This will help with the pain.",
-			"One for you... and one for me.\\\"",
+			"\"This will help with the pain.",
+			"One for you... and one for me.\"",
 			"- Doctor 'Shaky Hands' Opden"
 		]
 	},
@@ -1869,9 +1869,9 @@
 		"id": "UniqueBelt45",
 		"name": "Chain of Endurance",
 		"text": [
-			"\\\"A man confronted with sufficient adversity",
+			"\"A man confronted with sufficient adversity",
 			"may ascend to unprecedented heights",
-			"and triumph over his coddled rivals.\\\"",
+			"and triumph over his coddled rivals.\"",
 			"- Weylan the Ezomyte"
 		]
 	},
@@ -1879,8 +1879,8 @@
 		"id": "UniqueBelt46",
 		"name": "Ceinture of Benevolence",
 		"text": [
-			"\\\"Put your faith in me.",
-			"Our god demands it.\\\"",
+			"\"Put your faith in me.",
+			"Our god demands it.\"",
 			"- High Templar Maxarius"
 		]
 	},
@@ -1913,10 +1913,10 @@
 		"id": "UniqueBelt50",
 		"name": "Nevalius Inheritance",
 		"text": [
-			"\\\"I come from a long line of scholars, poets, and artists.",
+			"\"I come from a long line of scholars, poets, and artists.",
 			"You can imagine how little we leave our children...",
 			"My father only gifted me one thing: for good or ill,",
-			"I don't know when to quit.\\\"",
+			"I don't know when to quit.\"",
 			"- Victario Nevalius, the People's Poet"
 		]
 	},
@@ -1932,9 +1932,9 @@
 		"id": "UniqueBelt52",
 		"name": "Saresh's Darkness",
 		"text": [
-			"\\\"I weep not for myself, but for the truth of what we are.",
+			"\"I weep not for myself, but for the truth of what we are.",
 			"It rots away inside all of us, the darkness within. They blame",
-			"me, but I am merely the prophet, the one who sees the black.\\\""
+			"me, but I am merely the prophet, the one who sees the black.\""
 		]
 	},
 	{
@@ -1950,18 +1950,18 @@
 		"id": "UniqueBelt55",
 		"name": "Solerai's Radiance",
 		"text": [
-			"\\\"When we first saw the Sun, our eyes were not above,",
+			"\"When we first saw the Sun, our eyes were not above,",
 			"but on her. She was the burning heart of fury, and the",
-			"dead turned to flee. We drove them beneath for all time.\\\""
+			"dead turned to flee. We drove them beneath for all time.\""
 		]
 	},
 	{
 		"id": "UniqueBelt56",
 		"name": "Screams of the Desiccated",
 		"text": [
-			"\\\"I staggered on, dying of thirst... I thought I found respite,",
+			"\"I staggered on, dying of thirst... I thought I found respite,",
 			"but no... it was a pit of newborns... dry and hollow...",
-			"and they screamed still, begging me for vengeance...\\\""
+			"and they screamed still, begging me for vengeance...\""
 		]
 	},
 	{
@@ -1985,9 +1985,9 @@
 		"id": "UniqueBelt7",
 		"name": "Headhunter",
 		"text": [
-			"\\\"A man's soul rules from a cavern of bone, learns and",
+			"\"A man's soul rules from a cavern of bone, learns and",
 			"judges through flesh-born windows. The heart is meat.",
-			"The head is where the Man is.\\\"",
+			"The head is where the Man is.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -1995,18 +1995,18 @@
 		"id": "UniqueBelt7x",
 		"name": "Replica Headhunter",
 		"text": [
-			"\\\"A type Delta test subject escaped with Prototype #18. He was last seen",
-			"ten times the height of a man and crashing straight through walls.\\\""
+			"\"A type Delta test subject escaped with Prototype #18. He was last seen",
+			"ten times the height of a man and crashing straight through walls.\""
 		]
 	},
 	{
 		"id": "UniqueBelt8",
 		"name": "Immortal Flesh",
 		"text": [
-			"\\\"She begged the Earth to spare her Son;",
+			"\"She begged the Earth to spare her Son;",
 			"Out of love the Earth agreed.",
 			"To the other Elements she did not speak",
-			"And out of spite They plotted.\\\"",
+			"And out of spite They plotted.\"",
 			"- Berek and the Untamed"
 		]
 	},
@@ -2014,8 +2014,8 @@
 		"id": "UniqueBelt9",
 		"name": "Doryani's Invitation",
 		"text": [
-			"\\\"You can invite them but you can never be",
-			"sure who will come knocking.\\\"",
+			"\"You can invite them but you can never be",
+			"sure who will come knocking.\"",
 			"- Doryani, Queen's Thaumaturgist"
 		]
 	},
@@ -2051,8 +2051,8 @@
 		"id": "UniqueBodyDex11x",
 		"name": "Replica Perfect Form",
 		"text": [
-			"\\\"This is what I've been trying to tell you. This prototype",
-			"was different before. Now, it's always been this way!\\\"",
+			"\"This is what I've been trying to tell you. This prototype",
+			"was different before. Now, it's always been this way!\"",
 			"- Researcher Graven"
 		]
 	},
@@ -2070,8 +2070,8 @@
 		"id": "UniqueBodyDex1x",
 		"name": "Replica Hyrri's Ire",
 		"text": [
-			"\\\"Yes, a catastrophic storm erupted, and yes, they screamed for me",
-			"to stop the experiment... but you know how I am with screams.\\\"",
+			"\"Yes, a catastrophic storm erupted, and yes, they screamed for me",
+			"to stop the experiment... but you know how I am with screams.\"",
 			"- Researcher Olesya, on #2999 and the loss of Outpost Eight"
 		]
 	},
@@ -2113,8 +2113,8 @@
 		"id": "UniqueBodyDex7",
 		"name": "Wildwrap",
 		"text": [
-			"\\\"I carry neither food nor drink. I rely on the charity",
-			"of my fellow wayfarers. Dead men are generous men.\\\"",
+			"\"I carry neither food nor drink. I rely on the charity",
+			"of my fellow wayfarers. Dead men are generous men.\"",
 			"- Taruk of the Wildmen"
 		]
 	},
@@ -2140,8 +2140,8 @@
 		"id": "UniqueBodyDexInt1",
 		"name": "Carcass Jack",
 		"text": [
-			"\\\"...The discomfort shown by the others is amusing, but none",
-			"can deny that my work has made quite the splash...\\\"",
+			"\"...The discomfort shown by the others is amusing, but none",
+			"can deny that my work has made quite the splash...\"",
 			"- Maligaro's Journal"
 		]
 	},
@@ -2165,8 +2165,8 @@
 		"id": "UniqueBodyDexInt11x",
 		"name": "Replica Eternity Shroud",
 		"text": [
-			"\\\"The form of this replica came to me in a troubled dream.",
-			"I do not believe we should ever allow it to be used.\\\"",
+			"\"The form of this replica came to me in a troubled dream.",
+			"I do not believe we should ever allow it to be used.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -2245,17 +2245,17 @@
 		"id": "UniqueBodyDexInt3x",
 		"name": "Replica Restless Ward",
 		"text": [
-			"\\\"Further research must be done on Prototype #282.",
-			"There is power here, if it can be tapped.\\\""
+			"\"Further research must be done on Prototype #282.",
+			"There is power here, if it can be tapped.\""
 		]
 	},
 	{
 		"id": "UniqueBodyDexInt4",
 		"name": "Victario's Influence",
 		"text": [
-			"\\\"Every life is a story.",
+			"\"Every life is a story.",
 			"If you're not writing your own,",
-			"you'd better know who's writing it for you!\\\"",
+			"you'd better know who's writing it for you!\"",
 			"- Victario, the People's Poet"
 		]
 	},
@@ -2294,7 +2294,7 @@
 		"id": "UniqueBodyDexInt9x",
 		"name": "Replica Shroud of the Lightless",
 		"text": [
-			"\\\"Eyes of black, three by three, staring ever darker into me...\\\"",
+			"\"Eyes of black, three by three, staring ever darker into me...\"",
 			"- Researcher Arn"
 		]
 	},
@@ -2437,8 +2437,8 @@
 		"id": "UniqueBodyInt3x",
 		"name": "Replica Covenant",
 		"text": [
-			"\\\"Researcher Graven's request to wear Prototype #2998 in",
-			"place of his standard lab attire is... granted.\\\"",
+			"\"Researcher Graven's request to wear Prototype #2998 in",
+			"place of his standard lab attire is... granted.\"",
 			"- Lead Researcher Ksaret"
 		]
 	},
@@ -2539,8 +2539,8 @@
 		"id": "UniqueBodyStr1x",
 		"name": "Replica Kaom's Heart",
 		"text": [
-			"\\\"Useless for our purposes, but perhaps we can sell Prototype #5",
-			"to an archmage to fund other experiments.\\\""
+			"\"Useless for our purposes, but perhaps we can sell Prototype #5",
+			"to an archmage to fund other experiments.\""
 		]
 	},
 	{
@@ -2580,9 +2580,9 @@
 		"id": "UniqueBodyStr6",
 		"name": "Lioneye's Vision",
 		"text": [
-			"\\\"The Virtue Gems are a gift from the land,",
+			"\"The Virtue Gems are a gift from the land,",
 			"our land, and we will not let our gifts",
-			"be destroyed by savages.\\\"",
+			"be destroyed by savages.\"",
 			"- Marceus Lioneye"
 		]
 	},
@@ -2597,8 +2597,8 @@
 		"id": "UniqueBodyStr9",
 		"name": "The Iron Fortress",
 		"text": [
-			"\\\"The Council have a great many secrets.",
-			"Some are better kept that way, Cospri.\\\"",
+			"\"The Council have a great many secrets.",
+			"Some are better kept that way, Cospri.\"",
 			"- Mauritius, the Iron Heart"
 		]
 	},
@@ -2614,8 +2614,8 @@
 		"id": "UniqueBodyStrDex2",
 		"name": "Lightning Coil",
 		"text": [
-			"\\\"There's nothing like imminent death",
-			"to galvanize one's purpose in life.\\\"",
+			"\"There's nothing like imminent death",
+			"to galvanize one's purpose in life.\"",
 			"- Malachai the Soulless."
 		]
 	},
@@ -2623,10 +2623,10 @@
 		"id": "UniqueBodyStrDex3",
 		"name": "Daresso's Defiance",
 		"text": [
-			"\\\"When your back is against the wall,",
+			"\"When your back is against the wall,",
 			"And your opponent is bleeding you dry,",
 			"There is only one appropriate response:",
-			"Unbridled, overwhelming violence.\\\"",
+			"Unbridled, overwhelming violence.\"",
 			"- Daresso, the Sword King"
 		]
 	},
@@ -2634,10 +2634,10 @@
 		"id": "UniqueBodyStrDex4",
 		"name": "Cherrubim's Maleficence",
 		"text": [
-			"\\\"The Consort of Chaos descended,",
+			"\"The Consort of Chaos descended,",
 			"swiftly, brutally, artfully, she consumed the living,",
 			"leaving naught behind but a Rosemarie bloom,",
-			"to celebrate the massacre.\\\"",
+			"to celebrate the massacre.\"",
 			"- Blass, explorer, hunter, adventurer"
 		]
 	},
@@ -2677,25 +2677,25 @@
 		"id": "UniqueBodyStrDex8x",
 		"name": "Replica Farrul's Fur",
 		"text": [
-			"\\\"Attempt #120: the prototype has finally achieved power similar to the original",
-			"without breaking all the bones of the test subject. A rousing success.\\\""
+			"\"Attempt #120: the prototype has finally achieved power similar to the original",
+			"without breaking all the bones of the test subject. A rousing success.\""
 		]
 	},
 	{
 		"id": "UniqueBodyStrDex9",
 		"name": "Rigwald's Hunt",
 		"text": [
-			"\\\"The Greatwolf is with us! Gaius Sentari",
+			"\"The Greatwolf is with us! Gaius Sentari",
 			"flees! Let us give chase, for today, my",
-			"brothers and sisters, we are finally free!\\\""
+			"brothers and sisters, we are finally free!\""
 		]
 	},
 	{
 		"id": "UniqueBodyStrDexInt1",
 		"name": "Atziri's Splendour",
 		"text": [
-			"\\\"When you have nothing to hide,",
-			"you have nothing to fear.\\\"",
+			"\"When you have nothing to hide,",
+			"you have nothing to fear.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -2753,8 +2753,8 @@
 		"id": "UniqueBodyStrInt14",
 		"name": "Doryani's Prototype",
 		"text": [
-			"\\\"This was the first step in some grand design,",
-			"lost to the ages, now ours to decipher.\\\"",
+			"\"This was the first step in some grand design,",
+			"lost to the ages, now ours to decipher.\"",
 			"- Dominus, High Templar"
 		]
 	},
@@ -2770,9 +2770,9 @@
 		"id": "UniqueBodyStrInt16",
 		"name": "Waxen Soul",
 		"text": [
-			"\\\"We huddle in the fading light of our candles,",
+			"\"We huddle in the fading light of our candles,",
 			"begging the darkness to leave us in peace...",
-			"but what if we joined Him, and left fear behind?\\\""
+			"but what if we joined Him, and left fear behind?\""
 		]
 	},
 	{
@@ -2786,8 +2786,8 @@
 		"id": "UniqueBodyStrInt2x",
 		"name": "Replica Ambu's Charge",
 		"text": [
-			"\\\"Prototype #7 achieved even greater injury responsiveness than expected,",
-			"though at considerable cost to the long-term survival rate of the user.\\\""
+			"\"Prototype #7 achieved even greater injury responsiveness than expected,",
+			"though at considerable cost to the long-term survival rate of the user.\""
 		]
 	},
 	{
@@ -2844,8 +2844,8 @@
 		"id": "UniqueBodyStrInt9x",
 		"name": "Replica Loreweave",
 		"text": [
-			"\\\"Better... stronger... more vital... and then... failure. Always, failure.",
-			"What key fundamental secret are we missing?\\\""
+			"\"Better... stronger... more vital... and then... failure. Always, failure.",
+			"What key fundamental secret are we missing?\""
 		]
 	},
 	{
@@ -2907,9 +2907,9 @@
 		"id": "UniqueBootsDex4",
 		"name": "The Blood Dance",
 		"text": [
-			"\\\"Sharks thrash and swirl",
+			"\"Sharks thrash and swirl",
 			"To the pounding drum of their frenzied hearts",
-			"As they dance in the waters red.\\\"",
+			"As they dance in the waters red.\"",
 			"-Lavianga, Guardian of the Karui Way"
 		]
 	},
@@ -2917,8 +2917,8 @@
 		"id": "UniqueBootsDex5",
 		"name": "Seven-League Step",
 		"text": [
-			"\\\"Death can be outrun with these, but beware!",
-			"In running from death, you may forget to live.\\\"",
+			"\"Death can be outrun with these, but beware!",
+			"In running from death, you may forget to live.\"",
 			"- Icius Perandus, Antiquities Collection, Item 202"
 		]
 	},
@@ -2933,8 +2933,8 @@
 		"id": "UniqueBootsDex7",
 		"name": "Atziri's Step",
 		"text": [
-			"\\\"Those who dance are considered insane",
-			"by those who cannot hear the music.\\\"",
+			"\"Those who dance are considered insane",
+			"by those who cannot hear the music.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -2958,8 +2958,8 @@
 		"id": "UniqueBootsDex9x",
 		"name": "Replica Three-step Assault",
 		"text": [
-			"\\\"The test subject nearly escaped, but the poison gas",
-			"system in the hallway functioned as expected.\\\""
+			"\"The test subject nearly escaped, but the poison gas",
+			"system in the hallway functioned as expected.\""
 		]
 	},
 	{
@@ -2983,8 +2983,8 @@
 		"id": "UniqueBootsDexInt10x",
 		"name": "Replica Stampede",
 		"text": [
-			"\\\"Suppression troop seven, the 'Glowering Faithful,' managed to fell the escaping",
-			"test subject by timing their arrows between his explosive dashes.\\\"",
+			"\"Suppression troop seven, the 'Glowering Faithful,' managed to fell the escaping",
+			"test subject by timing their arrows between his explosive dashes.\"",
 			"",
 			"^8This item can be anointed by Cassia"
 		]
@@ -3009,8 +3009,8 @@
 		"id": "UniqueBootsDexInt13",
 		"name": "Veruso's Ambition",
 		"text": [
-			"\\\"Follow me if you desire better for yourself, and for your",
-			"families. Follow me if you hunger for more than this!\\\""
+			"\"Follow me if you desire better for yourself, and for your",
+			"families. Follow me if you hunger for more than this!\""
 		]
 	},
 	{
@@ -3033,8 +3033,8 @@
 		"id": "UniqueBootsDexInt5x",
 		"name": "Replica Voidwalker",
 		"text": [
-			"\\\"Test subject was able to walk into the walls of his chamber after breaking a rabbit's neck.",
-			"He was not fast enough, however. Suggest we begin excavation to retrieve prototype.\\\""
+			"\"Test subject was able to walk into the walls of his chamber after breaking a rabbit's neck.",
+			"He was not fast enough, however. Suggest we begin excavation to retrieve prototype.\""
 		]
 	},
 	{
@@ -3115,8 +3115,8 @@
 		"id": "UniqueBootsInt4x",
 		"name": "Replica Bones of Ullr",
 		"text": [
-			"\\\"Outpost Twelve has been abandoned. On the bright side, I expect the plague of apparitions",
-			"to serve as ample defence for the relics we left behind.\\\"",
+			"\"Outpost Twelve has been abandoned. On the bright side, I expect the plague of apparitions",
+			"to serve as ample defence for the relics we left behind.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -3124,8 +3124,8 @@
 		"id": "UniqueBootsInt5",
 		"name": "Rainbowstride",
 		"text": [
-			"\\\"They say that you should take life's troubles in your stride.",
-			"Some men have a longer stride than others.\\\"",
+			"\"They say that you should take life's troubles in your stride.",
+			"Some men have a longer stride than others.\"",
 			"- Gaius Sentari"
 		]
 	},
@@ -3157,8 +3157,8 @@
 		"id": "UniqueBootsInt8x",
 		"name": "Replica Inya's Epiphany",
 		"text": [
-			"\\\"Prototype #56 was deemed safe, but judging by Administrator Qotra's new hustle",
-			"and improved ability to micromanage us, I'm not so sure.\\\"",
+			"\"Prototype #56 was deemed safe, but judging by Administrator Qotra's new hustle",
+			"and improved ability to micromanage us, I'm not so sure.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -3247,8 +3247,8 @@
 		"id": "UniqueBootsStr7x",
 		"name": "Replica Red Trail",
 		"text": [
-			"\\\"Researchers will please refrain from combining our prototypes with existing relics",
-			"of power. The temptation is obvious, but the results can be... unpredictable.\\\"",
+			"\"Researchers will please refrain from combining our prototypes with existing relics",
+			"of power. The temptation is obvious, but the results can be... unpredictable.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -3271,17 +3271,17 @@
 		"id": "UniqueBootsStrDex1x",
 		"name": "Replica Lioneye's Paws",
 		"text": [
-			"\\\"Twelve dead, and the seventh lab cannot be entered for several years.",
-			"Prototype #12 is a 'success,' if we can ever reach it.\\\""
+			"\"Twelve dead, and the seventh lab cannot be entered for several years.",
+			"Prototype #12 is a 'success,' if we can ever reach it.\""
 		]
 	},
 	{
 		"id": "UniqueBootsStrDex2",
 		"name": "Darkray Vectors",
 		"text": [
-			"\\\"Sirrius flew on wings of light, faster than wind, faster",
+			"\"Sirrius flew on wings of light, faster than wind, faster",
 			"than thought. But try as he might to outrun the darkness,",
-			"it was there, at every turn, waiting for him.\\\"",
+			"it was there, at every turn, waiting for him.\"",
 			"- Azmerian legend"
 		]
 	},
@@ -3289,8 +3289,8 @@
 		"id": "UniqueBootsStrDex3",
 		"name": "Duskblight",
 		"text": [
-			"\\\"A lick of shadow may ease",
-			"the petty frictions of one's life.\\\"",
+			"\"A lick of shadow may ease",
+			"the petty frictions of one's life.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -3356,8 +3356,8 @@
 		"id": "UniqueBootsStrInt2x",
 		"name": "Replica Alberon's Warpath",
 		"text": [
-			"\\\"Starving test subject became completely incapable of exerting force.",
-			"However, after being fed, he began to poison everything he touched...\\\""
+			"\"Starving test subject became completely incapable of exerting force.",
+			"However, after being fed, he began to poison everything he touched...\""
 		]
 	},
 	{
@@ -3395,7 +3395,7 @@
 		"id": "UniqueBow1",
 		"name": "Lioneye's Glare",
 		"text": [
-			"\\\"See without doubt, slay without hesitation.\\\"",
+			"\"See without doubt, slay without hesitation.\"",
 			"- Marceus Lioneye of Sarn"
 		]
 	},
@@ -3412,10 +3412,10 @@
 		"id": "UniqueBow11",
 		"name": "Doomfletch's Prism",
 		"text": [
-			"\\\"Toasted or frozen",
+			"\"Toasted or frozen",
 			"Or twitching in the light",
 			"I'm not fussy",
-			"And neither is Death.\\\"",
+			"And neither is Death.\"",
 			"- Koralus Doomfletch"
 		]
 	},
@@ -3430,9 +3430,9 @@
 		"id": "UniqueBow13",
 		"name": "Roth's Reach",
 		"text": [
-			"\\\"Exiled to the sea; what a joke.",
-			"I'm more free than I've ever been.\\\"",
-			"- Captain Weylam \\\"Rot-tooth\\\" Roth of the Black Crest"
+			"\"Exiled to the sea; what a joke.",
+			"I'm more free than I've ever been.\"",
+			"- Captain Weylam \"Rot-tooth\" Roth of the Black Crest"
 		]
 	},
 	{
@@ -3447,8 +3447,8 @@
 		"id": "UniqueBow14x",
 		"name": "Replica Iron Commander",
 		"text": [
-			"\\\"Admittedly lacking the finesse of the fabled original,",
-			"Prototype #4 achieved identical results through brute force alone.\\\""
+			"\"Admittedly lacking the finesse of the fabled original,",
+			"Prototype #4 achieved identical results through brute force alone.\""
 		]
 	},
 	{
@@ -3491,7 +3491,7 @@
 		"id": "UniqueBow2",
 		"name": "Silverbough",
 		"text": [
-			"\\\"The wild takes care of its own.\\\"",
+			"\"The wild takes care of its own.\"",
 			"- Hyrri of the Karui"
 		]
 	},
@@ -3519,7 +3519,7 @@
 		"id": "UniqueBow22",
 		"name": "The Crimson Storm",
 		"text": [
-			"\\\"There were no survivors. It had only been fired twice.\\\"",
+			"\"There were no survivors. It had only been fired twice.\"",
 			"- Order of the Djinn inscription"
 		]
 	},
@@ -3535,9 +3535,9 @@
 		"id": "UniqueBow24",
 		"name": "Widowhail",
 		"text": [
-			"\\\"I loosed a volley of arrows into the heart of the man",
+			"\"I loosed a volley of arrows into the heart of the man",
 			"who slew my beloved. There was no satisfaction, no",
-			"healing, no revenge. There was only... emptiness.\\\"",
+			"healing, no revenge. There was only... emptiness.\"",
 			"- Chieftainess Ahuana of the Ramako Tribe"
 		]
 	},
@@ -3555,9 +3555,9 @@
 		"id": "UniqueBow26",
 		"name": "The Flame of Hope",
 		"text": [
-			"\\\"So long as a single flame flickers, our akhara lives.",
+			"\"So long as a single flame flickers, our akhara lives.",
 			"And when there is nothing left to give to the fire,",
-			"we shall burn the enemy for warmth!\\\"",
+			"we shall burn the enemy for warmth!\"",
 			"- Varashta, the Winter Sekhema"
 		]
 	},
@@ -3565,9 +3565,9 @@
 		"id": "UniqueBow27",
 		"name": "The Bane of Hope",
 		"text": [
-			"\\\"Hope? There is no such thing! We are all rotting flesh,",
+			"\"Hope? There is no such thing! We are all rotting flesh,",
 			"stuck here on this world to torture each other. Hope",
-			"is a mistake, and we will show you its folly.\\\"",
+			"is a mistake, and we will show you its folly.\"",
 			"- Batoor, of the Afarud"
 		]
 	},
@@ -3585,8 +3585,8 @@
 		"id": "UniqueBow4",
 		"name": "Quill Rain",
 		"text": [
-			"\\\"The rain of a thousand quills that whittle",
-			"present into past, life into death.\\\"",
+			"\"The rain of a thousand quills that whittle",
+			"present into past, life into death.\"",
 			"- Rigwald of the Ezomytes"
 		]
 	},
@@ -3594,8 +3594,8 @@
 		"id": "UniqueBow4x",
 		"name": "Replica Quill Rain",
 		"text": [
-			"\\\"How did you manage to lodge arrows in every single test subject",
-			"and researcher in Lab Three simultaneously?\\\"",
+			"\"How did you manage to lodge arrows in every single test subject",
+			"and researcher in Lab Three simultaneously?\"",
 			"- Doctor Bircus"
 		]
 	},
@@ -3603,8 +3603,8 @@
 		"id": "UniqueBow5",
 		"name": "Darkscorn",
 		"text": [
-			"\\\"The Spirit of War knows nothing of good and evil.",
-			"It knows only destruction.\\\"",
+			"\"The Spirit of War knows nothing of good and evil.",
+			"It knows only destruction.\"",
 			"- Sekhema Asenath"
 		]
 	},
@@ -3628,8 +3628,8 @@
 		"id": "UniqueBow7x",
 		"name": "Replica Infractem",
 		"text": [
-			"\\\"How did you manage to lodge arrows in every single test subject",
-			"and researcher in Lab Three simultaneously... again?\\\"",
+			"\"How did you manage to lodge arrows in every single test subject",
+			"and researcher in Lab Three simultaneously... again?\"",
 			"- Doctor Bircus"
 		]
 	},
@@ -3653,8 +3653,8 @@
 		"id": "UniqueBow9x",
 		"name": "Replica Windripper",
 		"text": [
-			"\\\"Beware. Prototype #91 is haunted by a strange miasma,",
-			"an odour of evil. Nothing can shield the senses.\\\"",
+			"\"Beware. Prototype #91 is haunted by a strange miasma,",
+			"an odour of evil. Nothing can shield the senses.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -3680,8 +3680,8 @@
 		"id": "UniqueClaw10x",
 		"name": "Replica Allure",
 		"text": [
-			"\\\"Test subject was able to survive the entire process simply by shouting epithets at",
-			"the researcher. Researcher's feelings were slightly injured.\\\"",
+			"\"Test subject was able to survive the entire process simply by shouting epithets at",
+			"the researcher. Researcher's feelings were slightly injured.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -3755,7 +3755,7 @@
 		"id": "UniqueClaw3",
 		"name": "Bloodseeker",
 		"text": [
-			"\\\"For the life of the flesh will always be in the blood.\\\"",
+			"\"For the life of the flesh will always be in the blood.\"",
 			"- Atalui, Vaal Priestess"
 		]
 	},
@@ -3770,8 +3770,8 @@
 		"id": "UniqueClaw4x",
 		"name": "Replica Last Resort",
 		"text": [
-			"\\\"An absurdly vicious weapon in the hands of our test subjects. It seems to",
-			"channel the desperate will to live. Intriguing.\\\"",
+			"\"An absurdly vicious weapon in the hands of our test subjects. It seems to",
+			"channel the desperate will to live. Intriguing.\"",
 			"- Researcher Olesya"
 		]
 	},
@@ -3779,8 +3779,8 @@
 		"id": "UniqueClaw6",
 		"name": "Al Dhih",
 		"text": [
-			"\\\"When the hyena howls thrice",
-			"death is sure to follow.\\\"",
+			"\"When the hyena howls thrice",
+			"death is sure to follow.\"",
 			"-Maraketh Wisdom"
 		]
 	},
@@ -3847,9 +3847,9 @@
 		"id": "UniqueCorruptedJewel14x",
 		"name": "Replica Blood Sacrifice",
 		"text": [
-			"\\\"You know what to do with this, don't you?\\\" - Researcher Graven",
-			"\\\"Kill test subjects for their vitality?\\\" - Researcher Olesya",
-			"\\\"That is not what he meant.\\\" - Researcher Arn"
+			"\"You know what to do with this, don't you?\" - Researcher Graven",
+			"\"Kill test subjects for their vitality?\" - Researcher Olesya",
+			"\"That is not what he meant.\" - Researcher Arn"
 		]
 	},
 	{
@@ -3863,16 +3863,16 @@
 		"id": "UniqueCorruptedJewel16",
 		"name": "Pacifism",
 		"text": [
-			"\\\"Your fear will overcome you.\\\""
+			"\"Your fear will overcome you.\""
 		]
 	},
 	{
 		"id": "UniqueCorruptedJewel16x",
 		"name": "Replica Pacifism",
 		"text": [
-			"\\\"Release the type Delta test subjects. Unseal all prototype lockers.",
+			"\"Release the type Delta test subjects. Unseal all prototype lockers.",
 			"Arm yourself! I know that, as researchers, you've never had to fight",
-			"before, but they're coming to kill us all. It's resist or die!\\\"",
+			"before, but they're coming to kill us all. It's resist or die!\"",
 			"- Lead Researcher Ksaret, two hours post-Incident"
 		]
 	},
@@ -3880,15 +3880,15 @@
 		"id": "UniqueCorruptedJewel17",
 		"name": "Fragility",
 		"text": [
-			"\\\"Your flesh will fail you.\\\""
+			"\"Your flesh will fail you.\""
 		]
 	},
 	{
 		"id": "UniqueCorruptedJewel17x",
 		"name": "Replica Fragility",
 		"text": [
-			"\\\"Our defenses are failing at Outpost One. We can't hold out much",
-			"longer. All outposts, abandon your stations! Escape while you can!\\\"",
+			"\"Our defenses are failing at Outpost One. We can't hold out much",
+			"longer. All outposts, abandon your stations! Escape while you can!\"",
 			"- Lead Researcher Ksaret, three hours post-Incident"
 		]
 	},
@@ -3896,16 +3896,16 @@
 		"id": "UniqueCorruptedJewel18",
 		"name": "Powerlessness",
 		"text": [
-			"\\\"Your desires will mislead you.\\\""
+			"\"Your desires will mislead you.\""
 		]
 	},
 	{
 		"id": "UniqueCorruptedJewel18x",
 		"name": "Replica Powerlessness",
 		"text": [
-			"\\\"The suppression troops have stopped responding to my orders.",
+			"\"The suppression troops have stopped responding to my orders.",
 			"I'm no longer in charge, and I likely never truly was... I suspect",
-			"they're already coming for us.\\\"",
+			"they're already coming for us.\"",
 			"- Lead Researcher Ksaret, one hour post-Incident"
 		]
 	},
@@ -3960,8 +3960,8 @@
 		"id": "UniqueCorruptedJewel8",
 		"name": "Ancient Waystones",
 		"text": [
-			"\\\"The Vaal left a thousand warnings behind.",
-			"We ignored every single one.\\\"",
+			"\"The Vaal left a thousand warnings behind.",
+			"We ignored every single one.\"",
 			"- Siosa, the Last Scholar"
 		]
 	},
@@ -4003,7 +4003,7 @@
 		"id": "UniqueDagger12",
 		"name": "Bloodplay",
 		"text": [
-			"\\\"I'm a painter, and crimson is my chosen hue.\\\"",
+			"\"I'm a painter, and crimson is my chosen hue.\"",
 			"- Coralito, Brotherhood of Silence"
 		]
 	},
@@ -4011,8 +4011,8 @@
 		"id": "UniqueDagger12x",
 		"name": "Replica Bloodplay",
 		"text": [
-			"\\\"Prototype #131 must never be allowed near anyone who bears a wound, no",
-			"matter how slight. Even a tiny cut makes it exponentially more dangerous.\\\""
+			"\"Prototype #131 must never be allowed near anyone who bears a wound, no",
+			"matter how slight. Even a tiny cut makes it exponentially more dangerous.\""
 		]
 	},
 	{
@@ -4067,8 +4067,8 @@
 		"id": "UniqueDagger19x",
 		"name": "Replica Cold Iron Point",
 		"text": [
-			"\\\"Researchers will refrain from scaring each other by firing ice spears while holding",
-			"Prototype #141. Sooner or later, someone's going to lose an eye.\\\"",
+			"\"Researchers will refrain from scaring each other by firing ice spears while holding",
+			"Prototype #141. Sooner or later, someone's going to lose an eye.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -4091,7 +4091,7 @@
 		"id": "UniqueDagger21",
 		"name": "Goblinedge",
 		"text": [
-			"\\\"That bronze girl sure knows how to cut someone down to size!\\\"",
+			"\"That bronze girl sure knows how to cut someone down to size!\"",
 			"- Bertrand the Plush"
 		]
 	},
@@ -4115,8 +4115,8 @@
 		"id": "UniqueDagger3x",
 		"name": "Replica Ungil's Gauche",
 		"text": [
-			"\\\"Recommend further production of Prototype #122. It makes",
-			"an ideal weapon for our suppression troops and guards.\\\""
+			"\"Recommend further production of Prototype #122. It makes",
+			"an ideal weapon for our suppression troops and guards.\""
 		]
 	},
 	{
@@ -4131,9 +4131,9 @@
 		"id": "UniqueDagger4x",
 		"name": "Replica Heartbreaker",
 		"text": [
-			"\\\"There is something incredibly satisfying about impaling test",
+			"\"There is something incredibly satisfying about impaling test",
 			"subjects with Ethereal Knives. Perhaps it is the sound -",
-			"the spell, the screams, or both.\\\"  - Researcher Olesya"
+			"the spell, the screams, or both.\"  - Researcher Olesya"
 		]
 	},
 	{
@@ -4246,16 +4246,16 @@
 		"id": "UniqueFlask15x",
 		"name": "Replica Sorrow of the Divine",
 		"text": [
-			"\\\"Success! Prototype #54 has tapped into that sliver of divinity that exists within.",
-			"Faith fuels the flesh, and the flesh fuels the fire...\\\""
+			"\"Success! Prototype #54 has tapped into that sliver of divinity that exists within.",
+			"Faith fuels the flesh, and the flesh fuels the fire...\""
 		]
 	},
 	{
 		"id": "UniqueFlask16",
 		"name": "Zerphi's Last Breath",
 		"text": [
-			"\\\"Proof that if you devote yourself to a god of death,",
-			"you may be spared from its wrath.\\\"",
+			"\"Proof that if you devote yourself to a god of death,",
+			"you may be spared from its wrath.\"",
 			"- Icius Perandus, Antiquities Collection, Item 408"
 		]
 	},
@@ -4279,10 +4279,10 @@
 		"id": "UniqueFlask19",
 		"name": "Witchfire Brew",
 		"text": [
-			"\\\"Think of those that cursed us, judged us,",
+			"\"Think of those that cursed us, judged us,",
 			"and burned our sisters upon the pyre.",
 			"Think of their names as you drink,",
-			"and even their children will feel what we do to them today.\\\"",
+			"and even their children will feel what we do to them today.\"",
 			"-Vadinya, to her coven"
 		]
 	},
@@ -4290,8 +4290,8 @@
 		"id": "UniqueFlask19x",
 		"name": "Replica Witchfire Brew",
 		"text": [
-			"\\\"Nobody will listen to me, because I'm the only one that sees it.",
-			"Nothing left to do now but drink until this world makes sense.\\\"",
+			"\"Nobody will listen to me, because I'm the only one that sees it.",
+			"Nothing left to do now but drink until this world makes sense.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -4333,8 +4333,8 @@
 		"id": "UniqueFlask23",
 		"name": "Coralito's Signature",
 		"text": [
-			"\\\"What cruelty it is, that to be judged a success,",
-			"such great work must go uncredited.\\\"",
+			"\"What cruelty it is, that to be judged a success,",
+			"such great work must go uncredited.\"",
 			"- Coralito, Brotherhood of Silence"
 		]
 	},
@@ -4351,7 +4351,7 @@
 		"id": "UniqueFlask26",
 		"name": "Soul Ripper",
 		"text": [
-			"\\\"What care have I for their pain? They're already dead.\\\"",
+			"\"What care have I for their pain? They're already dead.\"",
 			"- Atalui, Vaal Priestess"
 		]
 	},
@@ -4383,10 +4383,10 @@
 		"id": "UniqueFlask3",
 		"name": "Blood of the Karui",
 		"text": [
-			"\\\"Kaom fought and killed for his people.",
+			"\"Kaom fought and killed for his people.",
 			"Kaom bled for his people.",
 			"And so the people gave, the people bled,",
-			"So their King might go on.\\\"",
+			"So their King might go on.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -4436,8 +4436,8 @@
 		"id": "UniqueFlask35",
 		"name": "Wine of the Prophet",
 		"text": [
-			"\\\"To proclaim a vision of the future is to make it so,",
-			"for those that have the will, and the way!\\\"",
+			"\"To proclaim a vision of the future is to make it so,",
+			"for those that have the will, and the way!\"",
 			"- High Templar Andronicus"
 		]
 	},
@@ -4445,9 +4445,9 @@
 		"id": "UniqueFlask36",
 		"name": "Wellwater Phylactery",
 		"text": [
-			"\\\"Let us share our thirsts. Yours, for power,",
+			"\"Let us share our thirsts. Yours, for power,",
 			"and mine, for death. A stable alliance,",
-			"so long as you never speak my name...\\\""
+			"so long as you never speak my name...\""
 		]
 	},
 	{
@@ -4472,8 +4472,8 @@
 		"id": "UniqueFlask4",
 		"name": "Lavianga's Spirit",
 		"text": [
-			"\\\"When the Ancestors fill your cup,",
-			"It is only good manners to drink your fill.\\\"",
+			"\"When the Ancestors fill your cup,",
+			"It is only good manners to drink your fill.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -4481,14 +4481,14 @@
 		"id": "UniqueFlask4x",
 		"name": "Replica Lavianga's Spirit",
 		"text": [
-			"\\\"An intriguing paradox.\\\""
+			"\"An intriguing paradox.\""
 		]
 	},
 	{
 		"id": "UniqueFlask5",
 		"name": "Atziri's Promise",
 		"text": [
-			"\\\"Death needs not your understanding. It needs only your loyalty.\\\"",
+			"\"Death needs not your understanding. It needs only your loyalty.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -4503,8 +4503,8 @@
 		"id": "UniqueFlask7",
 		"name": "Rumi's Concoction",
 		"text": [
-			"\\\"Yesterday I was clever, so I wanted to change the world.",
-			"Today I am wise, so I am changing myself.\\\"",
+			"\"Yesterday I was clever, so I wanted to change the world.",
+			"Today I am wise, so I am changing myself.\"",
 			"-Rumi of the Vaal"
 		]
 	},
@@ -4512,7 +4512,7 @@
 		"id": "UniqueFlask7x",
 		"name": "Replica Rumi's Concoction",
 		"text": [
-			"\\\"The most terrifying split second of my life.\\\"",
+			"\"The most terrifying split second of my life.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -4656,7 +4656,7 @@
 		"id": "UniqueGlovesDexInt17",
 		"name": "Abhorrent Interrogation",
 		"text": [
-			"\\\"We have methods of interrogation the Inquisitors only dream of.\\\"",
+			"\"We have methods of interrogation the Inquisitors only dream of.\"",
 			"- Marcus, Brotherhood Liaison"
 		]
 	},
@@ -4713,10 +4713,10 @@
 		"id": "UniqueGlovesDexInt5",
 		"name": "Snakebite",
 		"text": [
-			"\\\"As the serpent shuns thought,",
+			"\"As the serpent shuns thought,",
 			"It shuns fear.",
 			"It strikes with the speed of wrath",
-			"And the skill of compulsion.\\\"",
+			"And the skill of compulsion.\"",
 			"- Deshret, The Red Sekhema"
 		]
 	},
@@ -4732,9 +4732,9 @@
 		"id": "UniqueGlovesDexInt7",
 		"name": "The Embalmer",
 		"text": [
-			"\\\"Decomposition takes hold too quickly!",
+			"\"Decomposition takes hold too quickly!",
 			"No, if we are to keep the specimen in perfect shape,",
-			"we must begin the process before expiry.\\\""
+			"we must begin the process before expiry.\""
 		]
 	},
 	{
@@ -4813,7 +4813,7 @@
 		"id": "UniqueGlovesInt4",
 		"name": "Kalisa's Grace",
 		"text": [
-			"\\\"You shall hang, in blissful agony, on my every note.\\\"",
+			"\"You shall hang, in blissful agony, on my every note.\"",
 			"- Kalisa, Prima Donna of Sarn"
 		]
 	},
@@ -4821,8 +4821,8 @@
 		"id": "UniqueGlovesInt4x",
 		"name": "Replica Kalisa's Grace",
 		"text": [
-			"\\\"Our superiors were getting anxious for results, and lowered security standards.",
-			"A single attempt of a spell with this unexpected power destroyed an entire floor.\\\""
+			"\"Our superiors were getting anxious for results, and lowered security standards.",
+			"A single attempt of a spell with this unexpected power destroyed an entire floor.\""
 		]
 	},
 	{
@@ -4844,8 +4844,8 @@
 		"id": "UniqueGlovesInt7x",
 		"name": "Replica Grip of the Council",
 		"text": [
-			"\\\"I feel altered when Administrator Qotra wears these gloves.",
-			"Somehow, I find that disturbing.\\\"",
+			"\"I feel altered when Administrator Qotra wears these gloves.",
+			"Somehow, I find that disturbing.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -4853,11 +4853,11 @@
 		"id": "UniqueGlovesInt8",
 		"name": "Allelopathy",
 		"text": [
-			"\\\"Nothing is more natural than competition.",
+			"\"Nothing is more natural than competition.",
 			"One feasts, another starves.",
 			"One blossoms, another withers.",
 			"And one cannot catch the golden sunlight",
-			"without casting a bitter shadow.\\\"",
+			"without casting a bitter shadow.\"",
 			"- Cadiro Perandus"
 		]
 	},
@@ -4865,16 +4865,16 @@
 		"id": "UniqueGlovesInt8x",
 		"name": "Replica Allelopathy",
 		"text": [
-			"\\\"There seems to be some innate relationship between the forces of",
-			"chaos and cold. Perhaps we should consult an occultist.\\\""
+			"\"There seems to be some innate relationship between the forces of",
+			"chaos and cold. Perhaps we should consult an occultist.\""
 		]
 	},
 	{
 		"id": "UniqueGlovesInt9",
 		"name": "Vixen's Entrapment",
 		"text": [
-			"\\\"One coy look. One blown kiss. One word spoken.",
-			"One night I wish I'd forget.\\\""
+			"\"One coy look. One blown kiss. One word spoken.",
+			"One night I wish I'd forget.\""
 		]
 	},
 	{
@@ -4920,8 +4920,8 @@
 		"id": "UniqueGlovesStr14",
 		"name": "Admiral's Arrogance",
 		"text": [
-			"\\\"The long and venerable lineages of the Oriathan nobility tended",
-			"to produce Admirals with, shall we say... quick tempers.\\\""
+			"\"The long and venerable lineages of the Oriathan nobility tended",
+			"to produce Admirals with, shall we say... quick tempers.\""
 		]
 	},
 	{
@@ -4946,8 +4946,8 @@
 		"id": "UniqueGlovesStr3",
 		"name": "Atziri's Acuity",
 		"text": [
-			"\\\"The heart is the herald.",
-			"It will tell me when it is best to strike.\\\"",
+			"\"The heart is the herald.",
+			"It will tell me when it is best to strike.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -4955,8 +4955,8 @@
 		"id": "UniqueGlovesStr3x",
 		"name": "Replica Atziri's Acuity",
 		"text": [
-			"\\\"One of our researchers cut himself on Prototype #2,",
-			"and he has not stopped screaming for months...\\\""
+			"\"One of our researchers cut himself on Prototype #2,",
+			"and he has not stopped screaming for months...\""
 		]
 	},
 	{
@@ -4972,8 +4972,8 @@
 		"id": "UniqueGlovesStr5",
 		"name": "Empire's Grasp",
 		"text": [
-			"\\\"I like my vassals at sword point,",
-			"but my enemies as close as the hilt.\\\"",
+			"\"I like my vassals at sword point,",
+			"but my enemies as close as the hilt.\"",
 			"- Emperor Chitus"
 		]
 	},
@@ -5073,8 +5073,8 @@
 		"id": "UniqueGlovesStrDex4",
 		"name": "Vaal Caress",
 		"text": [
-			"\\\"The gems are strangely human at times.",
-			"They simply love to be held.\\\"",
+			"\"The gems are strangely human at times.",
+			"They simply love to be held.\"",
 			"- Doryani, First Seer to the Queen"
 		]
 	},
@@ -5110,8 +5110,8 @@
 		"id": "UniqueGlovesStrDex8",
 		"name": "Haemophilia",
 		"text": [
-			"\\\"A master artist takes his time when he's painting.",
-			"Unfortunately, my kind doesn't often have that luxury.\\\"",
+			"\"A master artist takes his time when he's painting.",
+			"Unfortunately, my kind doesn't often have that luxury.\"",
 			"- Coralito, Brotherhood of Silence"
 		]
 	},
@@ -5172,10 +5172,10 @@
 		"id": "UniqueGlovesStrInt4",
 		"name": "Repentance",
 		"text": [
-			"\\\"I ask not for understanding,",
+			"\"I ask not for understanding,",
 			"only for forgiveness",
 			"for what I am about to do.",
-			"There will be blood on these shackles yet.\\\"",
+			"There will be blood on these shackles yet.\"",
 			"- Anonymous carving, Axiom Prison."
 		]
 	},
@@ -5193,8 +5193,8 @@
 		"id": "UniqueGlovesStrInt6x",
 		"name": "Replica Volkuur's Guidance",
 		"text": [
-			"\\\"Prototype #73 is a near perfect opposite of the original. Perhaps our failures",
-			"are due to some unknown polarity we have yet to discover.\\\""
+			"\"Prototype #73 is a near perfect opposite of the original. Perhaps our failures",
+			"are due to some unknown polarity we have yet to discover.\""
 		]
 	},
 	{
@@ -5217,8 +5217,8 @@
 		"id": "UniqueGlovesStrInt9",
 		"name": "Offering to the Serpent",
 		"text": [
-			"\\\"You covet the strength of your peers, mortal?",
-			"Perhaps it can be yours, if you are willing to make an offering of their blood...\\\"",
+			"\"You covet the strength of your peers, mortal?",
+			"Perhaps it can be yours, if you are willing to make an offering of their blood...\"",
 			"- Vaal Myth of the Third Snake"
 		]
 	},
@@ -5255,9 +5255,9 @@
 		"id": "UniqueHelmetDex2x",
 		"name": "Replica Heatshiver",
 		"text": [
-			"\\\"The storm... that lightning... I'd be dead if I hadn't...",
+			"\"The storm... that lightning... I'd be dead if I hadn't...",
 			"but it was cold. Ice cold! It's not what we think, and",
-			"the plan won't work! Where's Arn?! I have to tell him!\\\"",
+			"the plan won't work! Where's Arn?! I have to tell him!\"",
 			"- Researcher Graven, infirmary report"
 		]
 	},
@@ -5289,8 +5289,8 @@
 		"id": "UniqueHelmetDex5x",
 		"name": "Replica Alpha's Howl",
 		"text": [
-			"\\\"Test subject walked right through the poison gas defenses, and attempts to slow her",
-			"failed. Suppression troop six, the 'Furious Flagellants,' have been sent to intervene.\\\""
+			"\"Test subject walked right through the poison gas defenses, and attempts to slow her",
+			"failed. Suppression troop six, the 'Furious Flagellants,' have been sent to intervene.\""
 		]
 	},
 	{
@@ -5360,8 +5360,8 @@
 		"id": "UniqueHelmetDexInt12",
 		"name": "Fractal Thoughts",
 		"text": [
-			"\\\"The more the warrior understood Tangmazu's gift, the less the mask aided him.",
-			"His dreams were filled with divine laughter.\\\"",
+			"\"The more the warrior understood Tangmazu's gift, the less the mask aided him.",
+			"His dreams were filled with divine laughter.\"",
 			"- Tenth Song of the Islands"
 		]
 	},
@@ -5420,18 +5420,18 @@
 		"id": "UniqueHelmetDexInt2x",
 		"name": "Replica Leer Cast",
 		"text": [
-			"\\\"Prototype #412 seems to bear much in",
-			"common with Thought Extractor technology.\\\""
+			"\"Prototype #412 seems to bear much in",
+			"common with Thought Extractor technology.\""
 		]
 	},
 	{
 		"id": "UniqueHelmetDexInt3",
 		"name": "The Gull",
 		"text": [
-			"\\\"It is the Gull that delivers Man unto Ancestor.",
+			"\"It is the Gull that delivers Man unto Ancestor.",
 			"The consumer of our flesh. The seeder of our",
 			"souls unto the earth. We give the Gull his life.",
-			"The Gull gives us our Way.\\\"",
+			"The Gull gives us our Way.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -5439,10 +5439,10 @@
 		"id": "UniqueHelmetDexInt4",
 		"name": "The Three Dragons",
 		"text": [
-			"\\\"The ice seared his naked feet",
+			"\"The ice seared his naked feet",
 			"As the lightning stilled his heart,",
 			"But it was the flames upon his lover's face",
-			"That roused him to vengeance.\\\"",
+			"That roused him to vengeance.\"",
 			"- From 'The Three Dragons' by Victario of Sarn"
 		]
 	},
@@ -5450,7 +5450,7 @@
 		"id": "UniqueHelmetDexInt5",
 		"name": "The Vertex",
 		"text": [
-			"\\\"A queen should be seen, admired, but never touched.\\\"",
+			"\"A queen should be seen, admired, but never touched.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -5567,8 +5567,8 @@
 		"id": "UniqueHelmetInt17",
 		"name": "Hale Negator",
 		"text": [
-			"\\\"Feel the pain of ancient wounds.",
-			"Feel the doom of dying souls.\\\""
+			"\"Feel the pain of ancient wounds.",
+			"Feel the doom of dying souls.\""
 		]
 	},
 	{
@@ -5662,8 +5662,8 @@
 		"id": "UniqueHelmetInt28",
 		"name": "The Dark Monarch",
 		"text": [
-			"\\\"Hate? You speak to me of hate? You have no idea what your persecution inflicts.",
-			"How it chokes the heart. Withers the soul. Judge me, and you judge yourself.\\\"",
+			"\"Hate? You speak to me of hate? You have no idea what your persecution inflicts.",
+			"How it chokes the heart. Withers the soul. Judge me, and you judge yourself.\"",
 			"- Saresh, last words, to Sekhema Orbala"
 		]
 	},
@@ -5688,8 +5688,8 @@
 		"id": "UniqueHelmetInt8",
 		"name": "Scold's Bridle",
 		"text": [
-			"\\\"The sharper the pain, the sharper the mind.",
-			"A curious paradox.\\\"",
+			"\"The sharper the pain, the sharper the mind.",
+			"A curious paradox.\"",
 			"- Shavronne of Umbra"
 		]
 	},
@@ -5744,8 +5744,8 @@
 		"id": "UniqueHelmetStr3x",
 		"name": "Replica Abyssus",
 		"text": [
-			"\\\"While Prototype #3 does imbue its wearer with strength to match the original,",
-			"the first researcher to don it burst into flames when he walked into sunlight...\\\""
+			"\"While Prototype #3 does imbue its wearer with strength to match the original,",
+			"the first researcher to don it burst into flames when he walked into sunlight...\""
 		]
 	},
 	{
@@ -5767,8 +5767,8 @@
 		"id": "UniqueHelmetStr6",
 		"name": "The Baron",
 		"text": [
-			"\\\"The Emperor's trusted surgeons are not the only ones who",
-			"practice the dark arts. Some of us are just more discreet.\\\""
+			"\"The Emperor's trusted surgeons are not the only ones who",
+			"practice the dark arts. Some of us are just more discreet.\""
 		]
 	},
 	{
@@ -5802,7 +5802,7 @@
 		"text": [
 			"As the fiery remnants of our outpost were subsumed into the caldera,",
 			"a thunderous voice echoed across the barren landscape,",
-			"\\\"Your fragility is your folly. May others rise where you have fallen.\\\"",
+			"\"Your fragility is your folly. May others rise where you have fallen.\"",
 			"- El'Abin, Bloodeater"
 		]
 	},
@@ -5841,8 +5841,8 @@
 		"id": "UniqueHelmetStrDex4",
 		"name": "The Bringer of Rain",
 		"text": [
-			"\\\"What lies beneath your feet?!\\\"",
-			"\\\"Sacred ground, watered with tears of blood!\\\""
+			"\"What lies beneath your feet?!\"",
+			"\"Sacred ground, watered with tears of blood!\""
 		]
 	},
 	{
@@ -5880,8 +5880,8 @@
 		"id": "UniqueHelmetStrInt1",
 		"name": "Honourhome",
 		"text": [
-			"\\\"The craven mind is sharp with self interest.",
-			"The honourable mind is much easier to manipulate.\\\"",
+			"\"The craven mind is sharp with self interest.",
+			"The honourable mind is much easier to manipulate.\"",
 			"- Malachai the Soulless"
 		]
 	},
@@ -5955,9 +5955,9 @@
 		"id": "UniqueHelmetStrInt18x",
 		"name": "Replica Forbidden Shako",
 		"text": [
-			"\\\"I believed I understood Prototype #112 quite fully, until a test subject",
+			"\"I believed I understood Prototype #112 quite fully, until a test subject",
 			"with Azmeri ancestry donned it. I will be haunted by the results",
-			"for the rest of my life.\\\"  - Researcher Graven"
+			"for the rest of my life.\"  - Researcher Graven"
 		]
 	},
 	{
@@ -5981,8 +5981,8 @@
 		"id": "UniqueHelmetStrInt20",
 		"name": "Viridi's Veil",
 		"text": [
-			"\\\"Her sisters eternally fought for that shining apex in the skies,",
-			"but Viridi instead found strength in humility.\\\"",
+			"\"Her sisters eternally fought for that shining apex in the skies,",
+			"but Viridi instead found strength in humility.\"",
 			"- Azmerian Creation Myth"
 		]
 	},
@@ -6014,9 +6014,9 @@
 		"id": "UniqueHelmetStrInt25",
 		"name": "The Hallowed Monarch",
 		"text": [
-			"\\\"I don't judge who you are, Saresh. I judge what you do. True leadership",
+			"\"I don't judge who you are, Saresh. I judge what you do. True leadership",
 			"comes from fighting alongside those you command, from elevating them,",
-			"and sharing the glory of victory. This, you will never understand.\\\"",
+			"and sharing the glory of victory. This, you will never understand.\"",
 			"- Sekhema Orbala, to be crowned Garukhan"
 		]
 	},
@@ -6041,8 +6041,8 @@
 		"id": "UniqueHelmetStrInt4x",
 		"name": "Replica Veil of the Night",
 		"text": [
-			"\\\"Prototype #722 might look like a helmet, but I believe it to be something else",
-			"entirely. The visions it shows the wearer... are beyond mortal endurance...\\\""
+			"\"Prototype #722 might look like a helmet, but I believe it to be something else",
+			"entirely. The visions it shows the wearer... are beyond mortal endurance...\""
 		]
 	},
 	{
@@ -6084,8 +6084,8 @@
 		"id": "UniqueHelmetStrInt9",
 		"name": "Ahn's Contempt",
 		"text": [
-			"\\\"To touch it is to be overwhelmed with the need to carve your name into history.",
-			"A face no one remembers, yet once you have seen it, you will never forget.\\\"",
+			"\"To touch it is to be overwhelmed with the need to carve your name into history.",
+			"A face no one remembers, yet once you have seen it, you will never forget.\"",
 			"- Icius Perandus, Antiquities Collection, Item 48"
 		]
 	},
@@ -6117,8 +6117,8 @@
 		"id": "UniqueIntHelmet3",
 		"name": "Chitus' Apex",
 		"text": [
-			"\\\"It takes true strength to hold power,",
-			"and my grip grows tighter by the day.\\\"",
+			"\"It takes true strength to hold power,",
+			"and my grip grows tighter by the day.\"",
 			"- Emperor Chitus"
 		]
 	},
@@ -6177,7 +6177,7 @@
 		"id": "UniqueJewel105",
 		"name": "Violent Dead",
 		"text": [
-			"\\\"Rage, malice, hunger - some traits are more easily carried across the barrier of death.\\\"",
+			"\"Rage, malice, hunger - some traits are more easily carried across the barrier of death.\"",
 			"- Kadavrus, Surgeon to the Umbra"
 		]
 	},
@@ -6203,10 +6203,10 @@
 		"id": "UniqueJewel11",
 		"name": "Fertile Mind",
 		"text": [
-			"\\\"The swallow flew fast and took many turns,",
+			"\"The swallow flew fast and took many turns,",
 			"spilling a seed where no plant had grown before.",
 			"This seed grew and grew until the desert became fertile and abundant.",
-			"Your mind is like this seed.\\\"",
+			"Your mind is like this seed.\"",
 			"- Maraketh Proverb"
 		]
 	},
@@ -6232,8 +6232,8 @@
 		"id": "UniqueJewel111x",
 		"name": "Replica Pure Talent",
 		"text": [
-			"\\\"Twelve test subjects were expended in the production of Prototype #800.",
-			"Was it worth the expense? Only time will tell.\\\""
+			"\"Twelve test subjects were expended in the production of Prototype #800.",
+			"Was it worth the expense? Only time will tell.\""
 		]
 	},
 	{
@@ -6356,8 +6356,8 @@
 		"id": "UniqueJewel125",
 		"name": "Unnatural Instinct",
 		"text": [
-			"\\\"I don't know how I know,",
-			"I just know that I know.\\\""
+			"\"I don't know how I know,",
+			"I just know that I know.\""
 		]
 	},
 	{
@@ -6430,10 +6430,10 @@
 		"id": "UniqueJewel138",
 		"name": "Calamitous Visions",
 		"text": [
-			"\\\"Try as I might, I could not escape it.",
+			"\"Try as I might, I could not escape it.",
 			"When I closed my eyes, I saw only death.",
 			"Each breath tainted with the scent of seared and smouldering flesh,",
-			"And each sound tangled with pleas for mercy.\\\""
+			"And each sound tangled with pleas for mercy.\""
 		]
 	},
 	{
@@ -6593,18 +6593,18 @@
 		"id": "UniqueJewel158",
 		"name": "Melding of the Flesh",
 		"text": [
-			"\\\"We awoke to a sudden jungle rupturing the valleys of our home.",
+			"\"We awoke to a sudden jungle rupturing the valleys of our home.",
 			"Grasping limbs coiled around us, into us. We sank into each other,",
-			"then rose into the living sky. My family screams alongside me still.\\\""
+			"then rose into the living sky. My family screams alongside me still.\""
 		]
 	},
 	{
 		"id": "UniqueJewel159",
 		"name": "Dissolution of the Flesh",
 		"text": [
-			"\\\"We awoke to a sudden dawn cresting through the mountains.",
+			"\"We awoke to a sudden dawn cresting through the mountains.",
 			"Each peak rose into searing fire, a massive roiling tide.",
-			"A great eye gazed upon us, and we became known—utterly.\\\""
+			"A great eye gazed upon us, and we became known—utterly.\""
 		]
 	},
 	{
@@ -6722,7 +6722,7 @@
 		"name": "Immutable Force",
 		"text": [
 			"How simple a power, on which empires turn,",
-			"when one man stands firm and says, \\\"I refuse.\\\""
+			"when one man stands firm and says, \"I refuse.\""
 		]
 	},
 	{
@@ -6878,8 +6878,8 @@
 		"id": "UniqueJewel2",
 		"name": "Eldritch Knowledge",
 		"text": [
-			"\\\"True Thaumaturgy can only be learned",
-			"by the brilliant or the mad.\\\"",
+			"\"True Thaumaturgy can only be learned",
+			"by the brilliant or the mad.\"",
 			"- Shavronne of Umbra"
 		]
 	},
@@ -6894,8 +6894,8 @@
 		"id": "UniqueJewel20x",
 		"name": "Replica Hotheaded",
 		"text": [
-			"\\\"Does this jewel accomplish nothing? If only we could somehow",
-			"master cold and turn it to our own ends...\\\"",
+			"\"Does this jewel accomplish nothing? If only we could somehow",
+			"master cold and turn it to our own ends...\"",
 			"- Lead Researcher Ksaret"
 		]
 	},
@@ -6911,7 +6911,7 @@
 		"id": "UniqueJewel24x",
 		"name": "Replica Fragile Bloom",
 		"text": [
-			"\\\"Distribute Prototype #723 to the guards. Perhaps their survival rate will increase.\\\""
+			"\"Distribute Prototype #723 to the guards. Perhaps their survival rate will increase.\""
 		]
 	},
 	{
@@ -6926,8 +6926,8 @@
 		"id": "UniqueJewel26",
 		"name": "Rain of Splinters",
 		"text": [
-			"\\\"If one is an annoyance",
-			"then a hundred is a threat.\\\"",
+			"\"If one is an annoyance",
+			"then a hundred is a threat.\"",
 			"- Ancient Karui Proverb"
 		]
 	},
@@ -6942,9 +6942,9 @@
 		"id": "UniqueJewel29",
 		"name": "Brawn",
 		"text": [
-			"\\\"Take your time, make all your plans.",
+			"\"Take your time, make all your plans.",
 			"Then tell me which plan",
-			"pulls my axe from your ribs.\\\"",
+			"pulls my axe from your ribs.\"",
 			"- Barkhul, the Butcher"
 		]
 	},
@@ -6982,10 +6982,10 @@
 		"id": "UniqueJewel36",
 		"name": "Careful Planning",
 		"text": [
-			"\\\"Greatly outnumbered, Deshret dressed her personal guard",
+			"\"Greatly outnumbered, Deshret dressed her personal guard",
 			"in identical garb. When the Empire rode north, Deshret and",
 			"her guard took turns revealing themselves, creating the illusion",
-			"of speed beyond the capabilities of even the Virtue Gems.\\\"",
+			"of speed beyond the capabilities of even the Virtue Gems.\"",
 			"- History of the Maraketh"
 		]
 	},
@@ -7035,7 +7035,7 @@
 		"id": "UniqueJewel44x",
 		"name": "Replica Conqueror's Efficiency",
 		"text": [
-			"\\\"The effect is subtle, but potentially lethal...\\\""
+			"\"The effect is subtle, but potentially lethal...\""
 		]
 	},
 	{
@@ -7087,7 +7087,7 @@
 		"id": "UniqueJewel50",
 		"name": "Energised Armour",
 		"text": [
-			"\\\"I've yet to see prayer stop an arrow.\\\""
+			"\"I've yet to see prayer stop an arrow.\""
 		]
 	},
 	{
@@ -7110,8 +7110,8 @@
 		"id": "UniqueJewel53",
 		"name": "Static Electricity",
 		"text": [
-			"\\\"Movement expends energy, but perhaps a little of that energy",
-			"can be recaptured and... reappropriated.\\\"",
+			"\"Movement expends energy, but perhaps a little of that energy",
+			"can be recaptured and... reappropriated.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -7199,7 +7199,7 @@
 		"id": "UniqueJewel61x",
 		"name": "Replica Reckless Defence",
 		"text": [
-			"\\\"Prototype #298 must be contained in a non-conductive glass box at all times.\\\""
+			"\"Prototype #298 must be contained in a non-conductive glass box at all times.\""
 		]
 	},
 	{
@@ -7258,7 +7258,7 @@
 		"text": [
 			"A mage from the coast rode up on a broken nag, legs burnt to his bones.",
 			"Before he collapsed, he uttered:",
-			"\\\"I watched the world we know end yesterday.\\\""
+			"\"I watched the world we know end yesterday.\""
 		]
 	},
 	{
@@ -7302,7 +7302,7 @@
 		"id": "UniqueJewel71x",
 		"name": "Replica Cheap Construction",
 		"text": [
-			"\\\"A curious jewel. Like so many others, a shining little paradox.\\\""
+			"\"A curious jewel. Like so many others, a shining little paradox.\""
 		]
 	},
 	{
@@ -7332,8 +7332,8 @@
 		"id": "UniqueJewel74x",
 		"name": "Replica Unstable Payload",
 		"text": [
-			"\\\"Researchers will refrain from giving test subjects virtue gems which produce traps.",
-			"We are still finding explosives in the vents months later.\\\"",
+			"\"Researchers will refrain from giving test subjects virtue gems which produce traps.",
+			"We are still finding explosives in the vents months later.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -7389,8 +7389,8 @@
 		"id": "UniqueJewel81",
 		"name": "Primordial Might",
 		"text": [
-			"\\\"A stone is not a stone.",
-			"It is but one part of a fortress.\\\"",
+			"\"A stone is not a stone.",
+			"It is but one part of a fortress.\"",
 			"- Ezomyte proverb"
 		]
 	},
@@ -7398,8 +7398,8 @@
 		"id": "UniqueJewel82",
 		"name": "Primordial Eminence",
 		"text": [
-			"\\\"Do not cause the land to stir,",
-			"It holds secrets better unknown.\\\"",
+			"\"Do not cause the land to stir,",
+			"It holds secrets better unknown.\"",
 			"- Azmerian proverb"
 		]
 	},
@@ -7407,8 +7407,8 @@
 		"id": "UniqueJewel83",
 		"name": "Primordial Harmony",
 		"text": [
-			"\\\"Kings fall, empires crumble, mortals perish.",
-			"All turn to earth and sand.\\\"",
+			"\"Kings fall, empires crumble, mortals perish.",
+			"All turn to earth and sand.\"",
 			"- Maraketh proverb"
 		]
 	},
@@ -7597,9 +7597,9 @@
 		"id": "UniqueMercenaryGlovesStrInt1",
 		"name": "Hand of Heresy",
 		"text": [
-			"\\\"The followers of Light recognize Tyndarus Phrecius as",
+			"\"The followers of Light recognize Tyndarus Phrecius as",
 			"the Emperor. For siding with the rebels, you and your",
-			"brothers shall be cast out from the true faith, forevermore!\\\"",
+			"brothers shall be cast out from the true faith, forevermore!\"",
 			"- High Templar Andronicus, 892 IC"
 		]
 	},
@@ -7607,17 +7607,17 @@
 		"id": "UniqueMercenaryHelmetStr1",
 		"name": "Howlcrack",
 		"text": [
-			"\\\"Our new capital will be called Korathin.",
+			"\"Our new capital will be called Korathin.",
 			"My slaves will build it. My price is dominion...",
-			"or blood.\\\" - Keita's Proclamation, 872 IC"
+			"or blood.\" - Keita's Proclamation, 872 IC"
 		]
 	},
 	{
 		"id": "UniqueMercenaryShieldDex1",
 		"name": "Azadi Crest",
 		"text": [
-			"\\\"Keita expects an assassination attempt by stealth or subterfuge.",
-			"I say we attack head-on, like madmen. Let the fates decide.\\\"",
+			"\"Keita expects an assassination attempt by stealth or subterfuge.",
+			"I say we attack head-on, like madmen. Let the fates decide.\"",
 			"- Azadi, first ancestor of the House Azadin"
 		]
 	},
@@ -7650,8 +7650,8 @@
 		"id": "UniqueOneHandAxe1x",
 		"name": "Replica Soul Taker",
 		"text": [
-			"\\\"Nothing feels so smooth in the hand as Prototype #66.",
-			"Results like these may justify everything we do here.\\\""
+			"\"Nothing feels so smooth in the hand as Prototype #66.",
+			"Results like these may justify everything we do here.\""
 		]
 	},
 	{
@@ -7719,9 +7719,9 @@
 		"id": "UniqueOneHandClaw12",
 		"name": "Advancing Fortress",
 		"text": [
-			"\\\"A man cowers behind his walls.",
+			"\"A man cowers behind his walls.",
 			"A woman carries her fortress with her.",
-			"In heart, in mind, in hand.\\\"",
+			"In heart, in mind, in hand.\"",
 			"- Sekhema Deshret"
 		]
 	},
@@ -7729,16 +7729,16 @@
 		"id": "UniqueOneHandClaw12x",
 		"name": "Replica Advancing Fortress",
 		"text": [
-			"\\\"Additional test subjects approved. Determine exactly how many wounds",
-			"need to be endured to activate Prototype #612's energies.\\\""
+			"\"Additional test subjects approved. Determine exactly how many wounds",
+			"need to be endured to activate Prototype #612's energies.\""
 		]
 	},
 	{
 		"id": "UniqueOneHandMace1",
 		"name": "Brightbeak",
 		"text": [
-			"\\\"I know how to say 'faster' and 'attack'",
-			"in Karui, Marak and Ezo.\\\"",
+			"\"I know how to say 'faster' and 'attack'",
+			"in Karui, Marak and Ezo.\"",
 			"- Voll of Thebrus"
 		]
 	},
@@ -7754,8 +7754,8 @@
 		"id": "UniqueOneHandMace10x",
 		"name": "Replica Frostbreath",
 		"text": [
-			"\\\"Three test subjects confirmed Prototype #495 creates an additional",
-			"debilitating effect from poisons. This could be very useful.\\\""
+			"\"Three test subjects confirmed Prototype #495 creates an additional",
+			"debilitating effect from poisons. This could be very useful.\""
 		]
 	},
 	{
@@ -7778,8 +7778,8 @@
 		"id": "UniqueOneHandMace13",
 		"name": "The Monastery Bell",
 		"text": [
-			"\\\"We must be ready. We are the voice of Wraeclast's vengeance,",
-			"tolling righteous fury for those who would dare invade our world!\\\"",
+			"\"We must be ready. We are the voice of Wraeclast's vengeance,",
+			"tolling righteous fury for those who would dare invade our world!\"",
 			"- Ailith, First of the Keepers"
 		]
 	},
@@ -7794,9 +7794,9 @@
 		"id": "UniqueOneHandMace4",
 		"name": "Cameria's Avarice",
 		"text": [
-			"\\\"You'll have my riches when you pry them",
-			"from my cold, dead hands!\\\"",
-			"\\\"That's how I prefer it.\\\""
+			"\"You'll have my riches when you pry them",
+			"from my cold, dead hands!\"",
+			"\"That's how I prefer it.\""
 		]
 	},
 	{
@@ -7821,7 +7821,7 @@
 		"id": "UniqueOneHandMace7",
 		"name": "Lavianga's Wisdom",
 		"text": [
-			"\\\"The painful memories are the easiest to recall.\\\"",
+			"\"The painful memories are the easiest to recall.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -7871,15 +7871,15 @@
 		"id": "UniqueOneHandSword12",
 		"name": "The Princess",
 		"text": [
-			"\\\"She's pretty, aye. So pretty you'll",
-			"want to be with her long after you're dead.\\\""
+			"\"She's pretty, aye. So pretty you'll",
+			"want to be with her long after you're dead.\""
 		]
 	},
 	{
 		"id": "UniqueOneHandSword13",
 		"name": "Lakishu's Blade",
 		"text": [
-			"\\\"May the Blessed Lakishu watch our backs and our wives.\\\"",
+			"\"May the Blessed Lakishu watch our backs and our wives.\"",
 			"- Legionnaire Battle Blessing"
 		]
 	},
@@ -7887,8 +7887,8 @@
 		"id": "UniqueOneHandSword14",
 		"name": "Chitus' Needle",
 		"text": [
-			"\\\"With this, I will weave the threads of fate",
-			"into a noose for our 'glorious' emperor.\\\"",
+			"\"With this, I will weave the threads of fate",
+			"into a noose for our 'glorious' emperor.\"",
 			"- Chitus Perandus"
 		]
 	},
@@ -7913,16 +7913,16 @@
 		"id": "UniqueOneHandSword16x",
 		"name": "Replica Tempestuous Steel",
 		"text": [
-			"\\\"Test subjects were unable to strike even a motionless target.",
-			"However, when a trained guard tried it...\\\""
+			"\"Test subjects were unable to strike even a motionless target.",
+			"However, when a trained guard tried it...\""
 		]
 	},
 	{
 		"id": "UniqueOneHandSword17",
 		"name": "Varunastra",
 		"text": [
-			"\\\"Painful suicide in the hands of a fool,",
-			"Creative death in the hands of a master.\\\"",
+			"\"Painful suicide in the hands of a fool,",
+			"Creative death in the hands of a master.\"",
 			"- Icius Perandus, Antiquities Collection, Item 2992"
 		]
 	},
@@ -7940,8 +7940,8 @@
 		"id": "UniqueOneHandSword18x",
 		"name": "Replica Innsbury Edge",
 		"text": [
-			"\\\"The night-gaunts, they fly, soaring about in darkness beyond the ken of mankind.",
-			"I hear the silent whispers of their wings as they descend, for me, for me...\\\"",
+			"\"The night-gaunts, they fly, soaring about in darkness beyond the ken of mankind.",
+			"I hear the silent whispers of their wings as they descend, for me, for me...\"",
 			"- Researcher Arn"
 		]
 	},
@@ -8002,9 +8002,9 @@
 		"id": "UniqueOneHandSword24",
 		"name": "Ahn's Might",
 		"text": [
-			"\\\"Impossibly heavy, yet the ancient edge is as keen as any modern blade's.",
+			"\"Impossibly heavy, yet the ancient edge is as keen as any modern blade's.",
 			"A reminder that, in the end, when we lie in the bellies of worms,",
-			"it is what we make that makes us.\\\"",
+			"it is what we make that makes us.\"",
 			"- Icius Perandus, Antiquities Collection, Item 47"
 		]
 	},
@@ -8105,16 +8105,16 @@
 			"Her purpose seems done; the oath is fulfilled.",
 			"Rust dulls her smirk with the last demon killed.",
 			"The embers grow dim and yet hope burns her lips:",
-			"\\\"An old flame renewed can define our eclipse!\\\""
+			"\"An old flame renewed can define our eclipse!\""
 		]
 	},
 	{
 		"id": "UniqueOneHandSword5",
 		"name": "Prismatic Eclipse",
 		"text": [
-			"\\\"A raging Solaris seared and contorted the orb's surface.",
+			"\"A raging Solaris seared and contorted the orb's surface.",
 			"A despairing Lunaris filled the scars with her tears.",
-			"Yet Viridi remained, trapped within, forever more.\\\"",
+			"Yet Viridi remained, trapped within, forever more.\"",
 			"- Azmerian Creation Myth"
 		]
 	},
@@ -8122,11 +8122,11 @@
 		"id": "UniqueOneHandSword6",
 		"name": "Hyaon's Fury",
 		"text": [
-			"\\\"Hyaon the 'Red Wolf'",
+			"\"Hyaon the 'Red Wolf'",
 			"Howling mad",
 			"Cloaked in blood",
 			"A banner to his legion",
-			"A terror to his foes.\\\"",
+			"A terror to his foes.\"",
 			"- Garivaldi, Chronicler to the Empire"
 		]
 	},
@@ -8152,8 +8152,8 @@
 		"id": "UniqueOneHandSword9x",
 		"name": "Replica Dreamfeather",
 		"text": [
-			"\\\"Once we armoured the test subject heavily enough to test Prototype #502, he proceeded",
-			"to fight his way out. I don't know what we expected.\\\"",
+			"\"Once we armoured the test subject heavily enough to test Prototype #502, he proceeded",
+			"to fight his way out. I don't know what we expected.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -8219,8 +8219,8 @@
 		"id": "UniqueQuiver15x",
 		"name": "Replica Maloney's Mechanism",
 		"text": [
-			"\\\"The Midnight Tinkerer's aid was invaluable during our brief alliance,",
-			"but when we failed to make any progress on resurrection, he continued his search elsewhere...\\\""
+			"\"The Midnight Tinkerer's aid was invaluable during our brief alliance,",
+			"but when we failed to make any progress on resurrection, he continued his search elsewhere...\""
 		]
 	},
 	{
@@ -8276,7 +8276,7 @@
 		"id": "UniqueQuiver3",
 		"name": "Drillneck",
 		"text": [
-			"\\\"Why waste such a fine arrow on just one man?\\\"",
+			"\"Why waste such a fine arrow on just one man?\"",
 			"- Kiravi, Vaal Archer"
 		]
 	},
@@ -8284,7 +8284,7 @@
 		"id": "UniqueQuiver4",
 		"name": "Rearguard",
 		"text": [
-			"\\\"It's a rare man that has eyes in the back of his head.\\\"",
+			"\"It's a rare man that has eyes in the back of his head.\"",
 			"- Kiravi, Vaal Archer"
 		]
 	},
@@ -8320,8 +8320,8 @@
 		"id": "UniqueQuiver7x",
 		"name": "Replica Soul Strike",
 		"text": [
-			"\\\"The theft of another's vitality is short-lived, but sweet.",
-			"It calls to me, bidding me abandon all other pursuits.\\\"",
+			"\"The theft of another's vitality is short-lived, but sweet.",
+			"It calls to me, bidding me abandon all other pursuits.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -8349,7 +8349,7 @@
 			"She paints her offer in wicked hues",
 			"An off-white grin, an elegant bruise.",
 			"To the nascent scourge she sings the ruse:",
-			"\\\"With me in hand, what else need you use?\\\""
+			"\"With me in hand, what else need you use?\""
 		]
 	},
 	{
@@ -8388,7 +8388,7 @@
 		"id": "UniqueRapier6x",
 		"name": "Replica Paradoxica",
 		"text": [
-			"\\\"This is one riddle I can't solve.\\\"",
+			"\"This is one riddle I can't solve.\"",
 			"- Researcher Graven"
 		]
 	},
@@ -8411,8 +8411,8 @@
 		"id": "UniqueRing14",
 		"name": "Perandus Signet",
 		"text": [
-			"\\\"Our warehouses are bursting. Our vaults are full.",
-			"But our minds are still hungry.\\\"",
+			"\"Our warehouses are bursting. Our vaults are full.",
+			"But our minds are still hungry.\"",
 			"- Medici Perandus, Prefect to the Treasury"
 		]
 	},
@@ -8447,11 +8447,11 @@
 		"id": "UniqueRing18",
 		"name": "Berek's Pass",
 		"text": [
-			"\\\"From Frost's ice-bound pass",
+			"\"From Frost's ice-bound pass",
 			"Berek taunted and jeered",
 			"Until furious Flame scaled the mountain",
 			"Berek escaped through the thaw",
-			"And Frost's tortured moans.\\\"",
+			"And Frost's tortured moans.\"",
 			"- Berek and the Untamed"
 		]
 	},
@@ -8459,11 +8459,11 @@
 		"id": "UniqueRing19",
 		"name": "Berek's Grip",
 		"text": [
-			"\\\"Berek hid from Storm's lightning wrath",
+			"\"Berek hid from Storm's lightning wrath",
 			"In the embrace of oblivious Frost",
 			"Repelled by ice, blinded by blizzards",
 			"Storm raged in vain",
-			"While Berek slept.\\\"",
+			"While Berek slept.\"",
 			"- Berek and the Untamed"
 		]
 	},
@@ -8480,12 +8480,12 @@
 		"id": "UniqueRing20",
 		"name": "Berek's Respite",
 		"text": [
-			"\\\"With Flame licking at his heels",
+			"\"With Flame licking at his heels",
 			"Berek berated the clouds",
 			"Until vengeful Storm spewed forth his rains",
 			"And Berek held on tight",
 			"As Fire screamed and steamed",
-			"And fled.\\\"",
+			"And fled.\"",
 			"- Berek and the Untamed"
 		]
 	},
@@ -8493,12 +8493,12 @@
 		"id": "UniqueRing21",
 		"name": "The Taming",
 		"text": [
-			"\\\"Moon after moon did Berek make fools",
+			"\"Moon after moon did Berek make fools",
 			"Of the great and Untamed Three",
 			"Until malice for a Brother",
 			"Slew the hatred of the Other",
 			"And Berek did hunt",
-			"Alone and free.\\\"",
+			"Alone and free.\"",
 			"- Berek and the Untamed"
 		]
 	},
@@ -8521,7 +8521,7 @@
 		"id": "UniqueRing23x",
 		"name": "Replica Voideye",
 		"text": [
-			"\\\"So close, yet frustratingly distinct. Something more is going on here...\\\""
+			"\"So close, yet frustratingly distinct. Something more is going on here...\""
 		]
 	},
 	{
@@ -8544,8 +8544,8 @@
 		"id": "UniqueRing25x",
 		"name": "Replica Malachai's Artifice",
 		"text": [
-			"\\\"As much as Prototype #20 hints at some deep alternate physics, we cannot afford",
-			"to expend any more test subjects. Experiments halted.\\\"",
+			"\"As much as Prototype #20 hints at some deep alternate physics, we cannot afford",
+			"to expend any more test subjects. Experiments halted.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -8560,8 +8560,8 @@
 		"id": "UniqueRing27",
 		"name": "Timetwist",
 		"text": [
-			"\\\"To us mere mortals, time is slippery.",
-			"I'm just evening things out.\\\"",
+			"\"To us mere mortals, time is slippery.",
+			"I'm just evening things out.\"",
 			"- Doryani, Queen's Thaumaturgist"
 		]
 	},
@@ -8602,8 +8602,8 @@
 		"id": "UniqueRing30x",
 		"name": "Replica Tasalio's Sign",
 		"text": [
-			"\\\"Likely our closest to the original, yet Prototype #22 still falls short.",
-			"Are these objects actually somehow resisting our efforts?\\\""
+			"\"Likely our closest to the original, yet Prototype #22 still falls short.",
+			"Are these objects actually somehow resisting our efforts?\""
 		]
 	},
 	{
@@ -8621,7 +8621,7 @@
 		"text": [
 			"In a blaze of glory,",
 			"An anomaly defying all odds",
-			"The \\\"unkillable\\\" beast met the divine",
+			"The \"unkillable\" beast met the divine",
 			"And Ventor met his latest trophy."
 		]
 	},
@@ -8682,8 +8682,8 @@
 		"id": "UniqueRing38x",
 		"name": "Replica Emberwake",
 		"text": [
-			"\\\"The flames raced through Lab Five with incredible speed, but were extinguished",
-			"just as quickly. This could have been much worse.\\\"",
+			"\"The flames raced through Lab Five with incredible speed, but were extinguished",
+			"just as quickly. This could have been much worse.\"",
 			"- Lead Researcher Ksaret"
 		]
 	},
@@ -8707,8 +8707,8 @@
 		"id": "UniqueRing40",
 		"name": "Essence Worm",
 		"text": [
-			"\\\"This thing is not a pet. It is a parasite that feeds on the very will of its host.",
-			"Like any part of nightmare, it has found a way to make its price... acceptable.\\\"",
+			"\"This thing is not a pet. It is a parasite that feeds on the very will of its host.",
+			"Like any part of nightmare, it has found a way to make its price... acceptable.\"",
 			"- Malachai the Soulless"
 		]
 	},
@@ -8750,8 +8750,8 @@
 		"id": "UniqueRing45",
 		"name": "The Warden's Brand",
 		"text": [
-			"\\\"I don't always have a flame handy",
-			"when a fresh delinquent walks through our gates.\\\"",
+			"\"I don't always have a flame handy",
+			"when a fresh delinquent walks through our gates.\"",
 			"- Brutus, Warden of Axiom"
 		]
 	},
@@ -8781,8 +8781,8 @@
 		"id": "UniqueRing4x",
 		"name": "Replica Doedre's Damning",
 		"text": [
-			"\\\"Prototype #8 makes it difficult to think negatively, but two fatalities",
-			"resulted when a lead researcher used an epithet in its presence.\\\""
+			"\"Prototype #8 makes it difficult to think negatively, but two fatalities",
+			"resulted when a lead researcher used an epithet in its presence.\""
 		]
 	},
 	{
@@ -8924,8 +8924,8 @@
 		"id": "UniqueRing55",
 		"name": "Vivinsect",
 		"text": [
-			"\\\"Fusing the parasite with another ring has manifested unpredictable effects.",
-			"I theorise the sacrificial vessel's level of anguish is a key variable.\\\"",
+			"\"Fusing the parasite with another ring has manifested unpredictable effects.",
+			"I theorise the sacrificial vessel's level of anguish is a key variable.\"",
 			"- Arzaak, Syndicate Researcher"
 		]
 	},
@@ -9119,9 +9119,9 @@
 		"id": "UniqueRing77",
 		"name": "Soulbound",
 		"text": [
-			"\\\"Slay my twin and I will inherit her wisdom.",
+			"\"Slay my twin and I will inherit her wisdom.",
 			"Slay me and her life will be prolonged by my demise.",
-			"Our souls are eternally bound by the sacrifices we have made.\\\"",
+			"Our souls are eternally bound by the sacrifices we have made.\"",
 			"- High Priest Atazek"
 		]
 	},
@@ -9226,10 +9226,10 @@
 		"id": "UniqueRing90",
 		"name": "Prospero's Protection",
 		"text": [
-			"\\\"Worry not, my friend, that I tour in fineries.",
+			"\"Worry not, my friend, that I tour in fineries.",
 			"The ostentation is all part of being a Perandus.",
 			"As long as I maintain my Vigilance,",
-			"nothing can harm the Empire... or me.\\\"",
+			"nothing can harm the Empire... or me.\"",
 			"- Emperor Chitus, to Ondar"
 		]
 	},
@@ -9313,29 +9313,29 @@
 		"id": "UniqueRing96",
 		"name": "The Bandit Lord's Band",
 		"text": [
-			"\\\"Sasan tells a tale of robbery, and accosting a",
+			"\"Sasan tells a tale of robbery, and accosting a",
 			"Bardiyan princeling on the road. If that were",
 			"true, why hasn't he sold the damn thing already?",
-			"Why does he still wear it like a shameful secret?\\\""
+			"Why does he still wear it like a shameful secret?\""
 		]
 	},
 	{
 		"id": "UniqueRing97",
 		"name": "Zana's Ingenuity",
 		"text": [
-			"\\\"I designed this to protect you,",
+			"\"I designed this to protect you,",
 			"whatever you may face. And when",
-			"this is all over... let's talk.\\\""
+			"this is all over... let's talk.\""
 		]
 	},
 	{
 		"id": "UniqueRing98",
 		"name": "Pearl of Tsoatha",
 		"text": [
-			"\\\"Velka was a mere pirate when she ventured to Tsoatha,",
+			"\"Velka was a mere pirate when she ventured to Tsoatha,",
 			"a reverence for the Brine King burning in her heart.",
 			"She returned as something different. Something more.",
-			"So the legend of the Tide Witch is told.\\\""
+			"So the legend of the Tide Witch is told.\""
 		]
 	},
 	{
@@ -9357,7 +9357,7 @@
 		"id": "UniqueSceptre10",
 		"name": "Death's Hand",
 		"text": [
-			"\\\"All are welcome in Hinekora's eternal home.\\\"",
+			"\"All are welcome in Hinekora's eternal home.\"",
 			"- Karui Proverb"
 		]
 	},
@@ -9392,8 +9392,8 @@
 		"id": "UniqueSceptre14x",
 		"name": "Replica Bitterdream",
 		"text": [
-			"\\\"Attempt #2520: Been slaving away at this one for longer than I can remember.",
-			"Convinced this assignment is retribution from my superior...\\\""
+			"\"Attempt #2520: Been slaving away at this one for longer than I can remember.",
+			"Convinced this assignment is retribution from my superior...\""
 		]
 	},
 	{
@@ -9434,8 +9434,8 @@
 		"id": "UniqueSceptre19x",
 		"name": "Replica Earendel's Embrace",
 		"text": [
-			"\\\"Lord of Bone, Lord of Flesh, yet all that we can",
-			"master turns to ash.\\\"",
+			"\"Lord of Bone, Lord of Flesh, yet all that we can",
+			"master turns to ash.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -9467,8 +9467,8 @@
 		"id": "UniqueSceptre21x",
 		"name": "Replica Nebulis",
 		"text": [
-			"\\\"We could rival the gods with this power, if only we had the mitigating mechanisms",
-			"to make it work. A jewel, a talisman, an armour... or the Font...\\\""
+			"\"We could rival the gods with this power, if only we had the mitigating mechanisms",
+			"to make it work. A jewel, a talisman, an armour... or the Font...\""
 		]
 	},
 	{
@@ -9503,9 +9503,9 @@
 		"id": "UniqueSceptre25x",
 		"name": "Replica Maata's Teaching",
 		"text": [
-			"\\\"And so it begins. Someone,",
+			"\"And so it begins. Someone,",
 			"somewhere, is trying again...",
-			"seems mankind never learns.\\\""
+			"seems mankind never learns.\""
 		]
 	},
 	{
@@ -9564,8 +9564,8 @@
 		"id": "UniqueSceptre9",
 		"name": "Brutus' Lead Sprinkler",
 		"text": [
-			"\\\"A sprinkle of liquid encouragement is often required",
-			"to garnish the perfect confession.\\\"",
+			"\"A sprinkle of liquid encouragement is often required",
+			"to garnish the perfect confession.\"",
 			"- Brutus, Warden of Axiom"
 		]
 	},
@@ -9580,7 +9580,7 @@
 		"id": "UniqueShieldDex2",
 		"name": "Crest of Perandus",
 		"text": [
-			"\\\"With piety and justice.\\\"",
+			"\"With piety and justice.\"",
 			"- Perandus family motto"
 		]
 	},
@@ -9588,7 +9588,7 @@
 		"id": "UniqueShieldDex3",
 		"name": "Atziri's Reflection",
 		"text": [
-			"\\\"As long as I see death in my mirror, so will Wraeclast.\\\"",
+			"\"As long as I see death in my mirror, so will Wraeclast.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -9634,8 +9634,8 @@
 		"id": "UniqueShieldDex8x",
 		"name": "Replica Mistwall",
 		"text": [
-			"\\\"For personal defence, Prototype #444 is fantastic. It is one hundred percent",
-			"effective seventy five percent of the time... once.\\\"",
+			"\"For personal defence, Prototype #444 is fantastic. It is one hundred percent",
+			"effective seventy five percent of the time... once.\"",
 			"- Lead Researcher Ksaret"
 		]
 	},
@@ -9658,10 +9658,10 @@
 		"id": "UniqueShieldDexInt2",
 		"name": "Maligaro's Lens",
 		"text": [
-			"\\\"Look around you. What do you see?",
+			"\"Look around you. What do you see?",
 			"Corruption, perversion, sin?",
 			"No. It is progress.",
-			"You simply lack the means to see it.\\\"",
+			"You simply lack the means to see it.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -9684,9 +9684,9 @@
 		"id": "UniqueShieldDexInt5",
 		"name": "Zeel's Amplifier",
 		"text": [
-			"\\\"Great minds wish to reveal all the secrets of time and space.",
+			"\"Great minds wish to reveal all the secrets of time and space.",
 			"But it does not matter. Creation, the act of Matter Metamorphosis,",
-			"is the only secret worth discovering.\\\"",
+			"is the only secret worth discovering.\"",
 			"- Zeel, Vaal Tinkerer"
 		]
 	},
@@ -9783,9 +9783,9 @@
 		"id": "UniqueShieldInt18",
 		"name": "The Draugur's Lantern",
 		"text": [
-			"\\\"This infernal imp wasn't willing to part with its piece of the Allflame.",
+			"\"This infernal imp wasn't willing to part with its piece of the Allflame.",
 			"It's taught me ways to stoke the flame. To burn unnaturally fierce.",
-			"The imp may have the Allflame, but I have the imp.\\\"",
+			"The imp may have the Allflame, but I have the imp.\"",
 			"- Velka, the Tide Witch"
 		]
 	},
@@ -9868,16 +9868,16 @@
 		"id": "UniqueShieldStr10x",
 		"name": "Replica Tukohama's Fortress",
 		"text": [
-			"\\\"As one of our few creations that did not cost any fatalities,",
-			"Prototype #10 bore unexpectedly positive results.\\\""
+			"\"As one of our few creations that did not cost any fatalities,",
+			"Prototype #10 bore unexpectedly positive results.\""
 		]
 	},
 	{
 		"id": "UniqueShieldStr11",
 		"name": "Ahn's Heritage",
 		"text": [
-			"\\\"It's not Karui, Azmeri or even Vaal in origin,",
-			"but one thing is certain. It is very, very old.\\\"",
+			"\"It's not Karui, Azmeri or even Vaal in origin,",
+			"but one thing is certain. It is very, very old.\"",
 			"- Icius Perandus, Antiquities Collection, Item 46"
 		]
 	},
@@ -9895,8 +9895,8 @@
 		"id": "UniqueShieldStr13",
 		"name": "Dawnbreaker",
 		"text": [
-			"\\\"The newcomers warn of doom and death beyond mortal ken.",
-			"I ask, why should we fear the fire when we serve the Lord of Light?\\\"",
+			"\"The newcomers warn of doom and death beyond mortal ken.",
+			"I ask, why should we fear the fire when we serve the Lord of Light?\"",
 			"- Maxarius, the first High Templar"
 		]
 	},
@@ -9912,9 +9912,9 @@
 		"id": "UniqueShieldStr15",
 		"name": "Cowards' Wail",
 		"text": [
-			"\\\"A tale-woman passed through here not long ago.",
+			"\"A tale-woman passed through here not long ago.",
 			"Taught us a thing or two. We're not going to execute",
-			"you for what you've done... no. You've a debt to repay.\\\""
+			"you for what you've done... no. You've a debt to repay.\""
 		]
 	},
 	{
@@ -10160,8 +10160,8 @@
 		"id": "UniqueShieldStrInt9x",
 		"name": "Replica Victario's Charity",
 		"text": [
-			"\\\"Close to the original, and perhaps even more useful. However,",
-			"close is not what we are looking for. Keep trying.\\\"",
+			"\"Close to the original, and perhaps even more useful. However,",
+			"close is not what we are looking for. Keep trying.\"",
 			"- Administrator Qotra"
 		]
 	},
@@ -10201,9 +10201,9 @@
 		"id": "UniqueStaff13",
 		"name": "Realm Ender",
 		"text": [
-			"\\\"God's creations always begin and end",
+			"\"God's creations always begin and end",
 			"with flames and ice.",
-			"We should count ourselves lucky when we see neither.\\\"",
+			"We should count ourselves lucky when we see neither.\"",
 			"- Archbishop Geofri"
 		]
 	},
@@ -10219,8 +10219,8 @@
 		"id": "UniqueStaff15",
 		"name": "Femurs of the Saints",
 		"text": [
-			"\\\"They spent a lifetime in the service of God,",
-			"only to spend eternity in the service of me.\\\"",
+			"\"They spent a lifetime in the service of God,",
+			"only to spend eternity in the service of me.\"",
 			"- Kadavrus, Surgeon to the Umbra"
 		]
 	},
@@ -10228,10 +10228,10 @@
 		"id": "UniqueStaff16",
 		"name": "Xirgil's Crank",
 		"text": [
-			"\\\"Since one with knowledge of machines",
+			"\"Since one with knowledge of machines",
 			"might be able to bring the labyrinth to a standstill,",
 			"Izaro had us place many boobytrapped decoys.",
-			"But I know which switch brings the monster down.\\\"",
+			"But I know which switch brings the monster down.\"",
 			"- Xirgil, Trapbuilder's final words."
 		]
 	},
@@ -10239,10 +10239,10 @@
 		"id": "UniqueStaff17",
 		"name": "Duskdawn",
 		"text": [
-			"\\\"The world is not simply black and white,",
+			"\"The world is not simply black and white,",
 			"it is not divided into good and evil.",
 			"But black and white, good and evil, do exist,",
-			"and we must know how to recognize them.\\\"",
+			"and we must know how to recognize them.\"",
 			"- Archbishop Geofri"
 		]
 	},
@@ -10250,8 +10250,8 @@
 		"id": "UniqueStaff17x",
 		"name": "Replica Duskdawn",
 		"text": [
-			"\\\"Lab Two suffered significant structural damage in the process of creating",
-			"Prototype #77. It is, however, the closest we've come to perfection.\\\""
+			"\"Lab Two suffered significant structural damage in the process of creating",
+			"Prototype #77. It is, however, the closest we've come to perfection.\""
 		]
 	},
 	{
@@ -10281,9 +10281,9 @@
 		"id": "UniqueStaff21",
 		"name": "Cane of Unravelling",
 		"text": [
-			"\\\"Creation is the act of making the intangible tangible.",
+			"\"Creation is the act of making the intangible tangible.",
 			"To work backwards, to make the tangible intangible,",
-			"is to step into the mind of a god.\\\"",
+			"is to step into the mind of a god.\"",
 			"- Doryani, Queen's Thaumaturgist"
 		]
 	},
@@ -10400,9 +10400,9 @@
 		"id": "UniqueStaff36",
 		"name": "Jiquani's Potential",
 		"text": [
-			"\\\"I have risked everything. My position, my ambition, my",
+			"\"I have risked everything. My position, my ambition, my",
 			"very life. There has to be a way to save our people. If we",
-			"must, let us tear apart the very foundations of reality!\\\""
+			"must, let us tear apart the very foundations of reality!\""
 		]
 	},
 	{
@@ -10436,8 +10436,8 @@
 		"id": "UniqueStaff4x",
 		"name": "Replica Fencoil",
 		"text": [
-			"\\\"Attempt #306: The power I can sense in this ancient branch",
-			"still eludes me. Perhaps if I attach some string and a hook...\\\""
+			"\"Attempt #306: The power I can sense in this ancient branch",
+			"still eludes me. Perhaps if I attach some string and a hook...\""
 		]
 	},
 	{
@@ -10454,7 +10454,7 @@
 		"id": "UniqueStaff6",
 		"name": "Pledge of Hands",
 		"text": [
-			"\\\"To shake a hand is to double your power.\\\"",
+			"\"To shake a hand is to double your power.\"",
 			"- Jaetai, Queen's Advisor"
 		]
 	},
@@ -10485,8 +10485,8 @@
 		"id": "UniqueStaff9x",
 		"name": "Replica Blood Thorn",
 		"text": [
-			"\\\"Physical forces and flames seem to share some innate bond.",
-			"What logic lies beneath the veil of reality?\\\""
+			"\"Physical forces and flames seem to share some innate bond.",
+			"What logic lies beneath the veil of reality?\""
 		]
 	},
 	{
@@ -10645,8 +10645,8 @@
 		"id": "UniqueTwoHandAxe14",
 		"name": "Ngamahu's Flame",
 		"text": [
-			"\\\"The Karui savages claim the weapon was forged by their fire god.",
-			"I'm rather inclined to believe them.\\\"",
+			"\"The Karui savages claim the weapon was forged by their fire god.",
+			"I'm rather inclined to believe them.\"",
 			"- Fairgraves, Renowned Explorer"
 		]
 	},
@@ -10680,9 +10680,9 @@
 		"id": "UniqueTwoHandAxe18",
 		"name": "Spinesnatch",
 		"text": [
-			"\\\"Not all the Abyssals serve the Lich Lords.",
+			"\"Not all the Abyssals serve the Lich Lords.",
 			"Some serve themselves, living off stolen",
-			"flesh and bone from those they... eat.\\\""
+			"flesh and bone from those they... eat.\""
 		]
 	},
 	{
@@ -10721,15 +10721,15 @@
 		"id": "UniqueTwoHandAxe6x",
 		"name": "Replica Wings of Entropy",
 		"text": [
-			"\\\"The remarkable imbalance of Prototype #848 leads to uncommon",
-			"power or speed when striking.\\\""
+			"\"The remarkable imbalance of Prototype #848 leads to uncommon",
+			"power or speed when striking.\""
 		]
 	},
 	{
 		"id": "UniqueTwoHandAxe7",
 		"name": "Atziri's Disfavour",
 		"text": [
-			"\\\"I do not believe in disguising my disappointment.\\\"",
+			"\"I do not believe in disguising my disappointment.\"",
 			"- Atziri, Queen of the Vaal"
 		]
 	},
@@ -10746,8 +10746,8 @@
 		"id": "UniqueTwoHandAxe8x",
 		"name": "Replica Harvest",
 		"text": [
-			"\\\"Why is Prototype #67 never in the vault it should be?",
-			"Either we're keeping faulty logs, or...\\\"",
+			"\"Why is Prototype #67 never in the vault it should be?",
+			"Either we're keeping faulty logs, or...\"",
 			"- Researcher Graven"
 		]
 	},
@@ -10765,8 +10765,8 @@
 		"id": "UniqueTwoHandMace1",
 		"name": "Hrimnor's Dirge",
 		"text": [
-			"\\\"The crack of bone, the spray of blood.",
-			"Is there sweeter music?\\\"",
+			"\"The crack of bone, the spray of blood.",
+			"Is there sweeter music?\"",
 			"- Hrimnor of the Ezomytes."
 		]
 	},
@@ -10774,9 +10774,9 @@
 		"id": "UniqueTwoHandMace10",
 		"name": "Trypanon",
 		"text": [
-			"\\\"Though ingenious instruments have been found,",
+			"\"Though ingenious instruments have been found,",
 			"it seems surgery before thaumaturgy",
-			"was not so delicate.\\\"",
+			"was not so delicate.\"",
 			"- Icius Perandus, Antiquities Collection, Item 3546"
 		]
 	},
@@ -10784,7 +10784,7 @@
 		"id": "UniqueTwoHandMace10x",
 		"name": "Replica Trypanon",
 		"text": [
-			"\\\"The best place for this prototype would be in the hands of our enemies.\\\""
+			"\"The best place for this prototype would be in the hands of our enemies.\""
 		]
 	},
 	{
@@ -10816,9 +10816,9 @@
 		"id": "UniqueTwoHandMace15",
 		"name": "The Sacred Chalice",
 		"text": [
-			"\\\"Sacred water has no power of its own, and yet",
+			"\"Sacred water has no power of its own, and yet",
 			"holds the greatest strength of all... it can carry",
-			"what we give it. What we sacrifice for each other.\\\"",
+			"what we give it. What we sacrifice for each other.\"",
 			"- Rashi, Grand Daiyata of the Sel Khari"
 		]
 	},
@@ -10826,8 +10826,8 @@
 		"id": "UniqueTwoHandMace16",
 		"name": "The Desecrated Chalice",
 		"text": [
-			"\\\"All men must drink. Deny us water,",
-			"and we shall have blood instead.\\\"",
+			"\"All men must drink. Deny us water,",
+			"and we shall have blood instead.\"",
 			"- Rukh, of the Afarud"
 		]
 	},
@@ -10835,7 +10835,7 @@
 		"id": "UniqueTwoHandMace2",
 		"name": "Geofri's Devotion",
 		"text": [
-			"\\\"One quick tap is all the persuasion you'll need.\\\"",
+			"\"One quick tap is all the persuasion you'll need.\"",
 			"- Archbishop Geofri of Phrecia Cathedral"
 		]
 	},
@@ -10872,16 +10872,16 @@
 		"id": "UniqueTwoHandMace6x",
 		"name": "Replica Kongor's Undying Rage",
 		"text": [
-			"\\\"Prototype #599 offers an incredible defensive power, but at a cost.",
-			"What underlying physics are at play here, I wonder?\\\""
+			"\"Prototype #599 offers an incredible defensive power, but at a cost.",
+			"What underlying physics are at play here, I wonder?\""
 		]
 	},
 	{
 		"id": "UniqueTwoHandMace7",
 		"name": "Panquetzaliztli",
 		"text": [
-			"\\\"The finest prosperity grows from the direst",
-			"carnage. Such is the nature of progress.\\\"",
+			"\"The finest prosperity grows from the direst",
+			"carnage. Such is the nature of progress.\"",
 			"- Doryani of the Vaal"
 		]
 	},
@@ -10898,7 +10898,7 @@
 		"id": "UniqueTwoHandSword1",
 		"name": "Rigwald's Charge",
 		"text": [
-			"\\\"Today, clansmen, my sword is my voice!\\\"",
+			"\"Today, clansmen, my sword is my voice!\"",
 			"- Rigwald, at the Battle of Glarryn"
 		]
 	},
@@ -10956,17 +10956,17 @@
 		"id": "UniqueTwoHandSword17",
 		"name": "The Golden Charlatan",
 		"text": [
-			"\\\"He speaks, he leads, he stands tall...",
+			"\"He speaks, he leads, he stands tall...",
 			"yet, what has he truly done, save",
-			"spill our blood in pursuit of power?\\\""
+			"spill our blood in pursuit of power?\""
 		]
 	},
 	{
 		"id": "UniqueTwoHandSword18",
 		"name": "Fleshrender",
 		"text": [
-			"\\\"This blade, which once tasted the green ichor of Kulemak himself, is now",
-			"anathema to all life. Piece by piece, we shall steal back what we are owed...\\\"",
+			"\"This blade, which once tasted the green ichor of Kulemak himself, is now",
+			"anathema to all life. Piece by piece, we shall steal back what we are owed...\"",
 			"- Sak, of the Afarud"
 		]
 	},
@@ -10974,9 +10974,9 @@
 		"id": "UniqueTwoHandSword19",
 		"name": "Skysunder",
 		"text": [
-			"\\\"To the Children of Winter, the Sun was but a myth. While Lundara held Kulemak",
+			"\"To the Children of Winter, the Sun was but a myth. While Lundara held Kulemak",
 			"impaled, Solerai struck - not at him, but upwards. Her blade pierced the heavens,",
-			"and searing light embraced her golden armour. The Sun was real, and it was her.\\\""
+			"and searing light embraced her golden armour. The Sun was real, and it was her.\""
 		]
 	},
 	{
@@ -11021,8 +11021,8 @@
 		"id": "UniqueTwoHandSword6x",
 		"name": "Replica Oro's Sacrifice",
 		"text": [
-			"\\\"Ice and flame antagonized in the essence of a prototype.",
-			"What once burned now chills the soul.\\\"",
+			"\"Ice and flame antagonized in the essence of a prototype.",
+			"What once burned now chills the soul.\"",
 			"- Researcher Arn"
 		]
 	},
@@ -11098,8 +11098,8 @@
 		"id": "UniqueWand14",
 		"name": "Ashcaller",
 		"text": [
-			"\\\"We do not command fire.",
-			"Ngamahu lends it, and Hinekora returns it.\\\"",
+			"\"We do not command fire.",
+			"Ngamahu lends it, and Hinekora returns it.\"",
 			"- Lavianga, Advisor to Kaom"
 		]
 	},
@@ -11126,8 +11126,8 @@
 		"id": "UniqueWand16x",
 		"name": "Replica Tulfall",
 		"text": [
-			"\\\"Are we mad for attempting to build an engine out of this?",
-			"Looping cycles, power and pain...\\\"",
+			"\"Are we mad for attempting to build an engine out of this?",
+			"Looping cycles, power and pain...\"",
 			"- Researcher Arn"
 		]
 	},
@@ -11182,7 +11182,7 @@
 		"id": "UniqueWand22",
 		"name": "Mystic Refractor",
 		"text": [
-			"\\\"Waging war is a simple matter of geometry and death.\\\"",
+			"\"Waging war is a simple matter of geometry and death.\"",
 			"- Trinian, Intellectus Prime"
 		]
 	},
@@ -11199,8 +11199,8 @@
 		"id": "UniqueWand2x",
 		"name": "Replica Midnight Bargain",
 		"text": [
-			"\\\"Simply incredible. I caught an escaping test subject myself with",
-			"swarms of burning skulls. Delightful!\\\"",
+			"\"Simply incredible. I caught an escaping test subject myself with",
+			"swarms of burning skulls. Delightful!\"",
 			"- Researcher Olesya"
 		]
 	},
@@ -11208,8 +11208,8 @@
 		"id": "UniqueWand3",
 		"name": "Void Battery",
 		"text": [
-			"\\\"The trick is to give nothingness,",
-			"and to receive everything in return.\\\"",
+			"\"The trick is to give nothingness,",
+			"and to receive everything in return.\"",
 			"- Inquisitor Maligaro"
 		]
 	},
@@ -11226,11 +11226,11 @@
 		"id": "UniqueWand6",
 		"name": "Piscator's Vigil",
 		"text": [
-			"\\\"Stone still, amidst the reeds,",
+			"\"Stone still, amidst the reeds,",
 			"breath fogging in the iron cold air.",
 			"he sits, he waits, he watches.",
 			"A piscatorial vigil, sat by the river,",
-			"his cathedral, his patience his unanswered prayer.\\\"",
+			"his cathedral, his patience his unanswered prayer.\"",
 			"- Jojoba Mansell, bard, angler, adventurer"
 		]
 	},
@@ -11261,8 +11261,8 @@
 		"id": "UniqueWand9x",
 		"name": "Replica Twyzel",
 		"text": [
-			"\\\"Energy redirected is energy imbalanced.",
-			"Prototype #78 serves as a prime example.\\\""
+			"\"Energy redirected is energy imbalanced.",
+			"Prototype #78 serves as a prime example.\""
 		]
 	},
 	{

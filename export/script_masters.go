@@ -8,7 +8,7 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "masters", Build: buildMasters})
 }
 
-func buildMasters(x *Ctx) (any, error) {
+func buildMasters(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
 	itemClassMap := map[string]string{
@@ -46,29 +46,36 @@ func buildMasters(x *Ctx) (any, error) {
 		"Jewel":                    "Jewel",
 	}
 
+	benchOptions, err := x.Dat("CraftingBenchOptions")
+	if err != nil {
+		return nil, err
+	}
 	var mc schema.MasterCrafts
-	for _, craft := range x.Dat("CraftingBenchOptions").GetRowList("IsDisabled", false) {
-		mod, ok := craft.Get("Mod").(*Row)
-		if !ok {
+	for _, craft := range benchOptions.GetRowList("IsDisabled", false) {
+		mod := craft.Ref("Mod")
+		if mod == nil {
 			continue
 		}
-		c := schema.MasterCraft{Affix: luaStr(mod.Get("Name"))}
-		switch mod.Get("GenerationType").(int64) {
+		c := schema.MasterCraft{Affix: mod.Str("Name")}
+		switch mod.Int("GenerationType") {
 		case 1:
 			c.Type = "Prefix"
 		case 2:
 			c.Type = "Suffix"
 		}
-		stats := x.DescribeMod(mod)
+		stats, err := x.DescribeMod(mod)
+		if err != nil {
+			return nil, err
+		}
 		c.ModTags = stats.ModTags
 		c.Lines = stats.Lines
 		c.StatOrders = stats.Orders
-		c.Level = mod.Get("Level").(int64)
-		c.Group = luaStr(mod.Get("Type").(*Row).Get("Id"))
+		c.Level = mod.Int("Level")
+		c.Group = mod.Ref("Type").Str("Id")
 		uniqueTypes := map[string]bool{}
-		for _, category := range craft.Get("ItemCategories").([]any) {
-			for _, itemClass := range category.(*Row).Get("ItemClasses").([]any) {
-				mapped, found := itemClassMap[luaStr(itemClass.(*Row).Get("Id"))]
+		for _, category := range craft.Refs("ItemCategories") {
+			for _, itemClass := range category.Refs("ItemClasses") {
+				mapped, found := itemClassMap[itemClass.Str("Id")]
 				if found && !uniqueTypes[mapped] {
 					uniqueTypes[mapped] = true
 					c.Types = append(c.Types, mapped)

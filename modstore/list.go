@@ -49,14 +49,14 @@ func (l *List) ConvertModInternal(oldName string, mod *modparser.Mod) bool {
 
 // MergeMod ports ModList:MergeMod.
 func (l *List) MergeMod(mod *modparser.Mod, skipNonAdditive bool) {
-	if mod.Type == "BASE" || mod.Type == "INC" || mod.Type == "MORE" {
+	if mod.Type == modparser.Base || mod.Type == modparser.Inc || mod.Type == modparser.More {
 		for i, curMod := range l.Mods {
 			if modparser.CompareModParams(curMod, mod) {
 				// #EVAL: archive parity — copyTable(self[i], true) is SHALLOW, so
 				// the merged copy shares tag tables (and their mutations) with
 				// the original.
 				cp := *curMod
-				cp.Value = arithNum(curMod.Value) + arithNum(mod.Value)
+				cp.Value = modparser.Num(valueNum(curMod.Value) + valueNum(mod.Value))
 				l.Mods[i] = &cp
 				return
 			}
@@ -71,17 +71,17 @@ func (l *List) AddList(list []*modparser.Mod) {
 	l.Mods = append(l.Mods, list...)
 }
 
-func (l *List) SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64 {
+func (l *List) SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 0.0
 	for _, name := range names {
 		for _, mod := range l.Mods {
 			if mod.Name == name && mod.Type == modType && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
-						result += arithNum(v)
+						result += valueNum(v)
 					}
 				} else {
-					result += arithNum(mod.Value)
+					result += valueNum(mod.Value)
 				}
 			}
 		}
@@ -92,22 +92,22 @@ func (l *List) SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFl
 	return result
 }
 
-func (l *List) MoreInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64 {
+func (l *List) MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 1.0
 	var modPrecision int
 	hasPrecision := false
 	for _, name := range names {
 		modResult := 1.0
 		for _, mod := range l.Mods {
-			if mod.Name == name && mod.Type == "MORE" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Name == name && mod.Type == modparser.More && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
 					var value float64
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
-						value = arithNum(v)
+						value = valueNum(v)
 					}
 					modResult *= 1 + value/100
 				} else {
-					modResult *= 1 + arithNum(mod.Value)/100
+					modResult *= 1 + valueNum(mod.Value)/100
 				}
 				if p, ok := highPrecision(mod.Name, mod.Type); ok {
 					if !hasPrecision || p > modPrecision {
@@ -125,15 +125,15 @@ func (l *List) MoreInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, sour
 	return result
 }
 
-func (l *List) FlagInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) bool {
+func (l *List) FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
 	for _, name := range names {
 		for _, mod := range l.Mods {
-			if mod.Name == name && mod.Type == "FLAG" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Name == name && mod.Type == modparser.Flag && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					if truthy(evalMod(ctx, mod, cfg, nil)) {
+					if modparser.Truthy(evalMod(ctx, mod, cfg, nil)) {
 						return true
 					}
-				} else if truthy(mod.Value) {
+				} else if modparser.Truthy(mod.Value) {
 					return true
 				}
 			}
@@ -145,15 +145,15 @@ func (l *List) FlagInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, sour
 	return false
 }
 
-func (l *List) OverrideInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) any {
+func (l *List) OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value {
 	for _, name := range names {
 		for _, mod := range l.Mods {
-			if mod.Name == name && mod.Type == "OVERRIDE" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Name == name && mod.Type == modparser.Override && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					if v := evalMod(ctx, mod, cfg, nil); truthy(v) {
+					if v := evalMod(ctx, mod, cfg, nil); modparser.Truthy(v) {
 						return v
 					}
-				} else if truthy(mod.Value) {
+				} else if modparser.Truthy(mod.Value) {
 					return mod.Value
 				}
 			}
@@ -165,44 +165,48 @@ func (l *List) OverrideInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, 
 	return nil
 }
 
-func (l *List) ListInternal(ctx Store, result *[]any, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) {
+func (l *List) ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value {
+	var result []modparser.Value
 	for _, name := range names {
 		for _, mod := range l.Mods {
-			if mod.Name == name && mod.Type == "LIST" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Name == name && mod.Type == modparser.List && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
 					// #EVAL: archive parity — `or nullValue` reads an undefined
 					// global (nil), so failed evaluations are dropped silently.
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
-						*result = append(*result, v)
+						result = append(result, v)
 					}
-				} else if truthy(mod.Value) {
-					*result = append(*result, mod.Value)
+				} else if modparser.Truthy(mod.Value) {
+					result = append(result, mod.Value)
 				}
 			}
 		}
 	}
 	if l.Parent != nil {
-		l.Parent.ListInternal(ctx, result, cfg, flags, keywordFlags, source, names...)
+		result = append(result, l.Parent.ListInternal(ctx, cfg, flags, keywordFlags, source, names...)...)
 	}
+	return result
 }
 
-func (l *List) TabulateInternal(ctx Store, result *[]TabEntry, modType string, hasType bool, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) {
+func (l *List) TabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry {
+	var result []TabEntry
 	for _, name := range names {
 		for _, mod := range l.Mods {
 			if mod.Name == name && (!hasType || mod.Type == modType) && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
-				var value any
+				var value modparser.Value
 				if hasTags(mod) {
 					value = evalMod(ctx, mod, cfg, nil)
 				} else {
 					value = mod.Value
 				}
 				if tabValueKept(value, mod.Type) {
-					*result = append(*result, TabEntry{Value: value, Mod: mod})
+					result = append(result, TabEntry{Value: value, Mod: mod})
 				}
 			}
 		}
 	}
 	if l.Parent != nil {
-		l.Parent.TabulateInternal(ctx, result, modType, hasType, cfg, flags, keywordFlags, source, names...)
+		result = append(result, l.Parent.TabulateInternal(ctx, modType, hasType, cfg, flags, keywordFlags, source, names...)...)
 	}
+	return result
 }

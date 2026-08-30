@@ -1,6 +1,6 @@
 {
 	"directives": [
-		"#type Tincture",
-		"#baseMatch Metadata/Items/Tinctures/Tincture[0-9]"
+		{"directive":"type","name":"Tincture"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Tinctures/Tincture[0-9]"}
 	]
 }

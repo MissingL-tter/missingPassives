@@ -6,7 +6,9 @@ package calc
 import (
 	"github.com/MissingL-tter/missingPassives/data"
 	"math"
+	"strconv"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -14,18 +16,18 @@ import (
 // calcSkillCooldown ports the module-level function of the same name
 // (L274). The Lua returns (cooldown, rounded, addedCooldown); only the
 // first two are read outside the breakdown.
-func (env *Env) calcSkillCooldown(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData map[string]any) (cooldown float64, rounded bool) {
-	cooldownOverride := skillModList.Override(skillCfg, "CooldownRecovery")
-	addedCooldown := skillModList.Sum("BASE", skillCfg, "CooldownRecovery")
-	if truthy(cooldownOverride) {
-		cooldown = anyNum(cooldownOverride)
+func (env *Env) calcSkillCooldown(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData *SkillData) (cooldown float64, rounded bool) {
+	cooldownOverride, _ := skillModList.Override(skillCfg, "CooldownRecovery")
+	addedCooldown := skillModList.Sum(modparser.Base, skillCfg, "CooldownRecovery")
+	if modparser.Truthy(cooldownOverride) {
+		cooldown = valueNum(cooldownOverride)
 	} else {
-		cooldown = (anyNum(skillData["cooldown"]) + addedCooldown) / math.Max(0, Mod(skillModList, skillCfg, "CooldownRecovery"))
+		cooldown = (skillData.N("cooldown") + addedCooldown) / math.Max(0, Mod(skillModList, skillCfg, "CooldownRecovery"))
 	}
 	// If a skill can store extra uses and has a cooldown, it doesn't round
 	// the cooldown value to server ticks
-	if anyNum(skillData["storedUses"]) > 1 || anyNum(skillData["VaalStoredUses"]) > 1 ||
-		skillModList.Sum("BASE", skillCfg, "AdditionalCooldownUses") > 0 {
+	if skillData.N("storedUses") > 1 || skillData.N("VaalStoredUses") > 1 ||
+		skillModList.Sum(modparser.Base, skillCfg, "AdditionalCooldownUses") > 0 {
 		return cooldown, false
 	}
 	cooldown = math.Ceil(cooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
@@ -33,12 +35,12 @@ func (env *Env) calcSkillCooldown(skillModList *modstore.List, skillCfg *modstor
 }
 
 // calcWarcryCastTime ports the local of the same name (L289).
-func (env *Env) calcWarcryCastTime(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData map[string]any, actor *performActor) float64 {
-	baseSpeed := 1 / skillModList.Sum("BASE", skillCfg, "WarcryCastTime")
+func (env *Env) calcWarcryCastTime(skillModList *modstore.List, skillCfg *modstore.Cfg, skillData *SkillData, actor *performActor) float64 {
+	baseSpeed := 1 / skillModList.Sum(modparser.Base, skillCfg, "WarcryCastTime")
 	warcryCastTime := baseSpeed * Mod(skillModList, skillCfg, "WarcrySpeed") * env.actionSpeedMod(actor)
 	warcryCastTime = math.Min(warcryCastTime, data.Misc.ServerTickRate)
 	warcryCastTime = 1 / warcryCastTime
-	if skillModList.Flag(skillCfg, "InstantWarcry") || truthy(skillData["triggeredByAutoexertion"]) {
+	if skillModList.Flag(skillCfg, "InstantWarcry") || skillData.Flag("triggeredByAutoexertion") {
 		warcryCastTime = 0
 	}
 	return warcryCastTime
@@ -53,147 +55,143 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 	// Calculate skill type stats
 	if activeSkill.Minion != nil {
 		if limit := activeSkill.Minion.MinionData.Limit; limit != "" {
-			if ov := env.ModDB.Override(nil, limit); truthy(ov) {
-				output["ActiveMinionLimit"] = math.Floor(anyNum(ov))
+			if ov, ok := env.ModDB.Override(nil, limit); ok {
+				output.SetN("ActiveMinionLimit", math.Floor(valueNum(ov)))
 			} else {
-				output["ActiveMinionLimit"] = math.Floor(Val(skillModList, limit, skillCfg) * skillModList.More(skillCfg, "ActiveMinionLimit"))
+				output.SetN("ActiveMinionLimit", math.Floor(Val(skillModList, limit, skillCfg)*skillModList.More(skillCfg, "ActiveMinionLimit")))
 			}
 		}
-		output["SummonedMinionsPerCast"] = math.Floor(Val(skillModList, "MinionPerCastCount", skillCfg))
-		if outNum(output, "SummonedMinionsPerCast") == 0 {
-			output["SummonedMinionsPerCast"] = 1.0
+		output.SetN("SummonedMinionsPerCast", math.Floor(Val(skillModList, "MinionPerCastCount", skillCfg)))
+		if output.N("SummonedMinionsPerCast") == 0 {
+			output.SetN("SummonedMinionsPerCast", 1.0)
 		}
 	}
 	if skillFlags["chaining"] {
 		if skillModList.Flag(skillCfg, "CannotChain") || skillModList.Flag(skillCfg, "NoAdditionalChains") {
-			output["ChainMaxString"] = "Cannot chain"
+			output.SetStr("ChainMaxString", "Cannot chain")
 		} else {
 			names := []string{"ChainCountMax"}
 			if !skillFlags["projectile"] {
 				names = append(names, "BeamChainCountMax")
 			}
-			chainMax := skillModList.Sum("BASE", skillCfg, names...)
+			chainMax := skillModList.Sum(modparser.Base, skillCfg, names...)
 			if skillModList.Flag(skillCfg, "AdditionalProjectilesAddChainsInstead") {
 				projCount := 0.0
 				if !skillModList.Flag(skillCfg, "SingleProjectile") {
-					projCount = math.Floor((skillModList.Sum("BASE", skillCfg, "ProjectileCount") - 1) * skillModList.More(skillCfg, "ProjectileCount"))
+					projCount = math.Floor((skillModList.Sum(modparser.Base, skillCfg, "ProjectileCount") - 1) * skillModList.More(skillCfg, "ProjectileCount"))
 				}
 				chainMax += projCount
 			}
 			chainMax *= skillModList.More(skillCfg, "ChainCountMax")
-			output["ChainMax"] = chainMax
-			output["ChainMaxString"] = chainMax
-			output["Chain"] = math.Min(chainMax, skillModList.Sum("BASE", skillCfg, "ChainCount"))
-			output["ChainRemaining"] = math.Max(0, chainMax-outNum(output, "Chain"))
+			output.SetN("ChainMax", chainMax)
+			output.SetN("ChainMaxString", chainMax)
+			output.SetN("Chain", math.Min(chainMax, skillModList.Sum(modparser.Base, skillCfg, "ChainCount")))
+			output.SetN("ChainRemaining", math.Max(0, chainMax-output.N("Chain")))
 		}
 	}
 	if skillFlags["projectile"] {
 		if skillModList.Flag(nil, "PointBlank") {
-			skillModList.AddMod(newMod("Damage", "MORE", 30.0, "Point Blank",
-				modparser.ModFlag.Attack|modparser.ModFlag.Projectile,
-				modparser.Tag{"type": "DistanceRamp", "ramp": rampTable([][2]float64{{10, 1}, {35, 0}, {120, -1}})}))
+			skillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(30.0), "Point Blank", modparser.FlagAttack|modparser.FlagProjectile, modparser.KeywordNone, &modparser.DistanceRampTag{Ramp: modparser.Pairs{{10, 1}, {35, 0}, {120, -1}}}))
 		}
 		if skillModList.Flag(nil, "FarShot") {
-			skillModList.AddMod(newMod("Damage", "MORE", 100.0, "Far Shot",
-				modparser.ModFlag.Attack|modparser.ModFlag.Projectile,
-				modparser.Tag{"type": "DistanceRamp", "ramp": rampTable([][2]float64{{10, -0.2}, {25, 0}, {70, 0.6}})}))
+			skillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(100.0), "Far Shot", modparser.FlagAttack|modparser.FlagProjectile, modparser.KeywordNone, &modparser.DistanceRampTag{Ramp: modparser.Pairs{{10, -0.2}, {25, 0}, {70, 0.6}}}))
 		}
 		if skillModList.Flag(skillCfg, "NoAdditionalProjectiles") || skillModList.Flag(skillCfg, "SingleProjectile") {
-			output["ProjectileCount"] = 1.0
+			output.SetN("ProjectileCount", 1.0)
 		} else {
-			projMin := skillModList.Sum("BASE", skillCfg, "ProjectileCountMinimum")
+			projMin := skillModList.Sum(modparser.Base, skillCfg, "ProjectileCountMinimum")
 			projMax := math.Inf(1)
-			if ov := skillModList.Override(skillCfg, "ProjectileCountMaximum"); truthy(ov) {
-				projMax = anyNum(ov)
+			if ov, ok := skillModList.Override(skillCfg, "ProjectileCountMaximum"); ok {
+				projMax = valueNum(ov)
 			}
-			projBase := skillModList.Sum("BASE", skillCfg, "ProjectileCount")
+			projBase := skillModList.Sum(modparser.Base, skillCfg, "ProjectileCount")
 			projMore := skillModList.More(skillCfg, "ProjectileCount")
 			proj := math.Floor(projBase * projMore)
-			output["ProjectileCount"] = math.Max(math.Min(proj, projMax), projMin)
+			output.SetN("ProjectileCount", math.Max(math.Min(proj, projMax), projMin))
 		}
 		if skillModList.Flag(skillCfg, "AdditionalProjectilesAddBouncesInstead") {
 			projBase := 0.0
 			if !skillModList.Flag(skillCfg, "SingleProjectile") {
-				projBase = skillModList.Sum("BASE", skillCfg, "ProjectileCount") + skillModList.Sum("BASE", skillCfg, "BounceCount") - 1
+				projBase = skillModList.Sum(modparser.Base, skillCfg, "ProjectileCount") + skillModList.Sum(modparser.Base, skillCfg, "BounceCount") - 1
 			}
 			projMore := skillModList.More(skillCfg, "ProjectileCount")
-			output["BounceCount"] = math.Floor(projBase * projMore)
+			output.SetN("BounceCount", math.Floor(projBase*projMore))
 		}
-		if skillModList.Flag(skillCfg, "CannotSplit") || activeSkill.SkillTypes[modparser.SkillType.ProjectileNumber] {
+		if skillModList.Flag(skillCfg, "CannotSplit") || activeSkill.SkillTypes[modparser.SkillTypeProjectileNumber] {
 			// breakdown-only in the reference
 		} else {
-			splitCount := skillModList.Sum("BASE", skillCfg, "SplitCount") + enemyDB.Sum("BASE", skillCfg, "SelfSplitCount")
+			splitCount := skillModList.Sum(modparser.Base, skillCfg, "SplitCount") + enemyDB.Sum(modparser.Base, skillCfg, "SelfSplitCount")
 			if skillModList.Flag(skillCfg, "AdditionalProjectilesAddSplitsInstead") {
 				addedSplits := 0.0
 				if !skillModList.Flag(skillCfg, "SingleProjectile") {
-					addedSplits = math.Floor((skillModList.Sum("BASE", skillCfg, "ProjectileCount") - 1) * skillModList.More(skillCfg, "ProjectileCount"))
+					addedSplits = math.Floor((skillModList.Sum(modparser.Base, skillCfg, "ProjectileCount") - 1) * skillModList.More(skillCfg, "ProjectileCount"))
 				}
 				splitCount += addedSplits
 			}
 			if skillModList.Flag(skillCfg, "AdditionalChainsAddSplitsInstead") {
-				splitCount += skillModList.Sum("BASE", skillCfg, "ChainCountMax")
+				splitCount += skillModList.Sum(modparser.Base, skillCfg, "ChainCountMax")
 			}
-			output["SplitCount"] = splitCount
-			output["SplitCountString"] = splitCount
+			output.SetN("SplitCount", splitCount)
+			output.SetN("SplitCountString", splitCount)
 		}
 		switch {
 		case skillModList.Flag(skillCfg, "CannotFork"):
-			output["ForkCountString"] = "Cannot fork"
+			output.SetStr("ForkCountString", "Cannot fork")
 		case skillModList.Flag(skillCfg, "ForkOnce"):
 			skillFlags["forking"] = true
 			cap := 1.0
 			if skillModList.Flag(skillCfg, "ForkTwice") {
 				cap = 2
 			}
-			forkMax := math.Min(skillModList.Sum("BASE", skillCfg, "ForkCountMax"), cap)
-			output["ForkCountMax"] = forkMax
-			output["ForkedCount"] = math.Min(forkMax, skillModList.Sum("BASE", skillCfg, "ForkedCount"))
-			output["ForkCountString"] = forkMax
-			output["ForkRemaining"] = math.Max(0, forkMax-outNum(output, "ForkedCount"))
+			forkMax := math.Min(skillModList.Sum(modparser.Base, skillCfg, "ForkCountMax"), cap)
+			output.SetN("ForkCountMax", forkMax)
+			output.SetN("ForkedCount", math.Min(forkMax, skillModList.Sum(modparser.Base, skillCfg, "ForkedCount")))
+			output.SetN("ForkCountString", forkMax)
+			output.SetN("ForkRemaining", math.Max(0, forkMax-output.N("ForkedCount")))
 		default:
-			output["ForkCountString"] = "0"
+			output.SetStr("ForkCountString", "0")
 		}
 		if skillModList.Flag(skillCfg, "CannotPierce") {
-			output["PierceCount"] = 0.0
-			output["PierceCountString"] = "Cannot pierce"
+			output.SetN("PierceCount", 0.0)
+			output.SetStr("PierceCountString", "Cannot pierce")
 		} else {
 			if skillModList.Flag(skillCfg, "PierceAllTargets") || enemyDB.Flag(nil, "AlwaysPierceSelf") {
-				output["PierceCount"] = 100.0
-				output["PierceCountString"] = "All targets"
+				output.SetN("PierceCount", 100.0)
+				output.SetStr("PierceCountString", "All targets")
 			} else {
-				pc := skillModList.Sum("BASE", skillCfg, "PierceCount")
-				output["PierceCount"] = pc
-				output["PierceCountString"] = pc
+				pc := skillModList.Sum(modparser.Base, skillCfg, "PierceCount")
+				output.SetN("PierceCount", pc)
+				output.SetN("PierceCountString", pc)
 			}
-			if outNum(output, "PierceCount") > 0 {
+			if output.N("PierceCount") > 0 {
 				skillFlags["piercing"] = true
 			}
-			output["PiercedCount"] = math.Min(outNum(output, "PierceCount"), skillModList.Sum("BASE", skillCfg, "PiercedCount"))
+			output.SetN("PiercedCount", math.Min(output.N("PierceCount"), skillModList.Sum(modparser.Base, skillCfg, "PiercedCount")))
 		}
-		output["ProjectileSpeedMod"] = Mod(skillModList, skillCfg, "ProjectileSpeed")
+		output.SetN("ProjectileSpeedMod", Mod(skillModList, skillCfg, "ProjectileSpeed"))
 	}
 	if skillFlags["melee"] {
 		if skillFlags["weapon1Attack"] {
-			if truthy(actor.ms.WeaponData1["range"]) {
-				actor.weaponRange1 = anyNum(actor.ms.WeaponData1["range"]) +
-					skillModList.Sum("BASE", activeSkill.Weapon1Cfg, "MeleeWeaponRange") +
-					10*skillModList.Sum("BASE", activeSkill.Weapon1Cfg, "MeleeWeaponRangeMetre")
+			if wd := weaponOf(actor.ms.WeaponData1); wd != nil && wd.Range != 0 {
+				actor.weaponRange1 = wd.Range +
+					skillModList.Sum(modparser.Base, activeSkill.Weapon1Cfg, "MeleeWeaponRange") +
+					10*skillModList.Sum(modparser.Base, activeSkill.Weapon1Cfg, "MeleeWeaponRangeMetre")
 			} else {
-				actor.weaponRange1 = 6 + skillModList.Sum("BASE", skillCfg, "UnarmedRange") +
-					10*skillModList.Sum("BASE", skillCfg, "UnarmedRangeMetre")
+				actor.weaponRange1 = 6 + skillModList.Sum(modparser.Base, skillCfg, "UnarmedRange") +
+					10*skillModList.Sum(modparser.Base, skillCfg, "UnarmedRangeMetre")
 			}
 		}
 		if skillFlags["weapon2Attack"] {
-			if truthy(actor.ms.WeaponData2["range"]) {
-				actor.weaponRange2 = anyNum(actor.ms.WeaponData2["range"]) +
-					skillModList.Sum("BASE", activeSkill.Weapon2Cfg, "MeleeWeaponRange") +
-					10*skillModList.Sum("BASE", activeSkill.Weapon2Cfg, "MeleeWeaponRangeMetre")
+			if wd := weaponOf(actor.ms.WeaponData2); wd != nil && wd.Range != 0 {
+				actor.weaponRange2 = wd.Range +
+					skillModList.Sum(modparser.Base, activeSkill.Weapon2Cfg, "MeleeWeaponRange") +
+					10*skillModList.Sum(modparser.Base, activeSkill.Weapon2Cfg, "MeleeWeaponRangeMetre")
 			} else {
-				actor.weaponRange2 = 6 + skillModList.Sum("BASE", skillCfg, "UnarmedRange") +
-					10*skillModList.Sum("BASE", skillCfg, "UnarmedRangeMetre")
+				actor.weaponRange2 = 6 + skillModList.Sum(modparser.Base, skillCfg, "UnarmedRange") +
+					10*skillModList.Sum(modparser.Base, skillCfg, "UnarmedRangeMetre")
 			}
 		}
-		if activeSkill.SkillTypes[modparser.SkillType.MeleeSingleTarget] {
+		if activeSkill.SkillTypes[modparser.SkillTypeMeleeSingleTarget] {
 			rng := 100.0
 			if skillFlags["weapon1Attack"] {
 				rng = math.Min(rng, actor.weaponRange1)
@@ -201,44 +199,44 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 			if skillFlags["weapon2Attack"] {
 				rng = math.Min(rng, actor.weaponRange2)
 			}
-			output["WeaponRange"] = rng + 2
-			output["WeaponRangeMetre"] = outNum(output, "WeaponRange") / 10
+			output.SetN("WeaponRange", rng+2)
+			output.SetN("WeaponRangeMetre", output.N("WeaponRange")/10)
 
 			baseStrikeCount := 1.0
-			output["StrikeTargets"] = baseStrikeCount + skillModList.Sum("BASE", skillCfg, "AdditionalStrikeTarget")
+			output.SetN("StrikeTargets", baseStrikeCount+skillModList.Sum(modparser.Base, skillCfg, "AdditionalStrikeTarget"))
 		}
 	}
-	if skillFlags["area"] || truthy(skillData["radius"]) || (skillFlags["mine"] && activeSkill.SkillTypes[modparser.SkillType.Aura]) {
+	if skillFlags["area"] || skillData.Has("radius") || (skillFlags["mine"] && activeSkill.SkillTypes[modparser.SkillTypeAura]) {
 		env.calcAreaOfEffect(c)
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Aura] {
+	if activeSkill.SkillTypes[modparser.SkillTypeAura] {
 		names := []string{"AuraEffect"}
-		if !(truthy(skillData["auraCannotAffectSelf"]) || activeSkill.SkillTypes[modparser.SkillType.AuraAffectsEnemies]) {
+		if !(skillData.Flag("auraCannotAffectSelf") || activeSkill.SkillTypes[modparser.SkillTypeAuraAffectsEnemies]) {
 			names = append(names, "SkillAuraEffectOnSelf")
 		}
-		output["AuraEffectMod"] = Mod(skillModList, skillCfg, names...)
+		output.SetN("AuraEffectMod", Mod(skillModList, skillCfg, names...))
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.HasReservation] && !activeSkill.SkillTypes[modparser.SkillType.ReservationBecomesCost] {
+	if activeSkill.SkillTypes[modparser.SkillTypeHasReservation] && !activeSkill.SkillTypes[modparser.SkillTypeReservationBecomesCost] {
 		for _, pool := range []string{"Life", "Mana"} {
-			output[pool+"ReservedMod"] = 0.0
+			output.SetN(pool+"ReservedMod", 0.0)
 			if Mod(skillModList, skillCfg, "SupportManaMultiplier") > 0 && Mod(skillModList, skillCfg, pool+"Reserved", "Reserved") > 0 {
-				output[pool+"ReservedMod"] = Mod(skillModList, skillCfg, pool+"Reserved", "Reserved") *
-					floorDec(Mod(skillModList, skillCfg, "SupportManaMultiplier"), 4) /
-					math.Max(0, Mod(skillModList, skillCfg, pool+"ReservationEfficiency", "ReservationEfficiency"))
+				output.SetN(pool+"ReservedMod", Mod(skillModList, skillCfg, pool+"Reserved", "Reserved")*
+					floorDec(Mod(skillModList, skillCfg, "SupportManaMultiplier"), 4)/
+					math.Max(0, Mod(skillModList, skillCfg, pool+"ReservationEfficiency", "ReservationEfficiency")))
 			}
 		}
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Hex] || activeSkill.SkillTypes[modparser.SkillType.Mark] {
-		output["CurseEffectMod"] = Mod(skillModList, skillCfg, "CurseEffect")
+	if activeSkill.SkillTypes[modparser.SkillTypeHex] || activeSkill.SkillTypes[modparser.SkillTypeMark] {
+		output.SetN("CurseEffectMod", Mod(skillModList, skillCfg, "CurseEffect"))
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Warcry] {
+	if activeSkill.SkillTypes[modparser.SkillTypeWarcry] {
 		fullDuration := env.calcSkillDuration(skillModList, skillCfg, activeSkill.SkillData, enemyDB)
-		cooldownOverride := skillModList.Override(skillCfg, "CooldownRecovery")
+		cooldownOverride, _ := skillModList.Override(skillCfg, "CooldownRecovery")
 		var actualCooldown float64
-		if truthy(cooldownOverride) {
-			actualCooldown = anyNum(cooldownOverride)
+		if modparser.Truthy(cooldownOverride) {
+			actualCooldown = valueNum(cooldownOverride)
 		} else {
-			actualCooldown = (anyNum(activeSkill.SkillData["cooldown"]) + skillModList.Sum("BASE", skillCfg, "CooldownRecovery")) /
+			actualCooldown = (activeSkill.SkillData.N("cooldown") + skillModList.Sum(modparser.Base, skillCfg, "CooldownRecovery")) /
 				Mod(skillModList, skillCfg, "CooldownRecovery")
 		}
 		uptime := math.Min(fullDuration/actualCooldown, 1)
@@ -246,183 +244,171 @@ func (env *Env) offenceSkillTypeStats(c *offenceCtx) {
 			uptime = 1
 		}
 		unscaledEffect := Mod(skillModList, skillCfg, "WarcryEffect", "BuffEffect")
-		output["WarcryEffectMod"] = unscaledEffect * uptime
+		output.SetN("WarcryEffectMod", unscaledEffect*uptime)
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Link] {
-		output["LinkEffectMod"] = Mod(skillModList, skillCfg, "LinkEffect", "BuffEffect")
+	if activeSkill.SkillTypes[modparser.SkillTypeLink] {
+		output.SetN("LinkEffectMod", Mod(skillModList, skillCfg, "LinkEffect", "BuffEffect"))
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Buff] && activeSkill.SkillTypes[modparser.SkillType.Herald] {
-		output["HeraldBuffEffectMod"] = Mod(skillModList, skillCfg, "BuffEffect", "BuffEffectOnSelf")
+	if activeSkill.SkillTypes[modparser.SkillTypeBuff] && activeSkill.SkillTypes[modparser.SkillTypeHerald] {
+		output.SetN("HeraldBuffEffectMod", Mod(skillModList, skillCfg, "BuffEffect", "BuffEffectOnSelf"))
 	}
-	if (skillFlags["trap"] || skillFlags["mine"]) && !(truthy(skillData["trapCooldown"]) || truthy(skillData["cooldown"])) {
+	if (skillFlags["trap"] || skillFlags["mine"]) && !(skillData.Flag("trapCooldown") || skillData.Has("cooldown")) {
 		skillFlags["notAverage"] = true
 		skillFlags["showAverage"] = false
-		skillData["showAverage"] = false
+		skillData.SetFlag("showAverage", false)
 	}
 	if skillFlags["trap"] {
-		baseSpeed := 1 / skillModList.Sum("BASE", skillCfg, "TrapThrowingTime")
+		baseSpeed := 1 / skillModList.Sum(modparser.Base, skillCfg, "TrapThrowingTime")
 		timeMod := Mod(skillModList, skillCfg, "SkillTrapThrowingTime")
 		if timeMod > 0 {
 			baseSpeed = baseSpeed * (1 / timeMod)
 		}
-		output["TrapThrowingSpeed"] = baseSpeed * Mod(skillModList, skillCfg, "TrapThrowingSpeed") * outNum(output, "ActionSpeedMod")
+		output.SetN("TrapThrowingSpeed", baseSpeed*Mod(skillModList, skillCfg, "TrapThrowingSpeed")*output.N("ActionSpeedMod"))
 		trapThrowCount := Val(skillModList, "TrapThrowCount", skillCfg)
-		if truthy(skillData["trapCooldown"]) || truthy(skillData["cooldown"]) {
+		if skillData.Flag("trapCooldown") || skillData.Has("cooldown") {
 			trapThrowCount = 1
 		}
-		if ov := env.ModDB.Override(nil, "TrapThrowCount"); truthy(ov) {
-			output["TrapThrowCount"] = anyNum(ov)
+		if ov, ok := env.ModDB.Override(nil, "TrapThrowCount"); ok {
+			output.SetN("TrapThrowCount", valueNum(ov))
 		} else {
-			output["TrapThrowCount"] = trapThrowCount
+			output.SetN("TrapThrowCount", trapThrowCount)
 		}
-		output["TrapThrowingSpeed"] = math.Min(outNum(output, "TrapThrowingSpeed"), data.Misc.ServerTickRate)
-		output["TrapThrowingTime"] = 1 / outNum(output, "TrapThrowingSpeed")
-		skillData["timeOverride"] = outNum(output, "TrapThrowingTime") / outNum(output, "TrapThrowCount")
+		output.SetN("TrapThrowingSpeed", math.Min(output.N("TrapThrowingSpeed"), data.Misc.ServerTickRate))
+		output.SetN("TrapThrowingTime", 1/output.N("TrapThrowingSpeed"))
+		skillData.SetN("timeOverride", output.N("TrapThrowingTime")/output.N("TrapThrowCount"))
 
 		baseCooldown, hasBaseCooldown := 0.0, false
-		if truthy(skillData["trapCooldown"]) {
-			baseCooldown, hasBaseCooldown = anyNum(skillData["trapCooldown"]), true
-		} else if truthy(skillData["cooldown"]) {
-			baseCooldown, hasBaseCooldown = anyNum(skillData["cooldown"]), true
+		if skillData.Flag("trapCooldown") {
+			baseCooldown, hasBaseCooldown = skillData.N("trapCooldown"), true
+		} else if skillData.Has("cooldown") {
+			baseCooldown, hasBaseCooldown = skillData.N("cooldown"), true
 		}
-		if hasBaseCooldown || skillModList.Sum("BASE", skillCfg, "CooldownRecovery") != 0 {
+		if hasBaseCooldown || skillModList.Sum(modparser.Base, skillCfg, "CooldownRecovery") != 0 {
 			if hasBaseCooldown {
 				tc := baseCooldown / Mod(skillModList, skillCfg, "CooldownRecovery")
-				output["TrapCooldown"] = math.Ceil(tc*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+				output.SetN("TrapCooldown", math.Ceil(tc*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 			} else {
 				// Assign Trap Cooldown if the trap/skill does not have
 				// cooldown but gains cooldown elsewhere
 				cooldown, _ := env.calcSkillCooldown(skillModList, skillCfg, skillData)
-				output["TrapCooldown"] = cooldown
+				output.SetN("TrapCooldown", cooldown)
 			}
 		}
 		incArea, moreArea := Mods(skillModList, skillCfg, "TrapTriggerAreaOfEffect")
-		areaMod := roundDec(roundDec(incArea*moreArea, 10), 2)
-		output["TrapTriggerRadius"] = calcRadius(data.Misc.TrapTriggerRadiusBase, areaMod)
-		output["TrapTriggerRadiusMetre"] = outNum(output, "TrapTriggerRadius") / 10
-	} else if truthy(skillData["cooldown"]) || skillModList.Sum("BASE", skillCfg, "CooldownRecovery") != 0 {
+		areaMod := util.RoundHalfUp(util.RoundHalfUp(incArea*moreArea, 10), 2)
+		output.SetN("TrapTriggerRadius", calcRadius(data.Misc.TrapTriggerRadiusBase, areaMod))
+		output.SetN("TrapTriggerRadiusMetre", output.N("TrapTriggerRadius")/10)
+	} else if skillData.Has("cooldown") || skillModList.Sum(modparser.Base, skillCfg, "CooldownRecovery") != 0 {
 		cooldown, _ := env.calcSkillCooldown(skillModList, skillCfg, skillData)
-		output["Cooldown"] = cooldown
+		output.SetN("Cooldown", cooldown)
 	}
-	if truthy(skillData["storedUses"]) {
-		baseUses := anyNum(skillData["storedUses"])
-		additionalUses := skillModList.Sum("BASE", skillCfg, "AdditionalCooldownUses", "AdditionalUses")
-		output["StoredUses"] = baseUses + additionalUses
+	if skillData.Has("storedUses") {
+		baseUses := skillData.N("storedUses")
+		additionalUses := skillModList.Sum(modparser.Base, skillCfg, "AdditionalCooldownUses", "AdditionalUses")
+		output.SetN("StoredUses", baseUses+additionalUses)
 	}
 	if skillFlags["mine"] {
-		baseSpeed := 1 / skillModList.Sum("BASE", skillCfg, "MineLayingTime")
+		baseSpeed := 1 / skillModList.Sum(modparser.Base, skillCfg, "MineLayingTime")
 		timeMod := Mod(skillModList, skillCfg, "SkillMineThrowingTime")
 		if timeMod > 0 {
 			baseSpeed = baseSpeed * (1 / timeMod)
 		}
-		output["MineLayingSpeed"] = baseSpeed * Mod(skillModList, skillCfg, "MineLayingSpeed") * outNum(output, "ActionSpeedMod")
+		output.SetN("MineLayingSpeed", baseSpeed*Mod(skillModList, skillCfg, "MineLayingSpeed")*output.N("ActionSpeedMod"))
 		// Calculate additional mine throw
 		mineThrowCount := Val(skillModList, "MineThrowCount", skillCfg)
-		if truthy(skillData["trapCooldown"]) || truthy(skillData["cooldown"]) {
+		if skillData.Flag("trapCooldown") || skillData.Has("cooldown") {
 			mineThrowCount = 1
 		}
-		if ov := env.ModDB.Override(nil, "MineThrowCount"); truthy(ov) {
-			output["MineThrowCount"] = anyNum(ov)
+		if ov, ok := env.ModDB.Override(nil, "MineThrowCount"); ok {
+			output.SetN("MineThrowCount", valueNum(ov))
 		} else {
-			output["MineThrowCount"] = mineThrowCount
+			output.SetN("MineThrowCount", mineThrowCount)
 		}
-		if outNum(output, "MineThrowCount") >= 1 {
+		if output.N("MineThrowCount") >= 1 {
 			// Throwing Mines takes 10% more time for each *additional* Mine thrown
-			output["MineLayingSpeed"] = outNum(output, "MineLayingSpeed") / (1 + (outNum(output, "MineThrowCount")-1)*0.1)
+			output.SetN("MineLayingSpeed", output.N("MineLayingSpeed")/(1+(output.N("MineThrowCount")-1)*0.1))
 		}
 
-		output["MineLayingSpeed"] = math.Min(outNum(output, "MineLayingSpeed"), data.Misc.ServerTickRate)
-		output["MineLayingTime"] = 1 / outNum(output, "MineLayingSpeed")
+		output.SetN("MineLayingSpeed", math.Min(output.N("MineLayingSpeed"), data.Misc.ServerTickRate))
+		output.SetN("MineLayingTime", 1/output.N("MineLayingSpeed"))
 
 		// Trap mine interaction where the Character throws mines, mine throws traps
 		if skillFlags["trap"] {
-			skillData["timeOverride"] = outNum(output, "MineLayingTime") / outNum(output, "MineThrowCount") / outNum(output, "TrapThrowCount")
+			skillData.SetN("timeOverride", output.N("MineLayingTime")/output.N("MineThrowCount")/output.N("TrapThrowCount"))
 		} else {
-			skillData["timeOverride"] = outNum(output, "MineLayingTime") / outNum(output, "MineThrowCount")
+			skillData.SetN("timeOverride", output.N("MineLayingTime")/output.N("MineThrowCount"))
 		}
 
 		incArea, moreArea := Mods(skillModList, skillCfg, "MineDetonationAreaOfEffect")
-		areaMod := roundDec(roundDec(incArea*moreArea, 10), 2)
-		output["MineDetonationRadius"] = calcRadius(data.Misc.MineDetonationRadiusBase, areaMod)
-		output["MineDetonationRadiusMetre"] = outNum(output, "MineDetonationRadius") / 10
-		if activeSkill.SkillTypes[modparser.SkillType.Aura] {
-			output["MineAuraRadius"] = calcRadius(data.Misc.MineAuraRadiusBase, outNum(output, "AreaOfEffectMod"))
-			output["MineAuraRadiusMetre"] = outNum(output, "MineAuraRadius") / 10
+		areaMod := util.RoundHalfUp(util.RoundHalfUp(incArea*moreArea, 10), 2)
+		output.SetN("MineDetonationRadius", calcRadius(data.Misc.MineDetonationRadiusBase, areaMod))
+		output.SetN("MineDetonationRadiusMetre", output.N("MineDetonationRadius")/10)
+		if activeSkill.SkillTypes[modparser.SkillTypeAura] {
+			output.SetN("MineAuraRadius", calcRadius(data.Misc.MineAuraRadiusBase, output.N("AreaOfEffectMod")))
+			output.SetN("MineAuraRadiusMetre", output.N("MineAuraRadius")/10)
 		}
 	}
 	if skillFlags["totem"] {
 		var baseSpeed float64
 		if skillFlags["ballista"] {
-			baseSpeed = 1 / skillModList.Sum("BASE", skillCfg, "BallistaPlacementTime")
+			baseSpeed = 1 / skillModList.Sum(modparser.Base, skillCfg, "BallistaPlacementTime")
 		} else {
-			baseSpeed = 1 / skillModList.Sum("BASE", skillCfg, "TotemPlacementTime")
+			baseSpeed = 1 / skillModList.Sum(modparser.Base, skillCfg, "TotemPlacementTime")
 		}
-		output["TotemPlacementSpeed"] = baseSpeed * Mod(skillModList, skillCfg, "TotemPlacementSpeed") * outNum(output, "ActionSpeedMod")
-		output["TotemPlacementTime"] = 1 / outNum(output, "TotemPlacementSpeed")
-		output["ActiveTotemLimit"] = skillModList.Sum("BASE", skillCfg, "ActiveTotemLimit", "ActiveBallistaLimit")
-		if ov := env.ModDB.Override(nil, "TotemsSummoned"); truthy(ov) {
-			output["TotemsSummoned"] = anyNum(ov)
+		output.SetN("TotemPlacementSpeed", baseSpeed*Mod(skillModList, skillCfg, "TotemPlacementSpeed")*output.N("ActionSpeedMod"))
+		output.SetN("TotemPlacementTime", 1/output.N("TotemPlacementSpeed"))
+		output.SetN("ActiveTotemLimit", skillModList.Sum(modparser.Base, skillCfg, "ActiveTotemLimit", "ActiveBallistaLimit"))
+		if ov, ok := env.ModDB.Override(nil, "TotemsSummoned"); ok {
+			output.SetN("TotemsSummoned", valueNum(ov))
 		} else {
-			output["TotemsSummoned"] = outNum(output, "ActiveTotemLimit")
+			output.SetN("TotemsSummoned", output.N("ActiveTotemLimit"))
 		}
 		life, lifeMod := env.calcTotemLife(activeSkill)
-		output["TotemLife"], output["TotemLifeMod"] = life, lifeMod
-		output["TotemEnergyShield"] = skillModList.Sum("BASE", skillCfg, "TotemEnergyShield")
-		output["TotemBlockChance"] = skillModList.Sum("BASE", skillCfg, "TotemBlockChance")
-		output["TotemArmour"] = skillModList.Sum("BASE", skillCfg, "TotemArmour")
+		output.SetN("TotemLife", life)
+		output.SetN("TotemLifeMod", lifeMod)
+		output.SetN("TotemEnergyShield", skillModList.Sum(modparser.Base, skillCfg, "TotemEnergyShield"))
+		output.SetN("TotemBlockChance", skillModList.Sum(modparser.Base, skillCfg, "TotemBlockChance"))
+		output.SetN("TotemArmour", skillModList.Sum(modparser.Base, skillCfg, "TotemArmour"))
 	}
-	if activeSkill.SkillTypes[modparser.SkillType.Brand] {
-		output["BrandAttachmentRange"] = data.Misc.BrandAttachmentRangeBase * Mod(skillModList, skillCfg, "BrandAttachmentRange")
-		output["BrandAttachmentRangeMetre"] = outNum(output, "BrandAttachmentRange") / 10
-		output["ActiveBrandLimit"] = skillModList.Sum("BASE", skillCfg, "ActiveBrandLimit")
-		if v, ok := skillData["attachedBrandCount"]; ok && v != nil {
-			output["AttachedBrandCount"] = v
-		} else {
-			delete(output, "AttachedBrandCount")
-		}
+	if activeSkill.SkillTypes[modparser.SkillTypeBrand] {
+		output.SetN("BrandAttachmentRange", data.Misc.BrandAttachmentRangeBase*Mod(skillModList, skillCfg, "BrandAttachmentRange"))
+		output.SetN("BrandAttachmentRangeMetre", output.N("BrandAttachmentRange")/10)
+		output.SetN("ActiveBrandLimit", skillModList.Sum(modparser.Base, skillCfg, "ActiveBrandLimit"))
+		output.Set("AttachedBrandCount", skillData.Get("attachedBrandCount"))
 	}
 
 	if skillFlags["warcry"] {
-		output["WarcryCastTime"] = env.calcWarcryCastTime(skillModList, skillCfg, skillData, actor)
+		output.SetN("WarcryCastTime", env.calcWarcryCastTime(skillModList, skillCfg, skillData, actor))
 	}
 
 	if skillFlags["corpse"] {
-		output["CorpseLevel"] = skillModList.Sum("BASE", skillCfg, "CorpseLevel")
+		output.SetN("CorpseLevel", skillModList.Sum(modparser.Base, skillCfg, "CorpseLevel"))
 		// `output.CorpseLevel or 1` never falls through: CorpseLevel is the
 		// Sum just assigned, and 0 is truthy in Lua.
-		lvl := int(outNum(output, "CorpseLevel"))
+		lvl := int(output.N("CorpseLevel"))
 		varietyMult := 1.0
-		if v, ok := data.MonsterVarietyLifeMult[str(skillData["corpseMonsterVariety"])]; ok {
+		if v, ok := data.MonsterVarietyLifeMult[skillData.Str("corpseMonsterVariety")]; ok {
 			varietyMult = v
 		}
 		mapMult := 1.0
 		if v, ok := data.MapLevelLifeMult[int64(env.EnemyLevel)]; ok {
 			mapMult = v
 		}
-		output["BaseCorpseLife"] = luaIndex("monsterLifeTable", data.MonsterLifeTable, lvl) * varietyMult * mapMult
-		output["CorpseLifeInc"] = 1 + skillModList.Sum("INC", skillCfg, "CorpseLife")/100
-		output["CorpseLife"] = outNum(output, "BaseCorpseLife") * outNum(output, "CorpseLifeInc")
+		output.SetN("BaseCorpseLife", monsterLifeAtLevel(lvl)*varietyMult*mapMult)
+		output.SetN("CorpseLifeInc", 1+skillModList.Sum(modparser.Inc, skillCfg, "CorpseLife")/100)
+		output.SetN("CorpseLife", output.N("BaseCorpseLife")*output.N("CorpseLifeInc"))
 	}
 
 	env.offenceDuration(c)
 }
 
-// rampTable renders a Lua {{x,y},...} ramp as the nested list shape the
-// modifier evaluator reads.
-func rampTable(pairs [][2]float64) []any {
-	out := make([]any, 0, len(pairs))
-	for _, p := range pairs {
-		out = append(out, []any{p[0], p[1]})
+// monsterLifeAtLevel reads the per-level monster life table (entry 1 =
+// level 1). A level off the table panics — the reference errors there too
+// (nil arithmetic).
+func monsterLifeAtLevel(level int) float64 {
+	t := data.MonsterLifeTable
+	if level < 1 || level > len(t) {
+		panic("offence: monsterLifeTable has no level " + strconv.Itoa(level) + " (the reference errors too)")
 	}
-	return out
-}
-
-// luaIndex reads a 1-based Lua array slot. Out of range is nil in Lua, and
-// every caller here multiplies straight away, so the reference errors too —
-// panic rather than invent a value.
-func luaIndex(name string, t []float64, i int) float64 {
-	if i < 1 || i > len(t) {
-		panic("offence: " + name + " index out of range (the Lua errors too)")
-	}
-	return t[i-1]
+	return t[level-1]
 }

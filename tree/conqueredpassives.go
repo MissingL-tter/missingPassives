@@ -74,7 +74,7 @@ func (t *Tree) loadConqueredPassives() {
 	for _, addition := range doc.Additions {
 		if abyssIDRe.MatchString(addition.ID) && abyssDNRe.MatchString(addition.Name) {
 			if len(addition.SortedStats) > 0 {
-				if name, ok := data.AbyssNotableNames[addition.SortedStats[0]].(string); ok {
+				if name, ok := data.AbyssNotableNames[addition.SortedStats[0]]; ok {
 					addition.Name = name
 				} else if len(addition.Sd) > 0 {
 					addition.Name = addition.Sd[0]
@@ -102,17 +102,17 @@ func (t *Tree) loadConqueredPassives() {
 		node.StatDescs = nd.StatDescs
 		switch {
 		case nd.M:
-			node.Type = "Mastery"
+			node.Type = NodeMastery
 		case nd.Ks:
-			node.Type = "Keystone"
+			node.Type = NodeKeystone
 			// Don't override good tree data with legacy keystones.
 			if t.KeystoneMap[node.Name] == nil {
 				t.KeystoneMap[node.Name] = node
 			}
 		case nd.Not:
-			node.Type = "Notable"
+			node.Type = NodeNotable
 		default:
-			node.Type = "Normal"
+			node.Type = NodeNormal
 		}
 		t.processNodeStats(node)
 		t.ConqueredPassives.Nodes[nd.ID] = node

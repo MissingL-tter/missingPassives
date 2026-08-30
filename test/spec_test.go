@@ -74,7 +74,7 @@ type specNodeFixture struct {
 func specNodeFixtureOf(n *tree.SpecNode) *specNodeFixture {
 	f := &specNodeFixture{
 		ID:                   float64(n.ID()),
-		Type:                 n.Type(),
+		Type:                 n.Type().String(),
 		Name:                 n.EffectiveName(),
 		Dn:                   strPtr(n.Dn),
 		DistanceToClassStart: n.DistanceToClassStart,
@@ -85,7 +85,7 @@ func specNodeFixtureOf(n *tree.SpecNode) *specNodeFixture {
 		f.IsTattoo = truePtr(true)
 	}
 	if n.OverrideType != "" {
-		f.OverrideType = strPtr(n.OverrideType)
+		f.OverrideType = strPtr(string(n.OverrideType))
 	}
 	if n.ConqueredBy != nil {
 		f.ConqueredBy = truePtr(true)
@@ -195,7 +195,7 @@ func loadCorpusSpec(t *testing.T, xmlPath string, items map[int]*item.Item) *tre
 func treeNodeFixtureOf(n *tree.Node) *specNodeFixture {
 	return &specNodeFixture{
 		ID:          float64(n.ID),
-		Type:        n.Type,
+		Type:        n.Type.String(),
 		Name:        n.NameStr,
 		Dn:          strPtr(n.Name),
 		ModList:     n.ModList,

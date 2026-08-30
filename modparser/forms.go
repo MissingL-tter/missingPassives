@@ -1,90 +1,130 @@
 package modparser
 
+// modForm is the shape a modifier line takes (the formList value), which
+// picks the value/type handling in parseMod.
+type modForm uint8
+
+const (
+	formInc modForm = iota + 1
+	formRed
+	formMore
+	formLess
+	formBase
+	formGain
+	formLose
+	formGrants
+	formGrantsGlobal
+	formRemoves
+	formChance
+	formFlag
+	formTotalCost
+	formBaseCost
+	formPen
+	formRegenFlat
+	formRegenPercent
+	formDegenFlat
+	formDegenPercent
+	formDegen
+	formDmg
+	formDmgAttacks
+	formDmgSpells
+	formDmgBoth
+	formOverride
+	formDoubled
+)
+
+var modFormNames = [...]string{"", "INC", "RED", "MORE", "LESS", "BASE", "GAIN", "LOSE", "GRANTS", "GRANTS_GLOBAL",
+	"REMOVES", "CHANCE", "FLAG", "TOTALCOST", "BASECOST", "PEN", "REGENFLAT", "REGENPERCENT", "DEGENFLAT",
+	"DEGENPERCENT", "DEGEN", "DMG", "DMGATTACKS", "DMGSPELLS", "DMGBOTH", "OVERRIDE", "DOUBLED"}
+
+// String is the reference's formList value text.
+func (f modForm) String() string { return modFormNames[f] }
+
 // List of modifier forms — ModParser.lua:72.
-var formList = map[string]any{
-	`^([0-9]+)% increased`:                                               "INC",
-	`^([0-9]+)% faster`:                                                  "INC",
-	`^([0-9]+)% reduced`:                                                 "RED",
-	`^([0-9]+)% slower`:                                                  "RED",
-	`^([0-9]+)% more`:                                                    "MORE",
-	`^([0-9]+)% less`:                                                    "LESS",
-	`^([+\-][0-9.]+)%?`:                                                  "BASE",
-	`^([+\-][0-9.]+)%? to`:                                               "BASE",
-	`^([+\-]?[0-9.]+)%? of`:                                              "BASE",
-	`^([+\-][0-9.]+)%? base`:                                             "BASE",
-	`^([+\-]?[0-9.]+)%? additional`:                                      "BASE",
-	`([0-9]+) additional hits?`:                                          "BASE",
-	`([0-9]+) additional times?`:                                         "BASE",
-	`^throw up to ([0-9]+)`:                                              "BASE",
-	`^you gain ([0-9.]+)`:                                                "GAIN",
-	`^gains? ([0-9.]+)% of`:                                              "GAIN",
-	`^gain ([0-9.]+)`:                                                    "GAIN",
-	`^gain \+([0-9]+)% to`:                                               "GAIN",
-	`^you lose ([0-9.]+)`:                                                "LOSE",
-	`^loses? ([0-9.]+)% of`:                                              "LOSE",
-	`^lose ([0-9.]+)`:                                                    "LOSE",
-	`^lose \+([0-9]+)% to`:                                               "LOSE",
-	`^grants ([0-9.]+)`:                                                  "GRANTS",  // local
-	`^removes? ([0-9.]+) ?o?f? ?y?o?u?r?`:                                "REMOVES", // local
-	`^([0-9]+)`:                                                          "BASE",
-	`^([+\-]?[0-9]+)% chance`:                                            "CHANCE",
-	`^([+\-]?[0-9]+)% chance to gain `:                                   "FLAG",
-	`^([+\-]?[0-9]+)% additional chance`:                                 "CHANCE",
-	`costs? ([+\-]?[0-9]+)`:                                              "TOTALCOST",
-	`skills cost ([+\-]?[0-9]+)`:                                         "BASECOST",
-	`penetrates? ([0-9]+)%`:                                              "PEN",
-	`penetrates ([0-9]+)% of`:                                            "PEN",
-	`penetrates ([0-9]+)% of enemy`:                                      "PEN",
-	`^([0-9.]+) (.+) regenerated per second`:                             "REGENFLAT",
-	`^([0-9.]+)% (.+) regenerated per second`:                            "REGENPERCENT",
-	`^([0-9.]+)% of (.+) regenerated per second`:                         "REGENPERCENT",
-	`^regenerate ([0-9.]+) (.*?) per second`:                             "REGENFLAT",
-	`^regenerate ([0-9.]+)% (.*?) per second`:                            "REGENPERCENT",
-	`^regenerate ([0-9.]+)% of (.*?) per second`:                         "REGENPERCENT",
-	`^regenerate ([0-9.]+)% of your (.*?) per second`:                    "REGENPERCENT",
-	`^you regenerate ([0-9.]+)% of (.*?) per second`:                     "REGENPERCENT",
-	`^([0-9.]+) (.+) lost per second`:                                    "DEGENFLAT",
-	`^([0-9.]+)% (.+) lost per second`:                                   "DEGENPERCENT",
-	`^([0-9.]+)% of (.+) lost per second`:                                "DEGENPERCENT",
-	`^lose ([0-9.]+) (.*?) per second`:                                   "DEGENFLAT",
-	`^lose ([0-9.]+)% (.*?) per second`:                                  "DEGENPERCENT",
-	`^lose ([0-9.]+)% of (.*?) per second`:                               "DEGENPERCENT",
-	`^lose ([0-9.]+)% of your (.*?) per second`:                          "DEGENPERCENT",
-	`^you lose ([0-9.]+)% of (.*?) per second`:                           "DEGENPERCENT",
-	`^([0-9.]+) ([a-zA-Z]+) damage taken per second`:                     "DEGEN",
-	`^([0-9.]+) ([a-zA-Z]+) damage per second`:                           "DEGEN",
-	`([0-9]+) to ([0-9]+) added ([a-zA-Z]+) damage`:                      "DMG",
-	`([0-9]+)-([0-9]+) added ([a-zA-Z]+) damage`:                         "DMG",
-	`([0-9]+) to ([0-9]+) additional ([a-zA-Z]+) damage`:                 "DMG",
-	`([0-9]+)-([0-9]+) additional ([a-zA-Z]+) damage`:                    "DMG",
-	`^([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage`:                           "DMG",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage`:                       "DMG",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage`:                          "DMG",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to attacks`:            "DMGATTACKS",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to attacks`:               "DMGATTACKS",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) attack damage`:                "DMGATTACKS",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) attack damage`:                   "DMGATTACKS",
-	`([0-9]+) to ([0-9]+) added attack ([a-zA-Z]+) damage`:               "DMGATTACKS",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to spells`:             "DMGSPELLS",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to spells`:                "DMGSPELLS",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) spell damage`:                 "DMGSPELLS",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) spell damage`:                    "DMGSPELLS",
-	`([0-9]+) to ([0-9]+) added spell ([a-zA-Z]+) damage`:                "DMGSPELLS",
-	`([0-9]+) to ([0-9]+) spell ([a-zA-Z]+) damage`:                      "DMGSPELLS",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to attacks and spells`: "DMGBOTH",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to attacks and spells`:    "DMGBOTH",
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to spells and attacks`: "DMGBOTH", // o_O
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to spells and attacks`:    "DMGBOTH", // o_O
-	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to hits`:               "DMGBOTH",
-	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to hits`:                  "DMGBOTH",
-	`^you have `:       "FLAG",
-	`^have `:           "FLAG",
-	`^you are `:        "FLAG",
-	`^are `:            "FLAG",
-	`^gain `:           "FLAG",
-	`^you gain `:       "FLAG",
-	`is (-?[0-9]+)%? `: "OVERRIDE",
-	`is doubled`:       "DOUBLED",
-	`doubles?`:         "DOUBLED",
-	`causes? double`:   "DOUBLED",
+var formList = map[string]modForm{
+	`^([0-9]+)% increased`:                                               formInc,
+	`^([0-9]+)% faster`:                                                  formInc,
+	`^([0-9]+)% reduced`:                                                 formRed,
+	`^([0-9]+)% slower`:                                                  formRed,
+	`^([0-9]+)% more`:                                                    formMore,
+	`^([0-9]+)% less`:                                                    formLess,
+	`^([+\-][0-9.]+)%?`:                                                  formBase,
+	`^([+\-][0-9.]+)%? to`:                                               formBase,
+	`^([+\-]?[0-9.]+)%? of`:                                              formBase,
+	`^([+\-][0-9.]+)%? base`:                                             formBase,
+	`^([+\-]?[0-9.]+)%? additional`:                                      formBase,
+	`([0-9]+) additional hits?`:                                          formBase,
+	`([0-9]+) additional times?`:                                         formBase,
+	`^throw up to ([0-9]+)`:                                              formBase,
+	`^you gain ([0-9.]+)`:                                                formGain,
+	`^gains? ([0-9.]+)% of`:                                              formGain,
+	`^gain ([0-9.]+)`:                                                    formGain,
+	`^gain \+([0-9]+)% to`:                                               formGain,
+	`^you lose ([0-9.]+)`:                                                formLose,
+	`^loses? ([0-9.]+)% of`:                                              formLose,
+	`^lose ([0-9.]+)`:                                                    formLose,
+	`^lose \+([0-9]+)% to`:                                               formLose,
+	`^grants ([0-9.]+)`:                                                  formGrants,  // local
+	`^removes? ([0-9.]+) ?o?f? ?y?o?u?r?`:                                formRemoves, // local
+	`^([0-9]+)`:                                                          formBase,
+	`^([+\-]?[0-9]+)% chance`:                                            formChance,
+	`^([+\-]?[0-9]+)% chance to gain `:                                   formFlag,
+	`^([+\-]?[0-9]+)% additional chance`:                                 formChance,
+	`costs? ([+\-]?[0-9]+)`:                                              formTotalCost,
+	`skills cost ([+\-]?[0-9]+)`:                                         formBaseCost,
+	`penetrates? ([0-9]+)%`:                                              formPen,
+	`penetrates ([0-9]+)% of`:                                            formPen,
+	`penetrates ([0-9]+)% of enemy`:                                      formPen,
+	`^([0-9.]+) (.+) regenerated per second`:                             formRegenFlat,
+	`^([0-9.]+)% (.+) regenerated per second`:                            formRegenPercent,
+	`^([0-9.]+)% of (.+) regenerated per second`:                         formRegenPercent,
+	`^regenerate ([0-9.]+) (.*?) per second`:                             formRegenFlat,
+	`^regenerate ([0-9.]+)% (.*?) per second`:                            formRegenPercent,
+	`^regenerate ([0-9.]+)% of (.*?) per second`:                         formRegenPercent,
+	`^regenerate ([0-9.]+)% of your (.*?) per second`:                    formRegenPercent,
+	`^you regenerate ([0-9.]+)% of (.*?) per second`:                     formRegenPercent,
+	`^([0-9.]+) (.+) lost per second`:                                    formDegenFlat,
+	`^([0-9.]+)% (.+) lost per second`:                                   formDegenPercent,
+	`^([0-9.]+)% of (.+) lost per second`:                                formDegenPercent,
+	`^lose ([0-9.]+) (.*?) per second`:                                   formDegenFlat,
+	`^lose ([0-9.]+)% (.*?) per second`:                                  formDegenPercent,
+	`^lose ([0-9.]+)% of (.*?) per second`:                               formDegenPercent,
+	`^lose ([0-9.]+)% of your (.*?) per second`:                          formDegenPercent,
+	`^you lose ([0-9.]+)% of (.*?) per second`:                           formDegenPercent,
+	`^([0-9.]+) ([a-zA-Z]+) damage taken per second`:                     formDegen,
+	`^([0-9.]+) ([a-zA-Z]+) damage per second`:                           formDegen,
+	`([0-9]+) to ([0-9]+) added ([a-zA-Z]+) damage`:                      formDmg,
+	`([0-9]+)-([0-9]+) added ([a-zA-Z]+) damage`:                         formDmg,
+	`([0-9]+) to ([0-9]+) additional ([a-zA-Z]+) damage`:                 formDmg,
+	`([0-9]+)-([0-9]+) additional ([a-zA-Z]+) damage`:                    formDmg,
+	`^([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage`:                           formDmg,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage`:                       formDmg,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage`:                          formDmg,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to attacks`:            formDmgAttacks,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to attacks`:               formDmgAttacks,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) attack damage`:                formDmgAttacks,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) attack damage`:                   formDmgAttacks,
+	`([0-9]+) to ([0-9]+) added attack ([a-zA-Z]+) damage`:               formDmgAttacks,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to spells`:             formDmgSpells,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to spells`:                formDmgSpells,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) spell damage`:                 formDmgSpells,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) spell damage`:                    formDmgSpells,
+	`([0-9]+) to ([0-9]+) added spell ([a-zA-Z]+) damage`:                formDmgSpells,
+	`([0-9]+) to ([0-9]+) spell ([a-zA-Z]+) damage`:                      formDmgSpells,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to attacks and spells`: formDmgBoth,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to attacks and spells`:    formDmgBoth,
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to spells and attacks`: formDmgBoth, // o_O
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to spells and attacks`:    formDmgBoth, // o_O
+	`adds ([0-9]+) to ([0-9]+) ([a-zA-Z]+) damage to hits`:               formDmgBoth,
+	`adds ([0-9]+)-([0-9]+) ([a-zA-Z]+) damage to hits`:                  formDmgBoth,
+	`^you have `:       formFlag,
+	`^have `:           formFlag,
+	`^you are `:        formFlag,
+	`^are `:            formFlag,
+	`^gain `:           formFlag,
+	`^you gain `:       formFlag,
+	`is (-?[0-9]+)%? `: formOverride,
+	`is doubled`:       formDoubled,
+	`doubles?`:         formDoubled,
+	`causes? double`:   formDoubled,
 }

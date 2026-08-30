@@ -2,10 +2,11 @@ package modparser
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 // The rest of modLib — .archive/src/Modules/ModTools.lua. createMod is mod()
@@ -14,19 +15,20 @@ import (
 // source stamping. mergeKeystones is not here — it operates on a live ModDB
 // and the tree's keystone map, so it belongs to the mod-store port.
 
-// ParseTags — ModTools.lua:50: "type=Condition/var=X,type=..." into tags.
-// Comma separates tags, slash separates params; only "threshold" values are
-// numeric, and the literal "true" becomes a boolean.
-func ParseTags(line string) []any {
+// ParseTags — ModTools.lua:50: "type=Condition/var=X,type=..." into raw
+// tags. Comma separates tags, slash separates params; only "threshold"
+// values are numeric (a non-numeric one is dropped), and the literal "true"
+// becomes a boolean.
+func ParseTags(line string) []Tag {
 	if line == "" || line == "-" {
-		return []any{}
+		return []Tag{}
 	}
-	tags := []any{}
+	tags := []Tag{}
 	for _, tagGroup := range strings.Split(line, ",") {
 		if tagGroup == "" {
 			continue
 		}
-		tagSet := Tag{}
+		tagSet := &RawTag{}
 		for _, tag := range strings.Split(tagGroup, "/") {
 			if tag == "" {
 				continue
@@ -35,18 +37,17 @@ func ParseTags(line string) []any {
 			if !ok {
 				continue // the reference logs "Error tag invalid" and skips
 			}
-			if name == "threshold" {
-				if n, isNum := tonumber(value); isNum {
-					tagSet[name] = n
-				} else {
-					tagSet[name] = nil
+			switch {
+			case name == "type":
+				tagSet.Type = value
+			case name == "threshold":
+				if n, isNum := util.Tonumber(value); isNum {
+					tagSet.Fields = append(tagSet.Fields, Param{name, Num(n)})
 				}
-				continue
-			}
-			if value == "true" {
-				tagSet[name] = true
-			} else {
-				tagSet[name] = value
+			case value == "true":
+				tagSet.Fields = append(tagSet.Fields, Param{name, Bool(true)})
+			default:
+				tagSet.Fields = append(tagSet.Fields, Param{name, Str(value)})
 			}
 		}
 		tags = append(tags, tagSet)
@@ -70,33 +71,44 @@ func matchTagParam(tag string) (string, string, bool) {
 	return name, tag[eq+1:], true
 }
 
+// FormattedSourceMod is what ParseFormattedSourceMod reads back: the
+// reference stores the type text verbatim (any string, not only a mod type),
+// so the record keeps it as text rather than forcing it into ModType.
+type FormattedSourceMod struct {
+	Value        Value
+	Source, Name string
+	Type         string
+	Flags        ModFlag
+	KeywordFlags KeywordFlag
+	Tags         []Tag
+}
+
 // ParseFormattedSourceMod — ModTools.lua:78: the inverse of FormatSourceMod,
 // over "value|source|name|type|flags|keywordFlags|tags".
-func ParseFormattedSourceMod(line string) *Mod {
+func ParseFormattedSourceMod(line string) *FormattedSourceMod {
 	modStrings := strings.Split(line, "|")
 	if len(modStrings) < 4 {
 		return nil
 	}
-	var value any
+	var value Value
 	if modStrings[0] == "true" {
-		value = true
-	} else if n, ok := tonumber(modStrings[0]); ok {
-		value = n
+		value = Bool(true)
+	} else if n, ok := util.Tonumber(modStrings[0]); ok {
+		value = Num(n)
 	} else {
-		value = float64(0)
+		value = Num(0)
 	}
-	m := &Mod{
-		Value:     value,
-		Source:    modStrings[1],
-		SourceSet: true,
-		Name:      modStrings[2],
-		Type:      modStrings[3],
+	m := &FormattedSourceMod{
+		Value:  value,
+		Source: modStrings[1],
+		Name:   modStrings[2],
+		Type:   modStrings[3],
 	}
 	if len(modStrings) >= 5 {
-		m.Flags = modFlagNames[modStrings[4]] // or 0, as ModFlag[s] or 0
+		m.Flags = ModFlagByName[modStrings[4]] // or 0, as ModFlag[s] or 0
 	}
 	if len(modStrings) >= 6 {
-		m.KeywordFlags = keywordFlagNames[modStrings[5]]
+		m.KeywordFlags = KeywordFlagByName[modStrings[5]]
 	}
 	if len(modStrings) >= 7 {
 		m.Tags = append(m.Tags, ParseTags(modStrings[6])...)
@@ -115,8 +127,8 @@ func CompareModParams(modA, modB *Mod) bool {
 		return false
 	}
 	for i := 0; i < tagArrayLen(modA); i++ {
-		ta, tb := asTag(modA.Tags[i]), asTag(modB.Tags[i])
-		if ta["type"] != tb["type"] {
+		ta, tb := modA.Tags[i], modB.Tags[i]
+		if tb == nil || TagTypeName(ta) != TagTypeName(tb) {
 			return false
 		}
 		if FormatTag(ta) != FormatTag(tb) {
@@ -126,20 +138,9 @@ func CompareModParams(modA, modB *Mod) bool {
 	return true
 }
 
-// tagArrayLen mirrors Lua's ipairs/# over the mod's array part: a nil tag is a
-// hole that ends iteration.
-func tagArrayLen(m *Mod) int {
-	for i, t := range m.Tags {
-		if t == nil {
-			return i
-		}
-	}
-	return len(m.Tags)
-}
-
 // FormatFlags — ModTools.lua:114: the sorted names of every flag whose bits
 // are wholly contained in flags, comma-joined; "-" when none.
-func FormatFlags(flags int64, src map[string]int64) string {
+func FormatFlags[F ModFlag | KeywordFlag](flags F, src map[string]F) string {
 	var names []string
 	for name, val := range src {
 		if flags&val == val {
@@ -153,130 +154,79 @@ func FormatFlags(flags int64, src map[string]int64) string {
 	return strings.Join(names, ",")
 }
 
-// luaTostring matches Lua's tostring for the value types mods carry.
-func luaTostring(v any) string {
+// formatParamValue spells one scalar mod or tag param. The whole Format*
+// family here is PoB's own canonical mod serialisation (ModTools.lua
+// formatMod/formatTag/formatValue), kept deliberately: the product consumes
+// this text (flask cache keys, tree node ModKey) and the differentials
+// compare it byte for byte, so the spelling is fixed — numbers at %.14g
+// through util.FormatG14, flags and skill types as decimal integers.
+func formatParamValue(v ParamValue) string {
 	switch t := v.(type) {
-	case nil:
-		return "nil"
-	case bool:
-		return strconv.FormatBool(t)
-	case string:
-		return t
-	case int:
-		return strconv.Itoa(t)
-	case int64:
-		return strconv.FormatInt(t, 10)
-	case float64:
-		if math.IsInf(t, 1) {
-			return "inf"
-		}
-		if math.IsInf(t, -1) {
-			return "-inf"
-		}
-		if math.IsNaN(t) {
-			return "nan"
-		}
-		return fmt.Sprintf("%.14g", t)
+	case Str:
+		return string(t)
+	case Num:
+		return util.FormatG14(float64(t))
+	case Bool:
+		return strconv.FormatBool(bool(t))
+	case ModFlag:
+		return strconv.FormatUint(uint64(t), 10)
+	case KeywordFlag:
+		return strconv.FormatUint(uint64(t), 10)
+	case SkillTypeID:
+		return strconv.FormatInt(int64(t), 10)
 	}
-	return fmt.Sprintf("%v", v)
+	panic(fmt.Sprintf("modparser: %T has no scalar mod-text spelling", v))
 }
 
-// tagKeys returns a tag's param names sorted, with "type" forced first when
-// present — the ordering formatTag and formatValue share.
-func tagKeys(t Tag) ([]string, bool) {
-	names := make([]string, 0, len(t))
-	haveType := false
-	for name, val := range t {
-		if val == nil {
-			continue // a nil value is an absent key in Lua
-		}
-		if name == "type" {
-			haveType = true
-			continue
-		}
-		names = append(names, name)
+// tagParams returns a tag's params with "type" forced first — the ordering
+// formatTag and formatValue share.
+func tagParams(t Tag) []Param {
+	params := t.Params()
+	if typ := TagTypeName(t); typ != "" {
+		return append([]Param{{"type", Str(typ)}}, params...)
 	}
-	sort.Strings(names)
-	if haveType {
-		names = append([]string{"type"}, names...)
-	}
-	return names, haveType
+	return params
 }
 
 // FormatTag — ModTools.lua:129.
 func FormatTag(tag Tag) string {
-	names, _ := tagKeys(tag)
 	var sb strings.Builder
-	for i, name := range names {
+	for i, p := range tagParams(tag) {
 		if i > 0 {
 			sb.WriteByte('/')
 		}
-		val := tag[name]
-		if s, isTable := formatTagTableValue(val); isTable {
-			sb.WriteString(fmt.Sprintf("%s={%s}", name, s))
-		} else {
-			sb.WriteString(fmt.Sprintf("%s=%s", name, luaTostring(val)))
-		}
+		sb.WriteString(p.Name + "=" + formatTagParam(p.Value))
 	}
 	return sb.String()
 }
 
-// formatTagTableValue handles a table-valued tag param: a list of tags becomes
-// FormatTags, a list of scalars is comma-joined, a plain table recurses.
-func formatTagTableValue(val any) (string, bool) {
-	switch t := val.(type) {
-	case []any:
-		if len(t) == 0 {
-			// An empty Lua table has no [1]; the reference recurses formatTag
-			// on it, yielding "".
-			return "", true
-		}
-		if _, isTag := t[0].(Tag); isTag {
-			return FormatTags(anyToTags(t)), true
-		}
-		if _, isList := t[0].([]any); isList {
-			// list of lists (e.g. DistanceRamp ramps) — formatTags formats each
-			// with formatTag over numeric keys
-			return FormatTags(anyToTags(t)), true
-		}
+// formatTagParam spells one tag param: a list becomes {a,b} — formatTag
+// comma-joins a list of scalars and numeric-keys a list of pairs — and
+// anything else takes its scalar spelling.
+func formatTagParam(v ParamValue) string {
+	switch t := v.(type) {
+	case StrList:
+		return "{" + strings.Join(t, ",") + "}"
+	case NumList:
 		parts := make([]string, len(t))
 		for i, e := range t {
-			parts[i] = luaTostring(e)
+			parts[i] = util.FormatG14(e)
 		}
-		return strings.Join(parts, ","), true
-	case Tag:
-		return FormatTag(t), true
-	case *D:
-		// Transformed tables carry their array part in a *D.
-		if len(t.KV) == 0 {
-			s, _ := formatTagTableValue(t.Arr)
-			return s, true
+		return "{" + strings.Join(parts, ",") + "}"
+	case SkillTypeList:
+		parts := make([]string, len(t))
+		for i, e := range t {
+			parts[i] = strconv.FormatInt(int64(e), 10)
 		}
-		if len(t.Arr) == 0 {
-			return FormatTag(Tag(t.KV)), true
+		return "{" + strings.Join(parts, ",") + "}"
+	case Pairs:
+		parts := make([]string, len(t))
+		for i, pair := range t {
+			parts[i] = "1=" + util.FormatG14(pair[0]) + "/2=" + util.FormatG14(pair[1])
 		}
-		panic("formatTagTableValue: mixed array/hash tag value")
+		return "{" + strings.Join(parts, ",") + "}"
 	}
-	return "", false
-}
-
-// anyToTags views a list's elements as tags; a scalar-list element becomes a
-// numeric-keyed tag exactly as Lua's pairs would see it.
-func anyToTags(list []any) []Tag {
-	out := make([]Tag, 0, len(list))
-	for _, e := range list {
-		switch t := e.(type) {
-		case Tag:
-			out = append(out, t)
-		case []any:
-			tt := Tag{}
-			for i, v := range t {
-				tt[strconv.Itoa(i+1)] = v
-			}
-			out = append(out, tt)
-		}
-	}
-	return out
+	return formatParamValue(v)
 }
 
 // FormatTags — ModTools.lua:166.
@@ -291,58 +241,103 @@ func FormatTags(tagList []Tag) string {
 	return strings.Join(parts, ",")
 }
 
-// FormatValue — ModTools.lua:174: scalars via tostring; tables as
+// FormatValue — ModTools.lua:174: scalars via tostring; records as
 // {k=v/k=v...} with "type" first, and a "mod" param embedding FormatMod.
-func FormatValue(value any) string {
+func FormatValue(value Value) string {
 	switch t := value.(type) {
-	case Tag:
-		names, _ := tagKeys(t)
-		var sb strings.Builder
-		for i, name := range names {
-			if i > 0 {
-				sb.WriteByte('/')
-			}
-			if name == "mod" {
-				sb.WriteString(fmt.Sprintf("%s=[%s]", name, FormatMod(t[name].(*Mod))))
-			} else {
-				sb.WriteString(fmt.Sprintf("%s=%s", name, FormatValue(t[name])))
-			}
-		}
-		return "{" + sb.String() + "}"
-	case []any:
-		// A Lua array formats through the same path: numeric keys, sorted.
-		var sb strings.Builder
-		for i, e := range t {
-			if i > 0 {
-				sb.WriteByte('/')
-			}
-			sb.WriteString(fmt.Sprintf("%d=%s", i+1, FormatValue(e)))
-		}
-		return "{" + sb.String() + "}"
-	case *Mod:
-		// A mod under any key other than "mod" formats as its plain table via
-		// pairs: named fields sorted with "type" first. Tags would add numeric
-		// keys, which Lua's t_sort cannot order against strings — the reference
-		// would error there, so this port refuses the same shape loudly.
-		if tagArrayLen(t) > 0 {
-			panic("FormatValue: nested mod with tags has no defined ordering (the reference errors here too)")
-		}
-		kv := Tag{"name": t.Name, "type": t.Type, "value": t.Value, "flags": t.Flags, "keywordFlags": t.KeywordFlags}
-		if t.SourceSet {
-			kv["source"] = t.Source
-		}
-		return FormatValue(kv)
+	case nil:
+		return "nil"
+	case Num:
+		return util.FormatG14(float64(t))
+	case Bool:
+		return strconv.FormatBool(bool(t))
+	case Str:
+		return string(t)
 	}
-	return luaTostring(value)
+	_, params, ok := ValueParams(value)
+	if !ok {
+		panic(fmt.Sprintf("modparser: %T is not a listed value kind", value))
+	}
+	names := make([]string, 0, len(params))
+	byName := make(map[string]ParamValue, len(params))
+	haveType := false
+	for _, p := range params {
+		if p.Name == "type" {
+			haveType = true
+		} else {
+			names = append(names, p.Name)
+		}
+		byName[p.Name] = p.Value
+	}
+	sort.Strings(names)
+	if haveType {
+		names = append([]string{"type"}, names...)
+	}
+	var sb strings.Builder
+	for i, name := range names {
+		if i > 0 {
+			sb.WriteByte('/')
+		}
+		switch pv := byName[name].(type) {
+		case *Mod:
+			if name == "mod" {
+				sb.WriteString(name + "=[" + FormatMod(pv) + "]")
+			} else {
+				sb.WriteString(name + "=" + formatPlainMod(pv))
+			}
+		case Conqueror:
+			sb.WriteString(name + "=" + formatConqueror(pv))
+		case StrList:
+			// formatValue recurses into a list as a numeric-keyed table.
+			parts := make([]string, len(pv))
+			for i, e := range pv {
+				parts[i] = strconv.Itoa(i+1) + "=" + e
+			}
+			sb.WriteString(name + "={" + strings.Join(parts, "/") + "}")
+		case Value:
+			// Scalars included: FormatValue spells those itself.
+			sb.WriteString(name + "=" + FormatValue(pv))
+		case JewelFnRef:
+			// Lua prints "function: <address>" here. An address is not stable
+			// across runs, which defeats what the text is for (modKey is a
+			// cache key), so the function's own id is spelled instead; the
+			// tree differential normalises both spellings
+			// (test/tree_test.go funcAddrRe).
+			sb.WriteString(name + "=" + pv.ID)
+		default:
+			panic(fmt.Sprintf("modparser: %T has no mod-text spelling", pv))
+		}
+	}
+	return "{" + sb.String() + "}"
+}
+
+// formatPlainMod formats a mod under any key other than "mod": its plain
+// table via pairs, named fields sorted with "type" first. Tags would add
+// numeric keys, which Lua's t_sort cannot order against strings — the
+// reference would error there, so this port refuses the same shape loudly.
+func formatPlainMod(m *Mod) string {
+	if tagArrayLen(m) > 0 {
+		panic("FormatValue: nested mod with tags has no defined ordering (the reference errors here too)")
+	}
+	parts := []string{"type=" + m.Type.String(), "flags=" + formatParamValue(m.Flags), "keywordFlags=" + formatParamValue(m.KeywordFlags), "name=" + m.Name}
+	if m.SourceSet {
+		parts = append(parts, "source="+m.Source)
+	}
+	parts = append(parts, "value="+FormatValue(m.Value))
+	sort.Strings(parts[1:])
+	return "{" + strings.Join(parts, "/") + "}"
+}
+
+func formatConqueror(c Conqueror) string {
+	return "{type=" + c.Kind.String() + "/id=" + c.IDText() + "}"
 }
 
 // FormatModParams — ModTools.lua:205: "name|type|flags|keywordFlags|tags".
 func FormatModParams(m *Mod) string {
-	tags := ModTags(m)
 	return fmt.Sprintf("%s|%s|%s|%s|%s", m.Name, m.Type,
-		FormatFlags(m.Flags, modFlagNames),
-		FormatFlags(m.KeywordFlags, keywordFlagNames),
-		FormatTags(tags))
+		FormatFlags(m.Flags, ModFlagByName),
+		FormatFlags(m.KeywordFlags, KeywordFlagByName),
+		FormatTags(ModTags(m)))
 }
 
 // FormatMod — ModTools.lua:209.
@@ -359,68 +354,9 @@ func FormatSourceMod(m *Mod) string {
 func SetSource(m *Mod, source string) *Mod {
 	m.Source = source
 	m.SourceSet = true
-	if vt, ok := m.Value.(Tag); ok {
-		if inner, ok := vt["mod"].(*Mod); ok {
-			inner.Source = source
-			inner.SourceSet = true
-		}
+	if ref, ok := m.Value.(ModRef); ok && ref.Mod != nil {
+		ref.Mod.Source = source
+		ref.Mod.SourceSet = true
 	}
 	return m
-}
-
-// CopyMod deep-copies a mod, its tags and its value, the way the reference's
-// copyTable does before handing out cached or table-stored mods.
-func CopyMod(m *Mod) *Mod {
-	cp := *m
-	cp.Tags = copyAnyList(m.Tags)
-	cp.Value = copyAny(m.Value)
-	return &cp
-}
-
-func copyAny(v any) any {
-	switch t := v.(type) {
-	case Tag:
-		out := make(Tag, len(t))
-		for k, e := range t {
-			out[k] = copyAny(e)
-		}
-		return out
-	case []any:
-		return copyAnyList(t)
-	case *Mod:
-		return CopyMod(t)
-	case *D:
-		return &D{Arr: copyAnyList(t.Arr), KV: copyAny(Tag(t.KV)).(Tag)}
-	}
-	return v
-}
-
-func copyAnyList(list []any) []any {
-	if list == nil {
-		return nil
-	}
-	out := make([]any, len(list))
-	for i, e := range list {
-		out[i] = copyAny(e)
-	}
-	return out
-}
-
-// ModTags returns a mod's tag array up to the first hole, each viewed as a
-// Tag (transformed tables may store tags as *D).
-func ModTags(m *Mod) []Tag {
-	var out []Tag
-	for _, t := range m.Tags {
-		if t == nil {
-			break
-		}
-		out = append(out, asTag(t))
-	}
-	return out
-}
-
-// CopyValue deep-copies a mod value the way copyTable does (for stores that
-// need to mutate evaluated copies).
-func CopyValue(v any) any {
-	return copyAny(v)
 }

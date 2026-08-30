@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 type chargeModTier map[string]string
@@ -172,20 +174,20 @@ Implicits: 7
 				if rePctNumber.MatchString(mod) {
 					mod = reAnyNumber.ReplaceAllStringFunc(mod, func(num string) string {
 						n, _ := strconv.ParseFloat(num, 64)
-						return "(" + num + "-" + luaNumString(n*tier) + ")"
+						return "(" + num + "-" + util.FormatIntOrG14(n*tier) + ")"
 					})
 				} else if reRangePct.MatchString(mod) {
 					mod = reRangeHigher.ReplaceAllStringFunc(mod, func(m string) string {
 						parts := reRangeHigher.FindStringSubmatch(m)
 						n, _ := strconv.ParseFloat(parts[2], 64)
-						return parts[1] + luaNumString(n*tier) + ")"
+						return parts[1] + util.FormatIntOrG14(n*tier) + ")"
 					})
 				} else if reAddedRange.MatchString(mod) {
 					mod = reAddedParts.ReplaceAllStringFunc(mod, func(m string) string {
 						parts := reAddedParts.FindStringSubmatch(m)
 						h1, _ := strconv.ParseFloat(parts[2], 64)
 						h2, _ := strconv.ParseFloat(parts[4], 64)
-						return parts[1] + luaNumString(h1*tier) + parts[3] + luaNumString(h2*tier) + ")"
+						return parts[1] + util.FormatIntOrG14(h1*tier) + parts[3] + util.FormatIntOrG14(h2*tier) + ")"
 					})
 				}
 				out = append(out, "{variant:"+itoa(index)+"}{range:0}"+mod)

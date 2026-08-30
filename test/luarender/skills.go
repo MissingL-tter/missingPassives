@@ -6,12 +6,23 @@ package luarender
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 func init() { register("skills", renderSkills) }
+
+// skillTypeName is the reference's SkillType.<name> identifier for an id;
+// an id without a named constant is its Unknown<row index> spelling.
+func skillTypeName(id modparser.SkillTypeID) string {
+	if name, ok := modparser.SkillTypeName(id); ok {
+		return "SkillType." + name
+	}
+	return "SkillType.Unknown" + strconv.FormatInt(int64(id), 10)
+}
 
 var skillTemplateFiles = []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"}
 
@@ -26,7 +37,7 @@ func renderSkillHeader(b *B, h schema.SkillHeader) {
 		b.W("\thidden = true,\n")
 	} else if h.Support {
 		if h.Description != nil {
-			b.W("\tdescription = \"", *h.Description, "\",\n")
+			b.W("\tdescription = \"", luaEsc(*h.Description), "\",\n")
 		}
 	} else if h.BaseTypeName != nil {
 		b.W("\tbaseTypeName = \"", *h.BaseTypeName, "\",\n")
@@ -34,7 +45,7 @@ func renderSkillHeader(b *B, h schema.SkillHeader) {
 	if h.HasFlavour {
 		b.W("\tflavourText = {")
 		for _, line := range h.FlavourText {
-			b.W("\"", line, "\", ")
+			b.W("\"", luaEsc(line), "\", ")
 		}
 		b.W("},\n")
 	}
@@ -58,17 +69,17 @@ func renderSkillHeader(b *B, h schema.SkillHeader) {
 		b.W("\tsupport = true,\n")
 		b.W("\trequireSkillTypes = { ")
 		for _, typ := range h.RequireSkillTypes {
-			b.W(typ, ", ")
+			b.W(skillTypeName(typ), ", ")
 		}
 		b.W("},\n")
 		b.W("\taddSkillTypes = { ")
 		for _, typ := range h.AddSkillTypes {
-			b.W(typ, ", ")
+			b.W(skillTypeName(typ), ", ")
 		}
 		b.W("},\n")
 		b.W("\texcludeSkillTypes = { ")
 		for _, typ := range h.ExcludeSkillTypes {
-			b.W(typ, ", ")
+			b.W(skillTypeName(typ), ", ")
 		}
 		b.W("},\n")
 		if h.IsTrigger {
@@ -87,17 +98,17 @@ func renderSkillHeader(b *B, h schema.SkillHeader) {
 		b.W("\tstatDescriptionScope = \"gem_stat_descriptions\",\n")
 	} else {
 		if h.Description != nil {
-			b.W("\tdescription = \"", *h.Description, "\",\n")
+			b.W("\tdescription = \"", luaEsc(*h.Description), "\",\n")
 		}
 		b.W("\tskillTypes = { ")
 		for _, typ := range h.SkillTypes {
-			b.W("[", typ, "] = true, ")
+			b.W("[", skillTypeName(typ), "] = true, ")
 		}
 		b.W("},\n")
 		if len(h.MinionSkillTypes) > 0 {
 			b.W("\tminionSkillTypes = { ")
 			for _, typ := range h.MinionSkillTypes {
-				b.W("[", typ, "] = true, ")
+				b.W("[", skillTypeName(typ), "] = true, ")
 			}
 			b.W("},\n")
 		}
@@ -113,7 +124,7 @@ func renderSkillHeader(b *B, h schema.SkillHeader) {
 	}
 }
 
-func renderSkillTail(b *B, t schema.SkillTail, args string) {
+func renderSkillTail(b *B, t schema.SkillTail, args string, baseModTexts []string) {
 	if !strings.Contains(args, "noBaseFlags") && !t.Support {
 		b.W("\tbaseFlags = {\n")
 		for _, flag := range t.BaseFlags {
@@ -122,8 +133,11 @@ func renderSkillTail(b *B, t schema.SkillTail, args string) {
 		b.W("\t},\n")
 	}
 	if !strings.Contains(args, "noBaseMods") && len(t.BaseMods) > 0 {
+		// The hand-written mod text prints verbatim from the archive
+		// template's #baseMod directives (the document carries only the
+		// structured mods).
 		b.W("\tbaseMods = {\n")
-		for _, mod := range t.BaseMods {
+		for _, mod := range baseModTexts {
 			b.W("\t\t", mod, ",\n")
 		}
 		b.W("\t},\n")
@@ -202,7 +216,14 @@ func renderSkills(d schema.SkillsData, tpl Templates) (map[string]string, error)
 	for _, name := range skillTemplateFiles {
 		f := d.Files[name]
 		nextSkill, nextTail := 0, 0
+		// The hand-written mod text prints straight from the archive
+		// template's #baseMod directives (the document carries only the
+		// structured mods).
+		var baseModTexts []string
 		directives := map[string]func(string, *B){
+			"baseMod": func(args string, _ *B) {
+				baseModTexts = append(baseModTexts, args)
+			},
 			"skill": func(_ string, b *B) {
 				if nextSkill >= len(f.Skills) {
 					panic(fmt.Sprintf("skills: template %s has more #skill directives than data", name))
@@ -214,7 +235,8 @@ func renderSkills(d schema.SkillsData, tpl Templates) (map[string]string, error)
 				if nextTail >= len(f.Tails) {
 					panic(fmt.Sprintf("skills: template %s has more #mods directives than data", name))
 				}
-				renderSkillTail(b, f.Tails[nextTail], args)
+				renderSkillTail(b, f.Tails[nextTail], args, baseModTexts)
+				baseModTexts = nil
 				nextTail++
 			},
 		}

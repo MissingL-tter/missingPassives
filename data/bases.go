@@ -78,7 +78,7 @@ type Req struct {
 
 // RareLikeUnique describes a unique using the rare item crafting controls.
 type RareLikeUnique struct {
-	ValidBases              []any                  `lua:"validBases"`
+	ValidBases              []ValidBase            `lua:"validBases"`
 	Affixes                 map[string]ItemModData `lua:"affixes"`
 	PrefixLimit             float64                `lua:"prefixLimit"`
 	SuffixLimit             float64                `lua:"suffixLimit"`
@@ -87,9 +87,12 @@ type RareLikeUnique struct {
 	SupportsCustomModifiers map[string]bool        `lua:"supportsCustomModifiers"`
 }
 
-// baseOnlyEntry is a validBases entry carrying just a base.
-type baseOnlyEntry struct {
-	Base *ItemBase `lua:"base"`
+// ValidBase is one validBases entry: a base, with its list label and name
+// when the entry comes from an itemBaseLists row.
+type ValidBase struct {
+	Label string    `lua:"label,omitempty"`
+	Name  string    `lua:"name,omitempty"`
+	Base  *ItemBase `lua:"base"`
 }
 
 func loadRareLikeUniques() {
@@ -111,9 +114,9 @@ func loadRareLikeUniques() {
 	tags["deepwater_sword"] = true
 	ghost.Tags = tags
 
-	abyss := make([]any, 0, len(ItemBaseLists["Jewel: Abyss"]))
-	for i := range ItemBaseLists["Jewel: Abyss"] {
-		abyss = append(abyss, ItemBaseLists["Jewel: Abyss"][i])
+	abyss := make([]ValidBase, 0, len(ItemBaseLists["Jewel: Abyss"]))
+	for _, e := range ItemBaseLists["Jewel: Abyss"] {
+		abyss = append(abyss, ValidBase{Label: e.Label, Name: e.Name, Base: e.Base})
 	}
 
 	RareLikeUniques = map[string]RareLikeUnique{
@@ -131,7 +134,7 @@ func loadRareLikeUniques() {
 			SuffixLimit: 1,
 		},
 		"dread captain's cutlass": {
-			ValidBases:  []any{baseOnlyEntry{Base: &ghost}},
+			ValidBases:  []ValidBase{{Base: &ghost}},
 			Affixes:     ItemMods["Explicit"],
 			PrefixLimit: 3,
 			SuffixLimit: 3,
@@ -181,12 +184,12 @@ func loadItemBase(b schema.ItemBase) *ItemBase {
 		e.ImplicitModTypes = append(e.ImplicitModTypes, splitModTags(t))
 	}
 	if len(b.Implicit) > 0 {
-		s := luaUnescape(strings.Join(b.Implicit, "\\n"))
+		s := strings.Join(b.Implicit, "\n")
 		e.Implicit = &s
 		e.ImplicitIds = b.ImplicitIds
 	}
 	if len(b.Enchant) > 0 {
-		s := luaUnescape(strings.Join(b.Enchant, "\\n"))
+		s := strings.Join(b.Enchant, "\n")
 		e.Enchant = &s
 		e.EnchantIds = b.EnchantIds
 		e.EnchantModTypes = [][]string{}
@@ -230,7 +233,7 @@ func loadItemBase(b schema.ItemBase) *ItemBase {
 			if len(f.Buff) == 0 {
 				fd.Buff = []string{""}
 			} else {
-				fd.Buff = unescapeAll(f.Buff)
+				fd.Buff = f.Buff
 			}
 		}
 		e.Flask = fd
@@ -245,7 +248,7 @@ func loadItemBase(b schema.ItemBase) *ItemBase {
 		Int:   intPtrToFloat(b.ReqInt),
 	}
 	if len(b.FlavourText) > 0 {
-		e.FlavourText = unescapeAll(b.FlavourText)
+		e.FlavourText = b.FlavourText
 	}
 	return e
 }

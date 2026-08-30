@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 // The ModTools differential test: for every corpus line that parses to
@@ -53,7 +54,7 @@ func TestModToolsAgainstReference(t *testing.T) {
 			t.Fatalf("decoding modtools archive dump: %v", err)
 		}
 
-		mods, _ := modparser.Parse(rec.Line)
+		mods, _, _ := modparser.Parse(rec.Line)
 		if len(mods) != len(rec.Fmt) {
 			t.Fatalf("%s: parsed %d mods, archive dump has %d", rec.Line, len(mods), len(rec.Fmt))
 		}
@@ -66,8 +67,7 @@ func TestModToolsAgainstReference(t *testing.T) {
 			}
 		}
 
-		for i, m := range mods {
-			mm := m.(*modparser.Mod)
+		for i, mm := range mods {
 			checked++
 
 			if got := modparser.FormatMod(mm); got != rec.Fmt[i] {
@@ -81,34 +81,34 @@ func TestModToolsAgainstReference(t *testing.T) {
 				fail("formatTags", i, rec.Tags[i], gotTags)
 			}
 
-			cp := modparser.CopyMod(mm)
+			cp := mm.Clone()
 			modparser.SetSource(cp, "GoPort")
 			if got := modparser.FormatSourceMod(cp); got != rec.SrcFmt[i] {
 				fail("formatSourceMod", i, rec.SrcFmt[i], got)
 			}
 
-			if got := modparser.Canon(modparser.ParseTags(rec.Tags[i])); got != rec.PTags[i] {
+			if got := luacanon.CanonMods(modparser.ParseTags(rec.Tags[i])); got != rec.PTags[i] {
 				fail("parseTags", i, rec.PTags[i], got)
 			}
 			gotPSrc := "null"
 			if pm := modparser.ParseFormattedSourceMod(rec.SrcFmt[i]); pm != nil {
-				gotPSrc = modparser.Canon(pm)
+				gotPSrc = luacanon.CanonMods(pm)
 			}
 			if gotPSrc != rec.PSrc[i] {
 				fail("parseFormattedSourceMod", i, rec.PSrc[i], gotPSrc)
 			}
 
-			if got := modparser.CompareModParams(mm, modparser.CopyMod(mm)); got != rec.SelfCmp[i] {
+			if got := modparser.CompareModParams(mm, mm.Clone()); got != rec.SelfCmp[i] {
 				fail("compareModParams(self)", i, boolStr(rec.SelfCmp[i]), boolStr(got))
 			}
 		}
 
 		if rec.CrossCmp != nil && prevFirst != nil {
-			if got := modparser.CompareModParams(mods[0].(*modparser.Mod), prevFirst); got != *rec.CrossCmp {
+			if got := modparser.CompareModParams(mods[0], prevFirst); got != *rec.CrossCmp {
 				fail("compareModParams(cross)", 0, boolStr(*rec.CrossCmp), boolStr(got))
 			}
 		}
-		prevFirst = mods[0].(*modparser.Mod)
+		prevFirst = mods[0]
 	}
 	if err := sc.Err(); err != nil {
 		t.Fatal(err)

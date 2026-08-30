@@ -5,8 +5,8 @@
 // (UpdateSocketGroups). No view state: gem colour codes, controls and
 // display fields stay unported.
 //
-// Groups and gems are scalar bags plus resolution pointers — the same
-// shape the reference's Lua tables have and the calc input consumes.
+// Groups and gems are typed records plus resolution pointers; calc embeds
+// them in its socket-group input.
 package skills
 
 import (
@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MissingL-tter/missingPassives/calc"
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/item"
 )
 
@@ -58,19 +58,85 @@ func attrOf(attrs []xml.Attr, name string) (string, bool) {
 
 // --- model ---
 
-// GemInstance is one gem: the reference's scalar fields as a bag plus the
-// resolved data references.
-type GemInstance struct {
-	KV            map[string]any
+// Gem is one gem instance: the reference's scalar fields, typed, plus the
+// resolved data references. Strings hold "" for a key the reference never
+// set (it never stores an empty id, message, or minion name); Opt fields
+// are keys whose absence the reference distinguishes from a stored
+// zero/false (calc deletes them, or saves false/0 explicitly).
+type Gem struct {
+	NameSpec string
+	GemID    string
+	SkillID  string
+	ErrMsg   string
+	Level    float64
+	Quality  float64
+	Count    util.Opt[float64] // absent on calc-created granted gems
+	Enabled  bool
+	// EnableGlobal1/2 are absent on explode-source and granted gems; false
+	// is saved from the UI.
+	EnableGlobal1 util.Opt[bool]
+	EnableGlobal2 util.Opt[bool]
+	// MatchesSocket: false stored per gem; deleted when the item has fewer
+	// sockets than gems (Lua `nil and ...` assignment).
+	MatchesSocket util.Opt[bool]
+	// New/Triggered/NoSupports are only ever set to true or removed.
+	New        bool
+	Triggered  bool
+	NoSupports bool
+	// FromItem is calc-stamped on granted gems (false stored).
+	FromItem util.Opt[bool]
+	// Requirements are (re)computed only for gem-data gems and stay stale
+	// when a gem later resolves by skill id, so presence is independent of
+	// GemData.
+	ReqLevel        util.Opt[float64]
+	ReqStr          util.Opt[float64]
+	ReqDex          util.Opt[float64]
+	ReqInt          util.Opt[float64]
+	NaturalMaxLevel float64 // 0 = never recorded
+	TriggerChance   util.Opt[float64]
+
+	// Persisted UI selections the calc reads back and clears when the
+	// skill has no parts/stages/mines/minions. A present 0 is truthy to
+	// the reference, hence Opt.
+	SkillPart               util.Opt[float64]
+	SkillPartCalcs          util.Opt[float64]
+	SkillStageCount         util.Opt[float64]
+	SkillStageCountCalcs    util.Opt[float64]
+	SkillMineCount          util.Opt[float64]
+	SkillMineCountCalcs     util.Opt[float64]
+	SkillMinion             string
+	SkillMinionCalcs        string
+	SkillMinionSkill        util.Opt[float64]
+	SkillMinionSkillCalcs   util.Opt[float64]
+	SkillMinionItemSet      util.Opt[float64]
+	SkillMinionItemSetCalcs util.Opt[float64]
+
 	GemData       *data.Gem
 	GrantedEffect *data.GrantedEffect
 }
 
 // SocketGroup is one socket group (one <Skill> element).
 type SocketGroup struct {
-	KV      map[string]any
-	GemList []*GemInstance
+	Enabled          bool
+	IncludeInFullDPS util.Opt[bool] // absent on calc-created groups
+	GroupCount       float64        // 0 = not saved
+	Label            string
+	Slot             string // "" = no slot
+	Source           string // "" = socketed group; else the granting item/node
+	ImbuedSupport    string
+	// MainActiveSkill(Calcs) default to 1 on load; calc-created groups have
+	// none until the main-skill selection writes one.
+	MainActiveSkill      util.Opt[float64]
+	MainActiveSkillCalcs util.Opt[float64]
+	// NoSupports is calc-stamped on granted groups (true or absent).
+	NoSupports bool
+	// SlotEnabled is calc-stamped by the skills stage (false stored).
+	SlotEnabled util.Opt[bool]
+	GemList     []*Gem
 }
+
+// Granted reports whether the group is a granted-skill group (has a source).
+func (g *SocketGroup) Granted() bool { return g.Source != "" }
 
 type SkillSet struct {
 	ID              int
@@ -169,40 +235,32 @@ func (t *Tab) newSkillSet(id int) *SkillSet {
 
 // loadSkill ports SkillsTabClass:LoadSkill for one <Skill> element.
 func (t *Tab) loadSkill(node *XMLSkill, skillSetID int) {
-	kv := map[string]any{}
-	group := &SocketGroup{KV: kv}
+	group := &SocketGroup{}
 	attr := func(name string) (string, bool) { return attrOf(node.Attrs, name) }
 
 	active, _ := attr("active")
 	enabled, _ := attr("enabled")
-	kv["enabled"] = active == "true" || enabled == "true"
+	group.Enabled = active == "true" || enabled == "true"
 	if v, ok := attr("includeInFullDPS"); ok {
-		kv["includeInFullDPS"] = v == "true"
+		group.IncludeInFullDPS = util.Some(v == "true")
 	}
 	if v, ok := attr("groupCount"); ok && isNumber(v) {
-		kv["groupCount"] = num(v)
+		group.GroupCount = num(v)
 	}
-	if v, ok := attr("label"); ok {
-		kv["label"] = v
-	}
-	slot, hasSlot := attr("slot")
-	if hasSlot {
-		kv["slot"] = slot
-	}
-	if v, ok := attr("source"); ok {
-		kv["source"] = v
-	}
-	kv["mainActiveSkill"] = numOr(attr("mainActiveSkill"))(1)
-	kv["mainActiveSkillCalcs"] = numOr(attr("mainActiveSkillCalcs"))(1)
-	if v, ok := attr("imbuedSupport"); ok && hasSlot {
-		kv["imbuedSupport"] = v
+	group.Label, _ = attr("label")
+	group.Slot, _ = attr("slot")
+	group.Source, _ = attr("source")
+	group.MainActiveSkill = util.Some(numOr(attr("mainActiveSkill"))(1))
+	group.MainActiveSkillCalcs = util.Some(numOr(attr("mainActiveSkillCalcs"))(1))
+	if v, ok := attr("imbuedSupport"); ok && group.Slot != "" {
+		group.ImbuedSupport = v
 	}
 
 	for i := range node.Gems {
 		group.GemList = append(group.GemList, t.loadGem(&node.Gems[i]))
 	}
 	if v, ok := attr("skillPart"); ok && isNumber(v) && len(group.GemList) > 0 {
-		group.GemList[0].KV["skillPart"] = num(v)
+		group.GemList[0].SkillPart = util.Some(num(v))
 	}
 	t.ProcessSocketGroup(group)
 	set := t.SkillSets[skillSetID]
@@ -220,13 +278,12 @@ func numOr(s string, ok bool) func(def float64) float64 {
 	}
 }
 
-func (t *Tab) loadGem(child *XMLGem) *GemInstance {
-	kv := map[string]any{}
-	gem := &GemInstance{KV: kv}
+func (t *Tab) loadGem(child *XMLGem) *Gem {
+	gem := &Gem{}
 	attr := func(name string) (string, bool) { return attrOf(child.Attrs, name) }
 
 	nameSpec, _ := attr("nameSpec")
-	kv["nameSpec"] = sanitiseText(nameSpec)
+	gem.NameSpec = item.FoldText(nameSpec)
 	if gameID, ok := attr("gemId"); ok {
 		var gemData *data.Gem
 		possibleVariants := data.GemsByGameId[gameID]
@@ -245,47 +302,51 @@ func (t *Tab) loadGem(child *XMLGem) *GemInstance {
 			}
 		}
 		if gemData != nil {
-			kv["gemId"] = gemData.Id
-			kv["skillId"] = gemData.GrantedEffectId
-			kv["nameSpec"] = gemData.Name
+			gem.GemID = gemData.Id
+			gem.SkillID = gemData.GrantedEffectId
+			gem.NameSpec = gemData.Name
 		}
 	} else if skillID, ok := attr("skillId"); ok {
 		if grantedEffect := data.Skills[skillID]; grantedEffect != nil {
 			if gemID, ok := data.GemForSkill[grantedEffect]; ok {
-				kv["gemId"] = gemID
+				gem.GemID = gemID
 			}
-			kv["skillId"] = grantedEffect.Id
-			kv["nameSpec"] = grantedEffect.Name
+			gem.SkillID = grantedEffect.Id
+			gem.NameSpec = grantedEffect.Name
 		}
 	}
 	if v, ok := attr("level"); ok && isNumber(v) {
-		kv["level"] = num(v)
+		gem.Level = num(v)
 	}
 	if v, ok := attr("quality"); ok && isNumber(v) {
-		kv["quality"] = num(v)
+		gem.Quality = num(v)
 	}
-	kv["nameSpec"] = sanitiseText(kv["nameSpec"].(string))
+	gem.NameSpec = item.FoldText(gem.NameSpec)
 	en, hasEn := attr("enabled")
-	kv["enabled"] = !hasEn || en == "true"
+	gem.Enabled = !hasEn || en == "true"
 	eg1, hasEg1 := attr("enableGlobal1")
-	kv["enableGlobal1"] = !hasEg1 || eg1 == "true"
+	gem.EnableGlobal1 = util.Some(!hasEg1 || eg1 == "true")
 	eg2, _ := attr("enableGlobal2")
-	kv["enableGlobal2"] = eg2 == "true"
-	kv["count"] = numOr(attr("count"))(1)
-	for _, key := range []string{
-		"skillPart", "skillPartCalcs", "skillStageCount", "skillStageCountCalcs",
-		"skillMineCount", "skillMineCountCalcs", "skillMinionItemSet",
-		"skillMinionItemSetCalcs", "skillMinionSkill", "skillMinionSkillCalcs",
-	} {
+	gem.EnableGlobal2 = util.Some(eg2 == "true")
+	gem.Count = util.Some(numOr(attr("count"))(1))
+	numAttr := func(key string) util.Opt[float64] {
 		if v, ok := attr(key); ok && isNumber(v) {
-			kv[key] = num(v)
+			return util.Some(num(v))
 		}
+		return util.Opt[float64]{}
 	}
-	for _, key := range []string{"skillMinion", "skillMinionCalcs"} {
-		if v, ok := attr(key); ok {
-			kv[key] = v
-		}
-	}
+	gem.SkillPart = numAttr("skillPart")
+	gem.SkillPartCalcs = numAttr("skillPartCalcs")
+	gem.SkillStageCount = numAttr("skillStageCount")
+	gem.SkillStageCountCalcs = numAttr("skillStageCountCalcs")
+	gem.SkillMineCount = numAttr("skillMineCount")
+	gem.SkillMineCountCalcs = numAttr("skillMineCountCalcs")
+	gem.SkillMinionItemSet = numAttr("skillMinionItemSet")
+	gem.SkillMinionItemSetCalcs = numAttr("skillMinionItemSetCalcs")
+	gem.SkillMinionSkill = numAttr("skillMinionSkill")
+	gem.SkillMinionSkillCalcs = numAttr("skillMinionSkillCalcs")
+	gem.SkillMinion, _ = attr("skillMinion")
+	gem.SkillMinionCalcs, _ = attr("skillMinionCalcs")
 	return gem
 }
 
@@ -303,139 +364,80 @@ func sortedKeys[V any](m map[string]V) []string {
 	return keys
 }
 
-// sanitiseText ports Common.lua sanitiseText: strip balanced <> markup and
-// normalise unicode hyphens, but only when a byte >= 128 or '<' occurs.
-func sanitiseText(text string) string {
-	needs := false
-	for i := 0; i < len(text); i++ {
-		if text[i] >= 128 || text[i] == '<' {
-			needs = true
-			break
-		}
-	}
-	if !needs {
-		return text
-	}
-	// %b<> — balanced-delimiter strip.
-	var b strings.Builder
-	depth := 0
-	start := 0
-	for i := 0; i < len(text); i++ {
-		switch text[i] {
-		case '<':
-			if depth == 0 {
-				b.WriteString(text[start:i])
-			}
-			depth++
-		case '>':
-			if depth > 0 {
-				depth--
-				if depth == 0 {
-					start = i + 1
-				}
-			}
-		}
-	}
-	if depth == 0 {
-		b.WriteString(text[start:])
-	} else {
-		// unbalanced '<': Lua %b<> fails to match, leaves the rest as-is
-		b.WriteString(text[start:])
-	}
-	s := b.String()
-	for _, hy := range []string{"‐", "‑", "‒"} {
-		s = strings.ReplaceAll(s, hy, "-")
-	}
-	return s
-}
-
 // ProcessSocketGroup ports SkillsTabClass:ProcessSocketGroup (gem colour
 // codes skipped: view-only).
 func (t *Tab) ProcessSocketGroup(group *SocketGroup) {
 	for _, gem := range group.GemList {
-		kv := gem.KV
-		if _, ok := kv["nameSpec"]; !ok {
-			kv["nameSpec"] = ""
-		}
 		var prevDefaultLevel float64
 		hasPrev := false
 		if gem.GemData != nil {
 			prevDefaultLevel, hasPrev = gem.GemData.NaturalMaxLevel, true
-		} else if truthy(kv["new"]) {
+		} else if gem.New {
 			prevDefaultLevel, hasPrev = 20, true
 		}
 		gem.GemData, gem.GrantedEffect = nil, nil
-		if gemID, ok := kv["gemId"].(string); ok {
+		switch {
+		case gem.GemID != "":
 			// Specified by gem ID (skills granted by skill gems).
-			delete(kv, "errMsg")
-			gem.GemData = data.Gems[gemID]
+			gem.ErrMsg = ""
+			gem.GemData = data.Gems[gem.GemID]
 			if gem.GemData != nil {
-				kv["nameSpec"] = gem.GemData.Name
-				kv["skillId"] = gem.GemData.GrantedEffectId
+				gem.NameSpec = gem.GemData.Name
+				gem.SkillID = gem.GemData.GrantedEffectId
 			}
-		} else if skillID, ok := kv["skillId"].(string); ok {
+		case gem.SkillID != "":
 			// Specified by skill ID (skills granted by items).
-			delete(kv, "errMsg")
-			if grantedEffect := data.Skills[skillID]; grantedEffect != nil {
+			gem.ErrMsg = ""
+			if grantedEffect := data.Skills[gem.SkillID]; grantedEffect != nil {
 				if gemID, ok := data.GemForSkill[grantedEffect]; ok {
 					gem.GemData = data.Gems[gemID]
 				} else {
 					gem.GrantedEffect = grantedEffect
 				}
 			}
-			if truthy(kv["triggered"]) && gem.GrantedEffect != nil {
-				if lvl, ok := kv["level"].(float64); ok {
-					if sl := gem.GrantedEffect.Levels[lvl]; sl != nil {
-						// The reference wipes the SHARED level's cost table;
-						// the calc port keeps that per-env
-						// (TriggeredCostWipes) — nothing to do at load.
-						_ = sl
-					}
-				}
-			}
-		} else if strings.ContainsFunc(str(kv["nameSpec"]), notSpace) {
+			// The reference wipes the SHARED level's cost table for a
+			// triggered granted effect; the calc port keeps that per-env
+			// (TriggeredCostWipes) -- nothing to do at load.
+		case strings.ContainsFunc(gem.NameSpec, notSpace):
 			// Pre-1.4.20 migration by gem name (FindSkillGem). The ported
 			// lookup collapses "ambiguous" into nil; the reference's
 			// ambiguity message cites two hash-order names, but no corpus
 			// build carries an ambiguous spec.
-			delete(kv, "errMsg")
-			gem.GemData = calc.FindSkillGem(str(kv["nameSpec"]))
+			gem.ErrMsg = ""
+			gem.GemData = FindSkillGem(gem.NameSpec)
 			if gem.GemData != nil {
-				kv["gemId"] = gem.GemData.Id
-				kv["skillId"] = gem.GemData.GrantedEffectId
-				kv["nameSpec"] = gem.GemData.Name
+				gem.GemID = gem.GemData.Id
+				gem.SkillID = gem.GemData.GrantedEffectId
+				gem.NameSpec = gem.GemData.Name
 			} else {
-				kv["errMsg"] = "Unrecognised gem name '" + str(kv["nameSpec"]) + "'"
-				delete(kv, "gemId")
-				delete(kv, "skillId")
+				gem.ErrMsg = "Unrecognised gem name '" + gem.NameSpec + "'"
+				gem.GemID, gem.SkillID = "", ""
 			}
-		} else {
-			delete(kv, "errMsg")
-			delete(kv, "skillId")
+		default:
+			gem.ErrMsg, gem.SkillID = "", ""
 		}
 		// grantedEffect.unsupported gate: no 3.29 PoE1 skill carries the
 		// flag; the data tables have no such field.
 		if gem.GemData != nil || gem.GrantedEffect != nil {
-			delete(kv, "new")
+			gem.New = false
 			grantedEffect := gem.GrantedEffect
 			if grantedEffect == nil {
 				grantedEffect = gem.GemData.GrantedEffect
 			}
 			if hasPrev && gem.GemData != nil && gem.GemData.NaturalMaxLevel != prevDefaultLevel {
-				kv["level"] = gem.GemData.NaturalMaxLevel
-				kv["naturalMaxLevel"] = kv["level"]
+				gem.Level = gem.GemData.NaturalMaxLevel
+				gem.NaturalMaxLevel = gem.Level
 			}
 			validateGemLevel(gem)
 			if gem.GemData != nil {
-				lvl := kv["level"].(float64)
 				reqLevel := float64(0)
-				if sl := grantedEffect.Levels[lvl]; sl != nil {
+				if sl := grantedEffect.LevelData(gem.Level); sl != nil {
 					reqLevel = sl.Extra["levelRequirement"]
 				}
-				kv["reqLevel"] = reqLevel
-				kv["reqStr"] = calc.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqStr)
-				kv["reqDex"] = calc.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqDex)
-				kv["reqInt"] = calc.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqInt)
+				gem.ReqLevel = util.Some(reqLevel)
+				gem.ReqStr = util.Some(GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqStr))
+				gem.ReqDex = util.Some(GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqDex))
+				gem.ReqInt = util.Some(GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqInt))
 			}
 		}
 	}
@@ -445,54 +447,36 @@ func notSpace(r rune) bool {
 	return r != ' ' && r != '\t' && r != '\n' && r != '\r' && r != '\f' && r != '\v'
 }
 
-func truthy(v any) bool { return v != nil && v != false }
-
-func str(v any) string {
-	s, _ := v.(string)
-	return s
-}
-
-// validateGemLevel ports calcLib.validateGemLevel over the KV bag.
-func validateGemLevel(gem *GemInstance) {
-	kv := gem.KV
+// validateGemLevel ports calcLib.validateGemLevel.
+func validateGemLevel(gem *Gem) {
 	grantedEffect := gem.GrantedEffect
 	if grantedEffect == nil {
 		grantedEffect = gem.GemData.GrantedEffect
 	}
-	level, _ := kv["level"].(float64)
-	if grantedEffect.Levels[level] == nil {
+	level := gem.Level
+	if grantedEffect.LevelData(level) == nil {
 		level = math.Max(1, level)
-		if n := luaLevelsLen(grantedEffect.Levels); n > 0 {
-			level = math.Min(n, level)
+		if n := grantedEffect.LevelCount(); n > 0 {
+			level = math.Min(float64(n), level)
 		}
 	}
-	if grantedEffect.Levels[level] == nil && gem.GemData != nil {
+	if grantedEffect.LevelData(level) == nil && gem.GemData != nil {
 		level = gem.GemData.NaturalMaxLevel
 	}
-	if grantedEffect.Levels[level] == nil {
-		// The reference grabs next() — hash-arbitrary; lowest keeps it
+	if grantedEffect.LevelData(level) == nil {
+		// The reference grabs next() -- hash-arbitrary; lowest keeps it
 		// deterministic (same choice as calc.ValidateGemLevel).
-		first, found := 0.0, false
+		first, found := 0, false
 		for lvl := range grantedEffect.Levels {
 			if !found || lvl < first {
 				first, found = lvl, true
 			}
 		}
 		if found {
-			level = first
+			level = float64(first)
 		}
 	}
-	kv["level"] = level
-}
-
-// luaLevelsLen mirrors Lua # on the levels table: the length of the
-// contiguous run from 1.
-func luaLevelsLen(levels map[float64]*data.SkillLevel) float64 {
-	n := float64(0)
-	for levels[n+1] != nil {
-		n++
-	}
-	return n
+	gem.Level = level
 }
 
 // SetActiveSkillSet ports the logic half of SkillsTabClass:SetActiveSkillSet.
@@ -513,15 +497,13 @@ func (t *Tab) SetActiveSkillSet(skillSetID int) {
 func (t *Tab) RebuildImbuedSupportBySlot() {
 	t.ImbuedSupportBySlot = map[string]*data.GrantedEffect{}
 	for _, group := range t.SocketGroupList {
-		slot, hasSlot := group.KV["slot"].(string)
-		imbued, hasImbued := group.KV["imbuedSupport"].(string)
-		if hasSlot && hasImbued {
-			gemID, ok := data.GemForBaseName[strings.ToLower(imbued)+" support"]
+		if group.Slot != "" && group.ImbuedSupport != "" {
+			gemID, ok := data.GemForBaseName[strings.ToLower(group.ImbuedSupport)+" support"]
 			if !ok {
 				continue
 			}
 			if gem := data.Gems[gemID]; gem != nil && gem.GrantedEffect != nil {
-				t.ImbuedSupportBySlot[slot] = gem.GrantedEffect
+				t.ImbuedSupportBySlot[group.Slot] = gem.GrantedEffect
 			}
 		}
 	}
@@ -536,13 +518,12 @@ func (t *Tab) UpdateSocketGroups(slotItem func(slotName string) *item.Item) {
 	slotSocketedCounts := map[string]int{}
 	for _, group := range t.SocketGroupList {
 		for _, gem := range group.GemList {
-			gem.KV["matchesSocket"] = false
+			gem.MatchesSocket = util.Some(false)
 		}
-		slot, hasSlot := group.KV["slot"].(string)
-		_, hasSource := group.KV["source"]
-		if !hasSlot || hasSource {
+		if group.Slot == "" || group.Granted() {
 			continue
 		}
+		slot := group.Slot
 		gemOffset := slotSocketedCounts[slot]
 		for i, gem := range group.GemList {
 			if gem.GemData == nil && gem.GrantedEffect == nil {
@@ -558,17 +539,17 @@ func (t *Tab) UpdateSocketGroups(slotItem func(slotName string) *item.Item) {
 				continue
 			}
 			if it.SocketColourAlwaysMatches {
-				gem.KV["matchesSocket"] = true
+				gem.MatchesSocket = util.Some(true)
 			} else if gemIdx >= len(it.Sockets) {
-				// Lua: sockets[gemIdx] is nil, `nil and (...)` assigns nil —
+				// Lua: sockets[gemIdx] is nil, `nil and (...)` assigns nil --
 				// which REMOVES the key.
-				delete(gem.KV, "matchesSocket")
+				gem.MatchesSocket = util.Opt[bool]{}
 			} else {
 				var gemColour string
 				if c := int(grantedEffect.Color); c >= 1 && c <= 3 {
 					gemColour = colours[c]
 				}
-				gem.KV["matchesSocket"] = it.Sockets[gemIdx].Color == gemColour
+				gem.MatchesSocket = util.Some(it.Sockets[gemIdx].Color == gemColour)
 			}
 		}
 		slotSocketedCounts[slot] = gemOffset + len(group.GemList)

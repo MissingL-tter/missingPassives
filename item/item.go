@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -87,7 +88,7 @@ type ModLine struct {
 	ModGroup         string
 	Range            *float64
 	CorruptedRange   *float64
-	ValueScalar      float64 // 0 = unset (Lua nil)
+	ValueScalar      util.Opt[float64]
 	Order            *float64
 	ModID            string
 	NewModID         string
@@ -115,7 +116,7 @@ type Socket struct {
 // Affix is one prefixes/suffixes entry.
 type Affix struct {
 	ModID     string
-	Range     any // number, list of numbers, or nil
+	Range     AffixRange
 	Fractured bool
 }
 
@@ -219,7 +220,7 @@ type Item struct {
 	AbyssalSocketCount        float64
 	SelectableSocketCount     float64
 
-	Requirements map[string]float64 // str/dex/int always present; level/strMod/... when set
+	Requirements Requirements
 
 	ClassRequirementModLines []*ModLine
 	BuffModLines             []*ModLine
@@ -282,13 +283,13 @@ type Item struct {
 	BuffModListInit bool
 	RangeLineList   []*ModLine
 	HasModTags      bool
-	GrantedSkills   []map[string]any
+	GrantedSkills   []GrantedSkill
 
-	WeaponData   map[int]map[string]any
-	ArmourData   map[string]any
-	FlaskData    map[string]any
-	TinctureData map[string]any
-	JewelData    map[string]any
+	WeaponData   map[int]*WeaponData
+	ArmourData   *ArmourData
+	FlaskData    *FlaskData
+	TinctureData *TinctureData
+	JewelData    *JewelData
 
 	SocketedJewelEffectModifier float64
 }
@@ -434,7 +435,7 @@ func normaliseModLine(line string) string {
 	// %(%-?#%-#%) matches both the signed and unsigned range shells.
 	s = strings.ReplaceAll(s, "(-#-#)", "#")
 	s = strings.ReplaceAll(s, "(#-#)", "#")
-	s = luaLower(s)
+	s = strings.ToLower(s)
 	return strings.ReplaceAll(s, "\n", " ")
 }
 

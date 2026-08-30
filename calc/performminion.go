@@ -8,16 +8,17 @@ import (
 	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // initMinionModDB ports CalcPerform's initMinionModDB.
-func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any) {
+func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output modstore.Output) {
 	modDB := env.ModDB
 	minion := activeSkill.Minion
 	if output == nil {
-		output = map[string]any{}
+		output = modstore.Output{}
 	}
 	minion.Output = output
 	minion.DB.Multipliers["Level"] = minion.Level
@@ -30,7 +31,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 		}
 		baseLife = baseLife * mult
 	}
-	minion.DB.AddMod(newMod("Life", "BASE", math.Floor(baseLife), "Base"))
+	minion.DB.AddMod(newModS("Life", modparser.Base, modparser.Num(math.Floor(baseLife)), "Base"))
 	if minion.MinionData.EnergyShield != nil {
 		esTable := data.MonsterAllyLifeTable
 		if minion.Hostile {
@@ -44,49 +45,45 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 			}
 			baseES = baseES * mult
 		}
-		minion.DB.AddMod(newMod("EnergyShield", "BASE", math.Floor(baseES), "Base"))
+		minion.DB.AddMod(newModS("EnergyShield", modparser.Base, modparser.Num(math.Floor(baseES)), "Base"))
 	}
 	armourMult := 1.0
 	if minion.MinionData.Armour != nil {
 		armourMult = *minion.MinionData.Armour
 	}
-	minion.DB.AddMod(newMod("Armour", "BASE", roundDec(data.MonsterArmourTable[int(minion.Level)-1]*armourMult, 0), "Base"))
+	minion.DB.AddMod(newModS("Armour", modparser.Base, modparser.Num(util.RoundHalfUp(data.MonsterArmourTable[int(minion.Level)-1]*armourMult, 0)), "Base"))
 	evasionMult := 1.0
 	if minion.MinionData.Evasion != nil {
 		evasionMult = *minion.MinionData.Evasion
 	}
-	minion.DB.AddMod(newMod("Evasion", "BASE", roundDec(data.MonsterEvasionTable[int(minion.Level)-1]*evasionMult, 0), "Base"))
+	minion.DB.AddMod(newModS("Evasion", modparser.Base, modparser.Num(util.RoundHalfUp(data.MonsterEvasionTable[int(minion.Level)-1]*evasionMult, 0)), "Base"))
 	if modDB.Flag(nil, "MinionAccuracyEqualsAccuracy") {
 		accPerDex := data.Misc.AccuracyPerDexBase
-		if ov := modDB.Override(nil, "DexAccBonusOverride"); truthy(ov) {
-			accPerDex = anyNum(ov)
+		if ov, ok := modDB.Override(nil, "DexAccBonusOverride"); ok {
+			accPerDex = valueNum(ov)
 		}
-		minion.DB.AddMod(newMod("Accuracy", "BASE", Val(modDB, "Accuracy", nil)+Val(modDB, "Dex", nil)*accPerDex, "Player"))
+		minion.DB.AddMod(newModS("Accuracy", modparser.Base, modparser.Num(Val(modDB, "Accuracy", nil)+Val(modDB, "Dex", nil)*accPerDex), "Player"))
 	} else {
-		minion.DB.AddMod(newMod("CannotBeEvaded", "FLAG", 1.0, "Minion Attacks always hit"))
+		minion.DB.AddMod(newModS("CannotBeEvaded", modparser.Flag, modparser.Num(1.0), "Minion Attacks always hit"))
 	}
 	mc := data.MonsterConstants
-	minion.DB.AddMod(newMod("CritMultiplier", "BASE", mc["base_critical_strike_multiplier"]-100, "Base"))
-	minion.DB.AddMod(newMod("DotMultiplier", "BASE", mc["critical_ailment_dot_multiplier_+"], "Base", modparser.Tag{"type": "Condition", "var": "CriticalStrike"}))
-	minion.DB.AddMod(newMod("FireResist", "BASE", minion.MinionData.FireResist, "Base"))
-	minion.DB.AddMod(newMod("ColdResist", "BASE", minion.MinionData.ColdResist, "Base"))
-	minion.DB.AddMod(newMod("LightningResist", "BASE", minion.MinionData.LightningResist, "Base"))
-	minion.DB.AddMod(newMod("ChaosResist", "BASE", minion.MinionData.ChaosResist, "Base"))
-	minion.DB.AddMod(newMod("CritChance", "INC", mc["critical_strike_chance_+%_per_power_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "PowerCharge"}))
-	minion.DB.AddMod(newMod("Speed", "INC", mc["base_attack_speed_+%_per_frenzy_charge"], "Base", modparser.ModFlag.Attack, modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	minion.DB.AddMod(newMod("Speed", "INC", mc["base_cast_speed_+%_per_frenzy_charge"], "Base", modparser.ModFlag.Cast, modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	minion.DB.AddMod(newMod("Damage", "MORE", mc["object_inherent_damage_+%_final_per_frenzy_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	minion.DB.AddMod(newMod("PhysicalDamageReduction", "BASE", mc["physical_damage_reduction_%_per_endurance_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "EnduranceCharge"}))
-	minion.DB.AddMod(newMod("ElementalDamageReduction", "BASE", mc["elemental_damage_reduction_%_per_endurance_charge_if_player_minion"], "Base", modparser.Tag{"type": "Multiplier", "var": "EnduranceCharge"}))
-	minion.DB.AddMod(newMod("ProjectileCount", "BASE", 1.0, "Base"))
-	minion.DB.AddMod(newMod("MaximumFortification", "BASE", mc["base_max_fortification"], "Base"))
-	minion.DB.AddMod(newMod("Damage", "MORE", 200.0, "Base", int64(0), modparser.KeywordFlag.Bleed, modparser.Tag{"type": "ActorCondition", "actor": "enemy", "var": "Moving"}))
-	for _, mv := range minion.MinionData.ModList {
-		if mod, ok := mv.(*modparser.Mod); ok {
-			minion.DB.AddMod(mod)
-		} else {
-			panic("calc: non-mod minion modList entry (flags-slot artifact)")
-		}
+	minion.DB.AddMod(newModS("CritMultiplier", modparser.Base, modparser.Num(mc["base_critical_strike_multiplier"]-100), "Base"))
+	minion.DB.AddMod(newModS("DotMultiplier", modparser.Base, modparser.Num(mc["critical_ailment_dot_multiplier_+"]), "Base", &modparser.CondTag{Var: "CriticalStrike"}))
+	minion.DB.AddMod(newModS("FireResist", modparser.Base, modparser.Num(minion.MinionData.FireResist), "Base"))
+	minion.DB.AddMod(newModS("ColdResist", modparser.Base, modparser.Num(minion.MinionData.ColdResist), "Base"))
+	minion.DB.AddMod(newModS("LightningResist", modparser.Base, modparser.Num(minion.MinionData.LightningResist), "Base"))
+	minion.DB.AddMod(newModS("ChaosResist", modparser.Base, modparser.Num(minion.MinionData.ChaosResist), "Base"))
+	minion.DB.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(mc["critical_strike_chance_+%_per_power_charge"]), "Base", &modparser.MultiplierTag{Var: "PowerCharge"}))
+	minion.DB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(mc["base_attack_speed_+%_per_frenzy_charge"]), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	minion.DB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(mc["base_cast_speed_+%_per_frenzy_charge"]), "Base", modparser.FlagCast, modparser.KeywordNone, &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	minion.DB.AddMod(newModS("Damage", modparser.More, modparser.Num(mc["object_inherent_damage_+%_final_per_frenzy_charge"]), "Base", &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	minion.DB.AddMod(newModS("PhysicalDamageReduction", modparser.Base, modparser.Num(mc["physical_damage_reduction_%_per_endurance_charge"]), "Base", &modparser.MultiplierTag{Var: "EnduranceCharge"}))
+	minion.DB.AddMod(newModS("ElementalDamageReduction", modparser.Base, modparser.Num(mc["elemental_damage_reduction_%_per_endurance_charge_if_player_minion"]), "Base", &modparser.MultiplierTag{Var: "EnduranceCharge"}))
+	minion.DB.AddMod(newModS("ProjectileCount", modparser.Base, modparser.Num(1.0), "Base"))
+	minion.DB.AddMod(newModS("MaximumFortification", modparser.Base, modparser.Num(mc["base_max_fortification"]), "Base"))
+	minion.DB.AddMod(newModSF("Damage", modparser.More, modparser.Num(200.0), "Base", modparser.FlagNone, modparser.KeywordBleed, &modparser.CondTag{IsActor: true, Actor: "enemy", Var: "Moving"}))
+	for _, mod := range minion.MinionData.ModList {
+		minion.DB.AddMod(mod)
 	}
 	for _, mod := range activeSkill.ExtraSkillModList {
 		minion.DB.AddMod(mod)
@@ -98,13 +95,13 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 	if env.TheIronMass != nil && minion.Type == "RaisedSkeleton" {
 		minion.DB.AddList(env.TheIronMass.Mods)
 	}
-	if truthy(activeSkill.SkillData["minionUseBowAndQuiver"]) {
-		if str(env.Player.WeaponData1["type"]) == "Bow" {
+	if activeSkill.SkillData.Flag("minionUseBowAndQuiver") {
+		if weaponType(weaponOf(env.Player.WeaponData1)) == "Bow" {
 			w1, _ := env.Player.ItemList["Weapon 1"].(*Item)
 			minion.DB.AddList(w1.In.SlotModList[1])
 		}
 		if w2, _ := env.Player.ItemList["Weapon 2"].(*Item); w2 != nil && w2.In.Type == "Quiver" {
-			minion.DB.ScaleAddList(w2.In.ModList, math.Max(modDB.Sum("BASE", nil, "WidowHailMultiplier"), 1), false)
+			minion.DB.ScaleAddList(w2.In.ModList, math.Max(modDB.Sum(modparser.Base, nil, "WidowHailMultiplier"), 1), false)
 		}
 		if modDB.Flag(nil, "BlinkAndMirrorUseGloves") {
 			if gloves, _ := env.Player.ItemList["Gloves"].(*Item); gloves != nil {
@@ -112,7 +109,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 			}
 		}
 	}
-	if truthy(activeSkill.SkillData["minionUseMainHandWeapon"]) {
+	if activeSkill.SkillData.Flag("minionUseMainHandWeapon") {
 		w1, _ := env.Player.ItemList["Weapon 1"].(*Item)
 		minion.DB.AddList(w1.In.SlotModList[1])
 	}
@@ -121,7 +118,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 		// list order here — the writes are per-distinct-slot, order-free)
 		for _, slot := range env.Build.ItemsTab.Slots {
 			slotName := slot.SlotName
-			if !truthy(minion.Uses[slotName]) {
+			if !minion.Uses[slotName] {
 				continue
 			}
 			var item *Item
@@ -144,21 +141,20 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output map[string]any)
 			}
 		}
 	}
-	if modDB.Sum("BASE", nil, "StrengthAddedToMinions") > 0 {
-		minion.DB.AddMod(newMod("Str", "BASE", roundDec(Val(modDB, "Str", nil)*modDB.Sum("BASE", nil, "StrengthAddedToMinions")/100, 0), "Player"))
+	if modDB.Sum(modparser.Base, nil, "StrengthAddedToMinions") > 0 {
+		minion.DB.AddMod(newModS("Str", modparser.Base, modparser.Num(util.RoundHalfUp(Val(modDB, "Str", nil)*modDB.Sum(modparser.Base, nil, "StrengthAddedToMinions")/100, 0)), "Player"))
 	}
 }
 
 // addMinionModifiers ports CalcPerform's addMinionModifiers.
 func addMinionModifiers(modList modstore.Store, skillCfg *modstore.Cfg, minion *Minion) {
 	for _, v := range modList.List(skillCfg, "MinionModifier") {
-		tag, _ := v.(modparser.Tag)
-		mod, _ := tag["mod"].(*modparser.Mod)
-		if mod == nil {
+		tag, _ := v.(modparser.ModRef)
+		if tag.Mod == nil {
 			continue
 		}
-		if !truthy(tag["type"]) || minion.Type == str(tag["type"]) {
-			minion.DB.AddMod(mod)
+		if tag.MinionType == "" || minion.Type == tag.MinionType {
+			minion.DB.AddMod(tag.Mod)
 		}
 	}
 }
@@ -177,20 +173,19 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 		}
 	}
 	for _, v := range activeSkill.SkillModList.List(activeSkill.SkillCfg, "ExtraMinionSkill") {
-		tag, _ := v.(modparser.Tag)
-		minionList := tag["minionList"]
+		tag, _ := v.(modparser.SkillRef)
 		match := true
-		if truthy(minionList) {
+		if tag.MinionList != nil {
 			match = false
-			for _, mv := range asAnyList(minionList) {
-				if str(mv) == minion.Type {
+			for _, mv := range tag.MinionList {
+				if mv == minion.Type {
 					match = true
 					break
 				}
 			}
 		}
 		if match {
-			skillIdList = append(skillIdList, str(tag["skillId"]))
+			skillIdList = append(skillIdList, tag.SkillID)
 		}
 	}
 	if len(skillIdList) == 0 {
@@ -200,9 +195,9 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 	for _, skillId := range skillIdList {
 		ge := data.Skills[skillId]
 		minionEffect := &ActiveEffect{GrantedEffect: ge, Level: 1, Quality: 0}
-		if luaLevelsLen(ge.Levels) > 1 {
+		if len(ge.Levels) > 1 {
 			// walk levels 1..n while levelRequirement <= minion level
-			for level := 1.0; ; level++ {
+			for level := 1; ; level++ {
 				levelData := ge.Levels[level]
 				if levelData == nil {
 					break
@@ -211,7 +206,7 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 				if req > minion.Level {
 					break
 				}
-				minionEffect.Level = level
+				minionEffect.Level = float64(level)
 			}
 		}
 		minionSkill := env.createActiveSkill(minionEffect, activeSkill.SupportList, minion.Ms, nil, activeSkill)
@@ -220,45 +215,35 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 		minionSkill.SkillFlags["minionSkill"] = true
 		minionSkill.SkillFlags["haveMinion"] = true
 		setFlag(minionSkill.SkillFlags, "spectre", activeSkill.SkillFlags["spectre"])
-		minionSkill.SkillData["damageEffectiveness"] = 1 + anyNum(activeSkill.SkillData["minionDamageEffectiveness"])/100
+		minionSkill.SkillData.SetN("damageEffectiveness", 1+activeSkill.SkillData.N("minionDamageEffectiveness")/100)
 		minion.ActiveSkillList = append(minion.ActiveSkillList, minionSkill)
 	}
 	skillIndex := 1.0
-	if v, ok := activeEffect.SrcInstance.KV["skillMinionSkill"]; ok && truthy(v) {
-		skillIndex = anyNum(v)
+	if v := activeEffect.SrcInstance.SkillMinionSkill; v.Set {
+		skillIndex = v.V
 	}
 	skillIndex = math.Max(math.Min(skillIndex, float64(len(minion.ActiveSkillList))), 1)
 	if env.Mode == "MAIN" {
-		activeEffect.SrcInstance.KV["skillMinionSkill"] = skillIndex
+		activeEffect.SrcInstance.SkillMinionSkill = util.Some(skillIndex)
 	}
 	minion.MainSkill = minion.ActiveSkillList[int(skillIndex)-1]
 }
 
-func asAnyList(v any) []any {
-	switch t := v.(type) {
-	case []any:
-		return t
-	case *modparser.D:
-		return t.Arr
-	}
-	return nil
-}
-
 // calcSkillDuration ports CalcOffence's calcSkillDuration.
-func (env *Env) calcSkillDuration(skillModList modstore.Store, skillCfg *modstore.Cfg, skillData map[string]any, enemyDB *modstore.DB) float64 {
+func (env *Env) calcSkillDuration(skillModList modstore.Store, skillCfg *modstore.Cfg, skillData *SkillData, enemyDB *modstore.DB) float64 {
 	durationNames := []string{"Duration", "PrimaryDuration"}
-	if truthy(skillData["mineDurationAppliesToSkill"]) {
+	if skillData.Flag("mineDurationAppliesToSkill") {
 		durationNames = append(durationNames, "MineDuration")
 	}
 	durationMod := Mod(skillModList, skillCfg, durationNames...)
 	durationMod = math.Max(durationMod, 0)
-	durationBase := anyNum(skillData["duration"]) + skillModList.Sum("BASE", skillCfg, "Duration", "PrimaryDuration")
+	durationBase := skillData.N("duration") + skillModList.Sum(modparser.Base, skillCfg, "Duration", "PrimaryDuration")
 	duration := durationBase * durationMod
 	debuffDurationMult := 1.0
 	if env.ModeEffective {
 		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
-	if truthy(skillData["debuff"]) {
+	if skillData.Flag("debuff") {
 		duration = duration * debuffDurationMult
 	}
 	return duration
@@ -273,14 +258,13 @@ func (env *Env) defenceForConditionals(actor *performActor) {
 		if item == nil || item.In.ArmourData == nil {
 			continue
 		}
-		armourData := item.In.ArmourData
 		for _, def := range []string{"Ward", "EnergyShield", "Armour", "Evasion"} {
 			base := 0.0
 			if !modDB.Flag(nil, "GainNo"+def+"From"+slot) {
-				base = anyNum(armourData[def])
+				base = armourDataOf(item, def)
 			}
 			if base > 0 {
-				output[def+"On"+slot] = base
+				output.SetN(def+"On"+slot, base)
 			}
 		}
 	}

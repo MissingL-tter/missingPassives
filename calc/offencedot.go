@@ -20,10 +20,10 @@ func copyCfg(cfg *modstore.Cfg) *modstore.Cfg {
 
 // dotMultiDB is the DotMultiplier `or` chain against a ModDB.
 func dotMultiDB(db *modstore.DB, cfg *modstore.Cfg, typeName string) float64 {
-	if ov := db.Override(cfg, "DotMultiplier"); truthy(ov) {
-		return anyNum(ov)
+	if ov, ok := db.Override(cfg, "DotMultiplier"); ok {
+		return valueNum(ov)
 	}
-	return db.Sum("BASE", cfg, "DotMultiplier") + db.Sum("BASE", cfg, typeName+"DotMultiplier")
+	return db.Sum(modparser.Base, cfg, "DotMultiplier") + db.Sum(modparser.Base, cfg, typeName+"DotMultiplier")
 }
 
 // offenceDot ports L5605-6168.
@@ -37,10 +37,10 @@ func (env *Env) offenceDot(c *offenceCtx) {
 		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 
-	if skillFlags["hit"] && truthy(skillData["decay"]) && c.canDeal["Chaos"] {
+	if skillFlags["hit"] && skillData.Flag("decay") && c.canDeal["Chaos"] {
 		// Calculate DPS for Essence of Delirium's Decay effect
 		skillFlags["decay"] = true
-		skillCfgKeywords := int64(0)
+		skillCfgKeywords := modparser.KeywordNone
 		if skillCfg.KeywordFlags != nil {
 			skillCfgKeywords = *skillCfg.KeywordFlags
 		}
@@ -50,135 +50,135 @@ func (env *Env) offenceDot(c *offenceCtx) {
 			SkillTypes:      skillCfg.SkillTypes,
 			SummonSkillName: skillCfg.SummonSkillName,
 			SlotName:        skillCfg.SlotName,
-			Flags:           i64p(modparser.ModFlag.Dot),
-			KeywordFlags:    i64p((skillCfgKeywords &^ modparser.KeywordFlag.Hit) | modparser.KeywordFlag.ChaosDot),
+			Flags:           flagp(modparser.FlagDot),
+			KeywordFlags:    keywordp((skillCfgKeywords &^ modparser.KeywordHit) | modparser.KeywordChaosDot),
 		}
 		activeSkill.DecayCfg = dotCfg
 		effMult := 1.0
 		if env.ModeEffective {
 			resist := env.calcResistForType(c, "Chaos", dotCfg)
-			takenInc := enemyDB.Sum("INC", nil, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
+			takenInc := enemyDB.Sum(modparser.Inc, nil, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 			takenMore := enemyDB.More(nil, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 			effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
-			output["DecayEffMult"] = effMult
+			output.SetN("DecayEffMult", effMult)
 		}
-		inc := skillModList.Sum("INC", dotCfg, "Damage", "ChaosDamage")
+		inc := skillModList.Sum(modparser.Inc, dotCfg, "Damage", "ChaosDamage")
 		more := skillModList.More(dotCfg, "Damage", "ChaosDamage")
 		mult := dotMultiRaw(skillModList, dotCfg, "Chaos")
-		output["DecayDPS"] = anyNum(skillData["decay"]) * (1 + inc/100) * more * (1 + mult/100) * effMult
-		output["DecayDuration"] = 8 * debuffDurationMult
+		output.SetN("DecayDPS", skillData.N("decay")*(1+inc/100)*more*(1+mult/100)*effMult)
+		output.SetN("DecayDuration", 8*debuffDurationMult)
 	}
 
-	baseDropsBurningGround := modDB.Sum("BASE", nil, "DropsBurningGround")
+	baseDropsBurningGround := modDB.Sum(modparser.Base, nil, "DropsBurningGround")
 	if baseDropsBurningGround > 0 && c.canDeal["Fire"] {
-		dotTakenCfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Dot), KeywordFlags: i64p(0)}
-		dotTypeCfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Dot), KeywordFlags: i64p(modparser.KeywordFlag.FireDot)}
+		dotTakenCfg := &modstore.Cfg{Flags: flagp(modparser.FlagDot), KeywordFlags: keywordp(0)}
+		dotTypeCfg := &modstore.Cfg{Flags: flagp(modparser.FlagDot), KeywordFlags: keywordp(modparser.KeywordFireDot)}
 		effMult := 1.0
 		if env.ModeEffective {
 			resist := env.calcResistForType(c, "Fire", dotTypeCfg)
-			takenInc := enemyDB.Sum("INC", dotTakenCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
+			takenInc := enemyDB.Sum(modparser.Inc, dotTakenCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			takenMore := enemyDB.More(dotTakenCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
 		}
-		inc := modDB.Sum("INC", dotTypeCfg, "Damage", "FireDamage", "ElementalDamage")
+		inc := modDB.Sum(modparser.Inc, dotTypeCfg, "Damage", "FireDamage", "ElementalDamage")
 		more := modDB.More(dotTypeCfg, "Damage", "FireDamage", "ElementalDamage")
 		mult := dotMultiDB(modDB, dotTypeCfg, "Fire")
 		total := baseDropsBurningGround * (1 + inc/100) * more * (1 + mult/100) * effMult
-		if !truthy(output["BurningGroundDPS"]) || outNum(output, "BurningGroundDPS") < total {
-			output["BurningGroundDPS"] = total
-			output["BurningGroundFromIgnite"] = false
+		if !output.Has("BurningGroundDPS") || output.N("BurningGroundDPS") < total {
+			output.SetN("BurningGroundDPS", total)
+			output.SetFlag("BurningGroundFromIgnite", false)
 		}
 	}
 
 	// Calculate skill DOT components
-	skillCfgFlags := int64(0)
+	skillCfgFlags := modparser.FlagNone
 	if skillCfg.Flags != nil {
 		skillCfgFlags = *skillCfg.Flags
 	}
-	skillCfgKeywords := int64(0)
+	skillCfgKeywords := modparser.KeywordNone
 	if skillCfg.KeywordFlags != nil {
 		skillCfgKeywords = *skillCfg.KeywordFlags
 	}
-	dotFlags := modparser.ModFlag.Dot | skillCfgFlags
-	clearFlag := func(flag int64, keep bool) {
+	dotFlags := modparser.FlagDot | skillCfgFlags
+	clearFlag := func(flag modparser.ModFlag, keep bool) {
 		if dotFlags|flag == dotFlags && !keep {
 			dotFlags &^= flag
 		}
 	}
-	clearFlag(modparser.ModFlag.Area, truthy(skillData["dotIsArea"]))
-	clearFlag(modparser.ModFlag.Projectile, truthy(skillData["dotIsProjectile"]))
-	clearFlag(modparser.ModFlag.Spell, truthy(skillData["dotIsSpell"]))
-	clearFlag(modparser.ModFlag.Attack, truthy(skillData["dotIsAttack"]))
-	clearFlag(modparser.ModFlag.Hit, truthy(skillData["dotIsHit"]))
+	clearFlag(modparser.FlagArea, skillData.Flag("dotIsArea"))
+	clearFlag(modparser.FlagProjectile, skillData.Flag("dotIsProjectile"))
+	clearFlag(modparser.FlagSpell, skillData.Flag("dotIsSpell"))
+	clearFlag(modparser.FlagAttack, skillData.Flag("dotIsAttack"))
+	clearFlag(modparser.FlagHit, skillData.Flag("dotIsHit"))
 	dotCfg := &modstore.Cfg{
 		SkillName:       skillCfg.SkillName,
 		SkillPart:       skillCfg.SkillPart,
 		SkillTypes:      skillCfg.SkillTypes,
 		SummonSkillName: skillCfg.SummonSkillName,
 		SlotName:        skillCfg.SlotName,
-		Flags:           i64p(dotFlags),
-		KeywordFlags:    i64p(skillCfgKeywords &^ modparser.KeywordFlag.Hit),
+		Flags:           flagp(dotFlags),
+		KeywordFlags:    keywordp(skillCfgKeywords &^ modparser.KeywordHit),
 	}
 
 	// spell_damage_modifiers_apply_to_skill_dot does not apply to enemy damage taken
 	dotTakenCfg := copyCfg(dotCfg)
-	if truthy(skillData["dotIsSpell"]) {
-		dotTakenCfg.Flags = i64p(dotFlags &^ modparser.ModFlag.Spell)
+	if skillData.Flag("dotIsSpell") {
+		dotTakenCfg.Flags = flagp(dotFlags &^ modparser.FlagSpell)
 	}
 
 	activeSkill.DotCfg = dotCfg
 	activeSkill.DotTypeCfg = map[string]*modstore.Cfg{}
-	output["TotalDotInstance"] = 0.0
+	output.SetN("TotalDotInstance", 0.0)
 
-	env.runSkillFunc(c, "preDotFunc")
+	env.runSkillFunc(c, data.CallbackPreDot)
 
 	// Section handles generic damage over time
 	for _, damageType := range dmgTypeList {
 		dotTypeCfg := copyCfg(dotCfg)
-		dotTypeCfg.KeywordFlags = i64p(*dotCfg.KeywordFlags | keywordDotFlag(damageType))
+		dotTypeCfg.KeywordFlags = keywordp(*dotCfg.KeywordFlags | keywordDotFlag(damageType))
 		activeSkill.DotTypeCfg[damageType] = dotTypeCfg
 		baseVal := 0.0
 		if c.canDeal[damageType] {
-			baseVal = anyNum(skillData[damageType+"Dot"])
+			baseVal = skillData.N(damageType + "Dot")
 		}
-		if baseVal > 0 || outNum(output, damageType+"Dot") > 0 {
+		if baseVal > 0 || output.N(damageType+"Dot") > 0 {
 			skillFlags["dot"] = true
 			effMult := 1.0
 			// Section handles Enemy Damage Taken based on Configs
 			if env.ModeEffective {
 				resist := 0.0
-				takenInc := enemyDB.Sum("INC", dotTakenCfg, "DamageTaken", "DamageTakenOverTime", damageType+"DamageTaken", damageType+"DamageTakenOverTime")
+				takenInc := enemyDB.Sum(modparser.Inc, dotTakenCfg, "DamageTaken", "DamageTakenOverTime", damageType+"DamageTaken", damageType+"DamageTakenOverTime")
 				takenMore := enemyDB.More(dotTakenCfg, "DamageTaken", "DamageTakenOverTime", damageType+"DamageTaken", damageType+"DamageTakenOverTime")
 				if isElementalRes[damageType] {
-					takenInc += enemyDB.Sum("INC", dotTakenCfg, "ElementalDamageTaken")
+					takenInc += enemyDB.Sum(modparser.Inc, dotTakenCfg, "ElementalDamageTaken")
 					takenMore *= enemyDB.More(dotTakenCfg, "ElementalDamageTaken")
 				}
 				if damageType == "Physical" {
-					resist = math.Max(0, math.Min(enemyDB.Sum("BASE", nil, "PhysicalDamageReduction"), data.Misc.EnemyPhysicalDamageReductionCap))
+					resist = math.Max(0, math.Min(enemyDB.Sum(modparser.Base, nil, "PhysicalDamageReduction"), data.Misc.EnemyPhysicalDamageReductionCap))
 				} else {
 					resist = env.calcResistForType(c, damageType, dotTypeCfg)
 				}
 				effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
-				output[damageType+"DotEffMult"] = effMult
+				output.SetN(damageType+"DotEffMult", effMult)
 			}
 			names := optName(isElementalRes[damageType], []string{"Damage", damageType + "Damage"}, "ElementalDamage")
-			inc := skillModList.Sum("INC", dotTypeCfg, names...)
+			inc := skillModList.Sum(modparser.Inc, dotTypeCfg, names...)
 			if skillModList.Flag(nil, "dotIsHeraldOfAsh") {
-				inc = math.Max(inc-skillModList.Sum("INC", skillCfg, names...), 0)
+				inc = math.Max(inc-skillModList.Sum(modparser.Inc, skillCfg, names...), 0)
 			}
 			more := skillModList.More(dotTypeCfg, names...)
 			mult := dotMultiRaw(skillModList, dotTypeCfg, damageType)
 			aura := 1.0
-			if activeSkill.SkillTypes[modparser.SkillType.Aura] && !activeSkill.SkillTypes[modparser.SkillType.RemoteMined] &&
-				!activeSkill.SkillTypes[modparser.SkillType.Banner] {
+			if activeSkill.SkillTypes[modparser.SkillTypeAura] && !activeSkill.SkillTypes[modparser.SkillTypeRemoteMined] &&
+				!activeSkill.SkillTypes[modparser.SkillTypeBanner] {
 				aura = Mod(skillModList, dotTypeCfg, "AuraEffect")
 			}
 			total := baseVal * (1 + inc/100) * more * (1 + mult/100) * aura * effMult
-			if !truthy(output[damageType+"Dot"]) || outNum(output, damageType+"Dot") == 0 {
-				output[damageType+"Dot"] = total
-				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total, data.Misc.DotDpsCap)
+			if !output.Flag(damageType+"Dot") || output.N(damageType+"Dot") == 0 {
+				output.SetN(damageType+"Dot", total)
+				output.SetN("TotalDotInstance", math.Min(output.N("TotalDotInstance")+total, data.Misc.DotDpsCap))
 			} else {
-				output["TotalDotInstance"] = math.Min(outNum(output, "TotalDotInstance")+total+outNum(output, damageType+"Dot"), data.Misc.DotDpsCap)
+				output.SetN("TotalDotInstance", math.Min(output.N("TotalDotInstance")+total+output.N(damageType+"Dot"), data.Misc.DotDpsCap))
 			}
 		}
 	}
@@ -186,51 +186,51 @@ func (env *Env) offenceDot(c *offenceCtx) {
 	switch {
 	case skillModList.Flag(nil, "DotCanStack"):
 		skillFlags["DotCanStack"] = true
-		speed := outNum(output, "Speed")
+		speed := output.N("Speed")
 		// Check if skill is being triggered via Mine or Trap
-		if *dotCfg.KeywordFlags&modparser.KeywordFlag.Mine != 0 {
-			speed = outNum(output, "MineLayingSpeed")
-		} else if *dotCfg.KeywordFlags&modparser.KeywordFlag.Trap != 0 {
-			speed = outNum(output, "TrapThrowingSpeed")
+		if *dotCfg.KeywordFlags&modparser.KeywordMine != 0 {
+			speed = output.N("MineLayingSpeed")
+		} else if *dotCfg.KeywordFlags&modparser.KeywordTrap != 0 {
+			speed = output.N("TrapThrowingSpeed")
 		}
-		output["TotalDot"] = math.Min(outNum(output, "TotalDotInstance")*speed*outNum(output, "Duration")*
-			anyNum(skillData["dpsMultiplier"])*c.quantityMultiplier, data.Misc.DotDpsCap)
-		output["TotalDotCalcSection"] = output["TotalDot"]
+		output.SetN("TotalDot", math.Min(output.N("TotalDotInstance")*speed*output.N("Duration")*
+			skillData.N("dpsMultiplier")*c.quantityMultiplier, data.Misc.DotDpsCap))
+		output.Set("TotalDotCalcSection", output.Get("TotalDot"))
 	case skillModList.Flag(nil, "dotIsBurningGround"):
-		output["TotalDot"] = 0.0
-		output["TotalDotCalcSection"] = output["TotalDotInstance"]
-		if !truthy(output["BurningGroundDPS"]) || outNum(output, "BurningGroundDPS") < outNum(output, "TotalDotInstance") {
-			output["BurningGroundDPS"] = math.Max(outNum(output, "BurningGroundDPS"), outNum(output, "TotalDotInstance"))
-			output["BurningGroundFromIgnite"] = false
+		output.SetN("TotalDot", 0.0)
+		output.Set("TotalDotCalcSection", output.Get("TotalDotInstance"))
+		if !output.Has("BurningGroundDPS") || output.N("BurningGroundDPS") < output.N("TotalDotInstance") {
+			output.SetN("BurningGroundDPS", math.Max(output.N("BurningGroundDPS"), output.N("TotalDotInstance")))
+			output.SetFlag("BurningGroundFromIgnite", false)
 		}
 	case skillModList.Flag(nil, "dotIsCausticGround"):
-		output["TotalDot"] = 0.0
-		output["TotalDotCalcSection"] = output["TotalDotInstance"]
-		if !truthy(output["CausticGroundDPS"]) || outNum(output, "CausticGroundDPS") < outNum(output, "TotalDotInstance") {
-			output["CausticGroundDPS"] = math.Max(outNum(output, "CausticGroundDPS"), outNum(output, "TotalDotInstance"))
-			output["CausticGroundFromPoison"] = false
+		output.SetN("TotalDot", 0.0)
+		output.Set("TotalDotCalcSection", output.Get("TotalDotInstance"))
+		if !output.Has("CausticGroundDPS") || output.N("CausticGroundDPS") < output.N("TotalDotInstance") {
+			output.SetN("CausticGroundDPS", math.Max(output.N("CausticGroundDPS"), output.N("TotalDotInstance")))
+			output.SetFlag("CausticGroundFromPoison", false)
 		}
 	case skillModList.Flag(nil, "dotIsCorruptingBlood"):
-		output["TotalDot"] = 0.0
-		output["TotalDotCalcSection"] = output["TotalDotInstance"]
-		if !truthy(output["CorruptingBloodDPS"]) || outNum(output, "CorruptingBloodDPS") < outNum(output, "TotalDotInstance") {
-			output["CorruptingBloodDPS"] = math.Max(outNum(output, "CorruptingBloodDPS"), outNum(output, "TotalDotInstance"))
+		output.SetN("TotalDot", 0.0)
+		output.Set("TotalDotCalcSection", output.Get("TotalDotInstance"))
+		if !output.Has("CorruptingBloodDPS") || output.N("CorruptingBloodDPS") < output.N("TotalDotInstance") {
+			output.SetN("CorruptingBloodDPS", math.Max(output.N("CorruptingBloodDPS"), output.N("TotalDotInstance")))
 		}
 	default:
 		if skillModList.Flag(nil, "DotCanStackAsTotems") && skillFlags["totem"] {
 			skillFlags["DotCanStack"] = true
 		}
 		attachedBrandCount := 1.0
-		if activeSkill.SkillTypes[modparser.SkillType.Brand] && !truthy(skillData["countsAttachedBrandsInDamage"]) &&
-			truthy(output["AttachedBrandCount"]) {
-			attachedBrandCount = outNum(output, "AttachedBrandCount")
+		if activeSkill.SkillTypes[modparser.SkillTypeBrand] && !skillData.Flag("countsAttachedBrandsInDamage") &&
+			output.Flag("AttachedBrandCount") {
+			attachedBrandCount = output.N("AttachedBrandCount")
 		}
 		if attachedBrandCount > 1 {
-			output["TotalDot"] = math.Min(outNum(output, "TotalDotInstance")*attachedBrandCount, data.Misc.DotDpsCap)
+			output.SetN("TotalDot", math.Min(output.N("TotalDotInstance")*attachedBrandCount, data.Misc.DotDpsCap))
 		} else {
-			output["TotalDot"] = output["TotalDotInstance"]
+			output.Set("TotalDot", output.Get("TotalDotInstance"))
 		}
-		output["TotalDotCalcSection"] = output["TotalDot"]
+		output.Set("TotalDotCalcSection", output.Get("TotalDot"))
 	}
 
 	env.offenceCostPerSecond(c)
@@ -239,18 +239,18 @@ func (env *Env) offenceDot(c *offenceCtx) {
 }
 
 // keywordDotFlag maps a damage type to its KeywordFlag.<Type>Dot bit.
-func keywordDotFlag(damageType string) int64 {
+func keywordDotFlag(damageType string) modparser.KeywordFlag {
 	switch damageType {
 	case "Physical":
-		return modparser.KeywordFlag.PhysicalDot
+		return modparser.KeywordPhysicalDot
 	case "Lightning":
-		return modparser.KeywordFlag.LightningDot
+		return modparser.KeywordLightningDot
 	case "Cold":
-		return modparser.KeywordFlag.ColdDot
+		return modparser.KeywordColdDot
 	case "Fire":
-		return modparser.KeywordFlag.FireDot
+		return modparser.KeywordFireDot
 	case "Chaos":
-		return modparser.KeywordFlag.ChaosDot
+		return modparser.KeywordChaosDot
 	}
 	panic("offence: no dot keyword flag for " + damageType)
 }
@@ -263,9 +263,9 @@ func (env *Env) offenceCostPerSecond(c *offenceCtx) {
 	for _, resource := range costOrder {
 		val := c.costs[resource]
 		eb := env.ModDB.Flag(nil, "EnergyShieldProtectsMana")
-		if !(val.upfront && truthy(output[resource+"HasCost"]) && outNum(output, resource+"Cost") > 0 &&
-			!(truthy(output[resource+"PerSecondHasCost"]) && !(eb && skillModList.Sum("BASE", skillCfg, "ManaCostAsEnergyShieldCost") > 0)) &&
-			(outNum(output, "Speed") > 0 || truthy(output["Cooldown"]))) {
+		if !(val.upfront && output.Flag(resource+"HasCost") && output.N(resource+"Cost") > 0 &&
+			!(output.Flag(resource+"PerSecondHasCost") && !(eb && skillModList.Sum(modparser.Base, skillCfg, "ManaCostAsEnergyShieldCost") > 0)) &&
+			(output.N("Speed") > 0 || output.Flag("Cooldown"))) {
 			continue
 		}
 		usedResource := resource
@@ -274,21 +274,21 @@ func (env *Env) offenceCostPerSecond(c *offenceCtx) {
 		}
 
 		repeats := 1.0
-		if truthy(output["Repeats"]) {
-			repeats = anyNum(output["Repeats"])
+		if output.Has("Repeats") {
+			repeats = output.N("Repeats")
 		}
 		useSpeed := 1.0
 		switch {
 		case skillFlags["trap"] || skillFlags["mine"]:
-			preSpeed := outNum(output, "MineLayingSpeed")
-			if truthy(output["TrapThrowingSpeed"]) {
-				preSpeed = outNum(output, "TrapThrowingSpeed")
+			preSpeed := output.N("MineLayingSpeed")
+			if output.Has("TrapThrowingSpeed") {
+				preSpeed = output.N("TrapThrowingSpeed")
 			}
 			cooldown, hasCooldown := 0.0, false
-			if truthy(output["TrapCooldown"]) {
-				cooldown, hasCooldown = outNum(output, "TrapCooldown"), true
-			} else if truthy(output["Cooldown"]) {
-				cooldown, hasCooldown = outNum(output, "Cooldown"), true
+			if output.Has("TrapCooldown") {
+				cooldown, hasCooldown = output.N("TrapCooldown"), true
+			} else if output.Flag("Cooldown") {
+				cooldown, hasCooldown = output.N("Cooldown"), true
 			}
 			if hasCooldown && cooldown > 0 {
 				useSpeed = 1 / cooldown
@@ -296,35 +296,35 @@ func (env *Env) offenceCostPerSecond(c *offenceCtx) {
 				useSpeed = preSpeed
 			}
 		case skillFlags["totem"]:
-			if truthy(output["Cooldown"]) && outNum(output, "Cooldown") > 0 {
-				if outNum(output, "TotemPlacementSpeed") > 0 {
-					useSpeed = outNum(output, "TotemPlacementSpeed")
+			if output.Flag("Cooldown") && output.N("Cooldown") > 0 {
+				if output.N("TotemPlacementSpeed") > 0 {
+					useSpeed = output.N("TotemPlacementSpeed")
 				} else {
-					useSpeed = 1 / outNum(output, "Cooldown")
+					useSpeed = 1 / output.N("Cooldown")
 				}
 			} else {
-				useSpeed = outNum(output, "TotemPlacementSpeed")
+				useSpeed = output.N("TotemPlacementSpeed")
 			}
 			useSpeed /= repeats
 		case skillModList.Flag(nil, "HasSeals") && skillModList.Flag(nil, "UseMaxUnleash") &&
-			truthy(env.PlayerMainSkill.SkillData["hitTimeOverride"]):
-			useSpeed = anyNum(env.PlayerMainSkill.SkillData["hitTimeOverride"]) / repeats
+			env.PlayerMainSkill.SkillData.Flag("hitTimeOverride"):
+			useSpeed = env.PlayerMainSkill.SkillData.N("hitTimeOverride") / repeats
 		default:
-			if truthy(output["Cooldown"]) && outNum(output, "Cooldown") > 0 {
-				if outNum(output, "Speed") > 0 {
-					useSpeed = outNum(output, "Speed")
+			if output.Flag("Cooldown") && output.N("Cooldown") > 0 {
+				if output.N("Speed") > 0 {
+					useSpeed = output.N("Speed")
 				} else {
-					useSpeed = 1 / outNum(output, "Cooldown")
+					useSpeed = 1 / output.N("Cooldown")
 				}
 			} else {
-				useSpeed = outNum(output, "Speed")
+				useSpeed = output.N("Speed")
 			}
 			useSpeed /= repeats
 		}
 		_ = skillData
 
-		output[usedResource+"PerSecondHasCost"] = true
-		output[usedResource+"PerSecondCost"] = outNum(output, usedResource+"PerSecondCost") + outNum(output, resource+"Cost")*useSpeed
+		output.SetFlag(usedResource+"PerSecondHasCost", true)
+		output.SetN(usedResource+"PerSecondCost", output.N(usedResource+"PerSecondCost")+output.N(resource+"Cost")*useSpeed)
 	}
 }
 
@@ -333,163 +333,166 @@ func (env *Env) offenceCombinedDPS(c *offenceCtx) {
 	skillData, skillFlags, output := c.skillData, c.skillFlags, c.output
 
 	baseKey := "TotalDPS"
-	if truthy(skillData["showAverage"]) {
+	if skillData.Flag("showAverage") {
 		baseKey = "AverageDamage"
 	}
-	baseDPS := outNum(output, baseKey)
-	output["CombinedDPS"] = baseDPS
+	baseDPS := output.N(baseKey)
+	output.SetN("CombinedDPS", baseDPS)
 	combinedAvg := baseDPS
 	if skillFlags["dot"] {
-		output["WithDotDPS"] = baseDPS + outNum(output, "TotalDot")
+		output.SetN("WithDotDPS", baseDPS+output.N("TotalDot"))
 	}
-	if c.quantityMultiplier > 1 && truthy(output["TotalPoisonDPS"]) {
-		output["TotalPoisonDPS"] = math.Min(outNum(output, "TotalPoisonDPS")*c.quantityMultiplier, data.Misc.DotDpsCap)
+	if c.quantityMultiplier > 1 && output.Flag("TotalPoisonDPS") {
+		output.SetN("TotalPoisonDPS", math.Min(output.N("TotalPoisonDPS")*c.quantityMultiplier, data.Misc.DotDpsCap))
 	}
-	if truthy(skillData["showAverage"]) {
-		combinedAvg += outNum(output, "TotalPoisonAverageDamage")
-		output["WithPoisonDPS"] = baseDPS + outNum(output, "TotalPoisonAverageDamage")
+	if skillData.Flag("showAverage") {
+		combinedAvg += output.N("TotalPoisonAverageDamage")
+		output.SetN("WithPoisonDPS", baseDPS+output.N("TotalPoisonAverageDamage"))
 	} else {
-		output["WithPoisonDPS"] = baseDPS + outNum(output, "TotalPoisonDPS")
+		output.SetN("WithPoisonDPS", baseDPS+output.N("TotalPoisonDPS"))
 	}
 	if skillFlags["ignite"] {
 		if skillFlags["igniteCanStack"] {
-			if truthy(skillData["showAverage"]) {
-				combinedAvg = outNum(output, "CombinedDPS") + outNum(output, "IgniteDamage")
+			if skillData.Flag("showAverage") {
+				combinedAvg = output.N("CombinedDPS") + output.N("IgniteDamage")
 			} else {
-				output["WithIgniteDPS"] = baseDPS + outNum(output, "TotalIgniteDPS")
+				output.SetN("WithIgniteDPS", baseDPS+output.N("TotalIgniteDPS"))
 			}
-		} else if truthy(skillData["showAverage"]) {
-			output["WithIgniteDPS"] = baseDPS + outNum(output, "IgniteDamage")
-			combinedAvg += outNum(output, "IgniteDamage")
+		} else if skillData.Flag("showAverage") {
+			output.SetN("WithIgniteDPS", baseDPS+output.N("IgniteDamage"))
+			combinedAvg += output.N("IgniteDamage")
 		} else {
-			output["WithIgniteDPS"] = baseDPS + outNum(output, "IgniteDPS")
+			output.SetN("WithIgniteDPS", baseDPS+output.N("IgniteDPS"))
 		}
 	} else {
-		output["WithIgniteDPS"] = baseDPS
+		output.SetN("WithIgniteDPS", baseDPS)
 	}
 	if skillFlags["monsterExplode"] {
-		output["CombinedAvgToMonsterLife"] = combinedAvg / c.monsterLife * 100
+		output.SetN("CombinedAvgToMonsterLife", combinedAvg/c.monsterLife*100)
 	}
 	if skillFlags["bleed"] {
-		if truthy(skillData["showAverage"]) {
-			output["WithBleedDPS"] = baseDPS + outNum(output, "BleedDamage")
-			combinedAvg += outNum(output, "BleedDamage")
+		if skillData.Flag("showAverage") {
+			output.SetN("WithBleedDPS", baseDPS+output.N("BleedDamage"))
+			combinedAvg += output.N("BleedDamage")
 		} else {
-			output["WithBleedDPS"] = baseDPS + outNum(output, "BleedDPS")
+			output.SetN("WithBleedDPS", baseDPS+output.N("BleedDPS"))
 		}
 	} else {
-		output["WithBleedDPS"] = baseDPS
+		output.SetN("WithBleedDPS", baseDPS)
 	}
 	if skillFlags["impale"] {
 		var impaleDPS float64
-		if skillFlags["attack"] && truthy(skillData["doubleHitsWhenDualWielding"]) && skillFlags["bothWeaponAttack"] {
+		if skillFlags["attack"] && skillData.Flag("doubleHitsWhenDualWielding") && skillFlags["bothWeaponAttack"] {
 			// separately combine
 			mainMod, offMod := 1.0, 1.0
-			if truthy(c.mainHandStats["ImpaleModifier"]) {
-				mainMod = anyNum(c.mainHandStats["ImpaleModifier"])
+			if c.mainHandStats.Has("ImpaleModifier") {
+				mainMod = c.mainHandStats.N("ImpaleModifier")
 			}
-			if truthy(c.offHandStats["ImpaleModifier"]) {
-				offMod = anyNum(c.offHandStats["ImpaleModifier"])
+			if c.offHandStats.Has("ImpaleModifier") {
+				offMod = c.offHandStats.N("ImpaleModifier")
 			}
-			mainHandImpaleDPS := anyNum(c.mainHandStats["impaleStoredHitAvg"]) * (mainMod - 1) *
-				anyNum(c.mainHandStats["HitChance"]) / 100 * anyNum(skillData["dpsMultiplier"])
-			offHandImpaleDPS := anyNum(c.offHandStats["impaleStoredHitAvg"]) * (offMod - 1) *
-				anyNum(c.offHandStats["HitChance"]) / 100 * anyNum(skillData["dpsMultiplier"])
+			mainHandImpaleDPS := c.mainHandStats.N("impaleStoredHitAvg") * (mainMod - 1) *
+				c.mainHandStats.N("HitChance") / 100 * skillData.N("dpsMultiplier")
+			offHandImpaleDPS := c.offHandStats.N("impaleStoredHitAvg") * (offMod - 1) *
+				c.offHandStats.N("HitChance") / 100 * skillData.N("dpsMultiplier")
 			impaleDPS = mainHandImpaleDPS + offHandImpaleDPS
 		} else {
 			mod := 1.0
-			if truthy(output["ImpaleModifier"]) {
-				mod = outNum(output, "ImpaleModifier")
+			if output.Has("ImpaleModifier") {
+				mod = output.N("ImpaleModifier")
 			}
-			impaleDPS = outNum(output, "impaleStoredHitAvg") * (mod - 1) * outNum(output, "HitChance") / 100 * anyNum(skillData["dpsMultiplier"])
+			impaleDPS = output.N("impaleStoredHitAvg") * (mod - 1) * output.N("HitChance") / 100 * skillData.N("dpsMultiplier")
 		}
-		if outNum(output, "ImpaleDuration") <= 0 {
+		if output.N("ImpaleDuration") <= 0 {
 			impaleDPS = 0
 		}
-		if truthy(skillData["showAverage"]) {
-			output["WithImpaleDPS"] = outNum(output, "AverageDamage") + impaleDPS
+		if skillData.Flag("showAverage") {
+			output.SetN("WithImpaleDPS", output.N("AverageDamage")+impaleDPS)
 			combinedAvg += impaleDPS
 		} else {
 			skillFlags["notAverage"] = true
-			speed := outNum(output, "Speed")
-			if truthy(output["HitSpeed"]) {
-				speed = outNum(output, "HitSpeed")
+			speed := output.N("Speed")
+			if output.Has("HitSpeed") {
+				speed = output.N("HitSpeed")
 			}
 			impaleDPS = impaleDPS * speed
-			output["WithImpaleDPS"] = outNum(output, "TotalDPS") + impaleDPS
+			output.SetN("WithImpaleDPS", output.N("TotalDPS")+impaleDPS)
 		}
 		if c.quantityMultiplier > 1 {
 			impaleDPS = impaleDPS * c.quantityMultiplier
 		}
-		output["ImpaleDPS"] = impaleDPS
-		output["CombinedDPS"] = outNum(output, "CombinedDPS") + impaleDPS
+		output.SetN("ImpaleDPS", impaleDPS)
+		output.SetN("CombinedDPS", output.N("CombinedDPS")+impaleDPS)
 	}
-	output["CombinedAvg"] = combinedAvg
+	output.SetN("CombinedAvg", combinedAvg)
 
 	bestCull := 1.0
-	if m := c.activeSkill.Mirage; m != nil && m.Output != nil && truthy(m.Output["TotalDPS"]) {
+	if m := c.activeSkill.Mirage; m != nil && m.Output != nil && m.Output.Has("TotalDPS") {
 		mo := m.Output
 		mirageCount := m.Count
-		output["MirageDPS"] = anyNum(mo["TotalDPS"]) * mirageCount
-		output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(mo["TotalDPS"])*mirageCount
+		output.SetN("MirageDPS", mo.N("TotalDPS")*mirageCount)
+		output.SetN("CombinedDPS", output.N("CombinedDPS")+mo.N("TotalDPS")*mirageCount)
 		// Plain assignments: absent on the mirage side stays absent here.
-		assignKV(output, "MirageBurningGroundDPS", mo["BurningGroundDPS"])
-		assignKV(output, "MirageCausticGroundDPS", mo["CausticGroundDPS"])
+		output.Set("MirageBurningGroundDPS", mo.Get("BurningGroundDPS"))
+		output.Set("MirageCausticGroundDPS", mo.Get("CausticGroundDPS"))
 
-		if truthy(mo["IgniteDPS"]) && anyNum(mo["IgniteDPS"]) > outNum(output, "IgniteDPS") {
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["IgniteDPS"])
-			output["IgniteDPS"] = 0.0
+		if mo.Has("IgniteDPS") && mo.N("IgniteDPS") > output.N("IgniteDPS") {
+			output.SetN("MirageDPS", output.N("MirageDPS")+mo.N("IgniteDPS"))
+			output.SetN("IgniteDPS", 0.0)
 		}
-		if truthy(mo["BleedDPS"]) && anyNum(mo["BleedDPS"]) > outNum(output, "BleedDPS") {
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["BleedDPS"])
-			output["BleedDPS"] = 0.0
+		if mo.Has("BleedDPS") && mo.N("BleedDPS") > output.N("BleedDPS") {
+			output.SetN("MirageDPS", output.N("MirageDPS")+mo.N("BleedDPS"))
+			output.SetN("BleedDPS", 0.0)
 		}
-		if v, ok := mo["PoisonDPS"]; ok {
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)*mirageCount
-			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)*mirageCount
+		if mo.Has("PoisonDPS") {
+			v := mo.N("PoisonDPS")
+			output.SetN("MirageDPS", output.N("MirageDPS")+v*mirageCount)
+			output.SetN("CombinedDPS", output.N("CombinedDPS")+v*mirageCount)
 		}
-		if v, ok := mo["ImpaleDPS"]; ok {
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)*mirageCount
-			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)*mirageCount
+		if mo.Has("ImpaleDPS") {
+			v := mo.N("ImpaleDPS")
+			output.SetN("MirageDPS", output.N("MirageDPS")+v*mirageCount)
+			output.SetN("CombinedDPS", output.N("CombinedDPS")+v*mirageCount)
 		}
-		if v, ok := mo["DecayDPS"]; ok {
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(v)
-			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(v)
+		if mo.Has("DecayDPS") {
+			v := mo.N("DecayDPS")
+			output.SetN("MirageDPS", output.N("MirageDPS")+v)
+			output.SetN("CombinedDPS", output.N("CombinedDPS")+v)
 		}
-		if truthy(mo["TotalDot"]) && (skillFlags["DotCanStack"] || !truthy(output["TotalDot"])) {
+		if mo.Flag("TotalDot") && (skillFlags["DotCanStack"] || !output.Flag("TotalDot")) {
 			n := 1.0
 			if skillFlags["DotCanStack"] {
 				n = mirageCount
 			}
-			output["MirageDPS"] = outNum(output, "MirageDPS") + anyNum(mo["TotalDot"])*n
-			output["CombinedDPS"] = outNum(output, "CombinedDPS") + anyNum(mo["TotalDot"])*n
+			output.SetN("MirageDPS", output.N("MirageDPS")+mo.N("TotalDot")*n)
+			output.SetN("CombinedDPS", output.N("CombinedDPS")+mo.N("TotalDot")*n)
 		}
-		if anyNum(mo["CullMultiplier"]) > 1 {
-			bestCull = anyNum(mo["CullMultiplier"])
+		if mo.N("CullMultiplier") > 1 {
+			bestCull = mo.N("CullMultiplier")
 		}
 	}
 
-	totalDotDPS := outNum(output, "TotalDot") + outNum(output, "TotalPoisonDPS") +
-		math.Max(outNum(output, "CausticGroundDPS"), outNum(output, "MirageCausticGroundDPS"))
-	if truthy(output["TotalIgniteDPS"]) {
-		totalDotDPS += outNum(output, "TotalIgniteDPS")
+	totalDotDPS := output.N("TotalDot") + output.N("TotalPoisonDPS") +
+		math.Max(output.N("CausticGroundDPS"), output.N("MirageCausticGroundDPS"))
+	if output.Flag("TotalIgniteDPS") {
+		totalDotDPS += output.N("TotalIgniteDPS")
 	} else {
-		totalDotDPS += outNum(output, "IgniteDPS")
+		totalDotDPS += output.N("IgniteDPS")
 	}
-	totalDotDPS += math.Max(outNum(output, "BurningGroundDPS"), outNum(output, "MirageBurningGroundDPS")) +
-		outNum(output, "BleedDPS") + outNum(output, "CorruptingBloodDPS") + outNum(output, "DecayDPS")
-	output["TotalDotDPS"] = math.Min(totalDotDPS, data.Misc.DotDpsCap)
-	if outNum(output, "TotalDotDPS") != totalDotDPS {
-		output["showTotalDotDPS"] = true
+	totalDotDPS += math.Max(output.N("BurningGroundDPS"), output.N("MirageBurningGroundDPS")) +
+		output.N("BleedDPS") + output.N("CorruptingBloodDPS") + output.N("DecayDPS")
+	output.SetN("TotalDotDPS", math.Min(totalDotDPS, data.Misc.DotDpsCap))
+	if output.N("TotalDotDPS") != totalDotDPS {
+		output.SetFlag("showTotalDotDPS", true)
 	}
-	if !truthy(skillData["showAverage"]) {
-		output["CombinedDPS"] = outNum(output, "CombinedDPS") + outNum(output, "TotalDotDPS")
+	if !skillData.Flag("showAverage") {
+		output.SetN("CombinedDPS", output.N("CombinedDPS")+output.N("TotalDotDPS"))
 	}
 
-	bestCull = math.Max(bestCull, outNum(output, "CullMultiplier"))
-	output["CullingDPS"] = outNum(output, "CombinedDPS") * (bestCull - 1)
-	output["ReservationDPS"] = outNum(output, "CombinedDPS") * (outNum(output, "ReservationDpsMultiplier") - 1)
-	output["CombinedDPS"] = outNum(output, "CombinedDPS") * bestCull * outNum(output, "ReservationDpsMultiplier")
+	bestCull = math.Max(bestCull, output.N("CullMultiplier"))
+	output.SetN("CullingDPS", output.N("CombinedDPS")*(bestCull-1))
+	output.SetN("ReservationDPS", output.N("CombinedDPS")*(output.N("ReservationDpsMultiplier")-1))
+	output.SetN("CombinedDPS", output.N("CombinedDPS")*bestCull*output.N("ReservationDpsMultiplier"))
 }
 
 var _ = strings.Contains

@@ -77,23 +77,13 @@ var (
 	reNumberish = regexp.MustCompile(`-*[0-9]*\.*[0-9]+-*-*[0-9]*\.*[0-9]*`)
 )
 
-// rowIdList collects tag ids the way writeTagIds did (ipairs semantics).
-func rowIdList(cell any) []string {
-	var out []string
-	for _, tag := range listRows(cell) {
-		out = append(out, luaStr(tag.Get("Id")))
-	}
-	return out
-}
-
-// listLen is Lua # on a list cell whose nil elements never became keys.
-func listLen(cell any) int {
-	return len(listRows(cell))
-}
-
-func buildMods(x *Ctx) (any, error) {
+func buildMods(x *Ctx) (schema.Document, error) {
 	if x.modsDoc != nil {
 		return x.modsDoc, nil
+	}
+	mods, err := x.Dat("Mods")
+	if err != nil {
+		return nil, err
 	}
 	x.LoadStatFile("tincture_stat_descriptions.txt", "graft_stat_descriptions.txt")
 
@@ -102,39 +92,42 @@ func buildMods(x *Ctx) (any, error) {
 	x.modItemExclusive = map[string]*modEntry{}
 	x.modFoulborn = map[string]*modEntry{}
 
-	buildPool := func(outName string) []schema.ItemMod {
+	buildPool := func(outName string) ([]schema.ItemMod, error) {
 		var pool []schema.ItemMod
 		condFunc := modPoolConds[outName]
-		x.Dat("Mods").Rows(func(mod *Row) bool {
+		for mod := range mods.Rows() {
 			if !condFunc(mod) {
-				return true
+				continue
 			}
-			domain := mod.Get("Domain").(int64)
-			modId := luaStr(mod.Get("Id"))
+			domain := mod.Int("Domain")
+			modId := mod.Str("Id")
 			if domain == domainDelveFossil && strings.Contains(outName, "Item") {
-				spawnTags := listRows(mod.Get("SpawnTags"))
-				if luaStr(spawnTags[0].Get("Id")) == "abyss_jewel" && luaStr(spawnTags[1].Get("Id")) == "jewel" && len(spawnTags) == 3 {
-					return true
+				spawnTags := mod.Refs("SpawnTags")
+				if spawnTags[0].Str("Id") == "abyss_jewel" && spawnTags[1].Str("Id") == "jewel" && len(spawnTags) == 3 {
+					continue
 				}
 			} else if domain == domainDelveFossil && strings.Contains(outName, "JewelAbyss") {
-				if !tagListContainsId(mod.Get("SpawnTags"), "abyss_jewel") {
-					return true
+				if !tagListContainsId(mod.Refs("SpawnTags"), "abyss_jewel") {
+					continue
 				}
 			} else if domain == domainDelveFossil && strings.Contains(outName, "Jewel") {
-				if !tagListContainsId(mod.Get("SpawnTags"), "jewel") {
-					return true
+				if !tagListContainsId(mod.Refs("SpawnTags"), "jewel") {
+					continue
 				}
 			}
 			// game data has 0 and 0, which means no description is generated
 			if modId == "JewelExpansionPassiveNodes" {
 				mod.SetCell("Stat2Value", Interval{2, 12})
 			}
-			stats := x.DescribeMod(mod)
-			if len(stats.Orders) == 0 || strings.HasPrefix(stats.Lines[0], "DNT") {
-				return true
+			stats, err := x.DescribeMod(mod)
+			if err != nil {
+				return nil, err
 			}
-			genType := mod.Get("GenerationType").(int64)
-			family := listRows(mod.Get("Family"))
+			if len(stats.Orders) == 0 || strings.HasPrefix(stats.Lines[0], "DNT") {
+				continue
+			}
+			genType := mod.Int("GenerationType")
+			family := mod.Refs("Family")
 			m := schema.ItemMod{Id: modId}
 			switch genType {
 			case genPrefix:
@@ -145,9 +138,9 @@ func buildMods(x *Ctx) (any, error) {
 				if domain == domainItem {
 					if strings.HasPrefix(modId, "Synthesis") {
 						m.Type = "Synthesis"
-					} else if len(family) > 1 && strings.Contains(luaStr(family[1].Get("Id")), "MatchedInfluencesTier") {
-						f2 := luaStr(family[1].Get("Id"))
-						f1 := luaStr(family[0].Get("Id"))
+					} else if len(family) > 1 && strings.Contains(family[1].Str("Id"), "MatchedInfluencesTier") {
+						f2 := family[1].Str("Id")
+						f1 := family[0].Str("Id")
 						prefix := f1
 						if idx := strings.Index(f1, "Influence"); idx >= 0 {
 							prefix = f1[:idx]
@@ -168,7 +161,7 @@ func buildMods(x *Ctx) (any, error) {
 			case genEaterOfWorlds:
 				m.Type = "Eater"
 			}
-			m.Affix = luaStr(mod.Get("Name"))
+			m.Affix = mod.Str("Name")
 			if strings.Contains(modId, "EldritchImplicitUniquePresence") && len(stats.Lines) > 0 {
 				for i, stat := range stats.Lines {
 					stats.Lines[i] = "While a Unique Enemy is in your Presence, " + stat
@@ -181,24 +174,24 @@ func buildMods(x *Ctx) (any, error) {
 			}
 			m.Lines = stats.Lines
 			m.StatOrders = stats.Orders
-			m.Level = mod.Get("Level").(int64)
-			m.Group = luaStr(mod.Get("Type").(*Row).Get("Id"))
-			m.WeightKey = rowIdList(mod.Get("SpawnTags"))
-			m.WeightVal = intCells(mod.Get("SpawnWeights").([]any))
-			genTags := listRows(mod.Get("GenerationWeightTags"))
+			m.Level = mod.Int("Level")
+			m.Group = mod.Ref("Type").Str("Id")
+			m.WeightKey = rowIds(mod.Refs("SpawnTags"))
+			m.WeightVal = mod.Ints("SpawnWeights")
+			genTags := mod.Refs("GenerationWeightTags")
 			if len(genTags) > 0 {
-				modTagRows := listRows(mod.Get("Tags"))
+				modTagRows := mod.Refs("Tags")
 				if genType == genSuffix && len(modTagRows) > 0 && outName == "../Data/ModJewelCluster.lua" &&
-					luaStr(modTagRows[0].Get("Id")) == "has_affliction_notable" {
+					modTagRows[0].Str("Id") == "has_affliction_notable" {
 					// make large clusters only have 1 notable suffix
-					m.WeightMultiplierKey = append([]string{"has_affliction_notable2"}, rowIdList(mod.Get("GenerationWeightTags"))...)
-					m.WeightMultiplierVal = append([]int64{0}, intCells(mod.Get("GenerationWeightValues").([]any))...)
-					m.Tags = append([]string{"has_affliction_notable2"}, rowIdList(mod.Get("Tags"))...)
+					m.WeightMultiplierKey = append([]string{"has_affliction_notable2"}, rowIds(genTags)...)
+					m.WeightMultiplierVal = append([]int64{0}, mod.Ints("GenerationWeightValues")...)
+					m.Tags = append([]string{"has_affliction_notable2"}, rowIds(modTagRows)...)
 				} else {
-					m.WeightMultiplierKey = rowIdList(mod.Get("GenerationWeightTags"))
-					m.WeightMultiplierVal = intCells(mod.Get("GenerationWeightValues").([]any))
+					m.WeightMultiplierKey = rowIds(genTags)
+					m.WeightMultiplierVal = mod.Ints("GenerationWeightValues")
 					if len(modTagRows) > 0 {
-						m.Tags = rowIdList(mod.Get("Tags"))
+						m.Tags = rowIds(modTagRows)
 					}
 				}
 			}
@@ -210,29 +203,32 @@ func buildMods(x *Ctx) (any, error) {
 			// LuaJIT hash-iteration order is reproduced in the render test.
 			modIdx := 1
 			for {
-				stat, ok := mod.Get(fmt.Sprintf("Stat%d", modIdx)).(*Row)
-				if !ok {
+				stat := mod.Ref(fmt.Sprintf("Stat%d", modIdx))
+				if stat == nil {
 					break
 				}
 				currentStats := map[string]*statVal{}
-				iv := mod.Get(fmt.Sprintf("Stat%dValue", modIdx)).(Interval)
-				currentStats[luaStr(stat.Get("Id"))] = &statVal{min: float64(iv[0]), max: float64(iv[1])}
+				iv := mod.Ivl(fmt.Sprintf("Stat%dValue", modIdx))
+				currentStats[stat.Str("Id")] = &statVal{min: float64(iv[0]), max: float64(iv[1])}
 				if modIdx == 6 {
 					break
 				}
-				bytes := intToBytes(uint32(stat.Get("Hash").(int64)))
+				bytes := intToBytes(uint32(stat.Int("Hash")))
 				// # to # stats consist of two different stats as the min and
 				// max have different ranges
-				if strings.Contains(luaStr(stat.Get("Id")), "minimum") {
-					if nextStat, ok := mod.Get(fmt.Sprintf("Stat%d", modIdx+1)).(*Row); ok &&
-						strings.Contains(luaStr(nextStat.Get("Id")), "maximum") {
+				if strings.Contains(stat.Str("Id"), "minimum") {
+					if nextStat := mod.Ref(fmt.Sprintf("Stat%d", modIdx+1)); nextStat != nil &&
+						strings.Contains(nextStat.Str("Id"), "maximum") {
 						modIdx++
-						bytes = append(bytes, intToBytes(uint32(nextStat.Get("Hash").(int64)))...)
-						iv2 := mod.Get(fmt.Sprintf("Stat%dValue", modIdx)).(Interval)
-						currentStats[luaStr(nextStat.Get("Id"))] = &statVal{min: float64(iv2[0]), max: float64(iv2[1])}
+						bytes = append(bytes, intToBytes(uint32(nextStat.Int("Hash")))...)
+						iv2 := mod.Ivl(fmt.Sprintf("Stat%dValue", modIdx))
+						currentStats[nextStat.Str("Id")] = &statVal{min: float64(iv2[0]), max: float64(iv2[1])}
 					}
 				}
-				desc := x.DescribeStats(currentStats)
+				desc, err := x.DescribeStats(currentStats)
+				if err != nil {
+					return nil, err
+				}
 				m.TradeHashes = append(m.TradeHashes, schema.TradeHash{Hash: int64(murmurHash2(bytes, 0x02312233)), Lines: desc.Lines})
 				modIdx++
 			}
@@ -240,8 +236,8 @@ func buildMods(x *Ctx) (any, error) {
 
 			if outName == "../Data/ModItemExclusive.lua" || outName == "../Data/ModFoulborn.lua" {
 				var tagIds []string
-				for _, t := range listRows(mod.Get("ImplicitTags")) {
-					tagIds = append(tagIds, luaStr(t.Get("Id")))
+				for _, t := range mod.Refs("ImplicitTags") {
+					tagIds = append(tagIds, t.Str("Id"))
 				}
 				entry := &modEntry{lines: append([]string(nil), stats.Lines...), orders: stats.Orders, tags: tagIds}
 				if outName == "../Data/ModItemExclusive.lua" {
@@ -250,14 +246,15 @@ func buildMods(x *Ctx) (any, error) {
 					x.modFoulborn[modId] = entry
 				}
 			}
-			return true
-		})
-		return pool
+		}
+		return pool, nil
 	}
 
-	doc := schema.ModsData{Pools: map[string][]schema.ItemMod{}}
+	doc := &schema.ModsData{Pools: map[string][]schema.ItemMod{}}
 	for _, outName := range modPoolOrder {
-		doc.Pools[poolId(outName)] = buildPool(outName)
+		if doc.Pools[poolId(outName)], err = buildPool(outName); err != nil {
+			return nil, fmt.Errorf("%s: %w", poolId(outName), err)
+		}
 	}
 
 	// Generate unique mod mappings from text to mod.
@@ -307,9 +304,9 @@ var modPoolOrder = []string{
 var modPoolConds = map[string]func(mod *Row) bool{}
 
 func init() {
-	dom := func(mod *Row) int64 { return mod.Get("Domain").(int64) }
-	gen := func(mod *Row) int64 { return mod.Get("GenerationType").(int64) }
-	id := func(mod *Row) string { return luaStr(mod.Get("Id")) }
+	dom := func(mod *Row) int64 { return mod.Int("Domain") }
+	gen := func(mod *Row) int64 { return mod.Int("GenerationType") }
+	id := func(mod *Row) string { return mod.Str("Id") }
 	modPoolConds["../Data/ModExplicit.lua"] = func(mod *Row) bool {
 		return dom(mod) == domainItem &&
 			(gen(mod) == genPrefix || gen(mod) == genSuffix) &&
@@ -317,7 +314,7 @@ func init() {
 			!strings.Contains(id(mod), "Necropolis") &&
 			!strings.HasPrefix(id(mod), "Synthesis") &&
 			!(gen(mod) == genSearingExarch || gen(mod) == genEaterOfWorlds) &&
-			listLen(mod.Get("AuraFlags")) == 0
+			len(mod.Refs("AuraFlags")) == 0
 	}
 	modPoolConds["../Data/ModCorrupted.lua"] = func(mod *Row) bool {
 		return gen(mod) == genCorrupted && dom(mod) == domainItem
@@ -358,13 +355,13 @@ func init() {
 		return dom(mod) == domainCharm && (gen(mod) == genPrefix || gen(mod) == genSuffix)
 	}
 	modPoolConds["../Data/Uniques/Special/WatchersEye.lua"] = func(mod *Row) bool {
-		family := listRows(mod.Get("Family"))
-		return len(family) > 0 && (luaStr(family[0].Get("Id")) == "AuraBonus" || luaStr(family[0].Get("Id")) == "ArbalestBonus") &&
+		family := mod.Refs("Family")
+		return len(family) > 0 && (family[0].Str("Id") == "AuraBonus" || family[0].Str("Id") == "ArbalestBonus") &&
 			gen(mod) == genIntrinsic && !strings.HasPrefix(id(mod), "Synthesis")
 	}
 	modPoolConds["../Data/Uniques/Special/BoundByDestiny.lua"] = func(mod *Row) bool {
-		family := listRows(mod.Get("Family"))
-		return len(family) > 1 && strings.Contains(luaStr(family[1].Get("Id")), "MatchedInfluencesTier")
+		family := mod.Refs("Family")
+		return len(family) > 1 && strings.Contains(family[1].Str("Id"), "MatchedInfluencesTier")
 	}
 	modPoolConds["../Data/ModVeiled.lua"] = func(mod *Row) bool {
 		return dom(mod) == domainUnveiled && (gen(mod) == genPrefix || gen(mod) == genSuffix)
@@ -373,10 +370,10 @@ func init() {
 		return dom(mod) == domainItem && strings.HasPrefix(id(mod), "NecropolisCrafting")
 	}
 	modPoolConds["../Data/ModItemExclusive.lua"] = func(mod *Row) bool {
-		family := listRows(mod.Get("Family"))
+		family := mod.Refs("Family")
 		return (dom(mod) == domainItem || dom(mod) == domainFlask || dom(mod) == domainJewel || dom(mod) == domainClusterJewel || dom(mod) == domainTincture) &&
 			gen(mod) == genIntrinsic &&
-			(len(family) > 0 && luaStr(family[0].Get("Id")) != "AuraBonus") &&
+			(len(family) > 0 && family[0].Str("Id") != "AuraBonus") &&
 			!strings.HasPrefix(id(mod), "Synthesis") && !strings.Contains(id(mod), "Royale") &&
 			!strings.Contains(id(mod), "Cowards") && !strings.Contains(id(mod), "Map") &&
 			!strings.Contains(id(mod), "Ultimatum") && !strings.HasPrefix(id(mod), "MutatedUnique") &&
@@ -394,9 +391,9 @@ func init() {
 	}
 }
 
-func tagListContainsId(cell any, id string) bool {
-	for _, r := range listRows(cell) {
-		if luaStr(r.Get("Id")) == id {
+func tagListContainsId(rows []*Row, id string) bool {
+	for _, r := range rows {
+		if r.Str("Id") == id {
 			return true
 		}
 	}

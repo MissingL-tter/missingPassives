@@ -23,34 +23,32 @@ func (t *Tree) loadTattoo() {
 	for i := range doc.Nodes {
 		nd := &doc.Nodes[i]
 		node := &Node{
-			IDStr:           nd.Id,
-			Name:            nd.Name,
-			Icon:            nd.Icon,
-			Keystone:        nd.Ks,
-			Notable:         nd.Not,
-			Mastery:         nd.M,
-			IsTattooFlag:    true,
-			OverrideTypeStr: nd.OverrideType,
-			// Raw carries the fields later stages read by key (the saved-
-			// Overrides resolution matches on activeEffectImage).
-			Raw: map[string]any{"activeEffectImage": nd.ActiveEffectImage},
+			IDStr:             nd.Id,
+			Name:              nd.Name,
+			Icon:              nd.Icon,
+			Keystone:          nd.Ks,
+			Notable:           nd.Not,
+			Mastery:           nd.M,
+			IsTattooFlag:      true,
+			OverrideTypeOf:    OverrideKind(nd.OverrideType),
+			ActiveEffectImage: nd.ActiveEffectImage,
 		}
 		// The alternate masteries (runegrafts) carry their own name; it
 		// shadows the tattooed node's original name.
-		if nd.OverrideType == "AlternateMastery" {
+		if node.OverrideTypeOf == AlternateMastery {
 			ownName := "Runegraft Mastery"
 			node.NameStr = &ownName
 		}
 		node.Sd = append([]string{}, nd.Sd...)
 		switch {
 		case node.Mastery:
-			node.Type = "Mastery"
+			node.Type = NodeMastery
 		case node.Keystone:
-			node.Type = "Keystone"
+			node.Type = NodeKeystone
 		case node.Notable:
-			node.Type = "Notable"
+			node.Type = NodeNotable
 		default:
-			node.Type = "Normal"
+			node.Type = NodeNormal
 		}
 		t.Tattoo.Nodes[nd.Name] = node // later rows overwrite, like the Lua keys
 	}

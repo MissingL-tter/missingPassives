@@ -1,8 +1,8 @@
 {
 	"directives": [
-		"#type Claw",
-		"#influenceBaseTag claw",
-		"#socketLimit 3",
-		"#baseMatch BaseType Metadata/Items/Weapons/OneHandWeapons/Claws/AbstractClaw"
+		{"directive":"type","name":"Claw"},
+		{"directive":"influenceBaseTag","tag":"claw"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/OneHandWeapons/Claws/AbstractClaw"}
 	]
 }

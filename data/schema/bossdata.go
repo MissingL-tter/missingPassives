@@ -8,6 +8,8 @@ type BossData struct {
 	Bosses     []*BossMonster `json:"bosses"`     // one per #boss (nil = unknown type)
 }
 
+func (BossData) isDocument() {}
+
 type BossSkill struct {
 	Key        string `json:"key"` // "<boss> <skill>"
 	DamageType string `json:"damageType"`
@@ -24,17 +26,22 @@ type BossSkill struct {
 	UberSpeed   *float64 `json:"uberSpeed,omitempty"` // emitted when set and != 700
 	CritChance  int64    `json:"critChance"`          // emitted when != 5
 	EarlierUber bool     `json:"earlierUber,omitempty"`
-	// Tooltip is the raw #tooltip template argument (a Lua string literal).
-	Tooltip string `json:"tooltip"`
+	Tooltip     string   `json:"tooltip"` // the #tooltip template text
 
 	// Additional stats; the counts gate emission and reproduce the
-	// reference's base/uber count bookkeeping. Values are pre-rendered
-	// (number text or "flag" literal).
-	HasAdditional bool              `json:"hasAdditional,omitempty"`
-	BaseCount     int64             `json:"baseCount,omitempty"`
-	UberCount     int64             `json:"uberCount,omitempty"`
-	BaseVals      map[string]string `json:"baseVals,omitempty"`
-	UberVals      map[string]string `json:"uberVals,omitempty"`
+	// reference's base/uber count bookkeeping.
+	HasAdditional bool                     `json:"hasAdditional,omitempty"`
+	BaseCount     int64                    `json:"baseCount,omitempty"`
+	UberCount     int64                    `json:"uberCount,omitempty"`
+	BaseVals      map[string]BossStatValue `json:"baseVals,omitempty"`
+	UberVals      map[string]BossStatValue `json:"uberVals,omitempty"`
+}
+
+// BossStatValue is one additional stat: a number, or a flag carrying no
+// number. Flag set means Value is unused.
+type BossStatValue struct {
+	Value float64 `json:"value,omitempty"`
+	Flag  bool    `json:"flag,omitempty"`
 }
 
 type BossDamageMult struct {

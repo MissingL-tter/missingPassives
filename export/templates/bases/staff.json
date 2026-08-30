@@ -1,13 +1,13 @@
 {
 	"directives": [
-		"#type Staff",
-		"#influenceBaseTag staff",
-		"#socketLimit 6",
-		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractStaff",
-		"#type Staff",
-		"#subType Warstaff",
-		"#influenceBaseTag warstaff",
-		"#socketLimit 6",
-		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractWarstaff"
+		{"directive":"type","name":"Staff"},
+		{"directive":"influenceBaseTag","tag":"staff"},
+		{"directive":"socketLimit","limit":6},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractStaff"},
+		{"directive":"type","name":"Staff"},
+		{"directive":"subType","name":"Warstaff"},
+		{"directive":"influenceBaseTag","tag":"warstaff"},
+		{"directive":"socketLimit","limit":6},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractWarstaff"}
 	]
 }

@@ -55,7 +55,7 @@ func loadPantheons(src schema.Pantheons) map[string]Pantheon {
 			soul := PantheonSoul{Name: g.Name}
 			for _, m := range g.Mods {
 				soul.Mods = append(soul.Mods, PantheonMod{
-					Line:  luaUnescape(m.Line),
+					Line:  m.Line,
 					Value: []float64{float64(m.Value)},
 				})
 			}
@@ -88,7 +88,7 @@ func loadCrucible(src schema.CrucibleNodes) map[string]CrucibleNode {
 	out := map[string]CrucibleNode{}
 	for _, n := range src {
 		c := CrucibleNode{
-			Lines:        unescapeAll(n.Lines),
+			Lines:        emptyIfNil(n.Lines),
 			Type:         n.Type,
 			Tier:         float64(n.Tier),
 			StatOrder:    n.StatOrders,
@@ -132,7 +132,7 @@ func loadMasterMods(src schema.MasterCrafts) []MasterCraft {
 			types[t] = true
 		}
 		out = append(out, MasterCraft{
-			Lines:     unescapeAll(c.Lines),
+			Lines:     emptyIfNil(c.Lines),
 			Type:      c.Type,
 			Affix:     c.Affix,
 			ModTags:   splitModTags(c.ModTags),
@@ -155,7 +155,7 @@ type flavourText struct {
 func loadFlavourText(src schema.FlavourTexts) []flavourText {
 	out := make([]flavourText, 0, len(src))
 	for _, ft := range src {
-		out = append(out, flavourText{Id: ft.Id, Name: ft.Name, Text: unescapeAll(ft.Text)})
+		out = append(out, flavourText{Id: ft.Id, Name: ft.Name, Text: emptyIfNil(ft.Text)})
 	}
 	return out
 }
@@ -168,7 +168,7 @@ func loadEnchantments(src schema.Enchants) map[string]map[string][]string {
 		for source, mods := range m {
 			list := make([]string, 0, len(mods))
 			for _, lines := range mods {
-				list = append(list, luaUnescape(joinSlash(lines)))
+				list = append(list, joinSlash(lines))
 			}
 			out[source] = list
 		}
@@ -203,7 +203,7 @@ func loadHelmetEnchants(src schema.Enchants) map[string]map[string][]string {
 		for source, mods := range bySource {
 			list := make([]string, 0, len(mods))
 			for _, lines := range mods {
-				list = append(list, luaUnescape(joinSlash(lines)))
+				list = append(list, joinSlash(lines))
 			}
 			m[source] = list
 		}
@@ -223,14 +223,6 @@ func joinSlash(lines []string) string {
 	return s
 }
 
-func unescapeAll(lines []string) []string {
-	out := make([]string, len(lines))
-	for i, l := range lines {
-		out[i] = luaUnescape(l)
-	}
-	return out
-}
-
 func intsToFloats(vals []int64) []float64 {
 	out := make([]float64, len(vals))
 	for i, v := range vals {
@@ -239,9 +231,9 @@ func intsToFloats(vals []int64) []float64 {
 	return out
 }
 
-func emptyIfNil(s []string) []string {
+func emptyIfNil[T any](s []T) []T {
 	if s == nil {
-		return []string{}
+		return []T{}
 	}
 	return s
 }

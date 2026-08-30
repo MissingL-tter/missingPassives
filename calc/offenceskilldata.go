@@ -5,19 +5,12 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
-
-// modArgs builds the trailing NewMod arguments the reference writes as
-// `mod.source, mod.flags, mod.keywordFlags, unpack(mod)`.
-func modArgs(source string, flags, keywordFlags int64, tags []any) []any {
-	args := make([]any, 0, 3+len(tags))
-	args = append(args, source, flags, keywordFlags)
-	return append(args, tags...)
-}
 
 // maxOr is `skillModList:Max(cfg, name) or fallback`.
 func maxOr(l *modstore.List, cfg *modstore.Cfg, fallback float64, names ...string) float64 {
@@ -27,14 +20,6 @@ func maxOr(l *modstore.List, cfg *modstore.Cfg, fallback float64, names ...strin
 	return fallback
 }
 
-// wdNum reads a weaponData field (`weaponData[key] or 0`).
-func wdNum(wd map[string]any, key string) float64 {
-	if wd == nil {
-		return 0
-	}
-	return anyNum(wd[key])
-}
-
 // offenceSkillData ports L520-1022.
 func (env *Env) offenceSkillData(c *offenceCtx) {
 	actor, skillModList, skillCfg, skillData := c.actor, c.skillModList, c.skillCfg, c.skillData
@@ -42,61 +27,62 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 	activeSkill := c.activeSkill
 
 	if modDB.Flag(nil, "Elusive") && skillModList.Flag(nil, "SupportedByNightblade") {
-		elusiveEffect := outNum(output, "ElusiveEffectMod") / 100
-		nightbladeMulti := skillModList.Sum("BASE", nil, "NightbladeElusiveCritMultiplier")
-		skillModList.AddMod(newMod("CritMultiplier", "BASE", math.Floor(nightbladeMulti*elusiveEffect), "Nightblade"))
+		elusiveEffect := output.N("ElusiveEffectMod") / 100
+		nightbladeMulti := skillModList.Sum(modparser.Base, nil, "NightbladeElusiveCritMultiplier")
+		skillModList.AddMod(newModS("CritMultiplier", modparser.Base, modparser.Num(math.Floor(nightbladeMulti*elusiveEffect)), "Nightblade"))
 	}
 
 	// set other limits
-	output["ActiveTrapLimit"] = skillModList.Sum("BASE", skillCfg, "ActiveTrapLimit")
-	output["ActiveMineLimit"] = skillModList.Sum("BASE", skillCfg, "ActiveMineLimit")
+	output.SetN("ActiveTrapLimit", skillModList.Sum(modparser.Base, skillCfg, "ActiveTrapLimit"))
+	output.SetN("ActiveMineLimit", skillModList.Sum(modparser.Base, skillCfg, "ActiveMineLimit"))
 
 	// set flask scaling
 	if v, ok := env.ItemModDB.Multipliers["LifeFlaskRecovery"]; ok {
-		output["LifeFlaskRecovery"] = v
+		output.SetN("LifeFlaskRecovery", v)
 	} else {
-		delete(output, "LifeFlaskRecovery")
+		output.Del("LifeFlaskRecovery")
 	}
 	if v, ok := env.ItemModDB.Multipliers["LifeFlaskCharges"]; ok {
-		output["LifeFlaskCharges"] = v
+		output.SetN("LifeFlaskCharges", v)
 	} else {
-		delete(output, "LifeFlaskCharges")
+		output.Del("LifeFlaskCharges")
 	}
 
-	if truthy(modDB.Conditions["AffectedByEnergyBlade"]) {
+	if modDB.Conditions.Get("AffectedByEnergyBlade") {
 		dmgMod := Mod(skillModList, skillCfg, "EnergyBladeDamage")
 		speedMod := Mod(skillModList, skillCfg, "EnergyBladeAttackSpeed")
 		// The reference iterates a two-key table with pairs(); the two
 		// branches touch disjoint weapon slots, so the order is immaterial.
 		for _, pair := range [][2]string{{"Weapon 1", "1"}, {"Weapon 2", "2"}} {
 			slotName, side := pair[0], pair[1]
-			wd := actor.ms.WeaponData1
+			wd := weaponOf(actor.ms.WeaponData1)
 			if side == "2" {
-				wd = actor.ms.WeaponData2
+				wd = weaponOf(actor.ms.WeaponData2)
 			}
 			it, _ := actor.ms.ItemList[slotName].(*Item)
 			if it == nil || it.In.WeaponData == nil || it.In.WeaponData[1] == nil || wd == nil {
 				continue
 			}
-			name := str(wd["name"])
-			if name == "" {
+			if wd.Name == "" {
 				continue
 			}
-			base := data.ItemBases[name]
+			base := data.ItemBases[wd.Name]
 			if base == nil || base.Weapon == nil {
 				continue
 			}
 			wb := base.Weapon
-			wd["CritChance"] = wb.CritChanceBase
-			wd["AttackRate"] = wb.AttackRateBase * speedMod
-			wd["Range"] = wb.Range
+			wd.CritChance = util.Some(wb.CritChanceBase)
+			wd.AttackRate = wb.AttackRateBase * speedMod
+			// The reference writes "Range" (not the "range" key it reads).
+			wd.Set("Range", modparser.Num(wb.Range))
 			for _, damageType := range dmgTypeList {
 				baseMin, baseMax := 0.0, 0.0
 				if damageType == "Physical" {
 					baseMin, baseMax = wb.PhysicalMin, wb.PhysicalMax
 				}
-				wd[damageType+"Min"] = baseMin + math.Floor(skillModList.Sum("BASE", skillCfg, "EnergyBladeMin"+damageType)*dmgMod)
-				wd[damageType+"Max"] = baseMax + math.Floor(skillModList.Sum("BASE", skillCfg, "EnergyBladeMax"+damageType)*dmgMod)
+				r := wd.Damage(damageType)
+				r.Min = baseMin + math.Floor(skillModList.Sum(modparser.Base, skillCfg, "EnergyBladeMin"+damageType)*dmgMod)
+				r.Max = baseMax + math.Floor(skillModList.Sum(modparser.Base, skillCfg, "EnergyBladeMax"+damageType)*dmgMod)
 			}
 		}
 	}
@@ -108,14 +94,14 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		w1 != nil && w1.In.WeaponData != nil && w1.In.WeaponData[1] != nil {
 		multiplier := maxOr(skillModList, skillCfg, 100, "MainHandWeaponDamageAppliesToSpells") / 100
 		for _, damageType := range dmgTypeList {
-			skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Min")*multiplier), "Battlemage", modparser.ModFlag.Spell))
-			skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Max")*multiplier), "Battlemage", modparser.ModFlag.Spell))
+			skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Min*multiplier)), "Battlemage", modparser.FlagSpell, modparser.KeywordNone))
+			skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Max*multiplier)), "Battlemage", modparser.FlagSpell, modparser.KeywordNone))
 		}
 	}
 	// weapon1info/weapon2info are locals in the reference too, and used only
 	// by the Spellblade block just below.
-	weapon1info, hasWeapon1info := data.WeaponTypeInfo[str(actor.ms.WeaponData1["type"])]
-	_, hasWeapon2info := data.WeaponTypeInfo[str(actor.ms.WeaponData2["type"])]
+	weapon1info, hasWeapon1info := data.WeaponTypeInfo[weaponType(weaponOf(actor.ms.WeaponData1))]
+	_, hasWeapon2info := data.WeaponTypeInfo[weaponType(weaponOf(actor.ms.WeaponData2))]
 
 	// account for Spellblade
 	if spellbladeMulti, ok := skillModList.Max(skillCfg, "OneHandWeaponDamageAppliesToSpells"); ok {
@@ -128,13 +114,13 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 			}
 			multiplier := spellbladeMulti / 100 * second
 			for _, damageType := range dmgTypeList {
-				skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Min")*multiplier), "Spellblade Main Hand", modparser.ModFlag.Spell))
-				skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Max")*multiplier), "Spellblade Main Hand", modparser.ModFlag.Spell))
+				skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Min*multiplier)), "Spellblade Main Hand", modparser.FlagSpell, modparser.KeywordNone))
+				skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Max*multiplier)), "Spellblade Main Hand", modparser.FlagSpell, modparser.KeywordNone))
 			}
 			if hasWeapon2info {
 				for _, damageType := range dmgTypeList {
-					skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(wdNum(actor.ms.WeaponData2, damageType+"Min")*multiplier), "Spellblade Off Hand", modparser.ModFlag.Spell))
-					skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData2, damageType+"Max")*multiplier), "Spellblade Off Hand", modparser.ModFlag.Spell))
+					skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Min*multiplier)), "Spellblade Off Hand", modparser.FlagSpell, modparser.KeywordNone))
+					skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Max*multiplier)), "Spellblade Off Hand", modparser.FlagSpell, modparser.KeywordNone))
 				}
 			}
 		}
@@ -143,11 +129,10 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// Minion Damage conversion from Spiritual Aid and The Scourge
 		multiplier := maxOr(skillModList, skillCfg, 100, "ImprovedMinionDamageAppliesToPlayer") / 100
 		for _, value := range skillModList.List(skillCfg, "MinionModifier") {
-			tag, _ := value.(modparser.Tag)
-			mod, _ := tag["mod"].(*modparser.Mod)
-			if mod != nil && mod.Name == "Damage" && mod.Type == "INC" {
+			mod := modRefOf(value)
+			if mod != nil && mod.Name == "Damage" && mod.Type == modparser.Inc {
 				modifiers := GetConvertedModTags(mod, multiplier, true)
-				skillModList.AddMod(newMod("Damage", "INC", anyNum(mod.Value)*multiplier, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, modifiers)...))
+				skillModList.AddMod(modparser.NewModFull("Damage", modparser.Inc, modparser.Num(valueNum(mod.Value)*multiplier), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, modifiers...))
 			}
 		}
 	}
@@ -155,11 +140,10 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// Minion Attack Speed conversion from Spiritual Command
 		multiplier := maxOr(skillModList, skillCfg, 100, "ImprovedMinionAttackSpeedAppliesToPlayer") / 100
 		for _, value := range skillModList.List(skillCfg, "MinionModifier") {
-			tag, _ := value.(modparser.Tag)
-			mod, _ := tag["mod"].(*modparser.Mod)
-			if mod != nil && mod.Name == "Speed" && mod.Type == "INC" && (mod.Flags == 0 || mod.Flags&modparser.ModFlag.Attack != 0) {
+			mod := modRefOf(value)
+			if mod != nil && mod.Name == "Speed" && mod.Type == modparser.Inc && (mod.Flags == 0 || mod.Flags&modparser.FlagAttack != 0) {
 				modifiers := GetConvertedModTags(mod, multiplier, true)
-				skillModList.AddMod(newMod("Speed", "INC", anyNum(mod.Value)*multiplier, modArgs(mod.Source, modparser.ModFlag.Attack, mod.KeywordFlags, modifiers)...))
+				skillModList.AddMod(modparser.NewModFull("Speed", modparser.Inc, modparser.Num(valueNum(mod.Value)*multiplier), mod.Source, mod.SourceSet, modparser.FlagAttack, mod.KeywordFlags, modifiers...))
 			}
 		}
 	}
@@ -167,11 +151,10 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// Minion Cast Speed conversion from Spinehail
 		multiplier := maxOr(skillModList, skillCfg, 100, "ImprovedMinionCastSpeedAppliesToPlayer") / 100
 		for _, value := range skillModList.List(skillCfg, "MinionModifier") {
-			tag, _ := value.(modparser.Tag)
-			mod, _ := tag["mod"].(*modparser.Mod)
-			if mod != nil && mod.Name == "Speed" && mod.Type == "INC" && (mod.Flags == 0 || mod.Flags&modparser.ModFlag.Cast != 0) {
+			mod := modRefOf(value)
+			if mod != nil && mod.Name == "Speed" && mod.Type == modparser.Inc && (mod.Flags == 0 || mod.Flags&modparser.FlagCast != 0) {
 				modifiers := GetConvertedModTags(mod, multiplier, true)
-				skillModList.AddMod(newMod("Speed", "INC", anyNum(mod.Value)*multiplier, modArgs(mod.Source, modparser.ModFlag.Cast, mod.KeywordFlags, modifiers)...))
+				skillModList.AddMod(modparser.NewModFull("Speed", modparser.Inc, modparser.Num(valueNum(mod.Value)*multiplier), mod.Source, mod.SourceSet, modparser.FlagCast, mod.KeywordFlags, modifiers...))
 			}
 		}
 	}
@@ -179,23 +162,22 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// The Unblinking Eye evasion rating to spell damage conversion
 		// Must run before SpellDamageAppliesToAttacks so the generated spell
 		// mods can chain into attacks
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "Evasion") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "Evasion") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("Damage", mod.Type, mod.Value, modArgs(mod.Source, modparser.ModFlag.Spell, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("Damage", mod.Type, mod.Value, mod.Source, mod.SourceSet, modparser.FlagSpell, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "SpellDamageAppliesToAttacks") || skillModList.Flag(skillCfg, "SpellDamageAppliesToAttacks") {
 		// Spell Damage conversion from Crown of Eyes, Kinetic Bolt, and the
 		// Wandslinger notable
 		multiplier := maxOr(skillModList, skillCfg, 100, "ImprovedSpellDamageAppliesToAttacks") / 100
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{Flags: i64p(modparser.ModFlag.Spell)}, "Damage") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{Flags: flagp(modparser.FlagSpell)}, "Damage") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Spell != 0 {
+			if mod.Flags&modparser.FlagSpell != 0 {
 				modifiers := GetConvertedModTags(mod, multiplier, false)
-				skillModList.AddMod(newMod("Damage", "INC", anyNum(mod.Value)*multiplier,
-					modArgs(mod.Source, (mod.Flags&^modparser.ModFlag.Spell)|modparser.ModFlag.Attack, mod.KeywordFlags, modifiers)...))
+				skillModList.AddMod(modparser.NewModFull("Damage", modparser.Inc, modparser.Num(valueNum(mod.Value)*multiplier), mod.Source, mod.SourceSet, (mod.Flags&^modparser.FlagSpell)|modparser.FlagAttack, mod.KeywordFlags, modifiers...))
 				if mod.Source == "Strength" { // Prevent double-dipping from converted strength's damage bonus
-					skillModList.ReplaceMod(newMod("PhysicalDamage", "INC", 0.0, "Strength", modparser.ModFlag.Melee))
+					skillModList.ReplaceMod(newModSF("PhysicalDamage", modparser.Inc, modparser.Num(0.0), "Strength", modparser.FlagMelee, modparser.KeywordNone))
 				}
 			}
 		}
@@ -204,153 +186,147 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// Get all increases for this; assumption is that multiple sources
 		// would not stack, so find the max
 		multiplier := maxOr(skillModList, skillCfg, 100, "ImprovedCastSpeedAppliesToAttacks") / 100
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{Flags: i64p(modparser.ModFlag.Cast)}, "Speed") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{Flags: flagp(modparser.FlagCast)}, "Speed") {
 			mod := value.Mod
 			// Add a new mod for all mods that are cast only
-			if mod.Flags&modparser.ModFlag.Cast != 0 {
+			if mod.Flags&modparser.FlagCast != 0 {
 				modifiers := GetConvertedModTags(mod, multiplier, false)
-				skillModList.AddMod(newMod("Speed", "INC", anyNum(mod.Value)*multiplier,
-					modArgs(mod.Source, (mod.Flags&^modparser.ModFlag.Cast)|modparser.ModFlag.Attack, mod.KeywordFlags, modifiers)...))
+				skillModList.AddMod(modparser.NewModFull("Speed", modparser.Inc, modparser.Num(valueNum(mod.Value)*multiplier), mod.Source, mod.SourceSet, (mod.Flags&^modparser.FlagCast)|modparser.FlagAttack, mod.KeywordFlags, modifiers...))
 			}
 		}
 	}
 	if skillModList.Flag(nil, "ProjectileSpeedAppliesToBowDamage") {
 		// Bow mastery projectile speed to damage with bows conversion
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "ProjectileSpeed") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "ProjectileSpeed") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("Damage", mod.Type, mod.Value,
-				modArgs(mod.Source, modparser.ModFlag.Bow|modparser.ModFlag.Hit, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("Damage", mod.Type, mod.Value, mod.Source, mod.SourceSet, modparser.FlagBow|modparser.FlagHit, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "ClawDamageAppliesToUnarmed") {
 		// Claw Damage conversion from Rigwald's Curse
-		cfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Claw | modparser.ModFlag.Hit), KeywordFlags: i64p(modparser.KeywordFlag.Hit)}
-		for _, value := range skillModList.Tabulate("INC", cfg, "Damage") {
+		cfg := &modstore.Cfg{Flags: flagp(modparser.FlagClaw | modparser.FlagHit), KeywordFlags: keywordp(modparser.KeywordHit)}
+		for _, value := range skillModList.Tabulate(modparser.Inc, cfg, "Damage") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Claw != 0 {
-				skillModList.AddMod(newMod("Damage", mod.Type, mod.Value,
-					modArgs(mod.Source, (mod.Flags&^modparser.ModFlag.Claw)|modparser.ModFlag.Unarmed|modparser.ModFlag.Melee, mod.KeywordFlags, mod.Tags)...))
+			if mod.Flags&modparser.FlagClaw != 0 {
+				skillModList.AddMod(modparser.NewModFull("Damage", mod.Type, mod.Value, mod.Source, mod.SourceSet, (mod.Flags&^modparser.FlagClaw)|modparser.FlagUnarmed|modparser.FlagMelee, mod.KeywordFlags, mod.Tags...))
 			}
 		}
 	}
 	if skillModList.Flag(nil, "ClawAttackSpeedAppliesToUnarmed") {
 		// Claw Attack Speed conversion from Rigwald's Curse
-		cfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Claw | modparser.ModFlag.Attack | modparser.ModFlag.Hit)}
-		for _, value := range skillModList.Tabulate("INC", cfg, "Speed") {
+		cfg := &modstore.Cfg{Flags: flagp(modparser.FlagClaw | modparser.FlagAttack | modparser.FlagHit)}
+		for _, value := range skillModList.Tabulate(modparser.Inc, cfg, "Speed") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Claw != 0 && mod.Flags&modparser.ModFlag.Attack != 0 {
-				skillModList.AddMod(newMod("Speed", mod.Type, mod.Value,
-					modArgs(mod.Source, (mod.Flags&^modparser.ModFlag.Claw)|modparser.ModFlag.Unarmed, mod.KeywordFlags, mod.Tags)...))
+			if mod.Flags&modparser.FlagClaw != 0 && mod.Flags&modparser.FlagAttack != 0 {
+				skillModList.AddMod(modparser.NewModFull("Speed", mod.Type, mod.Value, mod.Source, mod.SourceSet, (mod.Flags&^modparser.FlagClaw)|modparser.FlagUnarmed, mod.KeywordFlags, mod.Tags...))
 			}
 		}
 	}
 	if skillModList.Flag(nil, "ClawCritChanceAppliesToUnarmed") {
 		// Claw Crit Chance conversion from Rigwald's Curse
-		cfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Claw | modparser.ModFlag.Hit)}
-		for _, value := range skillModList.Tabulate("INC", cfg, "CritChance") {
+		cfg := &modstore.Cfg{Flags: flagp(modparser.FlagClaw | modparser.FlagHit)}
+		for _, value := range skillModList.Tabulate(modparser.Inc, cfg, "CritChance") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Claw != 0 {
-				skillModList.AddMod(newMod("CritChance", mod.Type, mod.Value,
-					modArgs(mod.Source, (mod.Flags&^modparser.ModFlag.Claw)|modparser.ModFlag.Unarmed, mod.KeywordFlags, mod.Tags)...))
+			if mod.Flags&modparser.FlagClaw != 0 {
+				skillModList.AddMod(modparser.NewModFull("CritChance", mod.Type, mod.Value, mod.Source, mod.SourceSet, (mod.Flags&^modparser.FlagClaw)|modparser.FlagUnarmed, mod.KeywordFlags, mod.Tags...))
 			}
 		}
 	}
 	if skillModList.Flag(nil, "ClawCritChanceAppliesToMinions") {
 		// Claw Crit Chance conversion from Law of the Wilds
-		cfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Claw | modparser.ModFlag.Hit)}
-		for _, value := range skillModList.Tabulate("INC", cfg, "CritChance") {
+		cfg := &modstore.Cfg{Flags: flagp(modparser.FlagClaw | modparser.FlagHit)}
+		for _, value := range skillModList.Tabulate(modparser.Inc, cfg, "CritChance") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Claw != 0 {
-				env.Minion.DB.AddMod(newMod("CritChance", mod.Type, mod.Value, mod.Source))
+			if mod.Flags&modparser.FlagClaw != 0 {
+				env.Minion.DB.AddMod(newModS("CritChance", mod.Type, mod.Value, mod.Source))
 			}
 		}
 	}
 	if skillModList.Flag(nil, "ClawCritMultiplierAppliesToMinions") {
 		// Claw Crit Multi conversion from Law of the Wilds
-		cfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Claw | modparser.ModFlag.Hit)}
-		for _, value := range skillModList.Tabulate("BASE", cfg, "CritMultiplier") {
+		cfg := &modstore.Cfg{Flags: flagp(modparser.FlagClaw | modparser.FlagHit)}
+		for _, value := range skillModList.Tabulate(modparser.Base, cfg, "CritMultiplier") {
 			mod := value.Mod
-			if mod.Flags&modparser.ModFlag.Claw != 0 {
-				env.Minion.DB.AddMod(newMod("CritMultiplier", mod.Type, mod.Value, mod.Source))
+			if mod.Flags&modparser.FlagClaw != 0 {
+				env.Minion.DB.AddMod(newModS("CritMultiplier", mod.Type, mod.Value, mod.Source))
 			}
 		}
 	}
 	// The four resistance-driven crit/pen transfers each take only the first
 	// tabulated mod (the reference breaks out of the loop).
 	firstFlagSource := func(name string) (string, bool) {
-		for _, value := range modDB.Tabulate("FLAG", nil, name) {
+		for _, value := range modDB.Tabulate(modparser.Flag, nil, name) {
 			return value.Mod.Source, true
 		}
 		return "", false
 	}
 	if skillModList.Flag(nil, "CritChanceIncreasedByUncappedLightningRes") {
 		if src, ok := firstFlagSource("CritChanceIncreasedByUncappedLightningRes"); ok {
-			skillModList.AddMod(newMod("CritChance", "INC", outNum(output, "LightningResistTotal"), src))
+			skillModList.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(output.N("LightningResistTotal")), src))
 		}
 	}
 	if skillModList.Flag(nil, "CritChanceIncreasedByLightningRes") {
 		if src, ok := firstFlagSource("CritChanceIncreasedByLightningRes"); ok {
-			skillModList.AddMod(newMod("CritChance", "INC", outNum(output, "LightningResist"), src))
+			skillModList.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(output.N("LightningResist")), src))
 		}
 	}
 	if skillModList.Flag(nil, "CritChanceIncreasedByOvercappedLightningRes") {
 		if src, ok := firstFlagSource("CritChanceIncreasedByOvercappedLightningRes"); ok {
-			skillModList.AddMod(newMod("CritChance", "INC", outNum(output, "LightningResistOverCap"), src))
+			skillModList.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(output.N("LightningResistOverCap")), src))
 		}
 	}
 	if skillModList.Flag(nil, "CritChanceIncreasedBySpellSuppressChance") {
 		if src, ok := firstFlagSource("CritChanceIncreasedBySpellSuppressChance"); ok {
-			skillModList.AddMod(newMod("CritChance", "INC", outNum(output, "SpellSuppressionChance"), src))
+			skillModList.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(output.N("SpellSuppressionChance")), src))
 		}
 	}
 	if skillModList.Flag(nil, "FirePenIncreasedByUncappedFireRes") {
 		if src, ok := firstFlagSource("FirePenIncreasedByUncappedFireRes"); ok {
-			skillModList.AddMod(newMod("FirePenetration", "BASE", outNum(output, "FireResistOverCap"), src))
+			skillModList.AddMod(newModS("FirePenetration", modparser.Base, modparser.Num(output.N("FireResistOverCap")), src))
 		}
 	}
 	if skillModList.Flag(nil, "LightRadiusAppliesToAccuracy") {
 		// Light Radius conversion from Corona Solaris
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "LightRadius") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "LightRadius") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("Accuracy", "INC", mod.Value, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("Accuracy", modparser.Inc, mod.Value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "LightRadiusAppliesToAreaOfEffect") {
 		// Light Radius conversion from Wreath of Phrecia
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "LightRadius") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "LightRadius") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("AreaOfEffect", "INC", math.Floor(anyNum(mod.Value)/2), modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("AreaOfEffect", modparser.Inc, modparser.Num(math.Floor(valueNum(mod.Value)/2)), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "LightRadiusAppliesToDamage") {
 		// Light Radius conversion from Wreath of Phrecia
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "LightRadius") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "LightRadius") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("Damage", "INC", mod.Value, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("Damage", modparser.Inc, mod.Value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "CastSpeedAppliesToTrapThrowingSpeed") {
 		// Cast Speed conversion from Slavedriver's Hand
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{Flags: i64p(modparser.ModFlag.Cast)}, "Speed") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{Flags: flagp(modparser.FlagCast)}, "Speed") {
 			mod := value.Mod
-			if mod.Flags == 0 || mod.Flags&modparser.ModFlag.Cast != 0 {
-				skillModList.AddMod(newMod("TrapThrowingSpeed", "INC", mod.Value,
-					modArgs(mod.Source, mod.Flags&^modparser.ModFlag.Cast&^modparser.ModFlag.Attack, mod.KeywordFlags, mod.Tags)...))
+			if mod.Flags == 0 || mod.Flags&modparser.FlagCast != 0 {
+				skillModList.AddMod(modparser.NewModFull("TrapThrowingSpeed", modparser.Inc, mod.Value, mod.Source, mod.SourceSet, mod.Flags&^modparser.FlagCast&^modparser.FlagAttack, mod.KeywordFlags, mod.Tags...))
 			}
 		}
 	}
-	if truthy(skillData["arrowSpeedAppliesToAreaOfEffect"]) {
+	if skillData.Flag("arrowSpeedAppliesToAreaOfEffect") {
 		// Arrow Speed conversion for Galvanic Arrow
-		for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{Flags: i64p(modparser.ModFlag.Bow)}, "ProjectileSpeed") {
+		for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{Flags: flagp(modparser.FlagBow)}, "ProjectileSpeed") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("AreaOfEffect", "INC", mod.Value, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("AreaOfEffect", modparser.Inc, mod.Value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillModList.Flag(nil, "SequentialProjectiles") && !skillModList.Flag(nil, "OneShotProj") &&
 		!skillModList.Flag(nil, "NoAdditionalProjectiles") && !skillModList.Flag(nil, "SingleProjectile") &&
 		!skillModList.Flag(nil, "TriggeredBySnipe") {
 		// Applies DPS multiplier based on projectile count
-		skillData["dpsMultiplier"] = skillModList.Sum("BASE", skillCfg, "ProjectileCount")
+		skillData.SetN("dpsMultiplier", skillModList.Sum(modparser.Base, skillCfg, "ProjectileCount"))
 	}
 
 	env.offenceRepeats(c)
@@ -359,183 +335,188 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 		// Phys from weapon to Spells from Runegraft
 		// #EVAL: `Sum(...) or 100` — Sum always returns a number, so the
 		// fallback is dead and an absent mod means a 0% multiplier.
-		mult := skillModList.Sum("BASE", skillCfg, "WeaponPhysAppliesToSpellsPercent") / 100
-		if actor.ms.WeaponData1 != nil {
-			skillModList.AddMod(newMod("PhysicalMin", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, "PhysicalMin")*mult), "Runegraft of the Spellbound", modparser.ModFlag.Spell))
-			skillModList.AddMod(newMod("PhysicalMax", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, "PhysicalMax")*mult), "Runegraft of the Spellbound", modparser.ModFlag.Spell))
+		mult := skillModList.Sum(modparser.Base, skillCfg, "WeaponPhysAppliesToSpellsPercent") / 100
+		if weaponOf(actor.ms.WeaponData1) != nil {
+			skillModList.AddMod(newModSF("PhysicalMin", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), "Physical").Min*mult)), "Runegraft of the Spellbound", modparser.FlagSpell, modparser.KeywordNone))
+			skillModList.AddMod(newModSF("PhysicalMax", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), "Physical").Max*mult)), "Runegraft of the Spellbound", modparser.FlagSpell, modparser.KeywordNone))
 		}
 	}
-	if truthy(skillData["gainPercentBaseWandDamageToSpells"]) {
-		mult := anyNum(skillData["gainPercentBaseWandDamageToSpells"]) / 100
-		w1Wand := str(actor.ms.WeaponData1["type"]) == "Wand"
-		w2Wand := str(actor.ms.WeaponData2["type"]) == "Wand"
+	if skillData.Flag("gainPercentBaseWandDamageToSpells") {
+		mult := skillData.N("gainPercentBaseWandDamageToSpells") / 100
+		w1Wand := weaponType(weaponOf(actor.ms.WeaponData1)) == "Wand"
+		w2Wand := weaponType(weaponOf(actor.ms.WeaponData2)) == "Wand"
 		switch {
 		case w1Wand && w2Wand:
 			for _, damageType := range dmgTypeList {
-				skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor((wdNum(actor.ms.WeaponData1, damageType+"Min")+wdNum(actor.ms.WeaponData2, damageType+"Min"))/2*mult), "Spellslinger", modparser.ModFlag.Spell))
-				skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor((wdNum(actor.ms.WeaponData1, damageType+"Max")+wdNum(actor.ms.WeaponData2, damageType+"Max"))/2*mult), "Spellslinger", modparser.ModFlag.Spell))
+				skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor((dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Min+dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Min)/2*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
+				skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor((dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Max+dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Max)/2*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
 			}
 		case w1Wand:
 			for _, damageType := range dmgTypeList {
-				skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Min")*mult), "Spellslinger", modparser.ModFlag.Spell))
-				skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData1, damageType+"Max")*mult), "Spellslinger", modparser.ModFlag.Spell))
+				skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Min*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
+				skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Max*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
 			}
 		case w2Wand:
 			for _, damageType := range dmgTypeList {
-				skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(wdNum(actor.ms.WeaponData2, damageType+"Min")*mult), "Spellslinger", modparser.ModFlag.Spell))
-				skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(wdNum(actor.ms.WeaponData2, damageType+"Max")*mult), "Spellslinger", modparser.ModFlag.Spell))
+				skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Min*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
+				skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Max*mult)), "Spellslinger", modparser.FlagSpell, modparser.KeywordNone))
 			}
 		}
 	}
-	if truthy(skillData["gainPercentBaseDaggerDamageToSpells"]) {
-		weapon1IsDagger := truthy(actor.ms.WeaponData1["AddedUsingDagger"]) || str(actor.ms.WeaponData1["type"]) == "Dagger"
-		weapon2IsDagger := truthy(actor.ms.WeaponData2["AddedUsingDagger"]) || str(actor.ms.WeaponData2["type"]) == "Dagger"
+	if skillData.Flag("gainPercentBaseDaggerDamageToSpells") {
+		weapon1IsDagger := weaponAdded(weaponOf(actor.ms.WeaponData1), "Dagger") || weaponType(weaponOf(actor.ms.WeaponData1)) == "Dagger"
+		weapon2IsDagger := weaponAdded(weaponOf(actor.ms.WeaponData2), "Dagger") || weaponType(weaponOf(actor.ms.WeaponData2)) == "Dagger"
 		both := 1.0
 		if weapon1IsDagger && weapon2IsDagger {
 			both = 0.5
 		}
-		mult := anyNum(skillData["gainPercentBaseDaggerDamageToSpells"]) / 100 * both
+		mult := skillData.N("gainPercentBaseDaggerDamageToSpells") / 100 * both
 		for _, damageType := range dmgTypeList {
 			baseMin, baseMax := 0.0, 0.0
 			if weapon1IsDagger {
-				baseMin += wdNum(actor.ms.WeaponData1, damageType+"Min")
-				baseMax += wdNum(actor.ms.WeaponData1, damageType+"Max")
+				baseMin += dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Min
+				baseMax += dmgOf(weaponOf(actor.ms.WeaponData1), damageType).Max
 			}
 			if weapon2IsDagger {
-				baseMin += wdNum(actor.ms.WeaponData2, damageType+"Min")
-				baseMax += wdNum(actor.ms.WeaponData2, damageType+"Max")
+				baseMin += dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Min
+				baseMax += dmgOf(weaponOf(actor.ms.WeaponData2), damageType).Max
 			}
-			skillModList.AddMod(newMod(damageType+"Min", "BASE", math.Floor(baseMin*mult), "Blade Blast of Dagger Detonation", modparser.ModFlag.Spell))
-			skillModList.AddMod(newMod(damageType+"Max", "BASE", math.Floor(baseMax*mult), "Blade Blast of Dagger Detonation", modparser.ModFlag.Spell))
+			skillModList.AddMod(newModSF(damageType+"Min", modparser.Base, modparser.Num(math.Floor(baseMin*mult)), "Blade Blast of Dagger Detonation", modparser.FlagSpell, modparser.KeywordNone))
+			skillModList.AddMod(newModSF(damageType+"Max", modparser.Base, modparser.Num(math.Floor(baseMax*mult)), "Blade Blast of Dagger Detonation", modparser.FlagSpell, modparser.KeywordNone))
 		}
 	}
 
-	if skillModList.Flag(nil, "HasSeals") && activeSkill.SkillTypes[modparser.SkillType.CanRapidFire] && !skillModList.Flag(nil, "NoRepeatBonuses") {
+	if skillModList.Flag(nil, "HasSeals") && activeSkill.SkillTypes[modparser.SkillTypeCanRapidFire] && !skillModList.Flag(nil, "NoRepeatBonuses") {
 		// Applies DPS multiplier based on seals count
-		output["SealCooldown"] = skillModList.Sum("BASE", skillCfg, "SealGainFrequency") / Mod(skillModList, skillCfg, "SealGainFrequency")
-		output["SealMax"] = skillModList.Sum("BASE", skillCfg, "SealCount")
-		output["AverageBurstHits"] = output["SealMax"]
-		output["TimeMaxSeals"] = outNum(output, "SealCooldown") * outNum(output, "SealMax")
+		output.SetN("SealCooldown", skillModList.Sum(modparser.Base, skillCfg, "SealGainFrequency")/Mod(skillModList, skillCfg, "SealGainFrequency"))
+		output.SetN("SealMax", skillModList.Sum(modparser.Base, skillCfg, "SealCount"))
+		output.Set("AverageBurstHits", output.Get("SealMax"))
+		output.SetN("TimeMaxSeals", output.N("SealCooldown")*output.N("SealMax"))
 
-		if !truthy(skillData["hitTimeOverride"]) {
+		if !skillData.Flag("hitTimeOverride") {
 			castTime := 0.0
 			if ct := activeSkill.ActiveEffect.GrantedEffect.CastTime; ct != nil {
 				castTime = *ct
 			}
 			if skillModList.Flag(nil, "UseMaxUnleash") {
-				for _, value := range skillModList.Tabulate("INC", &modstore.Cfg{}, "MaxSealCrit") {
+				for _, value := range skillModList.Tabulate(modparser.Inc, &modstore.Cfg{}, "MaxSealCrit") {
 					mod := value.Mod
-					skillModList.AddMod(newMod("CritChance", "INC", mod.Value, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+					skillModList.AddMod(modparser.NewModFull("CritChance", modparser.Inc, mod.Value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 				}
-				for _, value := range skillModList.Tabulate("MORE", &modstore.Cfg{}, "MaxSealDamage") {
+				for _, value := range skillModList.Tabulate(modparser.More, &modstore.Cfg{}, "MaxSealDamage") {
 					mod := value.Mod
-					skillModList.AddMod(newMod("Damage", "MORE", anyNum(mod.Value)*outNum(output, "SealMax"), modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+					skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, modparser.Num(valueNum(mod.Value)*output.N("SealMax")), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 				}
-				env.PlayerMainSkill.SkillData["dpsMultiplier"] = 1 + outNum(output, "SealMax")*Mod(skillModList, skillCfg, "SealRepeatPenalty")
-				env.PlayerMainSkill.SkillData["hitTimeOverride"] = math.Max(outNum(output, "TimeMaxSeals"),
-					1/castTime*1.1*Mod(skillModList, skillCfg, "Speed")*outNum(output, "ActionSpeedMod"))
+				env.PlayerMainSkill.SkillData.SetN("dpsMultiplier", 1+output.N("SealMax")*Mod(skillModList, skillCfg, "SealRepeatPenalty"))
+				env.PlayerMainSkill.SkillData.SetN("hitTimeOverride", math.Max(output.N("TimeMaxSeals"),
+					1/castTime*1.1*Mod(skillModList, skillCfg, "Speed")*output.N("ActionSpeedMod")))
 			} else {
-				env.PlayerMainSkill.SkillData["dpsMultiplier"] = 1 + 1/outNum(output, "SealCooldown")/
-					(1/castTime*1.1*Mod(skillModList, skillCfg, "Speed")*outNum(output, "ActionSpeedMod"))*
-					Mod(skillModList, skillCfg, "SealRepeatPenalty")
+				env.PlayerMainSkill.SkillData.SetN("dpsMultiplier", 1+1/output.N("SealCooldown")/
+					(1/castTime*1.1*Mod(skillModList, skillCfg, "Speed")*output.N("ActionSpeedMod"))*
+					Mod(skillModList, skillCfg, "SealRepeatPenalty"))
 			}
 		}
 	}
 
 	physMode := "AVERAGE"
-	if v := str(env.ConfigInput["physMode"]); v != "" {
+	if v := env.ConfigInput.PhysMode; v != "" {
 		physMode = v
 	}
 	processedRandomMods := map[*modparser.Mod]bool{}
 	for _, cfg := range []*modstore.Cfg{skillCfg, activeSkill.Weapon1Cfg, activeSkill.Weapon2Cfg} {
-		if cfg == nil || skillModList.Sum("BASE", cfg, "PhysicalDamageGainAsRandom", "PhysicalDamageConvertToRandom", "PhysicalDamageGainAsColdOrLightning") <= 0 {
+		if cfg == nil || skillModList.Sum(modparser.Base, cfg, "PhysicalDamageGainAsRandom", "PhysicalDamageConvertToRandom", "PhysicalDamageGainAsColdOrLightning") <= 0 {
 			continue
 		}
 		skillFlags["randomPhys"] = true
-		for _, value := range skillModList.Tabulate("BASE", cfg, "PhysicalDamageGainAsRandom") {
+		for _, value := range skillModList.Tabulate(modparser.Base, cfg, "PhysicalDamageGainAsRandom") {
 			mod := value.Mod
 			if processedRandomMods[mod] {
 				continue
 			}
 			processedRandomMods[mod] = true
-			effVal := anyNum(mod.Value) / 3
-			args := modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)
+			effVal := valueNum(mod.Value) / 3
+			mk := func(name string, value modparser.Value) *modparser.Mod {
+				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
+			}
 			switch physMode {
 			case "AVERAGE":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsFire", "BASE", effVal, args...))
-				skillModList.AddMod(newMod("PhysicalDamageGainAsCold", "BASE", effVal, args...))
-				skillModList.AddMod(newMod("PhysicalDamageGainAsLightning", "BASE", effVal, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsFire", modparser.Num(effVal)))
+				skillModList.AddMod(mk("PhysicalDamageGainAsCold", modparser.Num(effVal)))
+				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", modparser.Num(effVal)))
 			case "FIRE":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsFire", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsFire", mod.Value))
 			case "COLD":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsCold", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsCold", mod.Value))
 			case "LIGHTNING":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsLightning", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", mod.Value))
 			}
 		}
-		for _, value := range skillModList.Tabulate("BASE", cfg, "PhysicalDamageConvertToRandom") {
+		for _, value := range skillModList.Tabulate(modparser.Base, cfg, "PhysicalDamageConvertToRandom") {
 			mod := value.Mod
 			if processedRandomMods[mod] {
 				continue
 			}
 			processedRandomMods[mod] = true
-			effVal := anyNum(mod.Value) / 3
-			args := modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)
+			effVal := valueNum(mod.Value) / 3
+			mk := func(name string, value modparser.Value) *modparser.Mod {
+				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
+			}
 			switch physMode {
 			case "AVERAGE":
-				skillModList.AddMod(newMod("PhysicalDamageConvertToFire", "BASE", effVal, args...))
-				skillModList.AddMod(newMod("PhysicalDamageConvertToCold", "BASE", effVal, args...))
-				skillModList.AddMod(newMod("PhysicalDamageConvertToLightning", "BASE", effVal, args...))
+				skillModList.AddMod(mk("PhysicalDamageConvertToFire", modparser.Num(effVal)))
+				skillModList.AddMod(mk("PhysicalDamageConvertToCold", modparser.Num(effVal)))
+				skillModList.AddMod(mk("PhysicalDamageConvertToLightning", modparser.Num(effVal)))
 			case "FIRE":
-				skillModList.AddMod(newMod("PhysicalDamageConvertToFire", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageConvertToFire", mod.Value))
 			case "COLD":
-				skillModList.AddMod(newMod("PhysicalDamageConvertToCold", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageConvertToCold", mod.Value))
 			case "LIGHTNING":
-				skillModList.AddMod(newMod("PhysicalDamageConvertToLightning", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageConvertToLightning", mod.Value))
 			}
 		}
-		for _, value := range skillModList.Tabulate("BASE", cfg, "PhysicalDamageGainAsColdOrLightning") {
+		for _, value := range skillModList.Tabulate(modparser.Base, cfg, "PhysicalDamageGainAsColdOrLightning") {
 			mod := value.Mod
 			if processedRandomMods[mod] {
 				continue
 			}
 			processedRandomMods[mod] = true
-			effVal := anyNum(mod.Value) / 2
-			args := modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)
+			effVal := valueNum(mod.Value) / 2
+			mk := func(name string, value modparser.Value) *modparser.Mod {
+				return modparser.NewModFull(name, modparser.Base, value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...)
+			}
 			switch physMode {
 			case "AVERAGE", "FIRE":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsCold", "BASE", effVal, args...))
-				skillModList.AddMod(newMod("PhysicalDamageGainAsLightning", "BASE", effVal, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsCold", modparser.Num(effVal)))
+				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", modparser.Num(effVal)))
 			case "COLD":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsCold", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsCold", mod.Value))
 			case "LIGHTNING":
-				skillModList.AddMod(newMod("PhysicalDamageGainAsLightning", "BASE", mod.Value, args...))
+				skillModList.AddMod(mk("PhysicalDamageGainAsLightning", mod.Value))
 			}
 		}
 	}
 	// momentum stacks
 	if skillModList.Flag(nil, "SupportedByMomentum") {
-		maxMomentumStacks := skillModList.Sum("BASE", skillCfg, "MomentumStacksMax")
-		extraMomentumStacks := skillModList.Sum("BASE", skillCfg, "MomentumStacksExtra")
-		combat := modparser.Tag{"type": "Condition", "var": "Combat"}
+		maxMomentumStacks := skillModList.Sum(modparser.Base, skillCfg, "MomentumStacksMax")
+		extraMomentumStacks := skillModList.Sum(modparser.Base, skillCfg, "MomentumStacksExtra")
+		combat := &modparser.CondTag{Var: "Combat"}
 		if maxMomentumStacks > 0 {
-			if !modDB.HasMod("BASE", nil, "Multiplier:MomentumStacks") {
-				modDB.AddMod(newMod("Multiplier:MomentumStacks", "BASE",
-					math.Min((maxMomentumStacks+extraMomentumStacks)/2, maxMomentumStacks), "Config", combat))
-			} else if modDB.Sum("BASE", nil, "Multiplier:MomentumStacks") > maxMomentumStacks {
-				modDB.ReplaceMod(newMod("Multiplier:MomentumStacks", "BASE", maxMomentumStacks, "Config", combat))
+			if !modDB.HasMod(modparser.Base, nil, "Multiplier:MomentumStacks") {
+				modDB.AddMod(newModS("Multiplier:MomentumStacks", modparser.Base, modparser.Num(math.Min((maxMomentumStacks+extraMomentumStacks)/2, maxMomentumStacks)), "Config", combat))
+			} else if modDB.Sum(modparser.Base, nil, "Multiplier:MomentumStacks") > maxMomentumStacks {
+				modDB.ReplaceMod(newModS("Multiplier:MomentumStacks", modparser.Base, modparser.Num(maxMomentumStacks), "Config", combat))
 			}
-		} else if modDB.HasMod("BASE", nil, "Multiplier:MomentumStacks") {
-			modDB.ReplaceMod(newMod("Multiplier:MomentumStacks", "BASE", 0.0, "Config"))
+		} else if modDB.HasMod(modparser.Base, nil, "Multiplier:MomentumStacks") {
+			modDB.ReplaceMod(newModS("Multiplier:MomentumStacks", modparser.Base, modparser.Num(0.0), "Config"))
 		}
 	}
 }
 
 // repeatSkillTypesCheck ports the local of the same name (L775).
-func repeatSkillTypesCheck(skillModList *modstore.List, activeSkillTypes map[int64]bool) bool {
-	excludeSkillTypes := []int64{
-		modparser.SkillType.Instant, modparser.SkillType.Channel, modparser.SkillType.Triggered,
-		modparser.SkillType.Retaliation, modparser.SkillType.NonRepeatable,
+func repeatSkillTypesCheck(skillModList *modstore.List, activeSkillTypes map[modparser.SkillTypeID]bool) bool {
+	excludeSkillTypes := []modparser.SkillTypeID{
+		modparser.SkillTypeInstant, modparser.SkillTypeChannel, modparser.SkillTypeTriggered,
+		modparser.SkillTypeRetaliation, modparser.SkillTypeNonRepeatable,
 	}
 	for _, typ := range excludeSkillTypes {
 		if activeSkillTypes[typ] {
@@ -543,7 +524,7 @@ func repeatSkillTypesCheck(skillModList *modstore.List, activeSkillTypes map[int
 		}
 	}
 	return !skillModList.Flag(nil, "CannotRepeat") &&
-		(activeSkillTypes[modparser.SkillType.Attack] || activeSkillTypes[modparser.SkillType.Spell])
+		(activeSkillTypes[modparser.SkillTypeAttack] || activeSkillTypes[modparser.SkillTypeSpell])
 }
 
 // offenceRepeats ports L783-869: output.Repeats and everything the repeat
@@ -554,73 +535,73 @@ func (env *Env) offenceRepeats(c *offenceCtx) {
 
 	repeats := 1.0
 	if repeatSkillTypesCheck(skillModList, activeSkill.SkillTypes) {
-		repeats += skillModList.Sum("BASE", skillCfg, "RepeatCount")
+		repeats += skillModList.Sum(modparser.Base, skillCfg, "RepeatCount")
 	}
-	output["Repeats"] = repeats
+	output.SetN("Repeats", repeats)
 	if repeats <= 1 {
 		return
 	}
-	output["RepeatCount"] = repeats
+	output.SetN("RepeatCount", repeats)
 	// handle all the multipliers from Repeats
-	repeatMode := str(env.ConfigInput["repeatMode"])
+	repeatMode := env.ConfigInput.RepeatMode
 	if repeatMode == "NONE" {
 		return
 	}
 	average := repeatMode == "AVERAGE"
 
-	for _, value := range skillModList.Tabulate("INC", skillCfg, "RepeatFinalAreaOfEffect") {
+	for _, value := range skillModList.Tabulate(modparser.Inc, skillCfg, "RepeatFinalAreaOfEffect") {
 		mod := value.Mod
-		modValue := anyNum(mod.Value)
+		modValue := valueNum(mod.Value)
 		if average {
 			modValue /= repeats
 		}
-		skillModList.AddMod(newMod("AreaOfEffect", "INC", modValue, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("AreaOfEffect", modparser.Inc, modparser.Num(modValue), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 	}
-	for _, value := range skillModList.Tabulate("INC", skillCfg, "RepeatPerRepeatAreaOfEffect") {
+	for _, value := range skillModList.Tabulate(modparser.Inc, skillCfg, "RepeatPerRepeatAreaOfEffect") {
 		mod := value.Mod
-		modValue := anyNum(mod.Value) * (repeats - 1)
+		modValue := valueNum(mod.Value) * (repeats - 1)
 		if average {
 			modValue /= 2
 		}
-		skillModList.AddMod(newMod("AreaOfEffect", "INC", modValue, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("AreaOfEffect", modparser.Inc, modparser.Num(modValue), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 	}
-	for _, value := range skillModList.Tabulate("BASE", skillCfg, "RepeatFinalDoubleDamageChance") {
+	for _, value := range skillModList.Tabulate(modparser.Base, skillCfg, "RepeatFinalDoubleDamageChance") {
 		mod := value.Mod
-		modValue := anyNum(mod.Value)
+		modValue := valueNum(mod.Value)
 		if average {
 			modValue /= repeats
 		}
-		skillModList.AddMod(newMod("DoubleDamageChance", "BASE", modValue, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("DoubleDamageChance", modparser.Base, modparser.Num(modValue), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 	}
 	damageFinalMoreValueTotal := 1.0
 	damageMoreValueTotal := 0.0
-	for _, value := range skillModList.Tabulate("MORE", skillCfg, "RepeatFinalDamage") {
+	for _, value := range skillModList.Tabulate(modparser.More, skillCfg, "RepeatFinalDamage") {
 		mod := value.Mod
-		modValue := anyNum(mod.Value)
+		modValue := valueNum(mod.Value)
 		damageFinalMoreValueTotal *= 1 + modValue/100
 		damageMoreValueTotal += modValue
 		if average && !skillModList.Flag(nil, "OnlyFinalRepeat") {
 			modValue /= repeats
 		}
-		skillModList.AddMod(newMod("Damage", "MORE", modValue, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, modparser.Num(modValue), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 	}
-	for _, value := range skillModList.Tabulate("MORE", skillCfg, "RepeatPerRepeatDamage") {
+	for _, value := range skillModList.Tabulate(modparser.More, skillCfg, "RepeatPerRepeatDamage") {
 		mod := value.Mod
-		modValue := anyNum(mod.Value) * (repeats - 1)
+		modValue := valueNum(mod.Value) * (repeats - 1)
 		if average {
 			if damageFinalMoreValueTotal != 1 {
 				// sum from 0 to num Repeats the damage each one does,
 				// multiplied by the other repeat multipliers, divide the
 				// total by the average other repeat multipliers and divide
 				// by number of repeats
-				modValue = ((100+anyNum(mod.Value)*(repeats-2)/2)*(repeats-1)+
-					(100+anyNum(mod.Value)*(repeats-1))*damageFinalMoreValueTotal)/
+				modValue = ((100+valueNum(mod.Value)*(repeats-2)/2)*(repeats-1)+
+					(100+valueNum(mod.Value)*(repeats-1))*damageFinalMoreValueTotal)/
 					(repeats+damageMoreValueTotal/100) - 100
 			} else {
 				modValue /= 2
 			}
 		}
-		skillModList.AddMod(newMod("Damage", "MORE", modValue, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, modparser.Num(modValue), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 	}
 
 	var lastMod *modparser.Mod
@@ -632,31 +613,27 @@ func (env *Env) offenceRepeats(c *offenceCtx) {
 		if repeatCount.n > repeats {
 			break
 		} else if average {
-			for _, value := range skillModList.Tabulate("MORE", skillCfg, "Repeat"+repeatCount.name+"Damage") {
-				damageMoreValueTotal += anyNum(value.Mod.Value)
+			for _, value := range skillModList.Tabulate(modparser.More, skillCfg, "Repeat"+repeatCount.name+"Damage") {
+				damageMoreValueTotal += valueNum(value.Mod.Value)
 				lastMod = value.Mod
 			}
 		} else if repeatCount.n == repeats {
-			for _, value := range skillModList.Tabulate("MORE", skillCfg, "Repeat"+repeatCount.name+"Damage") {
+			for _, value := range skillModList.Tabulate(modparser.More, skillCfg, "Repeat"+repeatCount.name+"Damage") {
 				mod := value.Mod
-				skillModList.AddMod(newMod("Damage", "MORE", mod.Value, modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+				skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, mod.Value, mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 			}
 		}
 	}
 	if average && lastMod != nil {
-		skillModList.AddMod(newMod("Damage", "MORE",
-			(damageMoreValueTotal/repeats+100)/(1+damageFinalMoreValueTotal/repeats/100)-100,
-			modArgs(lastMod.Source, lastMod.Flags, lastMod.KeywordFlags, lastMod.Tags)...))
+		skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, modparser.Num((damageMoreValueTotal/repeats+100)/(1+damageFinalMoreValueTotal/repeats/100)-100), lastMod.Source, lastMod.SourceSet, lastMod.Flags, lastMod.KeywordFlags, lastMod.Tags...))
 	}
 	if skillModList.Flag(nil, "FinalRepeatSumsDamage") {
-		for _, value := range skillModList.Tabulate("FLAG", skillCfg, "FinalRepeatSumsDamage") {
+		for _, value := range skillModList.Tabulate(modparser.Flag, skillCfg, "FinalRepeatSumsDamage") {
 			mod := value.Mod
-			skillModList.AddMod(newMod("Damage", "MORE",
-				(100*repeats+damageFinalMoreValueTotal)/(1+damageFinalMoreValueTotal/100)-100,
-				modArgs(mod.Source, mod.Flags, mod.KeywordFlags, mod.Tags)...))
+			skillModList.AddMod(modparser.NewModFull("Damage", modparser.More, modparser.Num((100*repeats+damageFinalMoreValueTotal)/(1+damageFinalMoreValueTotal/100)-100), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, mod.Tags...))
 		}
 	}
 	if skillFlags["trap"] || skillFlags["mine"] {
-		skillModList.AddMod(newMod("DPS", "MORE", (repeats-1)*100, "Repeat Count"))
+		skillModList.AddMod(newModS("DPS", modparser.More, modparser.Num((repeats-1)*100), "Repeat Count"))
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -49,13 +50,13 @@ func applyValueScalar(line string, valueScalar float64, baseValueScalar float64,
 	scaleValue := func(num string) string {
 		value, _ := strconv.ParseFloat(num, 64)
 		if baseValueScalar != 1 {
-			value = round(value*baseValueScalar*power) / power
+			value = util.RoundHalfUp(value*baseValueScalar*power, 0) / power
 		}
 		bump := 0.001
 		if precision != nil {
 			bump = 0
 		}
-		return luaNumStr(math.Floor(value*valueScalar*power+bump) / power)
+		return util.FormatIntOrG14(math.Floor(value*valueScalar*power+bump) / power)
 	}
 	if precision != nil {
 		// line:gsub("(%d+%.?%d*)", scaleValue, numbers)
@@ -130,11 +131,11 @@ func formatValue(valueStr string, baseValueScalar, valueScalar float64, precisio
 	if displayPrecision != nil && !ifRequired {
 		return strconv.FormatFloat(value, 'f', *displayPrecision, 64)
 	} else if displayPrecision != nil {
-		return luaNumStr(value)
+		return util.FormatIntOrG14(value)
 	}
 	// tostring(roundSymmetric(value, min(2, floor(log10(precision)+0.001))))
 	dec := imin(2, int(math.Floor(math.Log10(float64(precision))+0.001)))
-	return luaNumStr(roundSymmetricDec(value, dec))
+	return util.FormatIntOrG14(roundSymmetricDec(value, dec))
 }
 
 var (
@@ -177,9 +178,9 @@ func applyRange(line string, rng float64, valueScalar, baseValueScalar float64) 
 			value = -value
 		}
 		if sign == "+" && value > 0 {
-			return sign + luaNumStr(value)
+			return sign + util.FormatIntOrG14(value)
 		}
-		return luaNumStr(value)
+		return util.FormatIntOrG14(value)
 	})
 	strippedLine = gsubLimitFunc(strippedLine, antonymDecRe.String(), -1, func(caps []string) string {
 		return antonymFunc(caps[1], caps[2])
@@ -323,9 +324,9 @@ func applyRange(line string, rng float64, valueScalar, baseValueScalar float64) 
 				precisionSame = false
 			}
 			if minPrecision < 0 {
-				return luaNumStr(minPrecision)
+				return util.FormatIntOrG14(minPrecision)
 			}
-			return plus + luaNumStr(minPrecision)
+			return plus + util.FormatIntOrG14(minPrecision)
 		})
 		testLine = gsubLimitFunc(testLine, antonymIntRe.String(), -1, func(caps []string) string {
 			return antonymFunc(caps[1], caps[2])
@@ -336,20 +337,14 @@ func applyRange(line string, rng float64, valueScalar, baseValueScalar float64) 
 	}
 
 	var precision *int
-	mods, extra := modparser.Parse(testLine)
-	if mods != nil && extra == "" {
-		for _, mv := range mods {
-			mod, ok := mv.(*modparser.Mod)
-			if !ok {
-				continue
-			}
+	mods, extra, parsed := modparser.Parse(testLine)
+	if parsed && extra == "" {
+		for _, mod := range mods {
 			subMod := mod
-			if tag, ok := mod.Value.(modparser.Tag); ok {
-				if inner, ok := tag["mod"].(*modparser.Mod); ok {
-					subMod = inner
-				}
+			if ref, ok := mod.Value.(modparser.ModRef); ok && ref.Mod != nil {
+				subMod = ref.Mod
 			}
-			if _, isNum := subMod.Value.(float64); isNum {
+			if _, isNum := subMod.Value.(modparser.Num); isNum {
 				if byType, ok := data.HighPrecisionMods[subMod.Name]; ok {
 					if p, ok := byType[subMod.Type]; ok {
 						pp := p
@@ -375,9 +370,9 @@ func applyRange(line string, rng float64, valueScalar, baseValueScalar float64) 
 		}
 		numVal := math.Floor((minV+rng*(maxV-minV))*power+0.5) / power
 		if numVal < 0 {
-			return luaNumStr(numVal)
+			return util.FormatIntOrG14(numVal)
 		}
-		return plus + luaNumStr(numVal)
+		return plus + util.FormatIntOrG14(numVal)
 	})
 	out = gsubLimitFunc(out, antonymIntRe.String(), -1, func(caps []string) string {
 		return antonymFunc(caps[1], caps[2])

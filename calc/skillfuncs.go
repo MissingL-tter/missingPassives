@@ -1,58 +1,64 @@
 // Ports of the hand-written skill callbacks that Data/Skills/*.lua attaches
 // to granted effects (initialFunc, preSkillTypeFunc, preDamageFunc,
-// postCritFunc, preDotFunc). The generated data tables carry an UnportedFn
-// marker for each one; runSkillFunc consults this registry first and panics
+// postCritFunc, preDotFunc). The data tables list each one in the skill's
+// Custom.Callbacks; runSkillFunc consults this registry first and panics
 // on anything still unported, so a corpus build can never silently skip a
 // callback.
 package calc
 
 import (
 	"math"
-	"strconv"
 
+	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // skillFunc is one ported callback. It gets the same reach the Lua closure
 // has: the active skill, the pass-independent output, and the environment.
 type skillFunc func(env *Env, c *offenceCtx)
 
-// skillFuncs is keyed "<grantedEffectId>:<callbackName>".
-var skillFuncs = map[string]skillFunc{
-	"Cyclone:initialFunc":                 cycloneInitialFunc("Skill:Cyclone"),
-	"CycloneAltX:initialFunc":             cycloneInitialFunc("Skill:CycloneAltX"),
-	"VaalCyclone:initialFunc":             cycloneInitialFunc("Skill:Cyclone"),
-	"BloodSacramentUnique:initialFunc":    bloodSacramentInitialFunc,
-	"EnemyExplode:preDamageFunc":          enemyExplodePreDamageFunc,
-	"StormBrand:preDamageFunc":            brandHitTimeOverride,
-	"PenanceBrandAltX:preDamageFunc":      brandHitTimeOverride,
-	"HeraldOfTheBreach:preDamageFunc":     heraldOfTheBreachPreDamageFunc,
-	"RighteousFire:preDamageFunc":         righteousFirePreDamageFunc,
-	"BlazingSalvo:preDamageFunc":          blazingSalvoPreDamageFunc,
-	"ShrapnelBallista:preDamageFunc":      shrapnelBallistaPreDamageFunc,
-	"ExplosiveTrap:preDamageFunc":         explosiveTrapPreDamageFunc,
-	"IceSpearAltX:preDamageFunc":          iceSpearAltXPreDamageFunc,
-	"BladeBlast:preDamageFunc":            bladeBlastPreDamageFunc,
-	"TornadoShot:preDamageFunc":           tornadoShotPreDamageFunc,
-	"ToxicRain:preDamageFunc":             toxicRainPreDamageFunc,
-	"Earthquake:preDamageFunc":            earthquakePreDamageFunc,
-	"MoltenStrike:preDamageFunc":          moltenStrikePreDamageFunc(false),
-	"MoltenStrikeAltX:preDamageFunc":      moltenStrikePreDamageFunc(true),
-	"LightningTendrilsAltX:preDamageFunc": lightningTendrilsAltXPreDamageFunc,
-	"LightningTendrilsAltX:postCritFunc":  lightningTendrilsAltXPostCritFunc,
-	"MoltenShell:preDamageFunc":           moltenShellPreDamageFunc("MoltenShellDamageMitigated"),
-	"VaalMoltenShell:preDamageFunc":       moltenShellPreDamageFunc("VaalMoltenShellDamageMitigated"),
-	"HeraldOfAsh:preDamageFunc":           heraldOfAshPreDamageFunc,
-	"HeraldOfThunder:preDamageFunc":       repeatFrequencyOverride("HeraldStormFrequency"),
-	"VoidSphere:preDamageFunc":            repeatFrequencyOverride("VoidSphereFrequency"),
-	"Barrage:preDamageFunc":               barragePreDamageFunc,
-	"Tornado:preDamageFunc":               tornadoPreDamageFunc,
-	"LancingSteelAltX:preDamageFunc":      lancingSteelAltXPreDamageFunc,
-	"RighteousFireAltX:preDamageFunc":     righteousFireAltXPreDamageFunc,
-	"BrandSupport:preDamageFunc":          brandHitTimeOverride,
-	"ToxicRainAltY:preDamageFunc":         toxicRainPreDamageFunc,
-	"BladefallAltZ:preDamageFunc":         bladefallAltZPreDamageFunc,
-	"ForbiddenRite:preDamageFunc":         forbiddenRitePreDamageFunc,
+// skillFuncKey names one callback of one granted effect.
+type skillFuncKey struct {
+	ID   string
+	Kind data.CallbackKind
+}
+
+var skillFuncs = map[skillFuncKey]skillFunc{
+	{"Cyclone", data.CallbackInitial}:                 cycloneInitialFunc("Skill:Cyclone"),
+	{"CycloneAltX", data.CallbackInitial}:             cycloneInitialFunc("Skill:CycloneAltX"),
+	{"VaalCyclone", data.CallbackInitial}:             cycloneInitialFunc("Skill:Cyclone"),
+	{"BloodSacramentUnique", data.CallbackInitial}:    bloodSacramentInitialFunc,
+	{"EnemyExplode", data.CallbackPreDamage}:          enemyExplodePreDamageFunc,
+	{"StormBrand", data.CallbackPreDamage}:            brandHitTimeOverride,
+	{"PenanceBrandAltX", data.CallbackPreDamage}:      brandHitTimeOverride,
+	{"HeraldOfTheBreach", data.CallbackPreDamage}:     heraldOfTheBreachPreDamageFunc,
+	{"RighteousFire", data.CallbackPreDamage}:         righteousFirePreDamageFunc,
+	{"BlazingSalvo", data.CallbackPreDamage}:          blazingSalvoPreDamageFunc,
+	{"ShrapnelBallista", data.CallbackPreDamage}:      shrapnelBallistaPreDamageFunc,
+	{"ExplosiveTrap", data.CallbackPreDamage}:         explosiveTrapPreDamageFunc,
+	{"IceSpearAltX", data.CallbackPreDamage}:          iceSpearAltXPreDamageFunc,
+	{"BladeBlast", data.CallbackPreDamage}:            bladeBlastPreDamageFunc,
+	{"TornadoShot", data.CallbackPreDamage}:           tornadoShotPreDamageFunc,
+	{"ToxicRain", data.CallbackPreDamage}:             toxicRainPreDamageFunc,
+	{"Earthquake", data.CallbackPreDamage}:            earthquakePreDamageFunc,
+	{"MoltenStrike", data.CallbackPreDamage}:          moltenStrikePreDamageFunc(false),
+	{"MoltenStrikeAltX", data.CallbackPreDamage}:      moltenStrikePreDamageFunc(true),
+	{"LightningTendrilsAltX", data.CallbackPreDamage}: lightningTendrilsAltXPreDamageFunc,
+	{"LightningTendrilsAltX", data.CallbackPostCrit}:  lightningTendrilsAltXPostCritFunc,
+	{"MoltenShell", data.CallbackPreDamage}:           moltenShellPreDamageFunc("MoltenShellDamageMitigated"),
+	{"VaalMoltenShell", data.CallbackPreDamage}:       moltenShellPreDamageFunc("VaalMoltenShellDamageMitigated"),
+	{"HeraldOfAsh", data.CallbackPreDamage}:           heraldOfAshPreDamageFunc,
+	{"HeraldOfThunder", data.CallbackPreDamage}:       repeatFrequencyOverride("HeraldStormFrequency"),
+	{"VoidSphere", data.CallbackPreDamage}:            repeatFrequencyOverride("VoidSphereFrequency"),
+	{"Barrage", data.CallbackPreDamage}:               barragePreDamageFunc,
+	{"Tornado", data.CallbackPreDamage}:               tornadoPreDamageFunc,
+	{"LancingSteelAltX", data.CallbackPreDamage}:      lancingSteelAltXPreDamageFunc,
+	{"RighteousFireAltX", data.CallbackPreDamage}:     righteousFireAltXPreDamageFunc,
+	{"BrandSupport", data.CallbackPreDamage}:          brandHitTimeOverride,
+	{"ToxicRainAltY", data.CallbackPreDamage}:         toxicRainPreDamageFunc,
+	{"BladefallAltZ", data.CallbackPreDamage}:         bladefallAltZPreDamageFunc,
+	{"ForbiddenRite", data.CallbackPreDamage}:         forbiddenRitePreDamageFunc,
 }
 
 // cycloneInitialFunc ports the Cyclone family's initialFunc: the melee range
@@ -63,61 +69,46 @@ func cycloneInitialFunc(source string) skillFunc {
 		skillModList := activeSkill.SkillModList
 		actor := c.actor
 		rng := 0.0
-		if activeSkill.SkillFlags["weapon1Attack"] && truthy(actor.ms.WeaponData1["range"]) {
-			weapon1RangeBonus := skillModList.Sum("BASE", activeSkill.Weapon1Cfg, "MeleeWeaponRange") +
-				10*skillModList.Sum("BASE", activeSkill.Weapon1Cfg, "MeleeWeaponRangeMetre") +
-				anyNum(actor.ms.WeaponData1["rangeBonus"])
-			if activeSkill.SkillFlags["weapon2Attack"] && truthy(actor.ms.WeaponData2["range"]) {
+		wd1, wd2 := weaponOf(actor.ms.WeaponData1), weaponOf(actor.ms.WeaponData2)
+		if activeSkill.SkillFlags["weapon1Attack"] && wd1 != nil && wd1.Range != 0 {
+			weapon1RangeBonus := skillModList.Sum(modparser.Base, activeSkill.Weapon1Cfg, "MeleeWeaponRange") +
+				10*skillModList.Sum(modparser.Base, activeSkill.Weapon1Cfg, "MeleeWeaponRangeMetre") +
+				wd1.RangeBonus.Or(0)
+			if activeSkill.SkillFlags["weapon2Attack"] && wd2 != nil && wd2.Range != 0 {
 				// dual wield average
-				rng = (weapon1RangeBonus + skillModList.Sum("BASE", activeSkill.Weapon2Cfg, "MeleeWeaponRange") +
-					10*skillModList.Sum("BASE", activeSkill.Weapon2Cfg, "MeleeWeaponRangeMetre") +
-					anyNum(actor.ms.WeaponData2["rangeBonus"])) / 2
+				rng = (weapon1RangeBonus + skillModList.Sum(modparser.Base, activeSkill.Weapon2Cfg, "MeleeWeaponRange") +
+					10*skillModList.Sum(modparser.Base, activeSkill.Weapon2Cfg, "MeleeWeaponRangeMetre") +
+					wd2.RangeBonus.Or(0)) / 2
 			} else {
 				// primary hand attack
 				rng = weapon1RangeBonus
 			}
 		} else {
 			// unarmed
-			rng = skillModList.Sum("BASE", activeSkill.SkillCfg, "UnarmedRange") +
-				10*skillModList.Sum("BASE", activeSkill.SkillCfg, "UnarmedRangeMetre")
+			rng = skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "UnarmedRange") +
+				10*skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "UnarmedRangeMetre")
 		}
-		skillModList.AddMod(newMod("Multiplier:AdditionalMeleeRange", "BASE", rng, source))
+		skillModList.AddMod(newModS("Multiplier:AdditionalMeleeRange", modparser.Base, modparser.Num(rng), source))
 	}
 }
 
 // bloodSacramentInitialFunc ports the Blood Sacrament (Sanguimancy) callback.
 func bloodSacramentInitialFunc(env *Env, c *offenceCtx) {
-	if outNum(c.output, "LifeReservedPercent") >= 100 {
+	if c.output.N("LifeReservedPercent") >= 100 {
 		return
 	}
 	skillData := c.skillData
 	lifeReservedPercent := 3.0
-	if truthy(skillData["LifeReservedPercent"]) {
-		lifeReservedPercent = anyNum(skillData["LifeReservedPercent"])
+	if skillData.Flag("LifeReservedPercent") {
+		lifeReservedPercent = skillData.N("LifeReservedPercent")
 	}
 	// `skillData.LifeReservedBase or math.huge`
-	lifeReserved := mathHuge
-	if truthy(skillData["LifeReservedBase"]) {
-		lifeReserved = anyNum(skillData["LifeReservedBase"])
+	lifeReserved := math.Inf(1)
+	if skillData.Flag("LifeReservedBase") {
+		lifeReserved = skillData.N("LifeReservedBase")
 	}
-	c.skillModList.AddMod(newMod("Multiplier:ChannelledLifeReservedPercentPerStage", "BASE", lifeReservedPercent, "Blood Sacrament"))
-	c.skillModList.AddMod(newMod("Multiplier:ChannelledLifeReservedPerStage", "BASE", lifeReserved, "Blood Sacrament"))
-}
-
-// mathHuge is Lua's math.huge.
-var mathHuge = math.Inf(1)
-
-// explodeSourceKey ports `explodeSource.modSource or "Tree:"..explodeSource.id`.
-func explodeSourceKey(src any) string {
-	switch t := src.(type) {
-	case *Item:
-		if t.In.ModSource != nil {
-			return *t.In.ModSource
-		}
-	case *NodeInput:
-		return "Tree:" + strconv.FormatInt(int64(t.ID), 10)
-	}
-	panic("offence: explode source without a modSource")
+	c.skillModList.AddMod(newModS("Multiplier:ChannelledLifeReservedPercentPerStage", modparser.Base, modparser.Num(lifeReservedPercent), "Blood Sacrament"))
+	c.skillModList.AddMod(newModS("Multiplier:ChannelledLifeReservedPerStage", modparser.Base, modparser.Num(lifeReserved), "Blood Sacrament"))
 }
 
 // enemyExplodePreDamageFunc ports the EnemyExplode preDamageFunc
@@ -127,28 +118,27 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
 	skillModList, skillCfg, skillData := activeSkill.SkillModList, activeSkill.SkillCfg, activeSkill.SkillData
 	explodeChance := 0.0
-	part := anyNum(activeSkill.SkillPart)
+	part := activeSkill.SkillPart.V
 	if part != 3 {
-		src := activeSkill.ActiveEffect.SrcInstance.ExplodeSource
-		activeEffectSource := explodeSourceKey(src)
-		for _, entry := range skillModList.Tabulate("LIST", skillCfg, "ExplodeMod") {
+		activeEffectSource := activeSkill.ActiveEffect.SrcInstance.ExplodeSource.ExplodeKey()
+		for _, entry := range skillModList.Tabulate(modparser.List, skillCfg, "ExplodeMod") {
 			if entry.Mod.Source != activeEffectSource {
 				continue
 			}
-			tag, _ := entry.Value.(modparser.Tag)
-			typ := str(tag["type"])
-			amount := anyNum(tag["amount"])
+			tag, _ := entry.Value.(modparser.ExplodeRef)
+			typ := tag.Type
+			amount := tag.Amount
 			if typ == "RandomElement" {
-				skillData["FireEffectiveExplodePercentage"] = amount / 3
-				skillData["ColdEffectiveExplodePercentage"] = amount / 3
-				skillData["LightningEffectiveExplodePercentage"] = amount / 3
+				skillData.SetN("FireEffectiveExplodePercentage", amount/3)
+				skillData.SetN("ColdEffectiveExplodePercentage", amount/3)
+				skillData.SetN("LightningEffectiveExplodePercentage", amount/3)
 			} else {
-				skillData[typ+"EffectiveExplodePercentage"] = amount
+				skillData.SetN(typ+"EffectiveExplodePercentage", amount)
 			}
 			if part == 2 {
 				explodeChance = 1
 			} else {
-				explodeChance = anyNum(tag["chance"])
+				explodeChance = tag.Chance
 			}
 		}
 	} else {
@@ -157,14 +147,14 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 		type amountChance map[float64]float64
 		typeAmountChances := map[string]amountChance{}
 		for _, value := range skillModList.List(skillCfg, "ExplodeMod") {
-			tag, _ := value.(modparser.Tag)
-			typ := str(tag["type"])
+			tag, _ := value.(modparser.ExplodeRef)
+			typ := tag.Type
 			ac := typeAmountChances[typ]
 			if ac == nil {
 				ac = amountChance{}
 				typeAmountChances[typ] = ac
 			}
-			ac[anyNum(tag["amount"])] += anyNum(tag["chance"])
+			ac[tag.Amount] += tag.Chance
 		}
 		for typ, ac := range typeAmountChances {
 			physExplodeChance := 0.0
@@ -172,10 +162,10 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 				amountXChance := amount * chance
 				if typ == "RandomElement" {
 					for _, ele := range []string{"Fire", "Cold", "Lightning"} {
-						skillData[ele+"EffectiveExplodePercentage"] = anyNum(skillData[ele+"EffectiveExplodePercentage"]) + amountXChance/3
+						skillData.SetN(ele+"EffectiveExplodePercentage", skillData.N(ele+"EffectiveExplodePercentage")+amountXChance/3)
 					}
 				} else {
-					skillData[typ+"EffectiveExplodePercentage"] = anyNum(skillData[typ+"EffectiveExplodePercentage"]) + amountXChance
+					skillData.SetN(typ+"EffectiveExplodePercentage", skillData.N(typ+"EffectiveExplodePercentage")+amountXChance)
 				}
 				if typ == "Physical" {
 					physExplodeChance = 1 - ((1 - physExplodeChance) * (1 - chance))
@@ -183,11 +173,11 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 				explodeChance = 1 - ((1 - explodeChance) * (1 - chance))
 			}
 			if typ == "Physical" && physExplodeChance != 0 {
-				skillModList.AddMod(newMod("CalcArmourAsThoughDealing", "MORE", 100/math.Min(physExplodeChance, 1)-100))
+				skillModList.AddMod(newMod("CalcArmourAsThoughDealing", modparser.More, modparser.Num(100/math.Min(physExplodeChance, 1)-100)))
 			}
 		}
 	}
-	output["ExplodeChance"] = math.Min(explodeChance*100, 100)
+	output.SetN("ExplodeChance", math.Min(explodeChance*100, 100))
 }
 
 // brandHitTimeOverride ports the brand family's preDamageFunc: the brand's
@@ -195,9 +185,9 @@ func enemyExplodePreDamageFunc(env *Env, c *offenceCtx) {
 func brandHitTimeOverride(env *Env, c *offenceCtx) {
 	activeSkill := c.activeSkill
 	skillModList, skillCfg, skillData := activeSkill.SkillModList, activeSkill.SkillCfg, activeSkill.SkillData
-	skillData["hitTimeOverride"] = anyNum(skillData["repeatFrequency"]) /
-		(1 + skillModList.Sum("INC", skillCfg, "Speed", "BrandActivationFrequency")/100) /
-		skillModList.More(skillCfg, "BrandActivationFrequency")
+	skillData.SetN("hitTimeOverride", skillData.N("repeatFrequency")/
+		(1+skillModList.Sum(modparser.Inc, skillCfg, "Speed", "BrandActivationFrequency")/100)/
+		skillModList.More(skillCfg, "BrandActivationFrequency"))
 }
 
 // righteousFirePreDamageFunc ports Righteous Fire's preDamageFunc: the burn
@@ -205,12 +195,12 @@ func brandHitTimeOverride(env *Env, c *offenceCtx) {
 func righteousFirePreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
 	skillData := activeSkill.SkillData
-	if activeSkill.SkillFlags["totem"] && outNum(output, "TotemLife") > 1 {
-		skillData["FireDot"] = outNum(output, "TotemLife")*anyNum(skillData["RFLifeMultiplier"]) +
-			outNum(output, "TotemEnergyShield")*anyNum(skillData["RFESMultiplier"])
-	} else if outNum(output, "LifeUnreserved") > 1 {
-		skillData["FireDot"] = outNum(output, "Life")*anyNum(skillData["RFLifeMultiplier"]) +
-			outNum(output, "EnergyShield")*anyNum(skillData["RFESMultiplier"])
+	if activeSkill.SkillFlags["totem"] && output.N("TotemLife") > 1 {
+		skillData.SetN("FireDot", output.N("TotemLife")*skillData.N("RFLifeMultiplier")+
+			output.N("TotemEnergyShield")*skillData.N("RFESMultiplier"))
+	} else if output.N("LifeUnreserved") > 1 {
+		skillData.SetN("FireDot", output.N("Life")*skillData.N("RFLifeMultiplier")+
+			output.N("EnergyShield")*skillData.N("RFESMultiplier"))
 	}
 }
 
@@ -218,14 +208,14 @@ func righteousFirePreDamageFunc(env *Env, c *offenceCtx) {
 // "All Projectiles" skill part multiplies DPS by the projectile count.
 func blazingSalvoPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
-	if anyNum(activeSkill.SkillPart) != 2 {
+	if activeSkill.SkillPart.V != 2 {
 		return
 	}
 	mult := 1.0
-	if truthy(activeSkill.SkillData["dpsMultiplier"]) {
-		mult = anyNum(activeSkill.SkillData["dpsMultiplier"])
+	if activeSkill.SkillData.Has("dpsMultiplier") {
+		mult = activeSkill.SkillData.N("dpsMultiplier")
 	}
-	activeSkill.SkillData["dpsMultiplier"] = mult * outNum(output, "ProjectileCount")
+	activeSkill.SkillData.SetN("dpsMultiplier", mult*output.N("ProjectileCount"))
 }
 
 // shrapnelBallistaPreDamageFunc ports Shrapnel Ballista's preDamageFunc: the
@@ -236,21 +226,20 @@ func shrapnelBallistaPreDamageFunc(env *Env, c *offenceCtx) {
 	skillModList, skillData := activeSkill.SkillModList, activeSkill.SkillData
 	if !skillModList.Flag(nil, "SequentialProjectiles") {
 		mult := 1.0
-		if truthy(skillData["dpsMultiplier"]) {
-			mult = anyNum(skillData["dpsMultiplier"])
+		if skillData.Has("dpsMultiplier") {
+			mult = skillData.N("dpsMultiplier")
 		}
 		// `overlap or (Rain and ProjectileCount or 1)`
 		overlap := 1.0
-		if truthy(skillData["ShrapnelBallistaProjectileOverlap"]) {
-			overlap = anyNum(skillData["ShrapnelBallistaProjectileOverlap"])
-		} else if activeSkill.SkillTypes[modparser.SkillType.Rain] {
-			overlap = outNum(output, "ProjectileCount")
+		if skillData.Flag("ShrapnelBallistaProjectileOverlap") {
+			overlap = skillData.N("ShrapnelBallistaProjectileOverlap")
+		} else if activeSkill.SkillTypes[modparser.SkillTypeRain] {
+			overlap = output.N("ProjectileCount")
 		}
-		skillData["dpsMultiplier"] = mult * math.Min(overlap, outNum(output, "ProjectileCount"))
+		skillData.SetN("dpsMultiplier", mult*math.Min(overlap, output.N("ProjectileCount")))
 	}
-	if splitCount := outNum(output, "SplitCount"); splitCount > 0 {
-		skillModList.AddMod(newMod("DPS", "MORE", splitCount*100, "Split Return", int64(0),
-			modparser.Tag{"type": "Condition", "var": "ReturningProjectile"}))
+	if splitCount := output.N("SplitCount"); splitCount > 0 {
+		skillModList.AddMod(newModSF("DPS", modparser.More, modparser.Num(splitCount*100), "Split Return", modparser.FlagNone, modparser.KeywordNone, &modparser.CondTag{Var: "ReturningProjectile"}))
 	}
 }
 
@@ -269,23 +258,23 @@ func explosiveTrapPreDamageFunc(env *Env, c *offenceCtx) {
 		return math.Min(damagingAreaRadius*damagingAreaRadius/(areaSpreadRadius*areaSpreadRadius), 1)
 	}
 	enemyRadius := 0.0
-	if ov := skillModList.Override(skillCfg, "EnemyRadius"); truthy(ov) {
-		enemyRadius = anyNum(ov)
+	if ov, ok := skillModList.Override(skillCfg, "EnemyRadius"); ok {
+		enemyRadius = valueNum(ov)
 	} else {
-		enemyRadius = skillModList.Sum("BASE", skillCfg, "EnemyRadius")
+		enemyRadius = skillModList.Sum(modparser.Base, skillCfg, "EnemyRadius")
 	}
-	fullRadius := outNum(output, "AreaOfEffectRadiusSecondary")
+	fullRadius := output.N("AreaOfEffectRadiusSecondary")
 	overlapChance := 0.0
-	marginWidth := anyNum(skillData["radiusTertiaryBaseMargin"])*2 + 1
-	occurrences, _ := output["AreaOfEffectRadiusTertiaryOccurrences"].(map[float64]float64)
+	marginWidth := skillData.N("radiusTertiaryBaseMargin")*2 + 1
+	occurrences := c.radiusTertiaryOccurrences
 	for _, smallRadius := range sortedNumKeys(occurrences) {
 		overlapChance += hitChance(enemyRadius, smallRadius, fullRadius) * occurrences[smallRadius] / marginWidth
 	}
-	output["OverlapChance"] = overlapChance * 100
-	smallExplosionsPerTrap := skillModList.Sum("BASE", skillCfg, "SmallExplosions")
-	output["SmallExplosionsPerTrap"] = smallExplosionsPerTrap
+	output.SetN("OverlapChance", overlapChance*100)
+	smallExplosionsPerTrap := skillModList.Sum(modparser.Base, skillCfg, "SmallExplosions")
+	output.SetN("SmallExplosionsPerTrap", smallExplosionsPerTrap)
 	dpsMultiplier := 1.0
-	switch anyNum(activeSkill.SkillPart) {
+	switch activeSkill.SkillPart.V {
 	case 2:
 		dpsMultiplier = 1 + smallExplosionsPerTrap*overlapChance
 	case 3:
@@ -293,15 +282,15 @@ func explosiveTrapPreDamageFunc(env *Env, c *offenceCtx) {
 	}
 	if dpsMultiplier != 1 {
 		mult := 1.0
-		if truthy(skillData["dpsMultiplier"]) {
-			mult = anyNum(skillData["dpsMultiplier"])
+		if skillData.Has("dpsMultiplier") {
+			mult = skillData.N("dpsMultiplier")
 		}
-		skillData["dpsMultiplier"] = mult * dpsMultiplier
+		skillData.SetN("dpsMultiplier", mult*dpsMultiplier)
 		outMult := 1.0
-		if truthy(output["SkillDPSMultiplier"]) {
-			outMult = outNum(output, "SkillDPSMultiplier")
+		if output.Has("SkillDPSMultiplier") {
+			outMult = output.N("SkillDPSMultiplier")
 		}
-		output["SkillDPSMultiplier"] = outMult * dpsMultiplier
+		output.SetN("SkillDPSMultiplier", outMult*dpsMultiplier)
 	}
 }
 
@@ -309,11 +298,11 @@ func explosiveTrapPreDamageFunc(env *Env, c *offenceCtx) {
 // (act_dex.lua:6696), which CalcOffence calls by skill name rather than
 // through the callback registry. It works out how many fuses the attack can
 // keep on the target and how often those explode.
-func (env *Env) explosiveArrowFunc(c *offenceCtx, output map[string]any) {
+func (env *Env) explosiveArrowFunc(c *offenceCtx, output modstore.Output) {
 	activeSkill, globalOutput := c.activeSkill, c.output
 	// This doesn't apply to the "Arrow" skill part. That works like a
 	// normal skill.
-	part := anyNum(activeSkill.SkillPart)
+	part := activeSkill.SkillPart.V
 	if part != 1 && part != 2 {
 		return
 	}
@@ -321,33 +310,33 @@ func (env *Env) explosiveArrowFunc(c *offenceCtx, output map[string]any) {
 	modDB, enemyDB := c.modDB, c.enemyDB
 	skillModList := activeSkill.SkillModList
 	duration := env.calcSkillDuration(skillModList, activeSkill.SkillCfg, activeSkill.SkillData, enemyDB)
-	fuseLimit := skillModList.Sum("BASE", activeSkill.SkillCfg, "ExplosiveArrowMaxFuseCount")
+	fuseLimit := skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "ExplosiveArrowMaxFuseCount")
 	activeTotems := 0.0
 	if activeSkill.SkillFlags["totem"] {
 		// Override returns no values when nothing matches, so the `or`
 		// falls through to the limit sum.
-		if ov := modDB.Override(nil, "TotemsSummoned"); truthy(ov) {
-			activeTotems = anyNum(ov)
+		if ov, ok := modDB.Override(nil, "TotemsSummoned"); ok {
+			activeTotems = valueNum(ov)
 		} else {
-			activeTotems = skillModList.Sum("BASE", activeSkill.SkillCfg, "ActiveTotemLimit", "ActiveBallistaLimit")
+			activeTotems = skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "ActiveTotemLimit", "ActiveBallistaLimit")
 		}
 	}
 
 	barrageProjectiles := 0.0
 	if skillModList.Flag(nil, "SequentialProjectiles") && !skillModList.Flag(nil, "OneShotProj") &&
 		!skillModList.Flag(nil, "NoAdditionalProjectiles") && !skillModList.Flag(nil, "TriggeredBySnipe") {
-		barrageProjectiles = skillModList.Sum("BASE", activeSkill.SkillCfg, "ProjectileCount")
+		barrageProjectiles = skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "ProjectileCount")
 		// cancel out the normal dps multiplier from barrage that applies to
 		// most other skills
-		activeSkill.SkillData["dpsMultiplier"] = anyNum(activeSkill.SkillData["dpsMultiplier"]) / barrageProjectiles
+		activeSkill.SkillData.SetN("dpsMultiplier", activeSkill.SkillData.N("dpsMultiplier")/barrageProjectiles)
 	}
 
 	projectiles := 1.0
 	if barrageProjectiles != 0 {
 		projectiles = barrageProjectiles
 	}
-	fuseApplicationRate := (outNum(output, "HitChance") / 100) * outNum(globalOutput, "Speed") *
-		anyNum(activeSkill.SkillData["dpsMultiplier"]) * projectiles
+	fuseApplicationRate := (output.N("HitChance") / 100) * globalOutput.N("Speed") *
+		activeSkill.SkillData.N("dpsMultiplier") * projectiles
 	if activeSkill.SkillFlags["totem"] {
 		fuseApplicationRate = fuseApplicationRate * activeTotems
 	}
@@ -356,11 +345,11 @@ func (env *Env) explosiveArrowFunc(c *offenceCtx, output map[string]any) {
 	// account mines or traps.
 	if part == 2 {
 		maximum := math.Min(math.Floor(fuseApplicationRate*duration)+1, fuseLimit)
-		skillModList.AddMod(newMod("Multiplier:ExplosiveArrowStage", "BASE", maximum, "Base"))
-		skillModList.AddMod(newMod("Multiplier:ExplosiveArrowStageAfterFirst", "BASE", maximum-1, "Base"))
-		globalOutput["MaxExplosiveArrowFuseCalculated"] = maximum
+		skillModList.AddMod(newModS("Multiplier:ExplosiveArrowStage", modparser.Base, modparser.Num(maximum), "Base"))
+		skillModList.AddMod(newModS("Multiplier:ExplosiveArrowStageAfterFirst", modparser.Base, modparser.Num(maximum-1), "Base"))
+		globalOutput.SetN("MaxExplosiveArrowFuseCalculated", maximum)
 	} else {
-		delete(globalOutput, "MaxExplosiveArrowFuseCalculated")
+		globalOutput.Del("MaxExplosiveArrowFuseCalculated")
 	}
 
 	// Calculate explosion rate
@@ -370,25 +359,25 @@ func (env *Env) explosiveArrowFunc(c *offenceCtx, output map[string]any) {
 		stageCount = *activeSkill.ActiveStageCount
 	}
 	if part == 2 || (part == 1 && stageCount+1 >= fuseLimit) {
-		globalOutput["HitTime"] = math.Min(duration, timeToMaxFuses)
+		globalOutput.SetN("HitTime", math.Min(duration, timeToMaxFuses))
 	} else {
 		// Number of fuses is less than the limit, so the entire fuse
 		// duration applies
-		globalOutput["HitTime"] = duration
+		globalOutput.SetN("HitTime", duration)
 	}
-	globalOutput["HitSpeed"] = 1 / outNum(globalOutput, "HitTime")
+	globalOutput.SetN("HitSpeed", 1/globalOutput.N("HitTime"))
 }
 
 // iceSpearAltXPreDamageFunc ports Ice Spear of Splitting's preDamageFunc: the
 // split parts hit once per projectile.
 func iceSpearAltXPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
-	if part := anyNum(activeSkill.SkillPart); part == 3 || part == 4 {
+	if part := activeSkill.SkillPart.V; part == 3 || part == 4 {
 		mult := 1.0
-		if truthy(activeSkill.SkillData["dpsMultiplier"]) {
-			mult = anyNum(activeSkill.SkillData["dpsMultiplier"])
+		if activeSkill.SkillData.Has("dpsMultiplier") {
+			mult = activeSkill.SkillData.N("dpsMultiplier")
 		}
-		activeSkill.SkillData["dpsMultiplier"] = mult * outNum(output, "ProjectileCount")
+		activeSkill.SkillData.SetN("dpsMultiplier", mult*output.N("ProjectileCount"))
 	}
 }
 
@@ -397,14 +386,12 @@ func iceSpearAltXPreDamageFunc(env *Env, c *offenceCtx) {
 // to reflect the DPS from each.
 func lightningTendrilsAltXPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill := c.activeSkill
-	interval := anyNum(activeSkill.SkillData["pulseInterval"])
-	switch anyNum(activeSkill.SkillPart) {
+	interval := activeSkill.SkillData.N("pulseInterval")
+	switch activeSkill.SkillPart.V {
 	case 2:
-		activeSkill.SkillModList.AddMod(newMod("DPS", "MORE", -(1/interval)*100, "Normal pulse", int64(0), int64(0),
-			modparser.Tag{"type": "SkillPart", "skillPart": 2.0}))
+		activeSkill.SkillModList.AddMod(newModSF("DPS", modparser.More, modparser.Num(-(1/interval)*100), "Normal pulse", modparser.FlagNone, modparser.KeywordNone, &modparser.SkillPartTag{Part: opt(2.0)}))
 	case 3:
-		activeSkill.SkillModList.AddMod(newMod("DPS", "MORE", -(interval-1)/interval*100, "Stronger pulse", int64(0), int64(0),
-			modparser.Tag{"type": "SkillPart", "skillPart": 3.0}))
+		activeSkill.SkillModList.AddMod(newModSF("DPS", modparser.More, modparser.Num(-(interval-1)/interval*100), "Stronger pulse", modparser.FlagNone, modparser.KeywordNone, &modparser.SkillPartTag{Part: opt(3.0)}))
 	}
 }
 
@@ -412,19 +399,17 @@ func lightningTendrilsAltXPreDamageFunc(env *Env, c *offenceCtx) {
 // damage multiplier that folds in the 500% more damage on every 5th hit.
 func lightningTendrilsAltXPostCritFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
-	if anyNum(activeSkill.SkillPart) != 1 {
+	if activeSkill.SkillPart.V != 1 {
 		return
 	}
-	interval := anyNum(activeSkill.SkillData["pulseInterval"])
-	pulseDamage := anyNum(activeSkill.SkillData["pulseDamage"]) / 100
-	critChance := outNum(output, "PreEffectiveCritChance") / 100
-	effectiveCritChance := outNum(output, "CritChance") / 100
-	critMulti := outNum(output, "CritMultiplier")
+	interval := activeSkill.SkillData.N("pulseInterval")
+	pulseDamage := activeSkill.SkillData.N("pulseDamage") / 100
+	critChance := output.N("PreEffectiveCritChance") / 100
+	effectiveCritChance := output.N("CritChance") / 100
+	critMulti := output.N("CritMultiplier")
 	averageMore := 100 * (((interval-1)*(1+critChance*(critMulti-1))+(1+pulseDamage)*critMulti)/
 		(interval*((1-effectiveCritChance)+critMulti*effectiveCritChance)) - 1)
-	activeSkill.SkillModList.AddMod(newMod("Damage", "MORE", averageMore, "Average Pulse Damage", nil,
-		modparser.KeywordFlag.Hit|modparser.KeywordFlag.Ailment,
-		modparser.Tag{"type": "SkillPart", "skillPart": 1.0}))
+	activeSkill.SkillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(averageMore), "Average Pulse Damage", modparser.FlagNone, modparser.KeywordHit|modparser.KeywordAilment, &modparser.SkillPartTag{Part: opt(1.0)}))
 }
 
 // bladeBlastPreDamageFunc ports Blade Blast's preDamageFunc: one cast
@@ -432,12 +417,12 @@ func lightningTendrilsAltXPostCritFunc(env *Env, c *offenceCtx) {
 func bladeBlastPreDamageFunc(env *Env, c *offenceCtx) {
 	skillData := c.activeSkill.SkillData
 	mult := 1.0
-	if truthy(skillData["dpsMultiplier"]) {
-		mult = anyNum(skillData["dpsMultiplier"])
+	if skillData.Has("dpsMultiplier") {
+		mult = skillData.N("dpsMultiplier")
 	}
-	skillData["dpsMultiplier"] = mult * anyNum(skillData["dpsBaseMultiplier"])
-	if anyNum(c.activeSkill.SkillPart) == 2 {
-		skillData["hitTimeOverride"] = 1.0
+	skillData.SetN("dpsMultiplier", mult*skillData.N("dpsBaseMultiplier"))
+	if c.activeSkill.SkillPart.V == 2 {
+		skillData.SetN("hitTimeOverride", 1.0)
 	}
 }
 
@@ -446,8 +431,8 @@ func bladeBlastPreDamageFunc(env *Env, c *offenceCtx) {
 func heraldOfTheBreachPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill := c.activeSkill
 	skillModList, skillCfg, skillData := activeSkill.SkillModList, activeSkill.SkillCfg, activeSkill.SkillData
-	skillData["hitTimeOverride"] = anyNum(skillData["repeatFrequency"]) /
-		(1 + skillModList.Sum("INC", skillCfg, "PulseFrequencyPerPressure")/100)
+	skillData.SetN("hitTimeOverride", skillData.N("repeatFrequency")/
+		(1+skillModList.Sum(modparser.Inc, skillCfg, "PulseFrequencyPerPressure")/100))
 }
 
 // tornadoShotPreDamageFunc ports Tornado Shot's preDamageFunc: the secondary
@@ -455,29 +440,29 @@ func heraldOfTheBreachPreDamageFunc(env *Env, c *offenceCtx) {
 func tornadoShotPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
 	skillModList, skillData := activeSkill.SkillModList, activeSkill.SkillData
-	if anyNum(activeSkill.SkillPart) != 2 || outNum(output, "ReturnChance") != 0 {
+	if activeSkill.SkillPart.V != 2 || output.N("ReturnChance") != 0 {
 		return
 	}
-	averageSecondaryProjectiles := outNum(output, "ProjectileCount") + outNum(output, "SplitCount")
+	averageSecondaryProjectiles := output.N("ProjectileCount") + output.N("SplitCount")
 	// if barrage then only shoots 1 projectile at a time, but those can
 	// still split and still releases at least 1 secondary projectile
 	if skillModList.Flag(nil, "SequentialProjectiles") && !skillModList.Flag(nil, "OneShotProj") &&
 		!skillModList.Flag(nil, "NoAdditionalProjectiles") && !skillModList.Flag(nil, "SingleProjectile") &&
 		!skillModList.Flag(nil, "TriggeredBySnipe") {
-		averageSecondaryProjectiles = 1 + outNum(output, "SplitCount")
+		averageSecondaryProjectiles = 1 + output.N("SplitCount")
 	}
 	// default to 20% per secondary projectile, so 60% base, and 80% with
 	// helm enchant
-	secondary := 20 * skillModList.Sum("BASE", activeSkill.SkillCfg, "tornadoShotSecondaryProjectiles")
-	if truthy(skillData["tornadoShotSecondaryHitChance"]) {
-		secondary = anyNum(skillData["tornadoShotSecondaryHitChance"])
+	secondary := 20 * skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "tornadoShotSecondaryProjectiles")
+	if skillData.Flag("tornadoShotSecondaryHitChance") {
+		secondary = skillData.N("tornadoShotSecondaryHitChance")
 	}
 	chanceForSecondaryProjectilesToHit := math.Min(secondary/100, 1)
 	mult := 1.0
-	if truthy(skillData["dpsMultiplier"]) {
-		mult = anyNum(skillData["dpsMultiplier"])
+	if skillData.Has("dpsMultiplier") {
+		mult = skillData.N("dpsMultiplier")
 	}
-	skillData["dpsMultiplier"] = mult * (1 + chanceForSecondaryProjectilesToHit*averageSecondaryProjectiles)
+	skillData.SetN("dpsMultiplier", mult*(1+chanceForSecondaryProjectilesToHit*averageSecondaryProjectiles))
 }
 
 // toxicRainPreDamageFunc ports Toxic Rain's preDamageFunc: only as many pods
@@ -485,10 +470,10 @@ func tornadoShotPreDamageFunc(env *Env, c *offenceCtx) {
 func toxicRainPreDamageFunc(env *Env, c *offenceCtx) {
 	skillData := c.activeSkill.SkillData
 	overlap := 1.0
-	if truthy(skillData["podOverlapMultiplier"]) {
-		overlap = anyNum(skillData["podOverlapMultiplier"])
+	if skillData.Flag("podOverlapMultiplier") {
+		overlap = skillData.N("podOverlapMultiplier")
 	}
-	skillData["dpsMultiplier"] = math.Min(overlap, outNum(c.output, "ProjectileCount"))
+	skillData.SetN("dpsMultiplier", math.Min(overlap, c.output.N("ProjectileCount")))
 }
 
 // earthquakePreDamageFunc ports Earthquake's preDamageFunc: the aftershock
@@ -496,9 +481,8 @@ func toxicRainPreDamageFunc(env *Env, c *offenceCtx) {
 func earthquakePreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill := c.activeSkill
 	skillModList := activeSkill.SkillModList
-	duration := math.Floor(anyNum(activeSkill.SkillData["duration"]) * outNum(c.output, "DurationMod") * 10)
-	skillModList.AddMod(newMod("Damage", "INC",
-		skillModList.Sum("INC", activeSkill.SkillCfg, "EarthquakeDurationIncDamage")*duration, "Skill:Earthquake"))
+	duration := math.Floor(activeSkill.SkillData.N("duration") * c.output.N("DurationMod") * 10)
+	skillModList.AddMod(newModS("Damage", modparser.Inc, modparser.Num(skillModList.Sum(modparser.Inc, activeSkill.SkillCfg, "EarthquakeDurationIncDamage")*duration), "Skill:Earthquake"))
 }
 
 // moltenStrikePreDamageFunc ports the Molten Strike family's preDamageFunc:
@@ -509,51 +493,51 @@ func moltenStrikePreDamageFunc(zenith bool) skillFunc {
 	return func(env *Env, c *offenceCtx) {
 		activeSkill, output := c.activeSkill, c.output
 		skillModList, skillData, skillCfg := activeSkill.SkillModList, activeSkill.SkillData, activeSkill.SkillCfg
-		skillPart := anyNum(activeSkill.SkillPart)
+		skillPart := activeSkill.SkillPart.V
 		// melee part doesn't need to calc balls
 		if skillPart == 1 {
 			return
 		}
 
 		enemyRadius := 0.0
-		if ov := skillModList.Override(skillCfg, "EnemyRadius"); truthy(ov) {
-			enemyRadius = anyNum(ov)
+		if ov, ok := skillModList.Override(skillCfg, "EnemyRadius"); ok {
+			enemyRadius = valueNum(ov)
 		} else {
-			enemyRadius = skillModList.Sum("BASE", skillCfg, "EnemyRadius")
+			enemyRadius = skillModList.Sum(modparser.Base, skillCfg, "EnemyRadius")
 		}
-		ballRadius := outNum(output, "AreaOfEffectRadius")
-		innerRadius := outNum(output, "AreaOfEffectRadiusSecondary")
-		outerRadius := outNum(output, "AreaOfEffectRadiusTertiary")
+		ballRadius := output.N("AreaOfEffectRadius")
+		innerRadius := output.N("AreaOfEffectRadiusSecondary")
+		outerRadius := output.N("AreaOfEffectRadiusTertiary")
 
 		// logic adapted from MoldyDwarf's calculator
 		hitRange := enemyRadius + ballRadius - innerRadius
 		landingRange := outerRadius - innerRadius
 		overlapChance := math.Min(1, hitRange/landingRange)
-		output["OverlapChance"] = overlapChance * 100
+		output.SetN("OverlapChance", overlapChance*100)
 
-		numProjectiles := outNum(output, "ProjectileCount")
+		numProjectiles := output.N("ProjectileCount")
 		dpsMult := 1.0
 		if skillPart == 3 || (zenith && (skillPart == 5 || skillPart == 6)) {
 			dpsMult = overlapChance * numProjectiles
 			if zenith && skillPart == 6 {
 				// zenith: make an effective dpsMult for the weighted average
 				// of normal and 5th attack balls
-				fifthAttackMulti := 1 + anyNum(skillData["FifthStrikeDamage"])/100
-				fifthAttackOverallMulti := fifthAttackMulti * overlapChance * (numProjectiles + anyNum(skillData["FifthStrikeProjectiles"]))
+				fifthAttackMulti := 1 + skillData.N("FifthStrikeDamage")/100
+				fifthAttackOverallMulti := fifthAttackMulti * overlapChance * (numProjectiles + skillData.N("FifthStrikeProjectiles"))
 				dpsMult = 0.8*dpsMult + 0.2*fifthAttackOverallMulti
 			}
 		}
 		if dpsMult != 1 {
 			mult := 1.0
-			if truthy(skillData["dpsMultiplier"]) {
-				mult = anyNum(skillData["dpsMultiplier"])
+			if skillData.Has("dpsMultiplier") {
+				mult = skillData.N("dpsMultiplier")
 			}
-			skillData["dpsMultiplier"] = mult * dpsMult
+			skillData.SetN("dpsMultiplier", mult*dpsMult)
 			outMult := 1.0
-			if truthy(output["SkillDPSMultiplier"]) {
-				outMult = outNum(output, "SkillDPSMultiplier")
+			if output.Has("SkillDPSMultiplier") {
+				outMult = output.N("SkillDPSMultiplier")
 			}
-			output["SkillDPSMultiplier"] = outMult * dpsMult
+			output.SetN("SkillDPSMultiplier", outMult*dpsMult)
 		}
 	}
 }
@@ -564,9 +548,9 @@ func moltenStrikePreDamageFunc(zenith bool) skillFunc {
 func moltenShellPreDamageFunc(mitigatedKey string) skillFunc {
 	return func(env *Env, c *offenceCtx) {
 		skillData := c.activeSkill.SkillData
-		add := anyNum(skillData[mitigatedKey]) * anyNum(skillData["moltenShellReflect"]) / 100
-		skillData["FireMin"] = add
-		skillData["FireMax"] = add
+		add := skillData.N(mitigatedKey) * skillData.N("moltenShellReflect") / 100
+		skillData.SetN("FireMin", add)
+		skillData.SetN("FireMax", add)
 	}
 }
 
@@ -574,8 +558,8 @@ func moltenShellPreDamageFunc(mitigatedKey string) skillFunc {
 // a share of the overkill damage.
 func heraldOfAshPreDamageFunc(env *Env, c *offenceCtx) {
 	skillData := c.activeSkill.SkillData
-	skillData["FireDot"] = anyNum(skillData["hoaOverkill"]) *
-		(1 + anyNum(skillData["hoaMoreBurn"])/100) * anyNum(skillData["hoaOverkillPercent"])
+	skillData.SetN("FireDot", skillData.N("hoaOverkill")*
+		(1+skillData.N("hoaMoreBurn")/100)*skillData.N("hoaOverkillPercent"))
 }
 
 // repeatFrequencyOverride is the shared shape of Herald of Thunder's and
@@ -584,23 +568,23 @@ func heraldOfAshPreDamageFunc(env *Env, c *offenceCtx) {
 func repeatFrequencyOverride(incName string) skillFunc {
 	return func(env *Env, c *offenceCtx) {
 		activeSkill := c.activeSkill
-		activeSkill.SkillData["hitTimeOverride"] = anyNum(activeSkill.SkillData["repeatFrequency"]) /
-			(1 + activeSkill.SkillModList.Sum("INC", activeSkill.SkillCfg, incName)/100)
+		activeSkill.SkillData.SetN("hitTimeOverride", activeSkill.SkillData.N("repeatFrequency")/
+			(1+activeSkill.SkillModList.Sum(modparser.Inc, activeSkill.SkillCfg, incName)/100))
 	}
 }
 
 // barragePreDamageFunc ports Barrage's preDamageFunc: the "all projectiles"
 // part hits once per projectile.
 func barragePreDamageFunc(env *Env, c *offenceCtx) {
-	if anyNum(c.activeSkill.SkillPart) == 2 {
-		c.activeSkill.SkillData["dpsMultiplier"] = outNum(c.output, "ProjectileCount")
+	if c.activeSkill.SkillPart.V == 2 {
+		c.activeSkill.SkillData.SetN("dpsMultiplier", c.output.N("ProjectileCount"))
 	}
 }
 
 // tornadoPreDamageFunc ports Tornado's preDamageFunc: it deals damage on its
 // own interval while it lasts.
 func tornadoPreDamageFunc(env *Env, c *offenceCtx) {
-	c.activeSkill.SkillData["hitTimeOverride"] = c.activeSkill.SkillData["damageInterval"]
+	c.activeSkill.SkillData.Set("hitTimeOverride", c.activeSkill.SkillData.Get("damageInterval"))
 }
 
 // lancingSteelAltXPreDamageFunc ports Lancing Steel of Spraying's
@@ -608,21 +592,21 @@ func tornadoPreDamageFunc(env *Env, c *offenceCtx) {
 // into one average multiplier over the count.
 func lancingSteelAltXPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
-	if anyNum(activeSkill.SkillPart) != 2 {
+	if activeSkill.SkillPart.V != 2 {
 		return
 	}
-	percentReducedProjectiles := (outNum(output, "ProjectileCount") - 1) / outNum(output, "ProjectileCount")
+	percentReducedProjectiles := (output.N("ProjectileCount") - 1) / output.N("ProjectileCount")
 	mult := (activeSkill.SkillModList.More(activeSkill.SkillCfg, "LancingSteelSubsequentDamage") - 1) * 100 * percentReducedProjectiles
-	activeSkill.SkillData["dpsMultiplier"] = outNum(output, "ProjectileCount")
-	activeSkill.SkillModList.AddMod(newMod("Damage", "MORE", mult, "Skill:LancingSteelAltX"))
+	activeSkill.SkillData.SetN("dpsMultiplier", output.N("ProjectileCount"))
+	activeSkill.SkillModList.AddMod(newModS("Damage", modparser.More, modparser.Num(mult), "Skill:LancingSteelAltX"))
 }
 
 // righteousFireAltXPreDamageFunc ports Righteous Fire of Arcane Devotion's
 // preDamageFunc: the burn scales off mana instead of life.
 func righteousFireAltXPreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
-	if outNum(output, "LifeUnreserved") > 1 {
-		activeSkill.SkillData["FireDot"] = outNum(output, "Mana") * anyNum(activeSkill.SkillData["RFManaMultiplier"])
+	if output.N("LifeUnreserved") > 1 {
+		activeSkill.SkillData.SetN("FireDot", output.N("Mana")*activeSkill.SkillData.N("RFManaMultiplier"))
 	}
 }
 
@@ -630,7 +614,7 @@ func righteousFireAltXPreDamageFunc(env *Env, c *offenceCtx) {
 // volleys land on their own interval.
 func bladefallAltZPreDamageFunc(env *Env, c *offenceCtx) {
 	skillData := c.activeSkill.SkillData
-	skillData["hitTimeOverride"] = anyNum(skillData["hitFrequency"]) / (1 + anyNum(skillData["incVolleyFrequency"])/100)
+	skillData.SetN("hitTimeOverride", skillData.N("hitFrequency")/(1+skillData.N("incVolleyFrequency")/100))
 }
 
 // forbiddenRitePreDamageFunc ports Forbidden Rite's preDamageFunc: the hit
@@ -639,32 +623,32 @@ func bladefallAltZPreDamageFunc(env *Env, c *offenceCtx) {
 func forbiddenRitePreDamageFunc(env *Env, c *offenceCtx) {
 	activeSkill, output := c.activeSkill, c.output
 	skillModList, skillData := activeSkill.SkillModList, activeSkill.SkillData
-	basetakenFlat := skillModList.Sum("BASE", nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
-	baseTakenInc := skillModList.Sum("INC", nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
+	basetakenFlat := skillModList.Sum(modparser.Base, nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
+	baseTakenInc := skillModList.Sum(modparser.Inc, nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
 	baseTakenMore := skillModList.More(nil, "DamageTaken", "ChaosDamageTaken", "DamageTakenWhenHit", "ChaosDamageTakenWhenHit")
 	chaosDamageTaken := math.Max((1+baseTakenInc/100)*baseTakenMore, 0)
 	chaosFlat := floorDec(math.Floor(basetakenFlat*chaosDamageTaken+0.5), 0)
 	var life, energyShield, chaosResistance float64
 	if activeSkill.SkillFlags["totem"] {
-		life = outNum(output, "TotemLife")
-		energyShield = outNum(output, "TotemEnergyShield")
-		chaosResistance = outNum(output, "TotemChaosResist")
+		life = output.N("TotemLife")
+		energyShield = output.N("TotemEnergyShield")
+		chaosResistance = output.N("TotemChaosResist")
 	} else {
-		life = outNum(output, "Life")
-		energyShield = outNum(output, "EnergyShield")
-		chaosResistance = outNum(output, "ChaosResist")
+		life = output.N("Life")
+		energyShield = output.N("EnergyShield")
+		chaosResistance = output.N("ChaosResist")
 	}
-	add := life*anyNum(skillData["lifeDealtAsChaos"]) + energyShield*anyNum(skillData["energyShieldDealtAsChaos"])
-	selfDamageTakenLife := math.Floor(math.Floor(life*anyNum(skillData["SelfDamageTakenLife"])+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
-	selfDamageTakenES := math.Floor(math.Floor(energyShield*anyNum(skillData["SelfDamageTakenES"])+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
-	skillData["ChaosMin"] = anyNum(skillData["ChaosMin"]) + add
-	skillData["ChaosMax"] = anyNum(skillData["ChaosMax"]) + add
-	if anyNum(activeSkill.SkillPart) == 2 {
+	add := life*skillData.N("lifeDealtAsChaos") + energyShield*skillData.N("energyShieldDealtAsChaos")
+	selfDamageTakenLife := math.Floor(math.Floor(life*skillData.N("SelfDamageTakenLife")+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
+	selfDamageTakenES := math.Floor(math.Floor(energyShield*skillData.N("SelfDamageTakenES")+0.5) * (100 - chaosResistance) / 100 * chaosDamageTaken)
+	skillData.SetN("ChaosMin", skillData.N("ChaosMin")+add)
+	skillData.SetN("ChaosMax", skillData.N("ChaosMax")+add)
+	if activeSkill.SkillPart.V == 2 {
 		mult := 1.0
-		if truthy(skillData["dpsMultiplier"]) {
-			mult = anyNum(skillData["dpsMultiplier"])
+		if skillData.Has("dpsMultiplier") {
+			mult = skillData.N("dpsMultiplier")
 		}
-		skillData["dpsMultiplier"] = mult * (outNum(output, "ProjectileCount") + 1)
+		skillData.SetN("dpsMultiplier", mult*(output.N("ProjectileCount")+1))
 	}
-	output["FRDamageTaken"] = selfDamageTakenLife + selfDamageTakenES + chaosFlat
+	output.SetN("FRDamageTaken", selfDamageTakenLife+selfDamageTakenES+chaosFlat)
 }

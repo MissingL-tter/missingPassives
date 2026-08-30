@@ -1,15 +1,15 @@
 {
 	"directives": [
-		"#type One Handed Mace",
-		"#influenceBaseTag mace",
-		"#socketLimit 3",
-		"#baseMatch BaseType Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractOneHandMace",
-		"#type Sceptre",
-		"#influenceBaseTag sceptre",
-		"#baseMatch BaseType Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractSceptre",
-		"#type Two Handed Mace",
-		"#influenceBaseTag 2h_mace",
-		"#socketLimit 6",
-		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/TwoHandMaces/AbstractTwoHandMace"
+		{"directive":"type","name":"One Handed Mace"},
+		{"directive":"influenceBaseTag","tag":"mace"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractOneHandMace"},
+		{"directive":"type","name":"Sceptre"},
+		{"directive":"influenceBaseTag","tag":"sceptre"},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractSceptre"},
+		{"directive":"type","name":"Two Handed Mace"},
+		{"directive":"influenceBaseTag","tag":"2h_mace"},
+		{"directive":"socketLimit","limit":6},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/TwoHandWeapons/TwoHandMaces/AbstractTwoHandMace"}
 	]
 }

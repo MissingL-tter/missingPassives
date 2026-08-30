@@ -4,6 +4,8 @@ package schema
 // (disabled rows excluded).
 type Pantheons []Pantheon
 
+func (Pantheons) isDocument() {}
+
 type Pantheon struct {
 	Id         string        `json:"id"`
 	IsMajorGod bool          `json:"isMajorGod"`

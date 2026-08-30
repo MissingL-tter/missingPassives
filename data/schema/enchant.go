@@ -13,3 +13,5 @@ type Enchants struct {
 	// Helmet is keyed by skill name, then source.
 	Helmet map[string]map[string][][]string `json:"helmet"`
 }
+
+func (Enchants) isDocument() {}

@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 var influenceDisplay = []string{"Shaper", "Elder", "Warlord", "Hunter", "Crusader", "Redeemer", "Searing Exarch", "Eater of Worlds"}
@@ -26,7 +28,7 @@ func makeIDSpec(idList map[int]bool) string {
 	sort.Ints(ids)
 	parts := make([]string, len(ids))
 	for i, id := range ids {
-		parts[i] = luaNumStr(float64(id))
+		parts[i] = util.FormatIntOrG14(float64(id))
 	}
 	return strings.Join(parts, ",")
 }
@@ -38,10 +40,10 @@ func prependToAllLines(line, prefix string) string {
 func (it *Item) writeModLine(rawLines *[]string, modLine *ModLine) {
 	line := modLine.Line
 	if modLine.Range != nil && reRangeShell.MatchString(line) {
-		line = "{range:" + luaNumStr(roundDec(*modLine.Range, 6)) + "}" + line
+		line = "{range:" + util.FormatIntOrG14(util.RoundHalfUp(*modLine.Range, 6)) + "}" + line
 	}
 	if modLine.CorruptedRange != nil {
-		line = "{corruptedRange:" + luaNumStr(roundDec(*modLine.CorruptedRange, 2)) + "}" + line
+		line = "{corruptedRange:" + util.FormatIntOrG14(util.RoundHalfUp(*modLine.CorruptedRange, 2)) + "}" + line
 	}
 	for _, f := range []string{"disabled", "crafted", "enchant", "custom", "scourge", "crucible", "mutated"} {
 		if modLine.flag(f) {
@@ -78,19 +80,12 @@ func (it *Item) writeModLine(rawLines *[]string, modLine *ModLine) {
 // affixSpecLine renders one "Prefix: ..."/"Suffix: ..." template line.
 func affixSpecLine(kind string, affix *Affix) string {
 	rangeSpec := ""
-	switch r := affix.Range.(type) {
-	case float64:
-		rangeSpec = "{range:" + luaNumStr(roundDec(r, 3)) + "}"
-	case []any:
-		parts := make([]string, len(r))
-		for i, v := range r {
-			parts[i] = luaNumStr(v.(float64))
-		}
-		rangeSpec = "{range:" + strings.Join(parts, ",") + "}"
-	case []float64:
-		parts := make([]string, len(r))
-		for i, v := range r {
-			parts[i] = luaNumStr(v)
+	if affix.Range.Single.Set {
+		rangeSpec = "{range:" + util.FormatIntOrG14(util.RoundHalfUp(affix.Range.Single.V, 3)) + "}"
+	} else if affix.Range.Multi != nil {
+		parts := make([]string, len(affix.Range.Multi))
+		for i, v := range affix.Range.Multi {
+			parts[i] = util.FormatIntOrG14(v)
 		}
 		rangeSpec = "{range:" + strings.Join(parts, ",") + "}"
 	}
@@ -114,10 +109,11 @@ func (it *Item) BuildRaw() string {
 	}
 	if it.ArmourData != nil {
 		for _, typ := range []string{"Armour", "Evasion", "EnergyShield", "Ward"} {
-			if v, ok := it.ArmourData[typ].(float64); ok && v > 0 {
-				add(strings.ReplaceAll(typ, "EnergyShield", "Energy Shield") + ": " + luaNumStr(v))
-				if p, ok := it.ArmourData[typ+"BasePercentile"].(float64); ok {
-					add(typ + "BasePercentile: " + luaNumStr(p))
+			stat := it.ArmourData.Defence(typ)
+			if stat.Value.Set && stat.Value.V > 0 {
+				add(strings.ReplaceAll(typ, "EnergyShield", "Energy Shield") + ": " + util.FormatIntOrG14(stat.Value.V))
+				if stat.BasePercentile.Set {
+					add(typ + "BasePercentile: " + util.FormatIntOrG14(stat.BasePercentile.V))
 				}
 			}
 		}
@@ -152,31 +148,31 @@ func (it *Item) BuildRaw() string {
 		add("Catalyst: " + catalystList[*it.Catalyst-1])
 	}
 	if it.CatalystQuality != nil {
-		add("CatalystQuality: " + luaNumStr(*it.CatalystQuality))
+		add("CatalystQuality: " + util.FormatIntOrG14(*it.CatalystQuality))
 	}
 	if it.ClusterJewel != nil {
 		if it.ClusterJewelSkill != "" {
 			add("Cluster Jewel Skill: " + it.ClusterJewelSkill)
 		}
 		if it.ClusterJewelNodeCount != nil {
-			add("Cluster Jewel Node Count: " + luaNumStr(*it.ClusterJewelNodeCount))
+			add("Cluster Jewel Node Count: " + util.FormatIntOrG14(*it.ClusterJewelNodeCount))
 		}
 	}
 	if it.TalismanTier != nil {
-		add("Talisman Tier: " + luaNumStr(*it.TalismanTier))
+		add("Talisman Tier: " + util.FormatIntOrG14(*it.TalismanTier))
 	}
 	if it.ItemLevel != nil {
-		add("Item Level: " + luaNumStr(*it.ItemLevel))
+		add("Item Level: " + util.FormatIntOrG14(*it.ItemLevel))
 	}
 	if it.MemoryStrands != nil {
-		add("Memory Strands: " + luaNumStr(*it.MemoryStrands))
+		add("Memory Strands: " + util.FormatIntOrG14(*it.MemoryStrands))
 	}
 	if it.VersionList != nil {
 		for _, versionName := range it.VersionList {
 			add("Version: " + versionName)
 		}
 		if it.SelectedVersion != nil {
-			add("Selected Version: " + luaNumStr(float64(*it.SelectedVersion)))
+			add("Selected Version: " + util.FormatIntOrG14(float64(*it.SelectedVersion)))
 		}
 	}
 	if it.VariantList != nil {
@@ -191,11 +187,11 @@ func (it *Item) BuildRaw() string {
 			sort.Ints(groupIDs)
 			for _, groupID := range groupIDs {
 				if variantID, ok := it.VariantGroupSelections[groupID]; ok {
-					add("Selected Variant Group: " + luaNumStr(float64(groupID)) + "=" + luaNumStr(float64(variantID)))
+					add("Selected Variant Group: " + util.FormatIntOrG14(float64(groupID)) + "=" + util.FormatIntOrG14(float64(variantID)))
 				}
 			}
 		} else {
-			add("Selected Variant: " + luaNumStr(float64(*it.Variant)))
+			add("Selected Variant: " + util.FormatIntOrG14(float64(*it.Variant)))
 		}
 		for _, bl := range it.BaseLines {
 			if bl.variantList != nil || bl.versionList != nil || bl.variantGroupList != nil {
@@ -216,7 +212,7 @@ func (it *Item) BuildRaw() string {
 			} {
 				if alt.has {
 					add("Has Alt Variant" + alt.lbl + ": true")
-					add("Selected Alt Variant" + alt.lbl + ": " + luaNumStr(float64(*alt.sel)))
+					add("Selected Alt Variant" + alt.lbl + ": " + util.FormatIntOrG14(float64(*alt.sel)))
 				}
 			}
 		}
@@ -232,7 +228,7 @@ func (it *Item) BuildRaw() string {
 		}
 	}
 	if it.Quality != nil {
-		add("Quality: " + luaNumStr(*it.Quality))
+		add("Quality: " + util.FormatIntOrG14(*it.Quality))
 	}
 	if len(it.Sockets) > 0 {
 		line := "Sockets: "
@@ -248,19 +244,19 @@ func (it *Item) BuildRaw() string {
 		}
 		add(line)
 	}
-	if lvl, ok := it.Requirements["level"]; ok {
-		add("LevelReq: " + luaNumStr(lvl))
+	if it.Requirements.Level.Set {
+		add("LevelReq: " + util.FormatIntOrG14(it.Requirements.Level.V))
 	}
 	if it.JewelRadiusLabel != "" {
 		add("Radius: " + it.JewelRadiusLabel)
 	}
 	if it.Limit != nil {
-		add("Limited to: " + luaNumStr(*it.Limit))
+		add("Limited to: " + util.FormatIntOrG14(*it.Limit))
 	}
 	if it.ClassRestriction != "" {
 		add("Requires Class " + it.ClassRestriction)
 	}
-	add("Implicits: " + luaNumStr(float64(len(it.EnchantModLines)+len(it.ImplicitModLines)+len(it.ScourgeModLines))))
+	add("Implicits: " + util.FormatIntOrG14(float64(len(it.EnchantModLines)+len(it.ImplicitModLines)+len(it.ScourgeModLines))))
 	for _, group := range [][]*ModLine{it.EnchantModLines, it.ScourgeModLines, it.ClassRequirementModLines, it.ImplicitModLines, it.ExplicitModLines, it.CrucibleModLines} {
 		for _, modLine := range group {
 			it.writeModLine(&rawLines, modLine)
@@ -299,7 +295,7 @@ func combineStats(existing, incoming string) string {
 		fmt.Sscanf(num, "%g", &a)
 		fmt.Sscanf(nums[i], "%g", &b)
 		i++
-		return luaNumStr(a + b)
+		return util.FormatIntOrG14(a + b)
 	})
 }
 
@@ -316,11 +312,7 @@ func (it *Item) Craft() {
 	it.ExplicitModLines = nil
 	it.NamePrefix = ""
 	it.NameSuffix = ""
-	if it.Base.Req.Level != nil {
-		it.Requirements["level"] = *it.Base.Req.Level
-	} else {
-		delete(it.Requirements, "level")
-	}
+	it.Requirements.Level = optFloat(it.Base.Req.Level)
 	statOrder := map[float64]*ModLine{}
 	for _, list := range []*AffixList{&it.Prefixes, &it.Suffixes} {
 		limit := it.AffixLimit / 2
@@ -342,14 +334,11 @@ func (it *Item) Craft() {
 				it.NameSuffix = it.NameSuffix + " " + mod.Affix
 			}
 			lvl := math.Floor(mod.Level * 0.8)
-			if cur, ok := it.Requirements["level"]; !ok || cur < lvl {
-				it.Requirements["level"] = lvl
+			if !it.Requirements.Level.Set || it.Requirements.Level.V < lvl {
+				it.Requirements.Level = util.Some(lvl)
 			}
 			for j, line := range mod.Lines {
-				rng := 0.5
-				if r, ok := affix.Range.(float64); ok {
-					rng = r
-				}
+				rng := affix.Range.Single.Or(0.5)
 				line = applyRange(line, rng, 1, 1)
 				order := mod.StatOrder[j]
 				if existing := statOrder[order]; existing != nil {

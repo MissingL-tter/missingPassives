@@ -10,7 +10,7 @@ var unsupportedModList = map[string]bool{
 }
 
 // suffixTypes — ModParser.lua:5901.
-var suffixTypes = map[string]any{
+var suffixTypes = map[string]string{
 	"as extra lightning damage":        "GainAsLightning",
 	"added as lightning damage":        "GainAsLightning",
 	"gained as extra lightning damage": "GainAsLightning",
@@ -49,7 +49,7 @@ var suffixTypes = map[string]any{
 }
 
 // dmgTypes — ModParser.lua:5938.
-var dmgTypes = map[string]any{
+var dmgTypes = map[string]string{
 	"physical":  "Physical",
 	"lightning": "Lightning",
 	"cold":      "Cold",
@@ -58,41 +58,41 @@ var dmgTypes = map[string]any{
 }
 
 // penTypes — ModParser.lua:5945.
-var penTypes = map[string]any{
-	"lightning resistance":  "LightningPenetration",
-	"cold resistance":       "ColdPenetration",
-	"fire resistance":       "FirePenetration",
-	"elemental resistance":  "ElementalPenetration",
-	"elemental resistances": "ElementalPenetration",
-	"chaos resistance":      "ChaosPenetration",
+var penTypes = map[string]nameValue{
+	"lightning resistance":  name("LightningPenetration"),
+	"cold resistance":       name("ColdPenetration"),
+	"fire resistance":       name("FirePenetration"),
+	"elemental resistance":  name("ElementalPenetration"),
+	"elemental resistances": name("ElementalPenetration"),
+	"chaos resistance":      name("ChaosPenetration"),
 }
 
 // resourceTypes — ModParser.lua:5953, including the generated "maximum X"
 // variants from the do-block at 5971.
 var resourceTypes = buildResourceTypes()
 
-func buildResourceTypes() map[string]any {
-	base := map[string]any{
-		"life":                         "Life",
-		"mana":                         "Mana",
-		"energy shield":                "EnergyShield",
-		"life and mana":                []any{"Life", "Mana"},
-		"life and energy shield":       []any{"Life", "EnergyShield"},
-		"life, mana and energy shield": []any{"Life", "Mana", "EnergyShield"},
-		"life, energy shield and mana": []any{"Life", "Mana", "EnergyShield"},
-		"mana and life":                []any{"Life", "Mana"},
-		"mana and energy shield":       []any{"Mana", "EnergyShield"},
-		"mana, life and energy shield": []any{"Life", "Mana", "EnergyShield"},
-		"mana, energy shield and life": []any{"Life", "Mana", "EnergyShield"},
-		"energy shield and life":       []any{"Life", "EnergyShield"},
-		"energy shield and mana":       []any{"Mana", "EnergyShield"},
-		"energy shield, life and mana": []any{"Life", "Mana", "EnergyShield"},
-		"energy shield, mana and life": []any{"Life", "Mana", "EnergyShield"},
-		"rage":                         "Rage",
+func buildResourceTypes() map[string]nameValue {
+	base := map[string]nameValue{
+		"life":                         name("Life"),
+		"mana":                         name("Mana"),
+		"energy shield":                name("EnergyShield"),
+		"life and mana":                nameList{"Life", "Mana"},
+		"life and energy shield":       nameList{"Life", "EnergyShield"},
+		"life, mana and energy shield": nameList{"Life", "Mana", "EnergyShield"},
+		"life, energy shield and mana": nameList{"Life", "Mana", "EnergyShield"},
+		"mana and life":                nameList{"Life", "Mana"},
+		"mana and energy shield":       nameList{"Mana", "EnergyShield"},
+		"mana, life and energy shield": nameList{"Life", "Mana", "EnergyShield"},
+		"mana, energy shield and life": nameList{"Life", "Mana", "EnergyShield"},
+		"energy shield and life":       nameList{"Life", "EnergyShield"},
+		"energy shield and mana":       nameList{"Mana", "EnergyShield"},
+		"energy shield, life and mana": nameList{"Life", "Mana", "EnergyShield"},
+		"energy shield, mana and life": nameList{"Life", "Mana", "EnergyShield"},
+		"rage":                         name("Rage"),
 	}
 	// Collected first: Go's map iteration must not see the keys it adds,
 	// mirroring the reference's separate maximumResourceTypes table.
-	maximums := make(map[string]any, len(base))
+	maximums := make(map[string]nameValue, len(base))
 	for resource, values := range base {
 		maximums["maximum "+resource] = values
 	}
@@ -103,16 +103,16 @@ func buildResourceTypes() map[string]any {
 }
 
 // appendMod — ModParser.lua:5980: suffix every name in a resource table.
-func appendMod(inputTable map[string]any, suffix string) map[string]any {
-	out := make(map[string]any, len(inputTable))
-	for subLine, mods := range inputTable {
-		if s, ok := mods.(string); ok {
-			out[subLine] = s + suffix
-		} else {
-			list := mods.([]any)
-			nl := make([]any, len(list))
-			for i, m := range list {
-				nl[i] = m.(string) + suffix
+func appendMod(inputTable map[string]nameValue, suffix string) map[string]nameValue {
+	out := make(map[string]nameValue, len(inputTable))
+	for subLine, names := range inputTable {
+		switch v := names.(type) {
+		case name:
+			out[subLine] = name(string(v) + suffix)
+		case nameList:
+			nl := make(nameList, len(v))
+			for i, m := range v {
+				nl[i] = m + suffix
 			}
 			out[subLine] = nl
 		}
@@ -127,42 +127,42 @@ var baseCostTypes = appendMod(resourceTypes, "CostNoMult")
 
 // flagTypes — ModParser.lua:5998. The reference repeats two shrine keys with
 // identical values; they appear once here.
-var flagTypes = map[string]any{
-	"phasing":              "Condition:Phasing",
-	"onslaught":            "Condition:Onslaught",
-	"rampage":              "Condition:Rampage",
-	"soul eater":           "Condition:CanHaveSoulEater",
-	"adrenaline":           "Condition:Adrenaline",
-	"elusive":              "Condition:CanBeElusive",
-	"arcane surge":         "Condition:ArcaneSurge",
-	"fortify":              "Condition:Fortified",
-	"fortified":            "Condition:Fortified",
-	"unholy might":         "Condition:UnholyMight",
-	"chaotic might":        "Condition:ChaoticMight",
-	"tailwind":             "Condition:Tailwind",
-	"intimidated":          "Condition:Intimidated",
-	"crushed":              "Condition:Crushed",
-	"chilled":              "Condition:Chilled",
-	"blinded":              "Condition:Blinded",
-	"no life regeneration": "NoLifeRegen",
-	"hexproof":             Tag{"name": "CurseEffectOnSelf", "value": -100, "type": "MORE"},
-	`hindered,? with ([0-9]+)% reduced movement speed`: "Condition:Hindered",
-	"unnerved":                     "Condition:Unnerved",
-	"malediction":                  "HasMalediction",
-	"debilitated":                  "Condition:Debilitated",
-	"lesser brutal shrine buff":    "Condition:LesserBrutalShrine",
-	"lesser massive shrine buff":   "Condition:LesserMassiveShrine",
-	"acceleration shrine buff":     "Condition:AccelerationShrine",
-	"brutal shrine buff":           "Condition:BrutalShrine",
-	"diamond shrine buff":          "Condition:DiamondShrine",
-	"echoing shrine buff":          "Condition:EchoingShrine",
-	"gloom shrine buff":            "Condition:GloomShrine",
-	"greater freezing shrine buff": "Condition:GreaterFreezingShrine",
-	"greater shocking shrine buff": "Condition:GreaterShockingShrine",
-	"greater skeletal shrine buff": "Condition:GreaterSkeletalShrine",
-	"impenetrable shrine buff":     "Condition:ImpenetrableShrine",
-	"massive shrine buff":          "Condition:MassiveShrine",
-	"replenishing shrine buff":     "Condition:ReplenishingShrine",
-	"resistance shrine buff":       "Condition:ResistanceShrine",
-	"resonating shrine buff":       "Condition:ResonatingShrine",
+var flagTypes = map[string]flagTypeValue{
+	"phasing":              flagName("Condition:Phasing"),
+	"onslaught":            flagName("Condition:Onslaught"),
+	"rampage":              flagName("Condition:Rampage"),
+	"soul eater":           flagName("Condition:CanHaveSoulEater"),
+	"adrenaline":           flagName("Condition:Adrenaline"),
+	"elusive":              flagName("Condition:CanBeElusive"),
+	"arcane surge":         flagName("Condition:ArcaneSurge"),
+	"fortify":              flagName("Condition:Fortified"),
+	"fortified":            flagName("Condition:Fortified"),
+	"unholy might":         flagName("Condition:UnholyMight"),
+	"chaotic might":        flagName("Condition:ChaoticMight"),
+	"tailwind":             flagName("Condition:Tailwind"),
+	"intimidated":          flagName("Condition:Intimidated"),
+	"crushed":              flagName("Condition:Crushed"),
+	"chilled":              flagName("Condition:Chilled"),
+	"blinded":              flagName("Condition:Blinded"),
+	"no life regeneration": flagName("NoLifeRegen"),
+	"hexproof":             FlagTypeMod{Name: "CurseEffectOnSelf", Type: More, Value: Num(-100)},
+	`hindered,? with ([0-9]+)% reduced movement speed`: flagName("Condition:Hindered"),
+	"unnerved":                     flagName("Condition:Unnerved"),
+	"malediction":                  flagName("HasMalediction"),
+	"debilitated":                  flagName("Condition:Debilitated"),
+	"lesser brutal shrine buff":    flagName("Condition:LesserBrutalShrine"),
+	"lesser massive shrine buff":   flagName("Condition:LesserMassiveShrine"),
+	"acceleration shrine buff":     flagName("Condition:AccelerationShrine"),
+	"brutal shrine buff":           flagName("Condition:BrutalShrine"),
+	"diamond shrine buff":          flagName("Condition:DiamondShrine"),
+	"echoing shrine buff":          flagName("Condition:EchoingShrine"),
+	"gloom shrine buff":            flagName("Condition:GloomShrine"),
+	"greater freezing shrine buff": flagName("Condition:GreaterFreezingShrine"),
+	"greater shocking shrine buff": flagName("Condition:GreaterShockingShrine"),
+	"greater skeletal shrine buff": flagName("Condition:GreaterSkeletalShrine"),
+	"impenetrable shrine buff":     flagName("Condition:ImpenetrableShrine"),
+	"massive shrine buff":          flagName("Condition:MassiveShrine"),
+	"replenishing shrine buff":     flagName("Condition:ReplenishingShrine"),
+	"resistance shrine buff":       flagName("Condition:ResistanceShrine"),
+	"resonating shrine buff":       flagName("Condition:ResonatingShrine"),
 }

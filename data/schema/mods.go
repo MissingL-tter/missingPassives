@@ -9,6 +9,8 @@ type ModsData struct {
 	TextMap map[string][]string  `json:"textMap"` // lower-cased line -> mod ids
 }
 
+func (ModsData) isDocument() {}
+
 type ItemMod struct {
 	Id                  string      `json:"id"`
 	Type                string      `json:"type,omitempty"`

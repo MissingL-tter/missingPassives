@@ -15,10 +15,10 @@ package tree
 import (
 	"regexp"
 	"sort"
-	"strconv"
 	"sync"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
 // --- pool tables (data/raw/conquerTables.json) ---
@@ -333,12 +333,11 @@ func rollTimelessAdditions(rng *conquerRNG, t *conquerTables, pt, jewelType, min
 // addition id. The reference reads notable rows only for types 2-6; the
 // caller preserves that gate through the same nodeIDList index checks.
 func TimelessPassive(seed int64, nodeID int64, jewelType int) []int {
-	nl := data.NodeIDList
-	if nl == nil {
+	if data.NodeIDList == nil {
 		return nil
 	}
-	entry := nodeIDListEntry(nl, nodeID)
-	if entry == nil {
+	entry, known := data.NodeIDList[nodeID]
+	if !known {
 		// reference: ConPrintf ERROR, returns { }
 		return []int{}
 	}
@@ -369,7 +368,10 @@ func TimelessPassive(seed int64, nodeID int64, jewelType int) []int {
 		return out
 	}
 	// Types 2-6: notables only (the reference indexes within sizeNotable).
-	if !nodeIDListIndexIsNotable(nl, nodeID) {
+	// The reference tests index <= sizeNotable, but row sizeNotable does not
+	// exist in the fixed-stride files; its read produces an empty result. The
+	// strict inequality reproduces the observable behavior.
+	if int(entry.Index) >= data.NodeIDListSizeNotable {
 		return []int{}
 	}
 	if cell.skill != nil {
@@ -379,24 +381,6 @@ func TimelessPassive(seed int64, nodeID int64, jewelType int) []int {
 		return []int{cell.adds[0].add.global}
 	}
 	return []int{}
-}
-
-func nodeIDListEntry(nl map[string]any, nodeID int64) map[string]any {
-	v, _ := nl[strconv.FormatInt(nodeID, 10)].(map[string]any)
-	return v
-}
-
-func nodeIDListIndexIsNotable(nl map[string]any, nodeID int64) bool {
-	entry := nodeIDListEntry(nl, nodeID)
-	if entry == nil {
-		return false
-	}
-	index, _ := entry["index"].(float64)
-	sizeNotable, _ := nl["sizeNotable"].(float64)
-	// The reference tests index <= sizeNotable, but row sizeNotable does not
-	// exist in the fixed-stride files; its read produces an empty result. The
-	// strict inequality reproduces the observable behavior.
-	return index < sizeNotable
 }
 
 // ---------------------------------------------------------------------------
@@ -444,27 +428,23 @@ type abyssWorld struct {
 	ascCosts    map[string]map[int64]int
 }
 
-var (
-	abyssOnce  sync.Once
-	abyssState *abyssWorld
-)
-
 var abyssAttrRe = regexp.MustCompile(`^\+\d+ to (Strength|Dexterity|Intelligence)$`)
 
-func abyssData() *abyssWorld {
-	abyssOnce.Do(func() { abyssState = buildAbyssWorld() })
-	return abyssState
+// abyssData is the tree's generator world, built on first use.
+func (t *Tree) abyssData() *abyssWorld {
+	t.abyssOnce.Do(func() { t.abyss = buildAbyssWorld(t.doc) })
+	return t.abyss
 }
 
-func buildAbyssWorld() *abyssWorld {
-	var doc struct {
-		Nodes map[string]map[string]any `json:"nodes"`
-	}
-	data.RawDoc("tree_3_29", &doc)
+// buildAbyssWorld builds the generator's view of the tree document. It
+// reads the document rather than Tree.Nodes because the generator's tree
+// still holds the legacy alternate-ascendancy nodes Load drops (their
+// ascendancies get Zorath selections too).
+func buildAbyssWorld(doc *schema.PassiveTree) *abyssWorld {
 	w := &abyssWorld{nodes: map[int64]*abyssNode{}}
 
-	for _, raw := range doc.Nodes {
-		gid := int64(num(raw["skill"]))
+	for _, nd := range doc.Nodes {
+		gid := nd.Skill
 		if gid == 0 {
 			continue
 		}
@@ -472,21 +452,20 @@ func buildAbyssWorld() *abyssWorld {
 			continue
 		}
 		n := &abyssNode{gid: gid}
-		n.ins = idList(raw["in"])
-		n.outs = idList(raw["out"])
+		n.ins = idsOf(nd.In)
+		n.outs = idsOf(nd.Out)
 		n.connected = len(n.ins)+len(n.outs) > 0
-		n.notable = boolean(raw["isNotable"])
-		n.mastery = boolean(raw["isMastery"])
-		n.charstart = raw["classStartIndex"] != nil
-		n.ascName = str(raw["ascendancyName"])
-		keystone := boolean(raw["isKeystone"])
-		socket := boolean(raw["isJewelSocket"])
-		proxy := boolean(raw["isProxy"])
-		blight := boolean(raw["isBlighted"])
-		justIcon := boolean(raw["isJustIcon"])
-		cluster := raw["orbit"] == nil
-		stats := strList(raw["stats"])
-		attr := len(stats) == 1 && abyssAttrRe.MatchString(stats[0])
+		n.notable = nd.IsNotable
+		n.mastery = nd.IsMastery
+		n.charstart = nd.ClassStartIndex != nil
+		n.ascName = nd.AscendancyName
+		keystone := nd.IsKeystone
+		socket := nd.IsJewelSocket
+		proxy := nd.IsProxy
+		blight := nd.IsBlighted
+		justIcon := nd.IsJustIcon
+		cluster := nd.Orbit == nil
+		attr := len(nd.Stats) == 1 && abyssAttrRe.MatchString(nd.Stats[0])
 
 		switch {
 		case n.ascName != "" && n.notable:
@@ -516,12 +495,9 @@ func buildAbyssWorld() *abyssWorld {
 		n.specialCand = n.transformable ||
 			(n.ascName != "" && n.notable && !proxy && !n.mastery && !justIcon)
 		n.ascEligible = !(proxy || n.mastery || socket || blight || justIcon ||
-			boolean(raw["isAscendancyStart"]) || boolean(raw["isMultipleChoice"]) || boolean(raw["isMultipleChoiceOption"]))
+			nd.IsAscendancyStart || nd.IsMultipleChoice || nd.IsMultipleChoiceOption)
 
-		isClusterExpSocket := false
-		if ej, ok := raw["expansionJewel"].(map[string]any); ok {
-			_, isClusterExpSocket = ej["parent"]
-		}
+		isClusterExpSocket := nd.ExpansionJewel != nil && nd.ExpansionJewel.Parent != nil
 		if socket && !isClusterExpSocket && n.ascName == "" {
 			w.sockets = append(w.sockets, n)
 		}
@@ -725,10 +701,10 @@ func (w *abyssWorld) walk(socketGid int64, seed uint32, abyssSize int) []*abyssN
 // --- per-node modification (WriteModification's content) ---
 
 // AbyssComponent is one modification component the way readAbyssJewelLUT
-// returns it: type 1 replaces the node, type 2 adds stats; ID is the
-// global id (already converted), Rolls the stat rolls in stat order.
+// returns it; ID is the global id (already converted), Rolls the stat
+// rolls in stat order.
 type AbyssComponent struct {
-	Type  int
+	Kind  AbyssComponentKind
 	ID    int
 	Rolls []int32
 }
@@ -769,7 +745,7 @@ func abyssModification(t *conquerTables, n *abyssNode, jewelType int, seed uint3
 		if ks == nil || !containsInt(ks.Types, 4) {
 			return nil
 		}
-		return []AbyssComponent{{Type: 1, ID: ks.global, Rolls: []int32{int32(ks.Min[0])}}}
+		return []AbyssComponent{{Kind: ComponentReplace, ID: ks.global, Rolls: []int32{int32(ks.Min[0])}}}
 	}
 
 	rng.reset(gid, seed)
@@ -797,7 +773,7 @@ func abyssModification(t *conquerTables, n *abyssNode, jewelType int, seed uint3
 		}
 		rolls = append(rolls, v)
 	}
-	out := []AbyssComponent{{Type: 1, ID: rolled.global, Rolls: rolls}}
+	out := []AbyssComponent{{Kind: ComponentReplace, ID: rolled.global, Rolls: rolls}}
 	if rolled.RMin == 0 && rolled.RMax == 0 {
 		return out
 	}
@@ -839,7 +815,7 @@ func abyssRollAdditions(t *conquerTables, rng *conquerRNG, pt, jewelType, minAdd
 			}
 			rolls = append(rolls, v)
 		}
-		out = append(out, AbyssComponent{Type: 2, ID: rolled.global, Rolls: rolls})
+		out = append(out, AbyssComponent{Kind: ComponentAdd, ID: rolled.global, Rolls: rolls})
 	}
 	return out
 }
@@ -899,12 +875,12 @@ func (w *abyssWorld) selectAscendancyNotables(name string, seed uint32, requeste
 // AbyssPassive reproduces readAbyssJewelLUT: for types 7-10 the
 // affected nodes around the socket, for type 11 (with a path) the
 // modifications along the path plus one selected notable per ascendancy.
-func AbyssPassive(seed int64, socketID int64, jewelType int, path map[int64]bool) map[int64][]AbyssComponent {
+func (t *Tree) AbyssPassive(seed int64, socketID int64, jewelType int, path map[int64]bool) map[int64][]AbyssComponent {
 	if seed < 100 || seed > 8000 {
 		return map[int64][]AbyssComponent{}
 	}
-	w := abyssData()
-	t := conquerData()
+	w := t.abyssData()
+	tables := conquerData()
 	s := uint32(seed)
 
 	if jewelType >= 7 && jewelType <= 10 {
@@ -914,8 +890,8 @@ func AbyssPassive(seed int64, socketID int64, jewelType int, path map[int64]bool
 		}
 		affected := map[int64][]AbyssComponent{}
 		for _, n := range w.walk(socketID, s, abyssDefaultSize) {
-			if abyssCanModify(t, n, jewelType) {
-				affected[n.gid] = abyssModification(t, n, jewelType, s)
+			if abyssCanModify(tables, n, jewelType) {
+				affected[n.gid] = abyssModification(tables, n, jewelType, s)
 			}
 		}
 		return affected
@@ -929,7 +905,7 @@ func AbyssPassive(seed int64, socketID int64, jewelType int, path map[int64]bool
 		if !w.zorathNodes[gid] {
 			continue
 		}
-		if mod := abyssModification(t, w.nodes[gid], 11, s); len(mod) > 0 {
+		if mod := abyssModification(tables, w.nodes[gid], 11, s); len(mod) > 0 {
 			affected[gid] = mod
 		}
 	}
@@ -937,7 +913,7 @@ func AbyssPassive(seed int64, socketID int64, jewelType int, path map[int64]bool
 		for _, n := range w.selectAscendancyNotables(name, s, 1) {
 			var mod []AbyssComponent
 			if w.zorathNodes[n.gid] {
-				mod = abyssModification(t, n, 11, s)
+				mod = abyssModification(tables, n, 11, s)
 			}
 			affected[n.gid] = mod
 		}

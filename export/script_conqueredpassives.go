@@ -6,6 +6,7 @@
 package export
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"sort"
@@ -35,43 +36,39 @@ var legionDatErrors = map[string]struct {
 	"maraketh_notable_add_flask_effect":        {"Id", "maraketh_notable_add_flask_effect", "maraketh_notable_add_alchemists_genius"},
 }
 
-func fixLegionDatErrors(row map[string]any) {
-	fix, ok := legionDatErrors[luaStr(row["Id"])]
-	if !ok {
-		return
+// legionId is the row's Id with legionDatErrors applied.
+func legionId(row *Row) string {
+	id := row.Str("Id")
+	fix, ok := legionDatErrors[id]
+	if !ok || row.Str(fix.matchField) != fix.matchValue {
+		return id
 	}
-	if luaStr(row[fix.matchField]) != fix.matchValue {
-		return
-	}
-	row["Id"] = fix.replaceId
+	return fix.replaceId
 }
 
-func intListContains(cell any, val int64) bool {
-	for _, v := range cell.([]any) {
-		if n, ok := v.(int64); ok && n == val {
+func intListContains(list []int64, val int64) bool {
+	for _, v := range list {
+		if v == val {
 			return true
 		}
 	}
 	return false
 }
 
-func buildLegionPassives(x *Ctx) (any, error) {
+func buildLegionPassives(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("passive_skill_stat_descriptions.txt")
 
-	stats := x.Dat("Stats")
-	altSkills := x.Dat("AlternatePassiveSkills")
-	conqueredAdditions := x.Dat("AlternatePassiveAdditions")
-
-	dumpRow := func(d *DatFile, i int) map[string]any {
-		m := map[string]any{}
-		for j, col := range d.spec {
-			m[col.Name] = d.readCell(i, j)
-		}
-		return m
+	altSkills, err := x.Dat("AlternatePassiveSkills")
+	if err != nil {
+		return nil, err
+	}
+	conqueredAdditions, err := x.Dat("AlternatePassiveAdditions")
+	if err != nil {
+		return nil, err
 	}
 
 	// parseStats yields the node's sd, stats and sortedStats.
-	parseStats := func(rowMap map[string]any) (sd []string, statsOut []schema.PassiveStat, sorted []string) {
+	parseStats := func(row *Row) (sd []string, statsOut []schema.PassiveStat, sorted []string, err error) {
 		type entry struct {
 			sv        *statVal
 			index     int
@@ -80,13 +77,16 @@ func buildLegionPassives(x *Ctx) (any, error) {
 		}
 		entries := map[string]*entry{}
 		statMap := map[string]*statVal{}
-		for idx, statKey := range listRows(rowMap["StatsKeys"]) {
-			statId := luaStr(stats.GetRowByIndex(statKey.Index).Get("Id"))
-			rangeV := rowMap["Stat"+luaStr(idx+1)].(Interval)
+		for idx, statKey := range row.Refs("StatsKeys") {
+			statId := statKey.Str("Id")
+			rangeV := row.Ivl(fmt.Sprintf("Stat%d", idx+1))
 			sv := &statVal{min: float64(rangeV[0]), max: float64(rangeV[1])}
 			// describeStats changes values while formatting them, so use a
 			// copy when only finding the order.
-			orderProbe := x.DescribeStats(map[string]*statVal{statId: {min: sv.min, max: sv.max}})
+			orderProbe, err := x.DescribeStats(map[string]*statVal{statId: {min: sv.min, max: sv.max}})
+			if err != nil {
+				return nil, nil, nil, err
+			}
 			e := &entry{sv: sv, index: idx + 1}
 			if len(orderProbe.Orders) > 0 {
 				e.statOrder = orderProbe.Orders[0]
@@ -97,7 +97,10 @@ func buildLegionPassives(x *Ctx) (any, error) {
 		}
 		// A description can combine several stats, such as minimum and
 		// maximum added damage, so describe the complete set together.
-		lines := x.DescribeStats(statMap)
+		lines, err := x.DescribeStats(statMap)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 		sd = lines.Lines
 		ids := make([]string, 0, len(entries))
 		for id := range entries {
@@ -127,22 +130,24 @@ func buildLegionPassives(x *Ctx) (any, error) {
 			}
 			return oa < ob || (oa == ob && ea.index < eb.index)
 		})
-		return sd, statsOut, sortIds
+		return sd, statsOut, sortIds, nil
 	}
 
 	var doc schema.LegionPassives
-	for i := 1; i <= altSkills.RowCount; i++ {
-		rowMap := dumpRow(altSkills, i)
-		fixLegionDatErrors(rowMap)
+	for row := range altSkills.Rows() {
 		node := schema.LegionNode{
-			Id:   luaStr(rowMap["Id"]),
-			Icon: luaStr(rowMap["DDSIcon"]),
-			Dn:   luaStr(rowMap["Name"]),
+			Id:   legionId(row),
+			Icon: row.Str("DDSIcon"),
+			Dn:   row.Str("Name"),
 		}
-		node.Ks = intListContains(rowMap["PassiveType"], 4)
-		node.Not = intListContains(rowMap["PassiveType"], 3)
+		passiveType := row.Ints("PassiveType")
+		node.Ks = intListContains(passiveType, 4)
+		node.Not = intListContains(passiveType, 3)
 
-		node.Sd, node.Stats, node.SortedStats = parseStats(rowMap)
+		node.Sd, node.Stats, node.SortedStats, err = parseStats(row)
+		if err != nil {
+			return nil, err
+		}
 
 		if node.Id == "vaal_keystone_2_v2" { // Immortal Ambition needs to be manually added
 			node.Sd = []string{
@@ -157,12 +162,11 @@ func buildLegionPassives(x *Ctx) (any, error) {
 		doc.Nodes = append(doc.Nodes, node)
 	}
 
-	for i := 1; i <= conqueredAdditions.RowCount; i++ {
-		rowMap := dumpRow(conqueredAdditions, i)
-		fixLegionDatErrors(rowMap)
-		add := schema.ConqueredAddition{Id: luaStr(rowMap["Id"])}
+	for row := range conqueredAdditions.Rows() {
+		id := legionId(row)
+		add := schema.ConqueredAddition{Id: id}
 		// Additions have no name, so construct one from the id.
-		dn := strings.ReplaceAll(luaStr(rowMap["Id"]), "_", " ")
+		dn := strings.ReplaceAll(id, "_", " ")
 		dn = reLeadWordSpace.ReplaceAllString(dn, "")
 		dn = reLeadWordSpace.ReplaceAllString(dn, "")
 		dn = reWordCap.ReplaceAllStringFunc(dn, func(m string) string {
@@ -170,7 +174,10 @@ func buildLegionPassives(x *Ctx) (any, error) {
 		})
 		add.Dn = dn
 
-		add.Sd, add.Stats, add.SortedStats = parseStats(rowMap)
+		add.Sd, add.Stats, add.SortedStats, err = parseStats(row)
+		if err != nil {
+			return nil, err
+		}
 		doc.Additions = append(doc.Additions, add)
 	}
 	return doc, nil

@@ -65,13 +65,18 @@ func renderEssence(es schema.Essences, _ Templates) (map[string]string, error) {
 func renderModScalability(sc schema.ModScalability, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
+	// The reference sorted the escaped spellings.
 	lines := make([]string, 0, len(sc))
+	byEscaped := make(map[string]string, len(sc))
 	for line := range sc {
-		lines = append(lines, line)
+		esc := luaEsc(line)
+		lines = append(lines, esc)
+		byEscaped[esc] = line
 	}
 	sort.Strings(lines)
-	for _, line := range lines {
-		b.W("\t[\"", line, "\"] = { ")
+	for _, esc := range lines {
+		line := byEscaped[esc]
+		b.W("\t[\"", esc, "\"] = { ")
 		for i, s := range sc[line] {
 			b.W("{ isScalable = ", luaStr(s.IsScalable))
 			if s.Formats != nil {

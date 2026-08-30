@@ -8,21 +8,24 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "costs", Build: buildCosts})
 }
 
-func buildCosts(x *Ctx) (any, error) {
+func buildCosts(x *Ctx) (schema.Document, error) {
+	costTypes, err := x.Dat("CostTypes")
+	if err != nil {
+		return nil, err
+	}
 	var costs schema.Costs
-	x.Dat("CostTypes").Rows(func(c *Row) bool {
+	for c := range costTypes.Rows() {
 		ct := schema.CostType{
-			Resource:       luaStr(c.Get("Resource")),
-			ResourceString: luaStr(c.Get("ResourceString")),
-			Divisor:        c.Get("Divisor").(int64),
+			Resource:       c.Str("Resource"),
+			ResourceString: c.Str("ResourceString"),
+			Divisor:        c.Int("Divisor"),
 		}
-		if stat, ok := c.Get("Stat").(*Row); ok {
-			id := luaStr(stat.Get("Id"))
+		if stat := c.Ref("Stat"); stat != nil {
+			id := stat.Str("Id")
 			ct.Stat = &id
 		}
 		costs = append(costs, ct)
-		return true
-	})
+	}
 	// special case for soul cost
 	soulStat := " "
 	costs = append(costs, schema.CostType{

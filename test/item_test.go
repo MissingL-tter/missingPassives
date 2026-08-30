@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/test/luacanon"
@@ -134,10 +135,10 @@ func itemInputOf(it *item.Item) *calc.ItemInput {
 		if it.Base.Flask != nil {
 			fb := &calc.FlaskBaseInput{}
 			if it.Base.Flask.Life != nil {
-				fb.Life = *it.Base.Flask.Life
+				fb.Life = util.Some(*it.Base.Flask.Life)
 			}
 			if it.Base.Flask.Mana != nil {
-				fb.Mana = *it.Base.Flask.Mana
+				fb.Mana = util.Some(*it.Base.Flask.Mana)
 			}
 			base.Flask = fb
 		}
@@ -158,9 +159,7 @@ func itemInputOf(it *item.Item) *calc.ItemInput {
 		in.BuffModList = []*modparser.Mod{}
 	}
 	in.GrantedSkills = it.GrantedSkills
-	if it.Requirements != nil {
-		in.Requirements = it.Requirements
-	}
+	in.Requirements = &it.Requirements
 	sockets := make([]map[string]any, 0, len(it.Sockets))
 	for _, s := range it.Sockets {
 		sockets = append(sockets, map[string]any{"color": s.Color, "group": s.Group})
@@ -172,29 +171,19 @@ func itemInputOf(it *item.Item) *calc.ItemInput {
 		in.JewelRadiusIndex = f64Ptr(float64(*it.JewelRadiusIndex))
 	}
 	if it.JewelData != nil {
-		if funcList, ok := it.JewelData["funcList"].([]any); ok {
-			for _, fv := range funcList {
-				tag, _ := fv.(modparser.Tag)
-				typ, _ := tag["type"].(string)
-				in.FuncTypes = append(in.FuncTypes, typ)
-			}
+		for _, fn := range it.JewelData.FuncList {
+			in.FuncTypes = append(in.FuncTypes, fn.Type)
 		}
-		in.JewelData = scalarsOnly(it.JewelData)
 	}
-	if it.FlaskData != nil {
-		in.FlaskData = scalarsOnly(it.FlaskData)
-	}
-	if it.TinctureData != nil {
-		in.TinctureData = scalarsOnly(it.TinctureData)
-	}
-	if it.ArmourData != nil {
-		in.ArmourData = scalarsOnly(it.ArmourData)
-	}
+	in.JewelData = it.JewelData
+	in.FlaskData = it.FlaskData
+	in.TinctureData = it.TinctureData
+	in.ArmourData = it.ArmourData
 	if it.WeaponData != nil {
-		wd := map[int]map[string]any{}
+		wd := map[int]*item.WeaponData{}
 		for i := 1; i <= 2; i++ {
 			if side, ok := it.WeaponData[i]; ok {
-				wd[i] = scalarsOnly(side)
+				wd[i] = side
 			}
 		}
 		in.WeaponData = wd

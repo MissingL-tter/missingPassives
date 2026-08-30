@@ -14,17 +14,6 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "miscdata", Build: buildMiscdata})
 }
 
-// numCell converts a numeric dat cell to float64.
-func numCell(v any) float64 {
-	switch n := v.(type) {
-	case int64:
-		return float64(n)
-	case float64:
-		return n
-	}
-	panic("miscdata: non-numeric cell")
-}
-
 // otConstants parses an .ot file's wanted blocks the way miscdata.lua does.
 func otConstants(x *Ctx, file string, alsoPathfinding bool) []schema.KV {
 	raw := x.GetFile(file)
@@ -52,102 +41,113 @@ func otConstants(x *Ctx, file string, alsoPathfinding bool) []schema.KV {
 	return out
 }
 
-func buildMiscdata(x *Ctx) (any, error) {
+func buildMiscdata(x *Ctx) (schema.Document, error) {
 	var d schema.MiscData
 	m := &d.Misc
 
-	x.Dat("DefaultMonsterStats").Rows(func(stats *Row) bool {
-		m.MonsterEvasion = append(m.MonsterEvasion, numCell(stats.Get("Evasion")))
-		m.MonsterAccuracy = append(m.MonsterAccuracy, numCell(stats.Get("Accuracy")))
-		m.MonsterLife = append(m.MonsterLife, numCell(stats.Get("MonsterLife")))
-		m.MonsterLife2 = append(m.MonsterLife2, numCell(stats.Get("AltLife1")))
-		m.MonsterLife3 = append(m.MonsterLife3, numCell(stats.Get("AltLife2")))
-		m.MonsterAllyLife = append(m.MonsterAllyLife, numCell(stats.Get("MinionLife")))
-		m.MonsterDamage = append(m.MonsterDamage, numCell(stats.Get("Damage")))
-		m.MonsterAllyDamage = append(m.MonsterAllyDamage, numCell(stats.Get("MinionDamage")))
-		m.MonsterAilmentThreshold = append(m.MonsterAilmentThreshold, numCell(stats.Get("AilmentThreshold")))
-		m.MonsterPhysConversionMulti = append(m.MonsterPhysConversionMulti, numCell(stats.Get("MonsterPhysConversionMulti")))
-		return true
-	})
-	mdri := x.Dat("GameConstants").GetRow("Id", "MonsterDamageReductionImprovement")
-	mdriRatio := float64(mdri.Get("Value").(int64)) / float64(mdri.Get("Divisor").(int64))
+	var (
+		defaultMonsterStats, gameConstants, totemVariations, monsterVarieties *DatFile
+		mapDifficulty, mapBossDifficulty, villageBalance, currencyExchange    *DatFile
+	)
+	for name, dst := range map[string]**DatFile{
+		"DefaultMonsterStats":          &defaultMonsterStats,
+		"GameConstants":                &gameConstants,
+		"SkillTotemVariations":         &totemVariations,
+		"MonsterVarieties":             &monsterVarieties,
+		"MonsterMapDifficulty":         &mapDifficulty,
+		"MonsterMapBossDifficulty":     &mapBossDifficulty,
+		"VillageBalancePerLevelShared": &villageBalance,
+		"CurrencyExchange":             &currencyExchange,
+	} {
+		var err error
+		if *dst, err = x.Dat(name); err != nil {
+			return nil, err
+		}
+	}
+
+	for stats := range defaultMonsterStats.Rows() {
+		m.MonsterEvasion = append(m.MonsterEvasion, float64(stats.Int("Evasion")))
+		m.MonsterAccuracy = append(m.MonsterAccuracy, float64(stats.Int("Accuracy")))
+		m.MonsterLife = append(m.MonsterLife, float64(stats.Int("MonsterLife")))
+		m.MonsterLife2 = append(m.MonsterLife2, float64(stats.Int("AltLife1")))
+		m.MonsterLife3 = append(m.MonsterLife3, float64(stats.Int("AltLife2")))
+		m.MonsterAllyLife = append(m.MonsterAllyLife, float64(stats.Int("MinionLife")))
+		m.MonsterDamage = append(m.MonsterDamage, stats.Float("Damage"))
+		m.MonsterAllyDamage = append(m.MonsterAllyDamage, stats.Float("MinionDamage"))
+		m.MonsterAilmentThreshold = append(m.MonsterAilmentThreshold, float64(stats.Int("AilmentThreshold")))
+		m.MonsterPhysConversionMulti = append(m.MonsterPhysConversionMulti, float64(stats.Int("MonsterPhysConversionMulti")))
+	}
+	mdri := gameConstants.GetRow("Id", "MonsterDamageReductionImprovement")
+	mdriRatio := float64(mdri.Int("Value")) / float64(mdri.Int("Divisor"))
 	for i := 1; i <= 100; i++ {
 		m.MonsterArmour = append(m.MonsterArmour, math.Floor((10+2*float64(i))*math.Pow(1+mdriRatio/100, float64(i))))
 	}
 
-	x.Dat("GameConstants").Rows(func(row *Row) bool {
+	for row := range gameConstants.Rows() {
 		m.GameConstants = append(m.GameConstants, schema.IdValue{
-			Id:    luaStr(row.Get("Id")),
-			Value: float64(row.Get("Value").(int64)) / float64(row.Get("Divisor").(int64)),
+			Id:    row.Str("Id"),
+			Value: float64(row.Int("Value")) / float64(row.Int("Divisor")),
 		})
-		return true
-	})
+	}
 
 	m.CharacterConstants = otConstants(x, "Metadata/Characters/Character.ot", true)
 	m.MonsterConstants = otConstants(x, "Metadata/Monsters/Monster.ot", false)
 
 	totemKeys := map[int64]bool{}
-	x.Dat("SkillTotemVariations").Rows(func(vr *Row) bool {
-		st := vr.Get("SkillTotem").(int64)
+	for vr := range totemVariations.Rows() {
+		st := vr.Int("SkillTotem")
 		if !totemKeys[st] {
 			totemKeys[st] = true
 			m.TotemLifeMult = append(m.TotemLifeMult, schema.IntMult{
 				Id:   st,
-				Mult: float64(vr.Get("MonsterVariety").(*Row).Get("LifeMultiplier").(int64)) / 100,
+				Mult: float64(vr.Ref("MonsterVariety").Int("LifeMultiplier")) / 100,
 			})
 		}
-		return true
-	})
+	}
 
 	cachedEntry := map[string]bool{}
-	x.Dat("MonsterVarieties").Rows(func(row *Row) bool {
-		for _, mm := range row.Get("Mods").([]any) {
-			mod := mm.(*Row)
-			name := luaStr(row.Get("Name"))
-			if luaStr(mod.Get("Id")) == "MonsterNecromancerRaisable" && !cachedEntry[name] {
+	for row := range monsterVarieties.Rows() {
+		for _, mod := range row.Refs("Mods") {
+			name := row.Str("Name")
+			if mod.Str("Id") == "MonsterNecromancerRaisable" && !cachedEntry[name] {
 				m.MonsterVarietyLifeMult = append(m.MonsterVarietyLifeMult, schema.NameMult{
 					Name: name,
-					Mult: float64(row.Get("LifeMultiplier").(int64)) / 100,
+					Mult: float64(row.Int("LifeMultiplier")) / 100,
 				})
 				cachedEntry[name] = true
 				break
 			}
 		}
-		return true
-	})
+	}
 
-	x.Dat("MonsterMapDifficulty").Rows(func(row *Row) bool {
+	for row := range mapDifficulty.Rows() {
 		m.MapLevelLifeMult = append(m.MapLevelLifeMult, schema.LevelMult{
-			Level: row.Get("AreaLevel").(int64),
-			Mult:  1 + float64(row.Get("LifePercentIncrease").(int64))/100,
+			Level: row.Int("AreaLevel"),
+			Mult:  1 + float64(row.Int("LifePercentIncrease"))/100,
 		})
-		return true
-	})
-	x.Dat("MonsterMapBossDifficulty").Rows(func(vr *Row) bool {
-		lvl := vr.Get("AreaLevel").(int64)
+	}
+	for vr := range mapBossDifficulty.Rows() {
+		lvl := vr.Int("AreaLevel")
 		m.MapLevelBossLifeMult = append(m.MapLevelBossLifeMult, schema.LevelMult{
-			Level: lvl, Mult: 1 + float64(vr.Get("BossLifePercentIncrease").(int64))/100,
+			Level: lvl, Mult: 1 + float64(vr.Int("BossLifePercentIncrease"))/100,
 		})
 		m.MapLevelBossAilmentMult = append(m.MapLevelBossAilmentMult, schema.LevelMult{
-			Level: lvl, Mult: (100 + float64(vr.Get("BossAilmentPercentDecrease").(int64))) / 100,
+			Level: lvl, Mult: (100 + float64(vr.Int("BossAilmentPercentDecrease"))) / 100,
 		})
-		return true
-	})
-	x.Dat("VillageBalancePerLevelShared").Rows(func(row *Row) bool {
-		m.GoldRespecPrices = append(m.GoldRespecPrices, row.Get("GoldRespec").(int64))
-		return true
-	})
+	}
+	for row := range villageBalance.Rows() {
+		m.GoldRespecPrices = append(m.GoldRespecPrices, row.Int("GoldRespec"))
+	}
 
 	d.CurrencyNames = schema.CurrencyNames{}
 	nameClean := strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ")
-	x.Dat("CurrencyExchange").Rows(func(row *Row) bool {
-		base := row.Get("BaseItemType").(*Row)
-		name := luaStr(base.Get("Name"))
-		if luaStr(base.Get("ItemClass").(*Row).Get("Id")) == "StackableCurrency" &&
+	for row := range currencyExchange.Rows() {
+		base := row.Ref("BaseItemType")
+		name := base.Str("Name")
+		if base.Ref("ItemClass").Str("Id") == "StackableCurrency" &&
 			name != "" && !strings.Contains(name, "DNT") {
-			d.CurrencyNames[luaStr(base.Get("Id"))] = nameClean.Replace(name)
+			d.CurrencyNames[base.Str("Id")] = nameClean.Replace(name)
 		}
-		return true
-	})
+	}
 	return d, nil
 }

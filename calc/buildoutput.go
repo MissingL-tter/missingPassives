@@ -52,8 +52,7 @@ func (env *Env) BuildActiveSkill(mode string, skill *ActiveSkill, targetUUID str
 			// The reference's nested perform runs whatever the stage
 			// functions currently are: the real handoff normally, no-ops
 			// during the dump's checkpoint phase.
-			fullEnv.StubHandoff = env.StubHandoff
-			if env.StubHandoff {
+			if fullEnv.Replay.StubHandoff {
 				fullEnv.Perform()
 			} else {
 				fullEnv.PerformFull(true)

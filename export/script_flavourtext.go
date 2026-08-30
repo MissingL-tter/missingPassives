@@ -24,10 +24,6 @@ func normalizeId(id string) string {
 	return reTrailUnderscore.ReplaceAllString(id, "")
 }
 
-func luaTrim(s string) string {
-	return strings.Trim(s, " \t\n\v\f\r")
-}
-
 func cleanAndSplit(str string) []string {
 	str = strings.ReplaceAll(str, "\r\n", "\n")
 	str = strings.ReplaceAll(str, "<default>", "\n^8")
@@ -37,14 +33,13 @@ func cleanAndSplit(str string) []string {
 		if line == "" {
 			continue
 		}
-		line = luaTrim(line)
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		line = reBraces.ReplaceAllString(line, "$1")
 		line = reAngles.ReplaceAllString(line, "")
-		line = luaTrim(line)
-		line = strings.ReplaceAll(line, "\"", "\\\"")
+		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "^8") && (len(lines) == 0 || lines[len(lines)-1] != "") {
 			lines = append(lines, "")
 		}
@@ -165,24 +160,30 @@ var forcedNameList = []forcedName{
 	{"Ring11x", "Replica Gifts from Above"},
 }
 
-func buildFlavourText(x *Ctx) (any, error) {
+func buildFlavourText(x *Ctx) (schema.Document, error) {
+	stashLayout, err := x.Dat("UniqueStashLayout")
+	if err != nil {
+		return nil, err
+	}
+	flavourText, err := x.Dat("FlavourText")
+	if err != nil {
+		return nil, err
+	}
 	uniqueNameLookup := map[string]string{}
-	x.Dat("UniqueStashLayout").Rows(func(row *Row) bool {
-		name := luaStr(row.Get("WordsKey").(*Row).Get("Text2"))
-		id := normalizeId(luaStr(row.Get("ItemVisualIdentity").(*Row).Get("Id")))
+	for row := range stashLayout.Rows() {
+		name := row.Ref("WordsKey").Str("Text2")
+		id := normalizeId(row.Ref("ItemVisualIdentity").Str("Id"))
 		if strings.Contains(id, "Map") || strings.Contains(id, "AlternateArt") ||
 			strings.Contains(id, "AtlasUpgrade") || strings.Contains(id, "HeistQuest") {
-			return true
+			continue
 		}
 		uniqueNameLookup[id] = name
-		return true
-	})
+	}
 
 	flavourTextById := map[string][]string{}
-	x.Dat("FlavourText").Rows(func(c *Row) bool {
-		flavourTextById[normalizeId(luaStr(c.Get("Id")))] = cleanAndSplit(luaStr(c.Get("Text")))
-		return true
-	})
+	for c := range flavourText.Rows() {
+		flavourTextById[normalizeId(c.Str("Id"))] = cleanAndSplit(c.Str("Text"))
+	}
 
 	var fts schema.FlavourTexts
 	x.flavourEntries = nil

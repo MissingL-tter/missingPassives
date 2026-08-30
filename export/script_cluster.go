@@ -16,76 +16,93 @@ func init() {
 
 var reDdsEnd = regexp.MustCompile(`dds$`)
 
-func buildCluster(x *Ctx) (any, error) {
+func buildCluster(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("passive_skill_stat_descriptions.txt")
 
+	jewels, err := x.Dat("PassiveTreeExpansionJewels")
+	if err != nil {
+		return nil, err
+	}
+	expansionSkills, err := x.Dat("PassiveTreeExpansionSkills")
+	if err != nil {
+		return nil, err
+	}
+	specialSkills, err := x.Dat("PassiveTreeExpansionSpecialSkills")
+	if err != nil {
+		return nil, err
+	}
+	jewelSlots, err := x.Dat("PassiveJewelSlots")
+	if err != nil {
+		return nil, err
+	}
+
 	var cj schema.ClusterJewels
-	x.Dat("PassiveTreeExpansionJewels").Rows(func(jewel *Row) bool {
-		size := jewel.Get("Size").(*Row)
+	for jewel := range jewels.Rows() {
+		size := jewel.Ref("Size")
 		j := schema.ClusterJewelSize{
-			Name:            luaStr(jewel.Get("BaseItemType").(*Row).Get("Name")),
-			Size:            luaStr(size.Get("Id")),
-			SizeIndex:       size.Index - 1,
-			MinNodes:        jewel.Get("MinNodes").(int64),
-			MaxNodes:        jewel.Get("MaxNodes").(int64),
-			SmallIndicies:   intCells(jewel.Get("SmallIndicies").([]any)),
-			NotableIndicies: intCells(jewel.Get("NotableIndicies").([]any)),
-			SocketIndicies:  intCells(jewel.Get("SocketIndicies").([]any)),
-			TotalIndicies:   jewel.Get("TotalIndicies").(int64),
+			Name:            jewel.Ref("BaseItemType").Str("Name"),
+			Size:            size.Str("Id"),
+			SizeIndex:       size.ID,
+			MinNodes:        jewel.Int("MinNodes"),
+			MaxNodes:        jewel.Int("MaxNodes"),
+			SmallIndicies:   jewel.Ints("SmallIndicies"),
+			NotableIndicies: jewel.Ints("NotableIndicies"),
+			SocketIndicies:  jewel.Ints("SocketIndicies"),
+			TotalIndicies:   jewel.Int("TotalIndicies"),
 		}
-		for _, skill := range x.Dat("PassiveTreeExpansionSkills").GetRowList("JewelSize", size) {
-			node := skill.Get("Node").(*Row)
-			tagId := luaStr(skill.Get("Tag").(*Row).Get("Id"))
+		for _, skill := range expansionSkills.GetRowList("JewelSize", size) {
+			node := skill.Ref("Node")
+			tagId := skill.Ref("Tag").Str("Id")
 			s := schema.ClusterSkill{
-				Id:   luaStr(node.Get("Id")),
-				Name: luaStr(node.Get("Name")),
-				Icon: reDdsEnd.ReplaceAllString(luaStr(node.Get("Icon")), "png"),
+				Id:   node.Str("Id"),
+				Name: node.Str("Name"),
+				Icon: reDdsEnd.ReplaceAllString(node.Str("Icon"), "png"),
 				Tag:  tagId,
 			}
 			if strings.Contains(tagId, "old_do_not_use") {
 				s.Name += " (Legacy)"
 			}
-			if mastery, ok := skill.Get("Mastery").(*Row); ok {
-				icon := reDdsEnd.ReplaceAllString(luaStr(mastery.Get("Icon")), "png")
+			if mastery := skill.Ref("Mastery"); mastery != nil {
+				icon := reDdsEnd.ReplaceAllString(mastery.Str("Icon"), "png")
 				s.MasteryIcon = &icon
 			}
 			stats := map[string]*statVal{}
-			for i, stat := range node.Get("Stats").([]any) {
-				v := float64(node.Get(fmt.Sprintf("Stat%d", i+1)).(int64))
-				stats[luaStr(stat.(*Row).Get("Id"))] = &statVal{min: v, max: v}
+			for i, stat := range node.Refs("Stats") {
+				v := float64(node.Int(fmt.Sprintf("Stat%d", i+1)))
+				stats[stat.Str("Id")] = &statVal{min: v, max: v}
 			}
-			s.Stats = x.DescribeStats(stats).Lines
+			lines, err := x.DescribeStats(stats)
+			if err != nil {
+				return nil, err
+			}
+			s.Stats = lines.Lines
 			j.Skills = append(j.Skills, s)
 		}
 		cj.Jewels = append(cj.Jewels, j)
-		return true
-	})
+	}
 
-	x.Dat("PassiveTreeExpansionSpecialSkills").Rows(func(skill *Row) bool {
-		node := skill.Get("Node").(*Row)
-		if node.Get("Notable").(bool) {
+	for skill := range specialSkills.Rows() {
+		node := skill.Ref("Node")
+		if node.Bool("Notable") {
 			cj.NotableSortOrder = append(cj.NotableSortOrder, schema.NameOrder{
-				Name:  luaStr(node.Get("Name")),
-				Order: skill.Get("Stat").(*Row).Index,
+				Name:  node.Str("Name"),
+				Order: skill.Ref("Stat").ID + 1, // the reference's 1-based row index
 			})
 		}
-		return true
-	})
-	x.Dat("PassiveTreeExpansionSpecialSkills").Rows(func(skill *Row) bool {
-		node := skill.Get("Node").(*Row)
-		if node.Get("Keystone").(bool) {
-			cj.Keystones = append(cj.Keystones, luaStr(node.Get("Name")))
+	}
+	for skill := range specialSkills.Rows() {
+		node := skill.Ref("Node")
+		if node.Bool("Keystone") {
+			cj.Keystones = append(cj.Keystones, node.Str("Name"))
 		}
-		return true
-	})
-	x.Dat("PassiveJewelSlots").Rows(func(jewelSlot *Row) bool {
-		if _, ok := jewelSlot.Get("ClusterSize").(*Row); ok {
+	}
+	for jewelSlot := range jewelSlots.Rows() {
+		if jewelSlot.Ref("ClusterSize") != nil {
 			cj.OrbitOffsets = append(cj.OrbitOffsets, schema.OrbitOffset{
-				NodeId: jewelSlot.Get("Proxy").(*Row).Get("PassiveSkillNodeId").(int64),
-				Starts: intCells(jewelSlot.Get("StartIndices").([]any)),
+				NodeId: jewelSlot.Ref("Proxy").Int("PassiveSkillNodeId"),
+				Starts: jewelSlot.Ints("StartIndices"),
 			})
 		}
-		return true
-	})
+	}
 	return cj, nil
 }

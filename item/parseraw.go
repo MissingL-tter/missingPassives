@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -74,7 +75,7 @@ func uniqueStatOrder() (map[string]float64, map[string]float64) {
 				if index >= len(mod.StatOrder) {
 					break
 				}
-				exactLine := strings.ReplaceAll(luaLower(line), "\n", " ")
+				exactLine := strings.ReplaceAll(strings.ToLower(line), "\n", " ")
 				statLine := normaliseModLine(line)
 				order := mod.StatOrder[index]
 				if cur, ok := exact[exactLine]; !ok || order < cur {
@@ -141,7 +142,7 @@ var mathHuge = math.Inf(1)
 // sanitise, exactly as the reference does.
 func New(raw string, rarity string, highQuality bool) *Item {
 	it := &Item{}
-	it.ParseRaw(sanitiseText(raw), rarity, highQuality)
+	it.ParseRaw(FoldText(raw), rarity, highQuality)
 	return it
 }
 
@@ -241,7 +242,7 @@ func (it *Item) ParseRaw(raw string, rarity string, highQuality bool) {
 	it.UsesVariantGroups = false
 	it.Prefixes = AffixList{}
 	it.Suffixes = AffixList{}
-	it.Requirements = map[string]float64{"str": 0, "dex": 0, "int": 0}
+	it.Requirements = Requirements{Str: util.Some(0.0), Dex: util.Some(0.0), Int: util.Some(0.0)}
 	it.BaseLines = map[string]*baseLine{}
 	it.Foulborn = false
 	it.Vestigial = false
@@ -406,28 +407,21 @@ lineLoop:
 						}
 					}
 					if it.ArmourData == nil {
-						it.ArmourData = map[string]any{}
+						it.ArmourData = &ArmourData{}
 					}
-					if n := specToNumber(specVal); n != nil {
-						it.ArmourData[specName] = *n
-					} else {
-						delete(it.ArmourData, specName)
-					}
+					it.ArmourData.Set(specName, numValue(specToNumber(specVal)))
 				case strings.Contains(specName, "BasePercentile"):
 					if it.ArmourData == nil {
-						it.ArmourData = map[string]any{}
+						it.ArmourData = &ArmourData{}
 					}
-					if n := specToNumber(specVal); n != nil {
-						it.ArmourData[specName] = *n
-					} else {
-						it.ArmourData[specName] = 0.0
-					}
+					// tonumber(nil) or 0: an unreadable percentile parses as 0.
+					it.ArmourData.Set(specName, modparser.Num(orZero(specToNumber(specVal))))
 				case specName == "Requires Level":
-					setReq(it.Requirements, "level", specToNumber(specVal))
+					it.Requirements.Level = optFloat(specToNumber(specVal))
 				case specName == "Level":
 					importedLevelReq = specToNumber(specVal)
 				case specName == "LevelReq":
-					setReq(it.Requirements, "level", specToNumber(specVal))
+					it.Requirements.Level = optFloat(specToNumber(specVal))
 				case specName == "Has Alt Variant":
 					it.HasAltVariant = true
 				case specName == "Has Alt Variant Two":
@@ -481,25 +475,23 @@ lineLoop:
 					}
 					fractured := strings.HasPrefix(specVal, "{fractured}")
 					specVal = strings.TrimPrefix(specVal, "{fractured}")
-					var rng any
+					var rng AffixRange
 					affix := specVal
 					if m := rangeSpecRe.FindStringSubmatch(specVal); m != nil {
 						rangeStr, aff := m[1], m[2]
 						affix = aff
 						if strings.Contains(rangeStr, ",") {
-							var ranges []float64
 							for _, value := range strings.Split(rangeStr, ",") {
 								if n, err := strconv.ParseFloat(value, 64); err == nil {
-									ranges = append(ranges, n)
+									rng.Multi = append(rng.Multi, n)
 								}
 							}
-							rng = ranges
 						} else if n, err := strconv.ParseFloat(rangeStr, 64); err == nil {
-							rng = n
+							rng.Single = util.Some(n)
 						}
 					}
-					if rng == nil && affix != "None" {
-						rng = DefaultItemAffixQuality
+					if !rng.Single.Set && rng.Multi == nil && affix != "None" {
+						rng.Single = util.Some(DefaultItemAffixQuality)
 					}
 					affixes.List = append(affixes.List, &Affix{ModID: affix, Range: rng, Fractured: fractured})
 				case specName == "Implicits":
@@ -544,7 +536,7 @@ lineLoop:
 					it.Note = specVal
 				case specName == "Str" || specName == "Strength" || specName == "Dex" || specName == "Dexterity" ||
 					specName == "Int" || specName == "Intelligence":
-					setReq(it.Requirements, luaLower(specName[:3]), specToNumber(specVal))
+					*it.Requirements.Attribute(strings.ToLower(specName[:3])) = optFloat(specToNumber(specVal))
 				case specName == "Critical Strike Range" || specName == "Attacks per Second" || specName == "Weapon Range" ||
 					specName == "Critical Strike Chance" || specName == "Physical Damage" || specName == "Elemental Damage" ||
 					specName == "Chaos Damage" || specName == "Chance to Block" || specName == "Block chance":
@@ -730,7 +722,7 @@ lineLoop:
 							it.Title = it.Name
 						}
 						if it.Rarity == "UNIQUE" && it.Title != "" &&
-							!strings.Contains(luaLower(it.Title), "might of the meek") {
+							!strings.Contains(strings.ToLower(it.Title), "might of the meek") {
 							key := regexp.MustCompile(`^[Ff]oulborn `).ReplaceAllString(it.Title, "")
 							it.mutatedLines = foulbornEntry(key)
 						}
@@ -738,7 +730,7 @@ lineLoop:
 						it.Base = base
 						it.Affixes = affixPool(base)
 						if it.Title != "" {
-							if rlu, ok := data.RareLikeUniques[luaLower(it.Title)]; ok {
+							if rlu, ok := data.RareLikeUniques[strings.ToLower(it.Title)]; ok {
 								it.RareLikeUnique = &rlu
 								it.Affixes = rlu.Affixes
 							}
@@ -746,13 +738,14 @@ lineLoop:
 						it.Corruptible = base.Type != "Flask"
 						it.CanBeInfluenced = base.InfluenceTags != nil
 						it.ClusterJewel = clusterJewelFor(it.BaseName)
-						it.Requirements["str"] = reqOrZero(base.Req.Str)
-						it.Requirements["dex"] = reqOrZero(base.Req.Dex)
-						it.Requirements["int"] = reqOrZero(base.Req.Int)
-						maxReq := fmax(it.Requirements["str"], fmax(it.Requirements["dex"], it.Requirements["int"]))
-						if maxReq == it.Requirements["dex"] {
+						req := &it.Requirements
+						req.Str = util.Some(reqOrZero(base.Req.Str))
+						req.Dex = util.Some(reqOrZero(base.Req.Dex))
+						req.Int = util.Some(reqOrZero(base.Req.Int))
+						maxReq := fmax(req.Str.V, fmax(req.Dex.V, req.Int.V))
+						if maxReq == req.Dex.V {
 							it.DefaultSocketColor = "G"
-						} else if maxReq == it.Requirements["int"] {
+						} else if maxReq == req.Int.V {
 							it.DefaultSocketColor = "B"
 						} else {
 							it.DefaultSocketColor = "R"
@@ -819,7 +812,7 @@ lineLoop:
 						delta := maxV - minV
 						rollRange := 0.5
 						if delta > 0 {
-							rollRange = roundDec((valueN-minV)/delta, 6)
+							rollRange = util.RoundHalfUp((valueN-minV)/delta, 6)
 						}
 						if firstRollRange != nil && *firstRollRange != rollRange {
 							hasIndependentRolls = true
@@ -828,7 +821,7 @@ lineLoop:
 							firstRollRange = &rollRange
 						}
 						if delta > bestPrecisionDelta {
-							bestPrecisionRange = roundDec((valueN-minV)/delta, 6)
+							bestPrecisionRange = util.RoundHalfUp((valueN-minV)/delta, 6)
 							bestPrecisionDelta = delta
 						}
 						whole := value + "(" + rangeStr + ")"
@@ -869,7 +862,7 @@ lineLoop:
 						modList, extra, parsed = parseModLine3(rangedLine)
 					}
 				}
-				lineLower := luaLower(line)
+				lineLower := strings.ToLower(line)
 				if modLine.flag("disabled") {
 					lineLower = ""
 				}
@@ -950,7 +943,7 @@ lineLoop:
 					modLine.ModList = modList
 					modLine.HasModList = true
 					modLine.Extra = extra
-					modLine.ValueScalar = catalystScalar
+					modLine.ValueScalar = util.Some(catalystScalar)
 					if modLine.Range == nil {
 						r := DefaultItemAffixQuality
 						modLine.Range = &r
@@ -998,7 +991,7 @@ lineLoop:
 // detectModMagnitude ports the modMagnitudePattern loop.
 func (it *Item) detectModMagnitude(line, rangedLine string, modLine *ModLine, catalystScalar float64) {
 	for pi, pattern := range modMagnitudePatterns {
-		if !pattern.MatchString(luaLower(rangedLine)) {
+		if !pattern.MatchString(strings.ToLower(rangedLine)) {
 			continue
 		}
 		r := DefaultItemAffixQuality
@@ -1006,7 +999,7 @@ func (it *Item) detectModMagnitude(line, rangedLine string, modLine *ModLine, ca
 			r = *modLine.Range
 		}
 		reRanged := applyRange(line, r, catalystScalar, corruptedOr1(modLine))
-		m := pattern.FindStringSubmatch(luaLower(reRanged))
+		m := pattern.FindStringSubmatch(strings.ToLower(reRanged))
 		if m == nil {
 			break
 		}
@@ -1037,7 +1030,7 @@ func (it *Item) detectModMagnitude(line, rangedLine string, modLine *ModLine, ca
 				var modTags []string
 				modType := ""
 				for _, word := range strings.Fields(modTagsString) {
-					word = luaLower(word)
+					word = strings.ToLower(word)
 					if mapped, ok := modMagnitudeTagMap[word]; ok {
 						word = mapped
 					}
@@ -1116,12 +1109,20 @@ func adjustLimit(limit *float64, lineLower string, plusRe, minusRe *regexp.Regex
 	return &cur
 }
 
-func setReq(req map[string]float64, key string, v *float64) {
+// optFloat lifts a parsed number (nil = unparsable, the Lua nil).
+func optFloat(v *float64) util.Opt[float64] {
 	if v != nil {
-		req[key] = *v
-	} else {
-		delete(req, key)
+		return util.Some(*v)
 	}
+	return util.Opt[float64]{}
+}
+
+// numValue is optFloat as a modifier value (nil clears a data key).
+func numValue(v *float64) modparser.Value {
+	if v != nil {
+		return modparser.Num(*v)
+	}
+	return nil
 }
 
 func specToInt(s string) *int {
@@ -1172,19 +1173,7 @@ func corruptedOr1(modLine *ModLine) float64 {
 // parseModLine3 wraps modparser.Parse into ([]*Mod, extra, parsed):
 // parsed=false is Lua's nil modList.
 func parseModLine3(line string) ([]*modparser.Mod, string, bool) {
-	mods, extra := modparser.Parse(line)
-	if mods == nil {
-		return nil, extra, false
-	}
-	out := make([]*modparser.Mod, 0, len(mods))
-	for _, mv := range mods {
-		if m, ok := mv.(*modparser.Mod); ok {
-			out = append(out, m)
-		} else {
-			panic("item: non-Mod entry in parse result for line: " + line)
-		}
-	}
-	return out, extra, true
+	return modparser.Parse(line)
 }
 
 // parseModLine is the two-value form used for flask buff lines

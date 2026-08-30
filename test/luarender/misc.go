@@ -42,6 +42,28 @@ func luaQ(s string) string {
 	return b.String()
 }
 
+// luaEsc spells a decoded text as the body of a Lua double-quoted literal
+// the way the reference exporter wrote it: quotes, backslashes, newlines
+// and carriage returns escaped, tabs raw.
+func luaEsc(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; c {
+		case '"':
+			b.WriteString(`\"`)
+		case '\\':
+			b.WriteString(`\\`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
+}
+
 // numList renders "{ v1, v2, ... }" with the trailing separator miscdata
 // leaves behind every element.
 func (b *B) numList(label string, vals []float64) {
@@ -163,7 +185,7 @@ func renderFlavourText(fts schema.FlavourTexts, _ Templates) (map[string]string,
 		b.W("\t\tname = \"", ft.Name, "\",\n")
 		b.W("\t\ttext = {\n")
 		for _, line := range ft.Text {
-			b.W("\t\t\t\"", line, "\",\n")
+			b.W("\t\t\t\"", luaEsc(line), "\",\n")
 		}
 		b.W("\t\t},\n")
 		b.W("\t},\n")

@@ -20,10 +20,10 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
 
-	if !c.canDeal["Physical"] || (outNum(output, "BleedChanceOnHit")+outNum(output, "BleedChanceOnCrit")) <= 0 {
+	if !c.canDeal["Physical"] || (output.N("BleedChanceOnHit")+output.N("BleedChanceOnCrit")) <= 0 {
 		return
 	}
-	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordFlag.Bleed|modparser.KeywordFlag.Ailment|modparser.KeywordFlag.PhysicalDot)
+	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordBleed|modparser.KeywordAilment|modparser.KeywordPhysicalDot)
 	if pass.label != "Off Hand" {
 		activeSkill.BleedCfg = dotCfg
 	} else {
@@ -32,46 +32,46 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	checkWeapon1HFlags(dotCfg, cfg)
 
 	// For bleeds we will be using a weighted average calculation
-	configStacks := enemyDB.Sum("BASE", nil, "Multiplier:BleedStacks")
-	maxStacks := skillModList.Sum("BASE", cfg, "BleedStacksMax")
-	if ov := skillModList.Override(cfg, "BleedStacksMax"); truthy(ov) {
-		maxStacks = anyNum(ov)
+	configStacks := enemyDB.Sum(modparser.Base, nil, "Multiplier:BleedStacks")
+	maxStacks := skillModList.Sum(modparser.Base, cfg, "BleedStacksMax")
+	if ov, ok := skillModList.Override(cfg, "BleedStacksMax"); ok {
+		maxStacks = valueNum(ov)
 	}
 	overrideStackPotential, hasOverrideStackPotential := 0.0, false
-	if ov := skillModList.Override(nil, "BleedStackPotentialOverride"); truthy(ov) {
-		overrideStackPotential, hasOverrideStackPotential = anyNum(ov)/maxStacks, true
+	if ov, ok := skillModList.Override(nil, "BleedStackPotentialOverride"); ok {
+		overrideStackPotential, hasOverrideStackPotential = valueNum(ov)/maxStacks, true
 	}
-	globalOutput["BleedStacksMax"] = maxStacks
+	globalOutput.SetN("BleedStacksMax", maxStacks)
 	durationBase := data.Misc.BleedDurationBase
-	if ov := skillModList.Override(dotCfg, "BleedDurationBase"); truthy(ov) {
-		durationBase = anyNum(ov)
-	} else if truthy(skillData["bleedDurationIsSkillDuration"]) && truthy(skillData["duration"]) {
-		durationBase = anyNum(skillData["duration"])
+	if ov, ok := skillModList.Override(dotCfg, "BleedDurationBase"); ok {
+		durationBase = valueNum(ov)
+	} else if skillData.Flag("bleedDurationIsSkillDuration") && skillData.Flag("duration") {
+		durationBase = skillData.N("duration")
 	}
-	durNames := optName(truthy(skillData["bleedIsSkillEffect"]),
+	durNames := optName(skillData.Flag("bleedIsSkillEffect"),
 		[]string{"EnemyBleedDuration", "EnemyAilmentDuration", "DamagingAilmentDuration"}, "Duration")
 	durationMod := Mod(skillModList, dotCfg, durNames...) * Mod(enemyDB, nil, "SelfBleedDuration", "SelfAilmentDuration") /
 		Mod(enemyDB, dotCfg, "BleedExpireRate")
 	durationMod = math.Max(durationMod, 0)
-	rateMod := Mod(skillModList, cfg, "BleedFaster") + enemyDB.Sum("INC", nil, "SelfBleedFaster")/100
-	globalOutput["BleedDuration"] = durationBase * durationMod / rateMod * debuffDurationMult
+	rateMod := Mod(skillModList, cfg, "BleedFaster") + enemyDB.Sum(modparser.Inc, nil, "SelfBleedFaster")/100
+	globalOutput.SetN("BleedDuration", durationBase*durationMod/rateMod*debuffDurationMult)
 
 	// The chance any given hit applies bleed
-	bleedChance := outNum(output, "BleedChanceOnHit")/100*(1-outNum(output, "CritChance")/100) +
-		outNum(output, "BleedChanceOnCrit")/100*outNum(output, "CritChance")/100
+	bleedChance := output.N("BleedChanceOnHit")/100*(1-output.N("CritChance")/100) +
+		output.N("BleedChanceOnCrit")/100*output.N("CritChance")/100
 	// The average number of bleeds that will be active on the enemy at once
-	bleedStacks := outNum(output, "HitChance") / 100 * bleedChance * anyNum(skillData["dpsMultiplier"])
-	speed := outNum(globalOutput, "Speed")
-	if truthy(globalOutput["HitSpeed"]) {
-		speed = outNum(globalOutput, "HitSpeed")
+	bleedStacks := output.N("HitChance") / 100 * bleedChance * skillData.N("dpsMultiplier")
+	speed := globalOutput.N("Speed")
+	if globalOutput.Has("HitSpeed") {
+		speed = globalOutput.N("HitSpeed")
 	}
 	if speed > 0 {
 		// assume skills with no cast, attack, or cooldown time are single cast
-		bleedStacks = bleedStacks * outNum(globalOutput, "BleedDuration") * speed
+		bleedStacks = bleedStacks * globalOutput.N("BleedDuration") * speed
 	}
-	activeTotems := skillModList.Sum("BASE", skillCfg, "ActiveTotemLimit", "ActiveBallistaLimit")
-	if ov := env.ModDB.Override(nil, "TotemsSummoned"); truthy(ov) {
-		activeTotems = anyNum(ov)
+	activeTotems := skillModList.Sum(modparser.Base, skillCfg, "ActiveTotemLimit", "ActiveBallistaLimit")
+	if ov, ok := env.ModDB.Override(nil, "TotemsSummoned"); ok {
+		activeTotems = valueNum(ov)
 	}
 	if skillFlags["totem"] {
 		bleedStacks = bleedStacks * activeTotems
@@ -81,56 +81,56 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	}
 
 	if bleedStacks < 1 && overrideStackPotential <= 1 {
-		skillModList.AddMod(newMod("Condition:SingleBleed", "FLAG", true, "bleed"))
+		skillModList.AddMod(newModS("Condition:SingleBleed", modparser.Flag, modparser.Bool(true), "bleed"))
 	}
 
 	// ratio of bleeds applied : max effective bleeds
 	if hasOverrideStackPotential {
-		globalOutput["BleedStackPotential"] = overrideStackPotential
+		globalOutput.SetN("BleedStackPotential", overrideStackPotential)
 	} else {
-		globalOutput["BleedStackPotential"] = bleedStacks / maxStacks
+		globalOutput.SetN("BleedStackPotential", bleedStacks/maxStacks)
 	}
 
 	// the amount of damage each bleed does as % maximum
 	bleedRollAverage := 50.0
-	if outNum(globalOutput, "BleedStackPotential") > 1 {
+	if globalOutput.N("BleedStackPotential") > 1 {
 		// shift damage towards top of range as only top bleeds apply
 		bleedRollAverage = (bleedStacks - (maxStacks-1)/2) / (bleedStacks + 1) * 100
 	}
-	globalOutput["BleedRollAverage"] = bleedRollAverage
+	globalOutput.SetN("BleedRollAverage", bleedRollAverage)
 
 	var avgCritBleedDmg, sourceMaxCritDmg, avgHitBleedDmg, sourceMinHitDmg, sourceMaxHitDmg float64
 	for subPass := 1; subPass <= 2; subPass++ {
 		dotCfg.SkillCond["CriticalStrike"] = subPass != 1
 
 		min, max := env.calcAilmentSourceDamage(activeSkill, output, dotCfg, "Physical", 0, c.convTable(dotCfg))
-		output["BleedPhysicalMin"] = min
-		output["BleedPhysicalMax"] = max
+		output.SetN("BleedPhysicalMin", min)
+		output.SetN("BleedPhysicalMax", max)
 		if subPass == 2 {
 			if modDB.Flag(nil, "AilmentsAreNeverFromCrit") {
 				dotCfg.SkillCond["CriticalStrike"] = false // force config to non-crit for dotMulti calculation
-				output["CritBleedDotMulti"] = dotMulti(skillModList, dotCfg, "Physical")
+				output.SetN("CritBleedDotMulti", dotMulti(skillModList, dotCfg, "Physical"))
 				dotCfg.SkillCond["CriticalStrike"] = true // reset to true to avoid unintended side effects
 			} else {
-				output["CritBleedDotMulti"] = dotMulti(skillModList, dotCfg, "Physical")
+				output.SetN("CritBleedDotMulti", dotMulti(skillModList, dotCfg, "Physical"))
 			}
-			sourceMinCritDmg := min * outNum(output, "CritBleedDotMulti")
-			sourceMaxCritDmg = max * outNum(output, "CritBleedDotMulti")
+			sourceMinCritDmg := min * output.N("CritBleedDotMulti")
+			sourceMaxCritDmg = max * output.N("CritBleedDotMulti")
 			avgCritBleedDmg = sourceMinCritDmg + (sourceMaxCritDmg-sourceMinCritDmg)*bleedRollAverage/100
 		} else {
-			output["BleedDotMulti"] = dotMulti(skillModList, dotCfg, "Physical")
-			sourceMinHitDmg = min * outNum(output, "BleedDotMulti")
-			sourceMaxHitDmg = max * outNum(output, "BleedDotMulti")
+			output.SetN("BleedDotMulti", dotMulti(skillModList, dotCfg, "Physical"))
+			sourceMinHitDmg = min * output.N("BleedDotMulti")
+			sourceMaxHitDmg = max * output.N("BleedDotMulti")
 			avgHitBleedDmg = sourceMinHitDmg + (sourceMaxHitDmg-sourceMinHitDmg)*bleedRollAverage/100
 		}
 	}
 
 	basePercent := data.Misc.BleedPercentBase
-	if truthy(skillData["bleedBasePercent"]) {
-		basePercent = anyNum(skillData["bleedBasePercent"])
+	if skillData.Flag("bleedBasePercent") {
+		basePercent = skillData.N("bleedBasePercent")
 	}
 	// over-stacking bleed stacks increases the chance a critical bleed is present
-	ailmentCritChance := 100 * (1 - math.Pow(1-outNum(output, "CritChance")/100, math.Max(outNum(globalOutput, "BleedStackPotential"), 1)))
+	ailmentCritChance := 100 * (1 - math.Pow(1-output.N("CritChance")/100, math.Max(globalOutput.N("BleedStackPotential"), 1)))
 
 	// The reference's baseMinVal/baseMaxVal only reach its breakdown, but the
 	// calls still matter: each one rewrites output.BleedChance, and the last
@@ -139,24 +139,24 @@ func (env *Env) offenceBleed(c *offenceCtx, pass *damagePass, calcAilmentDamage 
 	calcAilmentDamage("Bleed", 100, sourceMaxHitDmg, sourceMaxCritDmg)
 	averageBaseBleedDps := calcAilmentDamage("Bleed", ailmentCritChance, avgHitBleedDmg, avgCritBleedDmg)
 	baseBleedDps := averageBaseBleedDps * basePercent / 100 *
-		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
+		output.N("RuthlessBlowAilmentEffect") * output.N("FistOfWarDamageEffect") * globalOutput.N("AilmentWarcryEffect")
 	if baseBleedDps > 0 {
 		skillFlags["bleed"] = true
 		skillFlags["duration"] = true
 		effMult := 1.0
 		if env.ModeEffective {
-			resist := math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")), data.Misc.EnemyPhysicalDamageReductionCap)
-			takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "PhysicalDamageTaken", "PhysicalDamageTakenOverTime")
+			resist := math.Min(math.Max(0, enemyDB.Sum(modparser.Base, nil, "PhysicalDamageReduction")), data.Misc.EnemyPhysicalDamageReductionCap)
+			takenInc := enemyDB.Sum(modparser.Inc, dotCfg, "DamageTaken", "DamageTakenOverTime", "PhysicalDamageTaken", "PhysicalDamageTakenOverTime")
 			takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "PhysicalDamageTaken", "PhysicalDamageTakenOverTime")
 			effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
-			globalOutput["BleedEffMult"] = effMult
+			globalOutput.SetN("BleedEffMult", effMult)
 		}
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
 		activeBleeds := math.Min(bleedStacks, maxStacks)
-		output["BaseBleedDPS"] = baseBleedDps * effectMod * rateMod * activeBleeds * effMult
-		output["BleedDPS"] = math.Min(outNum(output, "BaseBleedDPS"), data.Misc.DotDpsCap)
-		globalOutput["BleedStacks"] = bleedStacks
-		globalOutput["BleedDamage"] = outNum(output, "BaseBleedDPS") * outNum(globalOutput, "BleedDuration")
+		output.SetN("BaseBleedDPS", baseBleedDps*effectMod*rateMod*activeBleeds*effMult)
+		output.SetN("BleedDPS", math.Min(output.N("BaseBleedDPS"), data.Misc.DotDpsCap))
+		globalOutput.SetN("BleedStacks", bleedStacks)
+		globalOutput.SetN("BleedDamage", output.N("BaseBleedDPS")*globalOutput.N("BleedDuration"))
 	}
 }
 
@@ -168,10 +168,10 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	globalOutput := c.output
 
 	if !c.canDeal["Chaos"] ||
-		(outNum(output, "PoisonChanceOnHit")+outNum(output, "PoisonChanceOnCrit")+outNum(output, "ChaosPoisonChance")) <= 0 {
+		(output.N("PoisonChanceOnHit")+output.N("PoisonChanceOnCrit")+output.N("ChaosPoisonChance")) <= 0 {
 		return
 	}
-	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordFlag.Poison|modparser.KeywordFlag.Ailment|modparser.KeywordFlag.ChaosDot)
+	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordPoison|modparser.KeywordAilment|modparser.KeywordChaosDot)
 	if pass.label != "Off Hand" {
 		activeSkill.PoisonCfg = dotCfg
 	} else {
@@ -179,50 +179,50 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	}
 	checkWeapon1HFlags(dotCfg, cfg)
 
-	rateMod := Mod(skillModList, cfg, "PoisonFaster") + enemyDB.Sum("INC", nil, "SelfPoisonFaster")/100
+	rateMod := Mod(skillModList, cfg, "PoisonFaster") + enemyDB.Sum(modparser.Inc, nil, "SelfPoisonFaster")/100
 	durationBase := data.Misc.PoisonDurationBase
-	if ov := skillModList.Override(dotCfg, "PoisonDurationBase"); truthy(ov) {
-		durationBase = anyNum(ov)
-	} else if truthy(skillData["poisonDurationIsSkillDuration"]) && truthy(skillData["duration"]) {
-		durationBase = anyNum(skillData["duration"])
+	if ov, ok := skillModList.Override(dotCfg, "PoisonDurationBase"); ok {
+		durationBase = valueNum(ov)
+	} else if skillData.Flag("poisonDurationIsSkillDuration") && skillData.Flag("duration") {
+		durationBase = skillData.N("duration")
 	}
-	durNames := optName(truthy(skillData["poisonIsSkillEffect"]),
+	durNames := optName(skillData.Flag("poisonIsSkillEffect"),
 		[]string{"EnemyPoisonDuration", "EnemyAilmentDuration", "DamagingAilmentDuration"}, "Duration")
 	durationMod := math.Max(Mod(skillModList, dotCfg, durNames...)*Mod(enemyDB, nil, "SelfPoisonDuration", "SelfAilmentDuration"), 0)
-	globalOutput["PoisonDuration"] = durationBase * durationMod / rateMod * debuffDurationMult
+	globalOutput.SetN("PoisonDuration", durationBase*durationMod/rateMod*debuffDurationMult)
 
 	// The chance any given hit applies poison
 	chaosPoisonChance := 0.0
-	if outNum(output, "ChaosHitAverage") > 0 {
-		chaosPoisonChance = outNum(output, "ChaosPoisonChance")
+	if output.N("ChaosHitAverage") > 0 {
+		chaosPoisonChance = output.N("ChaosPoisonChance")
 	}
-	poisonChanceOnHit := math.Min(100, outNum(output, "PoisonChanceOnHit")+chaosPoisonChance)
-	poisonChanceOnCrit := math.Min(100, outNum(output, "PoisonChanceOnCrit")+chaosPoisonChance)
-	poisonChance := poisonChanceOnHit/100*(1-outNum(output, "CritChance")/100) +
-		poisonChanceOnCrit/100*outNum(output, "CritChance")/100
+	poisonChanceOnHit := math.Min(100, output.N("PoisonChanceOnHit")+chaosPoisonChance)
+	poisonChanceOnCrit := math.Min(100, output.N("PoisonChanceOnCrit")+chaosPoisonChance)
+	poisonChance := poisonChanceOnHit/100*(1-output.N("CritChance")/100) +
+		poisonChanceOnCrit/100*output.N("CritChance")/100
 
 	// Handling of "inflict x additional poisons"
 	additionalPoisonStacks := 1.0
 	if !skillModList.Flag(nil, "CannotMultiplePoison") {
-		additionalPoisonStacks = 1 + math.Min(skillModList.Sum("BASE", cfg, "AdditionalPoisonChance")/100, 1) +
-			skillModList.Sum("BASE", cfg, "AdditionalPoisonStacks")
+		additionalPoisonStacks = 1 + math.Min(skillModList.Sum(modparser.Base, cfg, "AdditionalPoisonChance")/100, 1) +
+			skillModList.Sum(modparser.Base, cfg, "AdditionalPoisonStacks")
 	}
 
 	// Calculate average number of poisons that will be active on the enemy at once
 	poisonStackLimit, hasStackLimit := skillModList.Min(cfg, "PoisonStackLimit")
 	stackMultiplier := 1.0
-	if truthy(skillData["stackMultiplier"]) {
-		stackMultiplier = anyNum(skillData["stackMultiplier"])
+	if skillData.Flag("stackMultiplier") {
+		stackMultiplier = skillData.N("stackMultiplier")
 	}
-	poisonStacks := outNum(output, "HitChance") / 100 * poisonChance * additionalPoisonStacks *
-		anyNum(skillData["dpsMultiplier"]) * stackMultiplier * c.quantityMultiplier
-	speed := outNum(globalOutput, "Speed")
-	if truthy(globalOutput["HitSpeed"]) {
-		speed = outNum(globalOutput, "HitSpeed")
+	poisonStacks := output.N("HitChance") / 100 * poisonChance * additionalPoisonStacks *
+		skillData.N("dpsMultiplier") * stackMultiplier * c.quantityMultiplier
+	speed := globalOutput.N("Speed")
+	if globalOutput.Has("HitSpeed") {
+		speed = globalOutput.N("HitSpeed")
 	}
 	if speed > 0 {
 		// assume skills with no cast, attack, or cooldown time are single cast
-		poisonStacks = poisonStacks * outNum(globalOutput, "PoisonDuration") * speed
+		poisonStacks = poisonStacks * globalOutput.N("PoisonDuration") * speed
 
 		// If stack limit exists, avg. poison stack is more complicated
 		if hasStackLimit && poisonStackLimit > 0 && poisonStacks > poisonStackLimit {
@@ -231,8 +231,8 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 			poisonStacks = math.Min(poisonStacks, maxPoisonStacks)
 		}
 	}
-	if poisonStacks < additionalPoisonStacks && anyNum(env.ConfigInput["multiplierPoisonOnEnemy"]) == 0 {
-		skillModList.AddMod(newMod("Condition:NonPoisonedOnly", "FLAG", true, "Calculation"))
+	if poisonStacks < additionalPoisonStacks && env.ConfigInput.MultiplierPoisonOnEnemy == 0 {
+		skillModList.AddMod(newModS("Condition:NonPoisonedOnly", modparser.Flag, modparser.Bool(true), "Calculation"))
 	}
 
 	var sourceHitDmg, sourceCritDmg, sourceMaxCritDmg, sourceMinHitDmg, sourceMaxHitDmg float64
@@ -242,29 +242,29 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 		totalMin, totalMax := 0.0, 0.0
 		{
 			min, max := env.calcAilmentSourceDamage(activeSkill, output, dotCfg, "Chaos", 0, c.convTable(dotCfg))
-			output["PoisonChaosMin"] = min
-			output["PoisonChaosMax"] = max
+			output.SetN("PoisonChaosMin", min)
+			output.SetN("PoisonChaosMax", max)
 			totalMin += min
 			totalMax += max
 		}
 		nonChaosMult := 1.0
-		if outNum(output, "ChaosPoisonChance") > 0 && outNum(output, "PoisonChaosMax") > 0 {
+		if output.N("ChaosPoisonChance") > 0 && output.N("PoisonChaosMax") > 0 {
 			// Additional chance for chaos
 			chance := "PoisonChanceOnHit"
 			if subPass == 2 {
 				chance = "PoisonChanceOnCrit"
 			}
-			chaosChance := math.Min(100, outNum(output, chance)+outNum(output, "ChaosPoisonChance"))
-			nonChaosMult = outNum(output, chance) / chaosChance
-			output[chance] = chaosChance
+			chaosChance := math.Min(100, output.N(chance)+output.N("ChaosPoisonChance"))
+			nonChaosMult = output.N(chance) / chaosChance
+			output.SetN(chance, chaosChance)
 		}
 		addType := func(typ string, gate bool) {
 			if !gate {
 				return
 			}
 			min, max := env.calcAilmentSourceDamage(activeSkill, output, dotCfg, typ, dmgTypeFlagBits["Chaos"], c.convTable(dotCfg))
-			output["Poison"+typ+"Min"] = min
-			output["Poison"+typ+"Max"] = max
+			output.SetN("Poison"+typ+"Min", min)
+			output.SetN("Poison"+typ+"Max", max)
 			totalMin += min * nonChaosMult
 			totalMax += max * nonChaosMult
 		}
@@ -275,55 +275,55 @@ func (env *Env) offencePoison(c *offenceCtx, pass *damagePass, calcAilmentDamage
 		if subPass == 2 {
 			if modDB.Flag(nil, "AilmentsAreNeverFromCrit") {
 				dotCfg.SkillCond["CriticalStrike"] = false
-				output["CritPoisonDotMulti"] = dotMulti(skillModList, dotCfg, "Chaos")
+				output.SetN("CritPoisonDotMulti", dotMulti(skillModList, dotCfg, "Chaos"))
 				dotCfg.SkillCond["CriticalStrike"] = true
 			} else {
-				output["CritPoisonDotMulti"] = dotMulti(skillModList, dotCfg, "Chaos")
+				output.SetN("CritPoisonDotMulti", dotMulti(skillModList, dotCfg, "Chaos"))
 			}
-			sourceCritDmg = (totalMin + totalMax) / 2 * outNum(output, "CritPoisonDotMulti")
-			sourceMaxCritDmg = totalMax * outNum(output, "CritPoisonDotMulti")
+			sourceCritDmg = (totalMin + totalMax) / 2 * output.N("CritPoisonDotMulti")
+			sourceMaxCritDmg = totalMax * output.N("CritPoisonDotMulti")
 		} else {
-			output["PoisonDotMulti"] = dotMulti(skillModList, dotCfg, "Chaos")
-			sourceHitDmg = (totalMin + totalMax) / 2 * outNum(output, "PoisonDotMulti")
-			sourceMinHitDmg = totalMin * outNum(output, "PoisonDotMulti")
-			sourceMaxHitDmg = totalMax * outNum(output, "PoisonDotMulti")
+			output.SetN("PoisonDotMulti", dotMulti(skillModList, dotCfg, "Chaos"))
+			sourceHitDmg = (totalMin + totalMax) / 2 * output.N("PoisonDotMulti")
+			sourceMinHitDmg = totalMin * output.N("PoisonDotMulti")
+			sourceMaxHitDmg = totalMax * output.N("PoisonDotMulti")
 		}
 	}
 	// Breakdown-only in the reference, but each call rewrites
 	// output.PoisonChance and the last one wins.
-	calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceMinHitDmg, 0)
+	calcAilmentDamage("Poison", output.N("CritChance"), sourceMinHitDmg, 0)
 	calcAilmentDamage("Poison", 100, sourceMaxHitDmg, sourceMaxCritDmg)
-	baseVal := calcAilmentDamage("Poison", outNum(output, "CritChance"), sourceHitDmg, sourceCritDmg) * data.Misc.PoisonPercentBase *
-		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
+	baseVal := calcAilmentDamage("Poison", output.N("CritChance"), sourceHitDmg, sourceCritDmg) * data.Misc.PoisonPercentBase *
+		output.N("RuthlessBlowAilmentEffect") * output.N("FistOfWarDamageEffect") * globalOutput.N("AilmentWarcryEffect")
 	if baseVal > 0 {
 		skillFlags["poison"] = true
 		skillFlags["duration"] = true
 		effMult := 1.0
 		if env.ModeEffective {
 			resist := env.calcResistForType(c, "Chaos", dotCfg)
-			takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
+			takenInc := enemyDB.Sum(modparser.Inc, dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 			takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 			effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
-			globalOutput["PoisonEffMult"] = effMult
+			globalOutput.SetN("PoisonEffMult", effMult)
 		}
 		if skillModList.Flag(nil, "Condition:NonPoisonedOnly") {
 			poisonStacks = math.Min(additionalPoisonStacks, poisonStacks)
 		}
-		globalOutput["PoisonStacks"] = poisonStacks
+		globalOutput.SetN("PoisonStacks", poisonStacks)
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
 		singlePoisonDPSCapped := math.Min(math.Min(baseVal*effectMod*rateMod*effMult, data.Misc.DotDpsCap), data.Misc.DotDpsCap)
-		output["PoisonDPS"] = singlePoisonDPSCapped
-		output["PoisonDamage"] = singlePoisonDPSCapped * outNum(globalOutput, "PoisonDuration")
+		output.SetN("PoisonDPS", singlePoisonDPSCapped)
+		output.SetN("PoisonDamage", singlePoisonDPSCapped*globalOutput.N("PoisonDuration"))
 		groundMult := math.Max(maxOr(skillModList, nil, 0, "PoisonDpsAsCausticGround"), dbMaxOr(enemyDB, nil, 0, "PoisonDpsAsCausticGround"))
 		if groundMult > 0 {
-			output["CausticGroundDPS"] = math.Min(baseVal*effectMod*rateMod*effMult*groundMult/100, data.Misc.DotDpsCap)
-			globalOutput["CausticGroundFromPoison"] = true
+			output.SetN("CausticGroundDPS", math.Min(baseVal*effectMod*rateMod*effMult*groundMult/100, data.Misc.DotDpsCap))
+			globalOutput.SetFlag("CausticGroundFromPoison", true)
 		}
-		if truthy(skillData["showAverage"]) {
-			output["TotalPoisonAverageDamage"] = output["PoisonDamage"]
-			output["TotalPoisonDPS"] = output["PoisonDPS"]
+		if skillData.Flag("showAverage") {
+			output.Set("TotalPoisonAverageDamage", output.Get("PoisonDamage"))
+			output.Set("TotalPoisonDPS", output.Get("PoisonDPS"))
 		} else {
-			output["TotalPoisonDPS"] = math.Min(singlePoisonDPSCapped*poisonStacks, data.Misc.DotDpsCap)
+			output.SetN("TotalPoisonDPS", math.Min(singlePoisonDPSCapped*poisonStacks, data.Misc.DotDpsCap))
 		}
 	}
 }
@@ -335,10 +335,10 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	activeSkill, cfg, output := c.activeSkill, pass.cfg, pass.output
 	globalOutput := c.output
 
-	if !c.canDeal["Fire"] || (outNum(output, "IgniteChanceOnHit")+outNum(output, "IgniteChanceOnCrit")) <= 0 {
+	if !c.canDeal["Fire"] || (output.N("IgniteChanceOnHit")+output.N("IgniteChanceOnCrit")) <= 0 {
 		return
 	}
-	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordFlag.Ignite|modparser.KeywordFlag.Ailment|modparser.KeywordFlag.FireDot)
+	dotCfg := ailmentCfg(skillCfg, cfg, modparser.KeywordIgnite|modparser.KeywordAilment|modparser.KeywordFireDot)
 	if pass.label != "Off Hand" {
 		activeSkill.IgniteCfg = dotCfg
 	} else {
@@ -346,67 +346,67 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 	}
 	checkWeapon1HFlags(dotCfg, cfg)
 
-	globalOutput["IgniteChancePerHit"] = outNum(output, "IgniteChanceOnHit")*(1-outNum(output, "CritChance")/100) +
-		outNum(output, "IgniteChanceOnCrit")*outNum(output, "CritChance")/100
+	globalOutput.SetN("IgniteChancePerHit", output.N("IgniteChanceOnHit")*(1-output.N("CritChance")/100)+
+		output.N("IgniteChanceOnCrit")*output.N("CritChance")/100)
 
 	// For ignites we will be using a weighted average calculation
 	maxStacks := 1.0
 	if skillFlags["igniteCanStack"] {
-		if ov := skillModList.Override(cfg, "IgniteStacks"); truthy(ov) {
-			maxStacks = anyNum(ov)
+		if ov, ok := skillModList.Override(cfg, "IgniteStacks"); ok {
+			maxStacks = valueNum(ov)
 		} else {
-			maxStacks = maxStacks + skillModList.Sum("BASE", cfg, "IgniteStacks")
+			maxStacks = maxStacks + skillModList.Sum(modparser.Base, cfg, "IgniteStacks")
 		}
 	}
 	overrideStackPotential, hasOverrideStackPotential := 0.0, false
-	if ov := skillModList.Override(nil, "IgniteStackPotentialOverride"); truthy(ov) {
-		overrideStackPotential, hasOverrideStackPotential = anyNum(ov)/maxStacks, true
+	if ov, ok := skillModList.Override(nil, "IgniteStackPotentialOverride"); ok {
+		overrideStackPotential, hasOverrideStackPotential = valueNum(ov)/maxStacks, true
 	}
-	globalOutput["IgniteStacksMax"] = maxStacks
+	globalOutput.SetN("IgniteStacksMax", maxStacks)
 
-	rateMod := (Mod(skillModList, cfg, "IgniteBurnFaster") + enemyDB.Sum("INC", nil, "SelfIgniteBurnFaster")/100) /
+	rateMod := (Mod(skillModList, cfg, "IgniteBurnFaster") + enemyDB.Sum(modparser.Inc, nil, "SelfIgniteBurnFaster")/100) /
 		Mod(skillModList, cfg, "IgniteBurnSlower")
 	durationBase := data.Misc.IgniteDurationBase
-	if ov := skillModList.Override(dotCfg, "IgniteDurationBase"); truthy(ov) {
-		durationBase = anyNum(ov)
+	if ov, ok := skillModList.Override(dotCfg, "IgniteDurationBase"); ok {
+		durationBase = valueNum(ov)
 	}
 	durationMod := math.Max(Mod(skillModList, dotCfg, "EnemyIgniteDuration", "EnemyAilmentDuration", "EnemyElementalAilmentDuration", "DamagingAilmentDuration")*
 		Mod(enemyDB, nil, "SelfIgniteDuration", "SelfAilmentDuration", "SelfElementalAilmentDuration"), 0)
-	globalOutput["IgniteDuration"] = durationBase * durationMod / rateMod * debuffDurationMult
+	globalOutput.SetN("IgniteDuration", durationBase*durationMod/rateMod*debuffDurationMult)
 
 	// The chance any given hit applies ignite
-	igniteChance := outNum(output, "IgniteChanceOnHit")/100*(1-outNum(output, "CritChance")/100) +
-		outNum(output, "IgniteChanceOnCrit")/100*outNum(output, "CritChance")/100
+	igniteChance := output.N("IgniteChanceOnHit")/100*(1-output.N("CritChance")/100) +
+		output.N("IgniteChanceOnCrit")/100*output.N("CritChance")/100
 	// The average number of ignites that will be active on the enemy at once
-	igniteStacks := outNum(output, "HitChance") / 100 * igniteChance * anyNum(skillData["dpsMultiplier"])
-	speed := outNum(globalOutput, "Speed")
-	if truthy(globalOutput["HitSpeed"]) {
-		speed = outNum(globalOutput, "HitSpeed")
+	igniteStacks := output.N("HitChance") / 100 * igniteChance * skillData.N("dpsMultiplier")
+	speed := globalOutput.N("Speed")
+	if globalOutput.Has("HitSpeed") {
+		speed = globalOutput.N("HitSpeed")
 	}
-	if !truthy(skillData["triggeredOnDeath"]) {
-		if truthy(output["Cooldown"]) {
-			hitTime := outNum(output, "Time")
-			if truthy(output["HitTime"]) {
-				hitTime = outNum(output, "HitTime")
+	if !skillData.Flag("triggeredOnDeath") {
+		if output.Flag("Cooldown") {
+			hitTime := output.N("Time")
+			if output.Flag("HitTime") {
+				hitTime = output.N("HitTime")
 			}
-			igniteStacks = igniteStacks * outNum(globalOutput, "IgniteDuration") / math.Max(outNum(output, "Cooldown"), hitTime)
+			igniteStacks = igniteStacks * globalOutput.N("IgniteDuration") / math.Max(output.N("Cooldown"), hitTime)
 		} else if speed > 0 {
-			igniteStacks = igniteStacks * outNum(globalOutput, "IgniteDuration") * speed
+			igniteStacks = igniteStacks * globalOutput.N("IgniteDuration") * speed
 		}
 	}
 	// ratio of ignites applied : max effective ignites
 	if hasOverrideStackPotential {
-		globalOutput["IgniteStackPotential"] = overrideStackPotential
+		globalOutput.SetN("IgniteStackPotential", overrideStackPotential)
 	} else {
-		globalOutput["IgniteStackPotential"] = igniteStacks / maxStacks
+		globalOutput.SetN("IgniteStackPotential", igniteStacks/maxStacks)
 	}
 
 	// the amount of damage each ignite does as % maximum
 	igniteRollAverage := 50.0
-	if outNum(globalOutput, "IgniteStackPotential") > 1 {
+	if globalOutput.N("IgniteStackPotential") > 1 {
 		igniteRollAverage = (igniteStacks - (maxStacks-1)/2) / (igniteStacks + 1) * 100
 	}
-	globalOutput["IgniteRollAverage"] = igniteRollAverage
+	globalOutput.SetN("IgniteRollAverage", igniteRollAverage)
 
 	var sourceHitDmg, sourceCritDmg, sourceMaxCritDmg, sourceMinHitDmg, sourceMaxHitDmg float64
 	for subPass := 1; subPass <= 2; subPass++ {
@@ -417,8 +417,8 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 				return
 			}
 			min, max := env.calcAilmentSourceDamage(activeSkill, output, dotCfg, typ, dmgTypeFlagBits["Fire"], c.convTable(dotCfg))
-			output["Ignite"+typ+"Min"] = min
-			output["Ignite"+typ+"Max"] = max
+			output.SetN("Ignite"+typ+"Min", min)
+			output.SetN("Ignite"+typ+"Max", max)
 			totalMin += min
 			totalMax += max
 		}
@@ -430,65 +430,65 @@ func (env *Env) offenceIgnite(c *offenceCtx, pass *damagePass, calcAilmentDamage
 		if subPass == 2 {
 			if modDB.Flag(nil, "AilmentsAreNeverFromCrit") {
 				dotCfg.SkillCond["CriticalStrike"] = false
-				output["CritIgniteDotMulti"] = dotMulti(skillModList, dotCfg, "Fire")
+				output.SetN("CritIgniteDotMulti", dotMulti(skillModList, dotCfg, "Fire"))
 				dotCfg.SkillCond["CriticalStrike"] = true
 			} else {
-				output["CritIgniteDotMulti"] = dotMulti(skillModList, dotCfg, "Fire")
+				output.SetN("CritIgniteDotMulti", dotMulti(skillModList, dotCfg, "Fire"))
 			}
-			sourceCritDmg = (totalMin + (totalMax-totalMin)*igniteRollAverage/100) * outNum(output, "CritIgniteDotMulti")
-			sourceMaxCritDmg = totalMax * outNum(output, "CritIgniteDotMulti")
+			sourceCritDmg = (totalMin + (totalMax-totalMin)*igniteRollAverage/100) * output.N("CritIgniteDotMulti")
+			sourceMaxCritDmg = totalMax * output.N("CritIgniteDotMulti")
 		} else {
-			output["IgniteDotMulti"] = dotMulti(skillModList, dotCfg, "Fire")
-			sourceHitDmg = (totalMin + (totalMax-totalMin)*igniteRollAverage/100) * outNum(output, "IgniteDotMulti")
-			sourceMinHitDmg = totalMin * outNum(output, "IgniteDotMulti")
-			sourceMaxHitDmg = totalMax * outNum(output, "IgniteDotMulti")
+			output.SetN("IgniteDotMulti", dotMulti(skillModList, dotCfg, "Fire"))
+			sourceHitDmg = (totalMin + (totalMax-totalMin)*igniteRollAverage/100) * output.N("IgniteDotMulti")
+			sourceMinHitDmg = totalMin * output.N("IgniteDotMulti")
+			sourceMaxHitDmg = totalMax * output.N("IgniteDotMulti")
 		}
-		output["IgniteTotalMin"] = totalMin
-		output["IgniteTotalMax"] = totalMax
+		output.SetN("IgniteTotalMin", totalMin)
+		output.SetN("IgniteTotalMax", totalMax)
 	}
 	// over-stacking ignite stacks increases the chance a critical ignite is present
-	ailmentCritChance := 100 * (1 - math.Pow(1-outNum(output, "CritChance")/100, math.Max(1, igniteStacks)))
+	ailmentCritChance := 100 * (1 - math.Pow(1-output.N("CritChance")/100, math.Max(1, igniteStacks)))
 	// Breakdown-only in the reference, but each call rewrites
 	// output.IgniteChance and the last one wins.
 	calcAilmentDamage("Ignite", ailmentCritChance, sourceMinHitDmg, 0)
 	calcAilmentDamage("Ignite", 100, sourceMaxHitDmg, sourceMaxCritDmg)
 	baseVal := calcAilmentDamage("Ignite", ailmentCritChance, sourceHitDmg, sourceCritDmg) * data.Misc.IgnitePercentBase *
-		outNum(output, "RuthlessBlowAilmentEffect") * outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "AilmentWarcryEffect")
+		output.N("RuthlessBlowAilmentEffect") * output.N("FistOfWarDamageEffect") * globalOutput.N("AilmentWarcryEffect")
 	if baseVal > 0 {
 		skillFlags["ignite"] = true
 		effMult := 1.0
 		if env.ModeEffective {
 			if skillModList.Flag(cfg, "IgniteToChaos") {
 				resist := env.calcResistForType(c, "Chaos", dotCfg)
-				takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
+				takenInc := enemyDB.Sum(modparser.Inc, dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 				takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "ChaosDamageTaken", "ChaosDamageTakenOverTime")
 				effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
 			} else {
 				resist := env.calcResistForType(c, "Fire", dotCfg)
-				takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
+				takenInc := enemyDB.Sum(modparser.Inc, dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 				takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 				effMult = (1 - resist/100) * (1 + takenInc/100) * takenMore
 			}
-			globalOutput["IgniteEffMult"] = effMult
+			globalOutput.SetN("IgniteEffMult", effMult)
 		}
 		effectMod := Mod(skillModList, dotCfg, "AilmentEffect")
 		activeIgnites := math.Min(igniteStacks, maxStacks)
-		output["IgniteDPS"] = math.Min(baseVal*effectMod*rateMod*activeIgnites*effMult, data.Misc.DotDpsCap)
+		output.SetN("IgniteDPS", math.Min(baseVal*effectMod*rateMod*activeIgnites*effMult, data.Misc.DotDpsCap))
 		groundMult := math.Max(maxOr(skillModList, nil, 0, "IgniteDpsAsBurningGround"), dbMaxOr(enemyDB, nil, 0, "IgniteDpsAsBurningGround"))
 		if groundMult > 0 {
 			// Always use fire eff multi
 			resist := env.calcResistForType(c, "Fire", dotCfg)
-			takenInc := enemyDB.Sum("INC", dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
+			takenInc := enemyDB.Sum(modparser.Inc, dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			takenMore := enemyDB.More(dotCfg, "DamageTaken", "DamageTakenOverTime", "FireDamageTaken", "FireDamageTakenOverTime", "ElementalDamageTaken")
 			fireEffMult := (1 - resist/100) * (1 + takenInc/100) * takenMore
-			globalOutput["BurningGroundDPS"] = math.Min(baseVal*effectMod*rateMod*fireEffMult*groundMult/100, data.Misc.DotDpsCap)
-			globalOutput["BurningGroundFromIgnite"] = true
+			globalOutput.SetN("BurningGroundDPS", math.Min(baseVal*effectMod*rateMod*fireEffMult*groundMult/100, data.Misc.DotDpsCap))
+			globalOutput.SetFlag("BurningGroundFromIgnite", true)
 		}
-		globalOutput["IgniteDamage"] = outNum(output, "IgniteDPS") * outNum(globalOutput, "IgniteDuration")
+		globalOutput.SetN("IgniteDamage", output.N("IgniteDPS")*globalOutput.N("IgniteDuration"))
 		if skillFlags["igniteCanStack"] {
-			output["IgniteDamage"] = outNum(output, "IgniteDPS") * outNum(globalOutput, "IgniteDuration")
-			output["IgniteStacksMax"] = maxStacks
-			output["TotalIgniteDPS"] = output["IgniteDPS"]
+			output.SetN("IgniteDamage", output.N("IgniteDPS")*globalOutput.N("IgniteDuration"))
+			output.SetN("IgniteStacksMax", maxStacks)
+			output.Set("TotalIgniteDPS", output.Get("IgniteDPS"))
 		}
 	}
 }

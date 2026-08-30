@@ -88,7 +88,7 @@ func abyssGlobalToLocal(jewelType int) map[int]byte {
 func encodeAbyssModification(buf *bytes.Buffer, comps []AbyssComponent, g2l map[int]byte) {
 	buf.WriteByte(byte(len(comps)))
 	for _, c := range comps {
-		buf.WriteByte(byte(c.Type))
+		buf.WriteByte(byte(c.Kind))
 		buf.WriteByte(g2l[c.ID])
 		buf.WriteByte(byte(len(c.Rolls)))
 		for _, r := range c.Rolls {
@@ -121,7 +121,7 @@ func skipAbyssModification(data []byte, o int) int {
 }
 
 func TestAbyssSocketBinsAgainstAlgorithm(t *testing.T) {
-	w := abyssData()
+	w := buildAbyssWorld(loadDoc("3_29"))
 	tt := conquerData()
 	names := map[int]string{7: "AbyssTecrod", 8: "AbyssUlaman", 9: "AbyssKurgal", 10: "AbyssAmanamu"}
 	recordsCompared := 0
@@ -211,7 +211,7 @@ func TestAbyssSocketBinsAgainstAlgorithm(t *testing.T) {
 }
 
 func TestAbyssZorathBinAgainstAlgorithm(t *testing.T) {
-	w := abyssData()
+	w := buildAbyssWorld(loadDoc("3_29"))
 	tt := conquerData()
 	data := inflateAbyssBin(t, "AbyssZorath")
 	seedMin, seedMax, seedInc, off := abyssHeader(t, data, "ABYN", 11)

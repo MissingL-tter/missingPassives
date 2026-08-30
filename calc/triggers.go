@@ -14,6 +14,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -47,7 +48,7 @@ type triggerConfig struct {
 	assumingEveryHitKills bool
 	sourceWeapon          bool
 	overlaps              *float64
-	stagesAreOverlaps     any
+	stagesAreOverlaps     *float64
 }
 
 // simSkill is one packaged skill for calcMultiSpellRotationImpact.
@@ -67,13 +68,13 @@ type simSkill struct {
 
 // addTriggerIncMoreMods ports the local of the same name (L23).
 func addTriggerIncMoreMods(activeSkill, sourceSkill *ActiveSkill) {
-	for _, value := range activeSkill.SkillModList.Tabulate("INC", sourceSkill.SkillCfg, "TriggeredDamage") {
+	for _, value := range activeSkill.SkillModList.Tabulate(modparser.Inc, sourceSkill.SkillCfg, "TriggeredDamage") {
 		m := value.Mod
-		activeSkill.SkillModList.AddMod(newMod("Damage", "INC", m.Value, modArgs(m.Source, m.Flags, m.KeywordFlags, m.Tags)...))
+		activeSkill.SkillModList.AddMod(modparser.NewModFull("Damage", modparser.Inc, m.Value, m.Source, m.SourceSet, m.Flags, m.KeywordFlags, m.Tags...))
 	}
-	for _, value := range activeSkill.SkillModList.Tabulate("MORE", sourceSkill.SkillCfg, "TriggeredDamage") {
+	for _, value := range activeSkill.SkillModList.Tabulate(modparser.More, sourceSkill.SkillCfg, "TriggeredDamage") {
 		m := value.Mod
-		activeSkill.SkillModList.AddMod(newMod("Damage", "MORE", m.Value, modArgs(m.Source, m.Flags, m.KeywordFlags, m.Tags)...))
+		activeSkill.SkillModList.AddMod(modparser.NewModFull("Damage", modparser.More, m.Value, m.Source, m.SourceSet, m.Flags, m.KeywordFlags, m.Tags...))
 	}
 }
 
@@ -82,31 +83,29 @@ func (env *Env) slotMatch(skill *ActiveSkill) bool {
 	main := env.PlayerMainSkill
 	fromItem := env.geFromItem(main.ActiveEffect.GrantedEffect) || env.geFromItem(skill.ActiveEffect.GrantedEffect)
 	if !fromItem {
-		if main.ActiveEffect.SrcInstance != nil && truthy(main.ActiveEffect.SrcInstance.KV["fromItem"]) {
+		if main.ActiveEffect.SrcInstance != nil && main.ActiveEffect.SrcInstance.FromItem.V {
 			fromItem = true
 		}
-		if skill.ActiveEffect.SrcInstance != nil && truthy(skill.ActiveEffect.SrcInstance.KV["fromItem"]) {
+		if skill.ActiveEffect.SrcInstance != nil && skill.ActiveEffect.SrcInstance.FromItem.V {
 			fromItem = true
 		}
 	}
 	match1 := fromItem && skill.SocketGroup != nil && main.SocketGroup != nil &&
-		str(skill.SocketGroup.KV["slot"]) == str(main.SocketGroup.KV["slot"])
+		skill.SocketGroup.Slot == main.SocketGroup.Slot
 	match2 := !env.geFromItem(main.ActiveEffect.GrantedEffect) && skill.SocketGroup == main.SocketGroup
 	return match1 || match2
 }
 
 // isTriggered ports the global of the same name (L40).
 func isTriggered(skill *ActiveSkill) bool {
-	if truthy(skill.SkillData["triggeredByUnique"]) || truthy(skill.SkillData["triggered"]) {
+	if skill.SkillData.Flag("triggeredByUnique") || skill.SkillData.Flag("triggered") {
 		return true
 	}
-	if skill.SkillTypes[modparser.SkillType.InbuiltTrigger] || skill.SkillTypes[modparser.SkillType.Triggered] {
+	if skill.SkillTypes[modparser.SkillTypeInbuiltTrigger] || skill.SkillTypes[modparser.SkillTypeTriggered] {
 		return true
 	}
-	if truthy(skill.ActiveEffect.GrantedEffect.Custom["triggered"]) {
-		return true
-	}
-	return skill.ActiveEffect.SrcInstance != nil && truthy(skill.ActiveEffect.SrcInstance.KV["triggered"])
+	// (`grantedEffect.triggered` is vestigial: no template sets it)
+	return skill.ActiveEffect.SrcInstance != nil && skill.ActiveEffect.SrcInstance.Triggered
 }
 
 // processAddedCastTime ports the local of the same name (L44). Returns nil
@@ -116,14 +115,14 @@ func processAddedCastTime(skill *ActiveSkill) *float64 {
 		return nil
 	}
 	baseCastTime := 1.0
-	if truthy(skill.SkillData["castTimeOverride"]) {
-		baseCastTime = anyNum(skill.SkillData["castTimeOverride"])
+	if skill.SkillData.Flag("castTimeOverride") {
+		baseCastTime = skill.SkillData.N("castTimeOverride")
 	} else if ct := skill.ActiveEffect.GrantedEffect.CastTime; ct != nil {
 		baseCastTime = *ct
 	}
-	inc := skill.SkillModList.Sum("INC", skill.SkillCfg, "Speed")
+	inc := skill.SkillModList.Sum(modparser.Inc, skill.SkillCfg, "Speed")
 	more := skill.SkillModList.More(skill.SkillCfg, "Speed")
-	csi := roundDec((1+inc/100)*more, 2)
+	csi := util.RoundHalfUp((1+inc/100)*more, 2)
 	addsCastTime := baseCastTime / csi
 	skill.SkillFlags["addsCastTime"] = true
 	return &addsCastTime
@@ -135,17 +134,17 @@ func (env *Env) packageSkillDataForSimulation(skill *ActiveSkill) *simSkill {
 		uuid:         env.cacheSkillUUID(skill),
 		addsCastTime: processAddedCastTime(skill),
 	}
-	if v, ok := skill.SkillData["cooldown"]; ok && truthy(v) {
-		n := anyNum(v)
+	if skill.SkillData.Flag("cooldown") {
+		n := skill.SkillData.N("cooldown")
 		s.cd = &n
 	}
-	if ov := skill.SkillModList.Override(skill.SkillCfg, "CooldownRecovery"); truthy(ov) {
-		n := anyNum(ov)
+	if ov, ok := skill.SkillModList.Override(skill.SkillCfg, "CooldownRecovery"); ok {
+		n := valueNum(ov)
 		s.cdOverride = &n
 	}
 	icdr := Mod(skill.SkillModList, skill.SkillCfg, "CooldownRecovery")
 	s.icdr = &icdr
-	added := skill.SkillModList.Sum("BASE", skill.SkillCfg, "CooldownRecovery")
+	added := skill.SkillModList.Sum(modparser.Base, skill.SkillCfg, "CooldownRecovery")
 	s.addedCooldown = &added
 	return s
 }
@@ -181,7 +180,7 @@ func (env *Env) findTriggerSkill(skill, source *ActiveSkill, triggerRate *float6
 	cached := env.GlobalCache[uuid]
 	usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
 	if cached != nil && comparer(env, uuid, source, triggerRate) && !skill.SkillFlags["disable"] && skill.SkillCfg != nil &&
-		!usedByMirage && !skill.SkillTypes[modparser.SkillType.OtherThingUsesSkill] {
+		!usedByMirage && !skill.SkillTypes[modparser.SkillTypeOtherThingUsesSkill] {
 		speed, _ := cached.speedOrHitSpeed()
 		return skill, &speed, uuid
 	}
@@ -280,9 +279,9 @@ func (env *Env) RunTriggers(actor *performActor) {
 	}
 	skillID := main.ActiveEffect.GrantedEffect.Id
 
-	keys := []string{skillID, luaLower(skillName), luaLower(triggerName)}
-	keys = append(keys, strings.TrimPrefix(luaLower(triggerName), "awakened "))
-	keys = append(keys, luaLower(uniqueName))
+	keys := []string{skillID, strings.ToLower(skillName), strings.ToLower(triggerName)}
+	keys = append(keys, strings.TrimPrefix(strings.ToLower(triggerName), "awakened "))
+	keys = append(keys, strings.ToLower(uniqueName))
 
 	var config *triggerConfig
 	for _, k := range keys {
@@ -301,7 +300,7 @@ func (env *Env) RunTriggers(actor *performActor) {
 		}
 	}
 	if config == nil {
-		delete(main.SkillData, "triggered")
+		main.SkillData.Del("triggered")
 		return
 	}
 	if config.actor == nil {
@@ -317,8 +316,8 @@ func (env *Env) RunTriggers(actor *performActor) {
 		}
 	}
 	if config.triggerChance == nil && main.ActiveEffect.SrcInstance != nil {
-		if v, ok := main.ActiveEffect.SrcInstance.KV["triggerChance"]; ok && truthy(v) {
-			n := anyNum(v)
+		if v := main.ActiveEffect.SrcInstance.TriggerChance; v.Set {
+			n := v.V
 			config.triggerChance = &n
 		}
 	}
@@ -332,7 +331,7 @@ func (env *Env) RunTriggers(actor *performActor) {
 // uniqueItemTriggerName ports getUniqueItemTriggerName (L1586): the name of
 // the unique item that grants the trigger.
 func (env *Env) uniqueItemTriggerName(skill *ActiveSkill) string {
-	if v := str(skill.SkillData["triggerSource"]); v != "" {
+	if v := skill.SkillData.Str("triggerSource"); v != "" {
 		return v
 	}
 	if len(skill.SupportList) >= 1 {
@@ -346,7 +345,7 @@ func (env *Env) uniqueItemTriggerName(skill *ActiveSkill) string {
 	if skill.SocketGroup != nil {
 		// source:find(".*:.*:(.*),.*") — the item name between the second
 		// colon and the last comma of e.g. "Item:14:Miracle Nail, Ruby Ring".
-		if src := str(skill.SocketGroup.KV["source"]); src != "" {
+		if src := skill.SocketGroup.Source; src != "" {
 			if i := strings.Index(src, ":"); i >= 0 {
 				if j := strings.Index(src[i+1:], ":"); j >= 0 {
 					rest := src[i+1+j+1:]

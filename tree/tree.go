@@ -5,12 +5,14 @@
 package tree
 
 import (
+	"fmt"
 	"math"
-	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -77,22 +79,23 @@ type Node struct {
 	SortedStats []string
 	StatDescs   []*ConqueredStatDesc
 	// Tattoo override pool fields (false/empty on real tree nodes).
-	IsTattooFlag           bool
-	OverrideTypeStr        string
+	IsTattooFlag      bool
+	OverrideTypeOf    OverrideKind
+	ActiveEffectImage string // the saved-Overrides match key
+
 	IsProxy                bool
 	IsBlighted             bool
+	IsJustIcon             bool
+	IsMultipleChoice       bool
 	IsMultipleChoiceOption bool
+	ExpansionJewel         *ExpansionJewel // set on cluster jewel sockets
 
 	GrantedStrength     float64
 	GrantedDexterity    float64
 	GrantedIntelligence float64
 
-	// Raw keeps the node object as decoded, for fields later stages read
-	// (expansionJewel, recipe, ...).
-	Raw map[string]any
-
 	// Processed state.
-	Type        string
+	Type        NodeKind
 	LinkedIDs   []int64
 	Group       *Group
 	Angle       float64
@@ -177,6 +180,12 @@ type Tree struct {
 
 	MinX, MinY, MaxX, MaxY float64
 	Size                   float64
+
+	// The decoded document, kept for the abyss generator's world (it needs
+	// the legacy alternate-ascendancy nodes Load drops).
+	doc       *schema.PassiveTree
+	abyssOnce sync.Once
+	abyss     *abyssWorld
 }
 
 // legacyAlternateAscendancies are hidden as no longer obtainable.
@@ -189,35 +198,39 @@ var classArt = map[int64]string{
 	3: "centerwitch", 4: "centerduelist", 5: "centertemplar", 6: "centershadow",
 }
 
+// loadDoc decodes data/raw/tree_<version>.json.
+func loadDoc(version string) *schema.PassiveTree {
+	var doc schema.PassiveTree
+	data.RawDoc("tree_"+version, &doc)
+	return &doc
+}
+
 // Load builds the tree for one version from the raw document
 // (data/raw/tree_<version>.json). The parser must already be loaded
 // (data.Load), since node stats parse through it.
-func Load(version string) *Tree {
-	var raw map[string]any
-	data.RawDoc("tree_"+version, &raw)
-	t := &Tree{Version: version}
+func Load(version string) (*Tree, error) {
+	doc := loadDoc(version)
+	t := &Tree{Version: version, doc: doc}
 
-	t.MinX, t.MinY = num(raw["min_x"]), num(raw["min_y"])
-	t.MaxX, t.MaxY = num(raw["max_x"]), num(raw["max_y"])
+	t.MinX, t.MinY = doc.MinX, doc.MinY
+	t.MaxX, t.MaxY = doc.MaxX, doc.MaxY
 	t.Size = math.Min(t.MaxX-t.MinX, t.MaxY-t.MinY) * 1.1
 
 	// Classes arrive 1-based; migrate to the old 0-based form.
 	t.Classes = map[int64]*Class{}
-	for i, cv := range canonArray(raw["classes"]) {
-		cm := cv.(map[string]any)
+	for i, cm := range doc.Classes {
 		class := &Class{
-			Name:    str(cm["name"]),
-			BaseStr: num(cm["base_str"]),
-			BaseDex: num(cm["base_dex"]),
-			BaseInt: num(cm["base_int"]),
+			Name:    cm.Name,
+			BaseStr: cm.BaseStr,
+			BaseDex: cm.BaseDex,
+			BaseInt: cm.BaseInt,
 			Classes: map[int64]*AscendClass{0: {Name: "None"}},
 		}
-		for j, av := range canonArray(cm["ascendancies"]) {
-			am := av.(map[string]any)
+		for j, am := range cm.Ascendancies {
 			class.Classes[int64(j+1)] = &AscendClass{
-				ID:         str(am["id"]),
-				InternalID: str(am["internalId"]),
-				Name:       str(am["name"]),
+				ID:         am.Id,
+				InternalID: am.InternalId,
+				Name:       am.Name,
 			}
 		}
 		t.Classes[int64(i)] = class
@@ -249,9 +262,8 @@ func Load(version string) *Tree {
 	// Alternate ascendancies: filter the legacy ones, index the rest.
 	altAsc := map[int64]*AscendClass{}
 	altNodeNames := map[string]bool{}
-	for i, av := range canonArray(raw["alternate_ascendancies"]) {
-		am := av.(map[string]any)
-		asc := &AscendClass{ID: str(am["id"]), Name: str(am["name"])}
+	for i, am := range doc.AlternateAscendancies {
+		asc := &AscendClass{ID: am.Id, Name: am.Name}
 		if legacyAlternateAscendancies[asc.ID] {
 			altNodeNames[asc.ID] = true
 			continue
@@ -273,13 +285,8 @@ func Load(version string) *Tree {
 		}
 	}
 
-	constants := raw["constants"].(map[string]any)
-	for _, v := range canonArray(constants["skillsPerOrbit"]) {
-		t.SkillsPerOrbit = append(t.SkillsPerOrbit, int64(num(v)))
-	}
-	for _, v := range canonArray(constants["orbitRadii"]) {
-		t.OrbitRadii = append(t.OrbitRadii, num(v))
-	}
+	t.SkillsPerOrbit = doc.Constants.SkillsPerOrbit
+	t.OrbitRadii = doc.Constants.OrbitRadii
 	t.OrbitAnglesByOrbit = make([][]float64, len(t.SkillsPerOrbit))
 	for orbit, skillsInOrbit := range t.SkillsPerOrbit {
 		t.OrbitAnglesByOrbit[orbit] = calcOrbitAngles(skillsInOrbit)
@@ -287,22 +294,21 @@ func Load(version string) *Tree {
 
 	// Groups (migrated: n = nodes, oo = orbit set).
 	t.Groups = map[int64]*Group{}
-	for gid, gv := range raw["groups"].(map[string]any) {
-		gm := gv.(map[string]any)
+	for gid, gm := range doc.Groups {
 		id, err := strconv.ParseInt(gid, 10, 64)
 		if err != nil {
-			panic("tree: non-numeric group id " + gid)
+			return nil, fmt.Errorf("tree %s: non-numeric group id %q", version, gid)
 		}
 		group := &Group{
 			ID:      id,
-			X:       num(gm["x"]),
-			Y:       num(gm["y"]),
-			IsProxy: boolean(gm["isProxy"]),
+			X:       gm.X,
+			Y:       gm.Y,
+			IsProxy: gm.IsProxy,
 			Orbits:  map[int64]bool{},
+			NodeIDs: idsOf(gm.Nodes),
 		}
-		group.NodeIDs = idList(gm["nodes"])
-		for _, ov := range canonArray(gm["orbits"]) {
-			group.Orbits[int64(num(ov))] = true
+		for _, orbit := range gm.Orbits {
+			group.Orbits[orbit] = true
 		}
 		t.Groups[id] = group
 	}
@@ -310,12 +316,11 @@ func Load(version string) *Tree {
 	// Nodes: decode, drop root, drop legacy alternate-ascendancy nodes
 	// (and their groups).
 	t.Nodes = map[int64]*Node{}
-	for key, nv := range raw["nodes"].(map[string]any) {
+	for key, nd := range doc.Nodes {
 		if key == "root" {
 			continue
 		}
-		nm := nv.(map[string]any)
-		node := decodeNode(nm)
+		node := decodeNode(&nd)
 		if node.AscendancyName != "" && altNodeNames[node.AscendancyName] {
 			delete(t.Groups, node.GroupID)
 			continue
@@ -333,14 +338,12 @@ func Load(version string) *Tree {
 	t.ClusterNodeMap = map[string]*Node{}
 	t.Sockets = map[int64]*Node{}
 	t.MasteryEffects = map[int64]*MasteryEffect{}
-	nodeIDs := make([]int64, 0, len(t.Nodes))
-	for id := range t.Nodes {
-		nodeIDs = append(nodeIDs, id)
-	}
-	sort.Slice(nodeIDs, func(i, j int) bool { return nodeIDs[i] < nodeIDs[j] })
+	nodeIDs := sortedNodeIDs(t.Nodes)
 	for _, id := range nodeIDs {
 		node := t.Nodes[id]
-		t.typeNode(node)
+		if err := t.typeNode(node); err != nil {
+			return nil, err
+		}
 		group := t.Groups[node.GroupID]
 		if group != nil {
 			node.Group = group
@@ -348,7 +351,7 @@ func Load(version string) *Tree {
 			if node.AscendancyStart {
 				group.AscendancyStart = true
 			}
-		} else if node.Type == "Notable" || node.Type == "Keystone" {
+		} else if node.Type == NodeNotable || node.Type == NodeKeystone {
 			t.ClusterNodeMap[node.Name] = node
 		}
 		t.ProcessNode(node)
@@ -371,10 +374,10 @@ func Load(version string) *Tree {
 		}
 		for _, nodeID := range startNode.LinkedIDs {
 			node := t.Nodes[nodeID]
-			if node != nil && node.Type == "Normal" {
-				node.ModList = append(node.ModList, modparser.NewMod(
-					"Condition:ConnectedTo"+class.Name+"Start", "FLAG", true,
-					"Tree:"+strconv.FormatInt(nodeID, 10)))
+			if node != nil && node.Type == NodeNormal {
+				node.ModList = append(node.ModList, modparser.NewModFull(
+					"Condition:ConnectedTo"+class.Name+"Start", modparser.Flag, modparser.Bool(true),
+					"Tree:"+strconv.FormatInt(nodeID, 10), true, 0, 0))
 			}
 		}
 	}
@@ -394,65 +397,99 @@ func Load(version string) *Tree {
 		}
 	}
 	data.BuildTreeDependentUniques(t.ClassNotables, nativeKeystones)
-	return t
+	return t, nil
 }
 
-func decodeNode(nm map[string]any) *Node {
+// cloneStrings copies a document string list; absent lists become empty
+// ones (every stat list is a table in the reference).
+func cloneStrings(v []string) []string {
+	out := make([]string, len(v))
+	copy(out, v)
+	return out
+}
+
+// idsOf converts a document id list.
+func idsOf(ids []schema.NodeID) []int64 {
+	if ids == nil {
+		return nil
+	}
+	out := make([]int64, len(ids))
+	for i, id := range ids {
+		out[i] = int64(id)
+	}
+	return out
+}
+
+func decodeNode(nd *schema.TreeNode) *Node {
 	node := &Node{
-		ID:                     int64(num(nm["skill"])),
-		Name:                   str(nm["name"]),
-		Icon:                   str(nm["icon"]),
-		GroupID:                int64(num(nm["group"])),
-		Orbit:                  int64(num(nm["orbit"])),
-		OrbitIndex:             int64(num(nm["orbitIndex"])),
-		Out:                    idList(nm["out"]),
-		In:                     idList(nm["in"]),
-		Keystone:               boolean(nm["isKeystone"]),
-		Notable:                boolean(nm["isNotable"]),
-		Mastery:                boolean(nm["isMastery"]),
-		JewelSocket:            boolean(nm["isJewelSocket"]),
-		AscendancyStart:        boolean(nm["isAscendancyStart"]),
-		AscendancyName:         str(nm["ascendancyName"]),
-		PassivePointsGranted:   num(nm["grantedPassivePoints"]),
-		IsProxy:                boolean(nm["isProxy"]),
-		IsBlighted:             boolean(nm["isBlighted"]),
-		IsMultipleChoiceOption: boolean(nm["isMultipleChoiceOption"]),
-		GrantedStrength:        num(nm["grantedStrength"]),
-		GrantedDexterity:       num(nm["grantedDexterity"]),
-		GrantedIntelligence:    num(nm["grantedIntelligence"]),
-		Raw:                    nm,
+		ID:                     nd.Skill,
+		Name:                   nd.Name,
+		Icon:                   nd.Icon,
+		GroupID:                nd.Group,
+		OrbitIndex:             nd.OrbitIndex,
+		Out:                    idsOf(nd.Out),
+		In:                     idsOf(nd.In),
+		Keystone:               nd.IsKeystone,
+		Notable:                nd.IsNotable,
+		Mastery:                nd.IsMastery,
+		JewelSocket:            nd.IsJewelSocket,
+		AscendancyStart:        nd.IsAscendancyStart,
+		AscendancyName:         nd.AscendancyName,
+		ClassStartIndex:        nd.ClassStartIndex,
+		PassivePointsGranted:   nd.GrantedPassivePoints,
+		IsProxy:                nd.IsProxy,
+		IsBlighted:             nd.IsBlighted,
+		IsJustIcon:             nd.IsJustIcon,
+		IsMultipleChoice:       nd.IsMultipleChoice,
+		IsMultipleChoiceOption: nd.IsMultipleChoiceOption,
+		ActiveEffectImage:      nd.ActiveEffectImage,
+		GrantedStrength:        nd.GrantedStrength,
+		GrantedDexterity:       nd.GrantedDexterity,
+		GrantedIntelligence:    nd.GrantedIntelligence,
+	}
+	if nd.Orbit != nil {
+		node.Orbit = *nd.Orbit
+	}
+	if ej := nd.ExpansionJewel; ej != nil {
+		node.ExpansionJewel = &ExpansionJewel{Size: ej.Size, Index: ej.Index, Proxy: int64(ej.Proxy)}
+		if ej.Parent != nil {
+			parent := int64(*ej.Parent)
+			node.ExpansionJewel.Parent = &parent
+		}
 	}
 	node.IDStr = strconv.FormatInt(node.ID, 10)
 	node.NameStr = &node.Name
-	node.Sd = strList(nm["stats"])
-	if csi, ok := nm["classStartIndex"].(float64); ok {
-		v := int64(csi)
-		node.ClassStartIndex = &v
-	}
-	for _, ev := range canonArray(nm["masteryEffects"]) {
-		em := ev.(map[string]any)
+	node.Sd = cloneStrings(nd.Stats)
+	for _, em := range nd.MasteryEffects {
 		node.MasteryEffects = append(node.MasteryEffects, &MasteryEffectRef{
-			Effect:       int64(num(em["effect"])),
-			Stats:        strList(em["stats"]),
-			ReminderText: strList(em["reminderText"]),
+			Effect:       em.Effect,
+			Stats:        cloneStrings(em.Stats),
+			ReminderText: cloneStrings(em.ReminderText),
 		})
 	}
 	return node
 }
 
 // typeNode ports the constructor's node-type chain.
-func (t *Tree) typeNode(node *Node) {
+func (t *Tree) typeNode(node *Node) error {
 	switch {
 	case node.ClassStartIndex != nil:
-		node.Type = "ClassStart"
+		node.Type = NodeClassStart
 		class := t.Classes[*node.ClassStartIndex]
+		if class == nil {
+			return fmt.Errorf("tree: node %d starts unknown class %d", node.ID, *node.ClassStartIndex)
+		}
 		class.StartNodeID = node.ID
 		node.StartArt = classArt[*node.ClassStartIndex]
 	case node.AscendancyStart:
-		node.Type = "AscendClassStart"
-		t.AscendNameMap[node.AscendancyName].AscendClass.StartNodeID = node.ID
+		node.Type = NodeAscendClassStart
+		entry := t.AscendNameMap[node.AscendancyName]
+		if entry == nil {
+			return fmt.Errorf("tree: node %d starts unknown ascendancy %q", node.ID, node.AscendancyName)
+		}
+		entry.AscendClass.StartNodeID = node.ID
 	case node.Mastery:
-		node.Type = "Mastery"
+		node.Type = NodeMastery
 		for _, effect := range node.MasteryEffects {
 			if t.MasteryEffects[effect.Effect] == nil {
 				me := &MasteryEffect{ID: effect.Effect}
@@ -465,23 +502,26 @@ func (t *Tree) typeNode(node *Node) {
 			}
 		}
 	case node.JewelSocket:
-		node.Type = "Socket"
+		node.Type = NodeSocket
 		t.Sockets[node.ID] = node
 	case node.Keystone:
-		node.Type = "Keystone"
+		node.Type = NodeKeystone
 		t.KeystoneMap[node.Name] = node
-		t.KeystoneMap[luaLower(node.Name)] = node
+		t.KeystoneMap[strings.ToLower(node.Name)] = node
 	case node.Notable:
-		node.Type = "Notable"
+		node.Type = NodeNotable
 		if node.AscendancyName == "" {
 			// Duplicate-named off-tree nodes lose to on-tree (grouped)
 			// ones; cluster notables have no group and still register.
-			if t.NotableMap[luaLower(node.Name)] == nil || node.GroupID != 0 {
-				t.NotableMap[luaLower(node.Name)] = node
+			if t.NotableMap[strings.ToLower(node.Name)] == nil || node.GroupID != 0 {
+				t.NotableMap[strings.ToLower(node.Name)] = node
 			}
 		} else {
-			t.AscendancyMap[luaLower(node.Name)] = node
-			className := t.AscendNameMap[node.AscendancyName].Class.Name
+			t.AscendancyMap[strings.ToLower(node.Name)] = node
+			className, err := t.ascendancyClassName(node)
+			if err != nil {
+				return err
+			}
 			if className != "Scion" {
 				t.ClassNotables[className] = append(t.ClassNotables[className], node.Name)
 			} else if t.ClassNotables[className] == nil {
@@ -489,17 +529,30 @@ func (t *Tree) typeNode(node *Node) {
 			}
 		}
 	default:
-		node.Type = "Normal"
+		node.Type = NodeNormal
 		isAscendantSpecial := node.AscendancyName == "Ascendant" && !node.IsMultipleChoiceOption &&
 			!strings.Contains(node.Name, "Dexterity") && !strings.Contains(node.Name, "Intelligence") &&
 			!strings.Contains(node.Name, "Strength") && !strings.Contains(node.Name, "Passive")
 		if (isAscendantSpecial || (node.IsMultipleChoiceOption && node.AscendancyName != "")) &&
 			node.AscendancyName != "Reliquarian" && node.AscendancyName != "Luminary" {
-			className := t.AscendNameMap[node.AscendancyName].Class.Name
-			t.AscendancyMap[luaLower(node.Name)] = node
+			className, err := t.ascendancyClassName(node)
+			if err != nil {
+				return err
+			}
+			t.AscendancyMap[strings.ToLower(node.Name)] = node
 			t.ClassNotables[className] = append(t.ClassNotables[className], node.Name)
 		}
 	}
+	return nil
+}
+
+// ascendancyClassName is the class owning the node's ascendancy.
+func (t *Tree) ascendancyClassName(node *Node) (string, error) {
+	entry := t.AscendNameMap[node.AscendancyName]
+	if entry == nil {
+		return "", fmt.Errorf("tree: node %d in unknown ascendancy %q", node.ID, node.AscendancyName)
+	}
+	return entry.Class.Name, nil
 }
 
 // ProcessNode ports PassiveTreeClass:ProcessNode's logic half: position
@@ -591,14 +644,4 @@ func calcOrbitAngles(nodesInOrbit int64) []float64 {
 		orbitAngles[i] = degrees * math.Pi / 180
 	}
 	return orbitAngles
-}
-
-func luaLower(s string) string {
-	b := []byte(s)
-	for i, c := range b {
-		if c >= 'A' && c <= 'Z' {
-			b[i] = c + 32
-		}
-	}
-	return string(b)
 }

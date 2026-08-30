@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // Fn stands for a Lua function value ({"__fn":true} in canon).
@@ -94,6 +96,10 @@ func enc(b *strings.Builder, rv reflect.Value) {
 			b.WriteString(`{"__fn":true}`)
 			return
 		}
+		if isOpt(rv) {
+			enc(b, rv.FieldByName("V"))
+			return
+		}
 		writeObject(b, structPairs(rv))
 	case reflect.Map:
 		var pairs []kv
@@ -104,6 +110,13 @@ func enc(b *strings.Builder, rv reflect.Value) {
 			switch k.Kind() {
 			case reflect.String:
 				ks = k.String()
+			case reflect.Uint8, reflect.Uint, reflect.Uint64:
+				// Named enum keys (modparser.ModType) canon as their reference text.
+				if s, ok := k.Interface().(fmt.Stringer); ok {
+					ks = s.String()
+				} else {
+					ks = strconv.FormatUint(k.Uint(), 10)
+				}
 			case reflect.Int, reflect.Int64, reflect.Int32:
 				ks = strconv.FormatInt(k.Int(), 10)
 			case reflect.Float64:
@@ -143,8 +156,17 @@ func omitted(rv reflect.Value) bool {
 	switch rv.Kind() {
 	case reflect.Pointer, reflect.Interface, reflect.Func, reflect.Slice, reflect.Map:
 		return rv.IsNil()
+	case reflect.Struct:
+		return isOpt(rv) && !rv.FieldByName("Set").Bool()
 	}
 	return false
+}
+
+// isOpt reports a util.Opt[T]: an absent one is an absent key, a present
+// one encodes as its value.
+func isOpt(rv reflect.Value) bool {
+	t := rv.Type()
+	return strings.HasSuffix(t.PkgPath(), "/internal/util") && strings.HasPrefix(t.Name(), "Opt[")
 }
 
 func structPairs(rv reflect.Value) []kv {
@@ -248,4 +270,29 @@ func Quote(s string) string {
 	}
 	b.WriteByte('"')
 	return b.String()
+}
+
+// Store condition and output entries render as the flat scalars the
+// reference tables held.
+func init() {
+	RegisterAdapter(func(v any) (any, bool) {
+		switch t := v.(type) {
+		case modstore.CondValue:
+			if class, ok := t.Class(); ok {
+				return class, true
+			}
+			return t.True(), true
+		case modstore.OutValue:
+			switch t.Kind {
+			case modstore.OutNum:
+				return t.N, true
+			case modstore.OutBool:
+				return t.B, true
+			case modstore.OutStr:
+				return t.S, true
+			}
+			return nil, true
+		}
+		return nil, false
+	})
 }

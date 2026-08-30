@@ -1,47 +1,105 @@
 // data.skills and data.skillStatMap: the granted effects, from the skills
-// document plus the generated hand-fragment tables.
+// document plus the Go-maintained template tables.
 
 package data
 
 import (
+	"encoding/json"
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
-// StatMapEntry is one skillStatMap / per-skill statMap entry: a list of
-// mods (or groups of mods) plus scaling keys (div, mult, value, skillFlag).
+// StatMapTable exposes the Go-maintained skillStatMap without Load — the
+// export pipeline builds minion mods from it.
+func StatMapTable() map[string]*StatMapEntry { return skillStatMap }
+
+// StatMapEntry is one skillStatMap / per-skill statMap entry: the mods a
+// skill stat maps to, plus its scale keys (Value replaces the stat value;
+// otherwise the stat value scales by Mult/Div and Base).
 type StatMapEntry struct {
-	Mods []any          // *modparser.Mod, []any group, or *modparser.D once mutated
-	KV   map[string]any // div, mult, value, skillFlag, ...
+	Mods                   []SkillMod
+	Div, Mult, Base, Value util.Opt[float64]
+	SkillFlag              string // a skill flag the stat sets when non-zero
 }
 
-// SkillCustom carries a skill's hand-written template fragment: its raw
-// statMap and any custom keys (parts, minionList, flags, Unported functions).
+// SkillMod is one element of a statMap entry: a mod, a group of mods
+// with its own scale, or one of the reference's typo records.
+type SkillMod struct {
+	Mod   *modparser.Mod
+	Group *StatMapGroup
+	Typo  *TypoMod
+}
+
+// StatMapGroup is a nested mod list inside a statMap entry. Source and
+// Tags are written only by the statMap metatable's blind processMod pass,
+// which treats the group as a mod.
+type StatMapGroup struct {
+	Mods      []*modparser.Mod
+	Div, Mult util.Opt[float64]
+	Source    string
+	Tags      []modparser.Tag
+}
+
+// TypoMod is a template mod record whose helper call misplaced its
+// arguments (a tag in the flags slot, a nil type, stray positional
+// numbers): the reference keeps the resulting plain table, which no
+// skill's stat ever reaches. Kept verbatim for the archive comparison.
+type TypoMod struct {
+	Name, Type   string // Type "" = the nil type slot
+	Value        modparser.Value
+	FlagsTag     modparser.Tag // the tag sitting in the flags slot, if any
+	Flags        float64
+	KeywordFlags float64
+	StrayNums    []float64       // positional numbers after keywordFlags
+	StrayTags    []modparser.Tag // positional tags, plus any processMod appends
+	Source       string
+}
+
+// CallbackKind names the hand-written Lua callbacks a template attaches to
+// a granted effect. The bodies live in calc/skillfuncs.go; a listed
+// callback without a ported body panics when reached.
+type CallbackKind uint8
+
+const (
+	CallbackInitial CallbackKind = iota + 1
+	CallbackPreSkillType
+	CallbackPreDamage
+	CallbackPostCrit
+	CallbackPreDot
+	CallbackExplosiveArrow
+)
+
+var callbackNames = [...]string{"", "initialFunc", "preSkillTypeFunc", "preDamageFunc", "postCritFunc", "preDotFunc", "explosiveArrowFunc"}
+
+// String is the template's key for the callback.
+func (k CallbackKind) String() string { return callbackNames[k] }
+
+// SkillCustom carries the template's hand-written keys beyond the
+// generated fields.
 type SkillCustom struct {
-	// Full marks a skill whose entire block is hand-written passthrough
-	// (no #skill directive).
-	Full    bool
-	StatMap map[string]*StatMapEntry
-	// StatMapAlias shares another skill's statMap table (the templates
-	// alias tables across skills).
-	StatMapAlias string
-	Keys         map[string]any
+	FromItem, FromTree, Legacy, MinionHasItemSet, HideFromGemList bool
+	Parts                                                         []SkillPart
+	MinionList                                                    []string // nil = absent; empty = the build's spectre list
+	AddMinionList                                                 []string
+	AddFlags                                                      map[string]bool
+	MinionUses                                                    map[string]bool
+	Callbacks                                                     map[CallbackKind]bool
 }
 
-// SkillAlias marks a custom value that shares another skill's table.
-type SkillAlias struct {
-	Skill, Key string
+// SkillPart is one multi-part skill part: its name and the skill flags it
+// sets (true) or clears (false).
+type SkillPart struct {
+	Name  string
+	Flags map[string]bool
 }
 
-// UnportedFn marks a Lua function not yet ported; the body lives in the
-// Export/Skills templates and is ported by the calc modules on demand.
-// `grep -rn UnportedFn data/*_gen.go` lists the outstanding ones.
-type UnportedFn struct{}
-
-// genMod builds a mod for the generated tables.
-func genMod(name, typ string, value any, flags, kw int64, source string, tags ...any) *modparser.Mod {
+// genMod builds a mod for the converted tables.
+func genMod(name string, typ modparser.ModType, value modparser.Value, flags modparser.ModFlag, kw modparser.KeywordFlag, source string, tags ...modparser.Tag) *modparser.Mod {
 	m := &modparser.Mod{Name: name, Type: typ, Value: value, Flags: flags, KeywordFlags: kw}
 	if source != "" {
 		m.Source = source
@@ -51,7 +109,8 @@ func genMod(name, typ string, value any, flags, kw int64, source string, tags ..
 	return m
 }
 
-// GrantedEffect is one data.skills entry.
+// GrantedEffect is one data.skills entry. nil slices and maps are keys the
+// reference's table lacks; empty ones are present-but-empty tables.
 type GrantedEffect struct {
 	Name                     string
 	Id                       string
@@ -60,22 +119,23 @@ type GrantedEffect struct {
 	Description              *string
 	Color                    float64
 	BaseTypeName             *string
-	HasFlavour               bool
 	FlavourText              []string
 	BaseEffectiveness        *float64
 	IncrementalEffectiveness *float64
 
-	Support           bool
-	RequireSkillTypes []any // SkillType numbers, nil holes for unknowns
-	AddSkillTypes     []any
-	ExcludeSkillTypes []any
+	Support bool
+	// Support type expressions in postfix order; 0 = a type the port does
+	// not know (the exporter's Unknown<n>).
+	RequireSkillTypes []modparser.SkillTypeID
+	AddSkillTypes     []modparser.SkillTypeID
+	ExcludeSkillTypes []modparser.SkillTypeID
 	IsTrigger         bool
 	SupportGemsOnly   bool
 	IgnoreMinionTypes bool
 	PlusVersionOf     *string
 
-	SkillTypes        map[int64]bool
-	MinionSkillTypes  map[int64]bool
+	SkillTypes        map[modparser.SkillTypeID]bool
+	MinionSkillTypes  map[modparser.SkillTypeID]bool
 	SkillTotemId      *float64
 	CastTime          *float64
 	CannotBeSupported bool
@@ -83,16 +143,14 @@ type GrantedEffect struct {
 	WeaponTypes          map[string]bool
 	StatDescriptionScope string
 
-	HasBaseFlags  bool
 	BaseFlags     map[string]bool
-	BaseMods      []any
-	QualityStats  [][]any
-	ConstantStats [][]any
-	HasStats      bool
+	BaseMods      []SkillMod       // mods, plus the one template typo record
+	LevelMods     []*modparser.Mod // full-custom skills only
+	QualityStats  []schema.StatValue
+	ConstantStats []schema.StatValue
 	Stats         []string
 	NotMinionStat []string
-	HasLevels     bool
-	Levels        map[float64]*SkillLevel
+	Levels        map[int]*SkillLevel
 
 	StatMap map[string]*StatMapEntry
 	// StatMapOwner is the reference's `statMap._grantedEffect` backref
@@ -103,12 +161,9 @@ type GrantedEffect struct {
 	StatMapOwner    *GrantedEffect
 	HasGlobalEffect bool
 
-	// Custom carries the hand-written template keys (parts, minionList,
-	// fromItem, Unported functions, ...).
-	Custom map[string]any
-	// FullCustom marks a skill defined entirely by hand in the template;
-	// every field but Name/Id/ModSource/StatMap/HasGlobalEffect lives in
-	// Custom.
+	Custom SkillCustom
+	// FullCustom marks a skill defined entirely by hand in the template
+	// (no #skill directive): only the fields the template sets exist.
 	FullCustom bool
 }
 
@@ -117,48 +172,221 @@ type SkillLevel struct {
 	Values            []float64
 	Extra             map[string]float64
 	StatInterpolation []float64
-	Cost              map[string]float64
+	Cost              map[string]float64 // nil = absent; the templates write present-empty tables
 }
 
-// resolveSkillType maps a "SkillType.X" identifier to its number, nil when
-// the identifier is unknown (mapAST's Unknown<n> fallback).
-func resolveSkillType(s string) any {
-	if v, ok := modConstants[s]; ok {
-		return v
+// skillTemplate is one Go-maintained template fragment: a full-custom
+// skill's whole definition, or the statMap, custom keys and hand-written
+// overrides (Levels, Stats, SkillTypes) laid over a generated skill.
+type skillTemplate struct {
+	Full                                    bool
+	StatMap                                 map[string]*StatMapEntry
+	StatMapAlias, BaseModsAlias, PartsAlias string // tables shared with another skill
+	Skill                                   GrantedEffect
+}
+
+// LevelCount is the reference's #levels: the contiguous run from level 1.
+func (ge *GrantedEffect) LevelCount() int {
+	n := 0
+	for ge.Levels[n+1] != nil {
+		n++
 	}
-	return nil
+	return n
 }
 
-func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) {
+// LevelData is levels[level] for a Lua number key: nil unless level is a
+// whole number the table holds.
+func (ge *GrantedEffect) LevelData(level float64) *SkillLevel {
+	if level != math.Trunc(level) {
+		return nil
+	}
+	return ge.Levels[int(level)]
+}
+
+// ---- clones (copyTable over the template and shared-map entries)
+
+func cloneMods(list []*modparser.Mod) []*modparser.Mod {
+	if list == nil {
+		return nil
+	}
+	out := make([]*modparser.Mod, len(list))
+	for i, m := range list {
+		out[i] = m.Clone()
+	}
+	return out
+}
+
+func cloneTags(list []modparser.Tag) []modparser.Tag {
+	if list == nil {
+		return nil
+	}
+	out := make([]modparser.Tag, len(list))
+	for i, t := range list {
+		out[i] = t.Clone()
+	}
+	return out
+}
+
+func cloneMap[K comparable, V any](m map[K]V) map[K]V {
+	if m == nil {
+		return nil
+	}
+	out := make(map[K]V, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
+}
+
+func cloneSlice[T any](s []T) []T {
+	if s == nil {
+		return nil
+	}
+	return append(make([]T, 0, len(s)), s...)
+}
+
+// Clone deep-copies the entry.
+func (e *StatMapEntry) Clone() *StatMapEntry {
+	out := *e
+	out.Mods = make([]SkillMod, len(e.Mods))
+	for i, m := range e.Mods {
+		out.Mods[i] = m.clone()
+	}
+	return &out
+}
+
+func cloneSkillMods(list []SkillMod) []SkillMod {
+	if list == nil {
+		return nil
+	}
+	out := make([]SkillMod, len(list))
+	for i, m := range list {
+		out[i] = m.clone()
+	}
+	return out
+}
+
+func (m SkillMod) clone() SkillMod {
+	switch {
+	case m.Mod != nil:
+		return SkillMod{Mod: m.Mod.Clone()}
+	case m.Group != nil:
+		g := *m.Group
+		g.Mods = cloneMods(m.Group.Mods)
+		g.Tags = cloneTags(m.Group.Tags)
+		return SkillMod{Group: &g}
+	case m.Typo != nil:
+		t := *m.Typo
+		t.Value = modparser.CloneValue(m.Typo.Value)
+		if m.Typo.FlagsTag != nil {
+			t.FlagsTag = m.Typo.FlagsTag.Clone()
+		}
+		t.StrayNums = cloneSlice(m.Typo.StrayNums)
+		t.StrayTags = cloneTags(m.Typo.StrayTags)
+		return SkillMod{Typo: &t}
+	}
+	return m
+}
+
+func cloneStatMap(m map[string]*StatMapEntry) map[string]*StatMapEntry {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]*StatMapEntry, len(m))
+	for k, e := range m {
+		out[k] = e.Clone()
+	}
+	return out
+}
+
+func (l *SkillLevel) clone() *SkillLevel {
+	return &SkillLevel{
+		Values:            cloneSlice(l.Values),
+		Extra:             cloneMap(l.Extra),
+		StatInterpolation: cloneSlice(l.StatInterpolation),
+		Cost:              cloneMap(l.Cost),
+	}
+}
+
+func cloneLevels(m map[int]*SkillLevel) map[int]*SkillLevel {
+	if m == nil {
+		return nil
+	}
+	out := make(map[int]*SkillLevel, len(m))
+	for k, l := range m {
+		out[k] = l.clone()
+	}
+	return out
+}
+
+func (c SkillCustom) clone() SkillCustom {
+	out := c
+	if c.Parts != nil {
+		out.Parts = make([]SkillPart, len(c.Parts))
+		for i, p := range c.Parts {
+			out.Parts[i] = SkillPart{Name: p.Name, Flags: cloneMap(p.Flags)}
+		}
+	}
+	out.MinionList = cloneSlice(c.MinionList)
+	out.AddMinionList = cloneSlice(c.AddMinionList)
+	out.AddFlags = cloneMap(c.AddFlags)
+	out.MinionUses = cloneMap(c.MinionUses)
+	out.Callbacks = cloneMap(c.Callbacks)
+	return out
+}
+
+// clone copies a template's hand-written skill (full-custom skills carry
+// no StatMap/Id/ModSource yet).
+func (ge *GrantedEffect) clone() *GrantedEffect {
+	out := *ge
+	out.FlavourText = cloneSlice(ge.FlavourText)
+	out.RequireSkillTypes = cloneSlice(ge.RequireSkillTypes)
+	out.AddSkillTypes = cloneSlice(ge.AddSkillTypes)
+	out.ExcludeSkillTypes = cloneSlice(ge.ExcludeSkillTypes)
+	out.SkillTypes = cloneMap(ge.SkillTypes)
+	out.MinionSkillTypes = cloneMap(ge.MinionSkillTypes)
+	out.WeaponTypes = cloneMap(ge.WeaponTypes)
+	out.BaseFlags = cloneMap(ge.BaseFlags)
+	out.BaseMods = cloneSkillMods(ge.BaseMods)
+	out.LevelMods = cloneMods(ge.LevelMods)
+	out.QualityStats = cloneSlice(ge.QualityStats)
+	out.ConstantStats = cloneSlice(ge.ConstantStats)
+	out.Stats = cloneSlice(ge.Stats)
+	out.NotMinionStat = cloneSlice(ge.NotMinionStat)
+	out.Levels = cloneLevels(ge.Levels)
+	out.StatMap = cloneStatMap(ge.StatMap)
+	out.Custom = ge.Custom.clone()
+	return &out
+}
+
+// ---- load
+
+func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) error {
 	Skills = map[string]*GrantedEffect{}
 	for _, name := range []string{"act_str", "act_dex", "act_int", "other", "glove", "minion", "spectre", "sup_str", "sup_dex", "sup_int"} {
 		f := src.Files[name]
 		if len(f.Skills) != len(f.Tails) {
-			panic("data: skills template " + name + " has unpaired #skill/#mods directives")
+			return fmt.Errorf("data: skills template %s has unpaired #skill/#mods directives", name)
 		}
 		for i, hdr := range f.Skills {
 			if hdr.Invalid {
-				panic("data: invalid skill " + hdr.GrantedId + " (unknown granted effect)")
+				return fmt.Errorf("data: invalid skill %s (unknown granted effect)", hdr.GrantedId)
 			}
-			Skills[hdr.GrantedId] = buildGrantedEffect(hdr, f.Tails[i])
+			ge, err := buildGrantedEffect(hdr, f.Tails[i])
+			if err != nil {
+				return err
+			}
+			Skills[hdr.GrantedId] = ge
 		}
 	}
-	// Skills whose whole block is hand-written passthrough.
-	for id, custom := range skillCustom {
-		if !custom.Full {
+	// Skills whose whole block is hand-written.
+	for id, tpl := range skillTemplates {
+		if !tpl.Full {
 			continue
 		}
-		ge := &GrantedEffect{FullCustom: true, Custom: deepCopyAny(custom.Keys).(map[string]any)}
-		if name, ok := ge.Custom["name"].(string); ok {
-			ge.Name = name
-			delete(ge.Custom, "name")
-		}
-		if custom.StatMap != nil {
-			ge.StatMap = map[string]*StatMapEntry{}
-			for k, e := range custom.StatMap {
-				ge.StatMap[k] = copyStatMapEntry(e)
-			}
-		}
+		ge := tpl.Skill.clone()
+		ge.FullCustom = true
+		ge.StatMap = cloneStatMap(tpl.StatMap)
 		Skills[id] = ge
 	}
 	// Resolve cross-skill table aliases so mutation is shared, as in the
@@ -166,30 +394,25 @@ func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) {
 	// statMap table so the backref owner can be settled deterministically.
 	statMapGroups := map[string][]string{}
 	for id, ge := range Skills {
-		if custom := skillCustom[id]; custom != nil && custom.StatMapAlias != "" {
-			target := Skills[custom.StatMapAlias]
+		tpl := skillTemplates[id]
+		if tpl == nil {
+			continue
+		}
+		if tpl.StatMapAlias != "" {
+			target := Skills[tpl.StatMapAlias]
 			if target.StatMap == nil {
 				target.StatMap = map[string]*StatMapEntry{}
 			}
 			ge.StatMap = target.StatMap
-			statMapGroups[custom.StatMapAlias] = append(statMapGroups[custom.StatMapAlias], id)
+			statMapGroups[tpl.StatMapAlias] = append(statMapGroups[tpl.StatMapAlias], id)
 		}
-		for k, v := range ge.Custom {
-			if alias, ok := v.(SkillAlias); ok {
-				target := Skills[alias.Skill]
-				if alias.Key == "baseMods" && target.BaseMods != nil {
-					ge.Custom[k] = target.BaseMods
-					// The Lua shares the table outright
-					// (`baseMods = skills.X.baseMods`), so the runtime field
-					// has to alias it too — filling only Custom leaves the
-					// typed list empty and the skill silently loses its
-					// base mods. The canon merges Custom, so this was
-					// invisible to the game-data comparison.
-					ge.BaseMods = target.BaseMods
-				} else {
-					ge.Custom[k] = target.Custom[alias.Key]
-				}
-			}
+		if tpl.BaseModsAlias != "" {
+			// The Lua shares the table outright (`baseMods = skills.X.baseMods`):
+			// the mods' final source is the last writer's in sorted id order.
+			ge.BaseMods = Skills[tpl.BaseModsAlias].BaseMods
+		}
+		if tpl.PartsAlias != "" {
+			ge.Custom.Parts = Skills[tpl.PartsAlias].Custom.Parts
 		}
 	}
 
@@ -220,52 +443,18 @@ func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) {
 		ge.Id = id
 		ge.ModSource = "Skill:" + id
 		// Add sources for skill mods, and check for global effects
-		processNamedOrGroup := func(m any, statName string) {
-			switch t := m.(type) {
-			case *modparser.Mod:
-				processMod(ge, t, statName)
-			case *modparser.D:
-				if t.KV["name"] != nil {
-					processTableMod(ge, t, statName)
-					return
-				}
-				forEachTableValue(t, func(inner any) {
-					if mod, ok := inner.(*modparser.Mod); ok {
-						processMod(ge, mod, statName)
-					}
-				})
-			case map[string]any:
-				if t["name"] != nil {
-					processMapMod(ge, t, statName)
-					return
-				}
-				forEachTableValue(t, func(inner any) {
-					if mod, ok := inner.(*modparser.Mod); ok {
-						processMod(ge, mod, statName)
-					}
-				})
-			default:
-				forEachTableValue(m, func(inner any) {
-					if mod, ok := inner.(*modparser.Mod); ok {
-						processMod(ge, mod, statName)
-					}
-				})
-			}
+		for _, m := range ge.BaseMods {
+			processSkillMod(ge, m, "")
 		}
-		baseModsList := anyList(ge.BaseMods)
-		if ge.FullCustom || ge.Custom["baseMods"] != nil || ge.BaseMods == nil {
-			baseModsList = ge.Custom["baseMods"]
+		for _, m := range ge.LevelMods {
+			processMod(ge, m, "")
 		}
-		for _, list := range []any{baseModsList, ge.Custom["qualityMods"], ge.Custom["levelMods"]} {
-			forEachTableValue(list, func(m any) { processNamedOrGroup(m, "") })
-		}
-		// Template statMap entries (group-aware processing).
 		if ge.StatMap == nil {
 			ge.StatMap = map[string]*StatMapEntry{}
 		}
 		for name, entry := range ge.StatMap {
-			for _, modOrGroup := range entry.Mods {
-				processNamedOrGroup(modOrGroup, name)
+			for _, m := range entry.Mods {
+				processSkillMod(ge, m, name)
 			}
 		}
 		// The boot's lazy statMap copies (replayed from the archive dump's
@@ -276,167 +465,16 @@ func loadSkills(src schema.SkillsData, statMapCopies map[string][]string) {
 			}
 			base := skillStatMap[key]
 			if base == nil {
-				panic("data: statMap copy of unknown stat " + key)
+				return fmt.Errorf("data: statMap copy of unknown stat %s", key)
 			}
-			entry := copyStatMapEntry(base)
+			entry := base.Clone()
 			ge.StatMap[key] = entry
-			for i, m := range entry.Mods {
-				entry.Mods[i] = processModBlind(ge, m, key)
-			}
-		}
-		if ge.FullCustom {
-			materializeFullCustom(ge)
-		}
-	}
-}
-
-// materializeFullCustom mirrors a full-custom skill's hand-written keys
-// into the typed GrantedEffect fields the calc engine reads. Tables are
-// SHARED with the Custom map (mutation visibility as in the reference);
-// the game-data canon still reads Custom for full-custom skills, so this
-// adds views without changing canon bytes.
-func materializeFullCustom(ge *GrantedEffect) {
-	c := ge.Custom
-	toBoolMap := func(v any) map[string]bool {
-		m, ok := v.(map[string]any)
-		if !ok {
-			return nil
-		}
-		out := map[string]bool{}
-		for k, e := range m {
-			if b, ok := e.(bool); ok && b {
-				out[k] = true
-			}
-		}
-		return out
-	}
-	if v, ok := c["skillTypes"].(map[string]any); ok {
-		ge.SkillTypes = map[int64]bool{}
-		for k, e := range v {
-			if n, err := parseLuaNumber(k); err == nil {
-				if b, ok := e.(bool); ok && b {
-					ge.SkillTypes[int64(n)] = true
-				}
+			for _, m := range entry.Mods {
+				processModBlindInto(ge, m, key, &ge.HasGlobalEffect)
 			}
 		}
 	}
-	if v, ok := c["minionSkillTypes"].(map[string]any); ok {
-		ge.MinionSkillTypes = map[int64]bool{}
-		for k, e := range v {
-			if n, err := parseLuaNumber(k); err == nil {
-				if b, ok := e.(bool); ok && b {
-					ge.MinionSkillTypes[int64(n)] = true
-				}
-			}
-		}
-	}
-	if bf := toBoolMap(c["baseFlags"]); bf != nil {
-		ge.HasBaseFlags = true
-		ge.BaseFlags = bf
-	}
-	if wt := toBoolMap(c["weaponTypes"]); wt != nil {
-		ge.WeaponTypes = wt
-	}
-	if v, ok := c["stats"].([]any); ok {
-		ge.HasStats = true
-		ge.Stats = nil
-		for _, s := range v {
-			if str, ok := s.(string); ok {
-				ge.Stats = append(ge.Stats, str)
-			}
-		}
-		if ge.Stats == nil {
-			ge.Stats = []string{}
-		}
-	}
-	if v, ok := c["baseMods"].([]any); ok {
-		ge.BaseMods = v
-	}
-	if v, ok := c["support"].(bool); ok {
-		ge.Support = v
-	}
-	if v, ok := c["castTime"].(float64); ok {
-		ge.CastTime = &v
-	}
-	toTypeList := func(v any) []any {
-		l, ok := v.([]any)
-		if !ok {
-			return nil
-		}
-		out := make([]any, len(l))
-		for i, e := range l {
-			if n, ok := e.(float64); ok {
-				out[i] = int64(n)
-			} else {
-				out[i] = e
-			}
-		}
-		return out
-	}
-	if l := toTypeList(c["addSkillTypes"]); l != nil {
-		ge.AddSkillTypes = l
-	}
-	if l := toTypeList(c["excludeSkillTypes"]); l != nil {
-		ge.ExcludeSkillTypes = l
-	}
-	if l := toTypeList(c["requireSkillTypes"]); l != nil {
-		ge.RequireSkillTypes = l
-	}
-	if v, ok := c["levels"].([]any); ok {
-		ge.HasLevels = true
-		ge.Levels = map[float64]*SkillLevel{}
-		for i, lvv := range v {
-			lvl := &SkillLevel{Values: []float64{}}
-			var kv map[string]any
-			switch t := lvv.(type) {
-			case map[string]any:
-				kv = t
-			case *modparser.D:
-				kv = t.KV
-				for _, av := range t.Arr {
-					if n, ok := av.(float64); ok {
-						lvl.Values = append(lvl.Values, n)
-					}
-				}
-			}
-			for k, e := range kv {
-				switch k {
-				case "statInterpolation":
-					if si, ok := e.([]any); ok {
-						for _, sv := range si {
-							if n, ok := sv.(float64); ok {
-								lvl.StatInterpolation = append(lvl.StatInterpolation, n)
-							}
-						}
-					}
-				case "cost":
-					lvl.Cost = map[string]float64{}
-					if cm, ok := e.(map[string]any); ok {
-						for ck, cv := range cm {
-							if n, ok := cv.(float64); ok {
-								lvl.Cost[ck] = n
-							}
-						}
-					}
-				default:
-					// Extra holds the numeric scalars; boolean level keys
-					// stay reachable through Custom["levels"]
-					if n, ok := e.(float64); ok {
-						lvl.Extra = mapSet(lvl.Extra, k, n)
-					}
-				}
-			}
-			ge.Levels[float64(i+1)] = lvl
-		}
-	}
-}
-
-func mapSet(m map[string]float64, k string, v float64) map[string]float64 {
-	if m == nil {
-		m = map[string]float64{}
-	}
-	m[k] = v
-	return m
+	return nil
 }
 
 // LazyStatMapCopy builds the skillStatMapMeta.__index result for a stat
@@ -462,37 +500,50 @@ func LazyStatMapCopy(ge *GrantedEffect, key string) (*StatMapEntry, bool) {
 		owner = ge.StatMapOwner
 	}
 	setsGlobal := false
-	entry := copyStatMapEntry(base)
-	for i, m := range entry.Mods {
-		entry.Mods[i] = processModBlindInto(owner, m, key, &setsGlobal)
+	entry := base.Clone()
+	for _, m := range entry.Mods {
+		processModBlindInto(owner, m, key, &setsGlobal)
 	}
 	return entry, setsGlobal
 }
 
-// anyList adapts []any so nil stays nil for forEachTableValue.
-func anyList(l []any) any {
-	if l == nil {
-		return nil
+// processSkillMod is Data.lua's load-time pass over a statMap entry:
+// groups are walked into their mods, typo records are stamped as tables.
+func processSkillMod(ge *GrantedEffect, m SkillMod, statName string) {
+	switch {
+	case m.Mod != nil:
+		processMod(ge, m.Mod, statName)
+	case m.Group != nil:
+		for _, gm := range m.Group.Mods {
+			processMod(ge, gm, statName)
+		}
+	case m.Typo != nil:
+		processTypoInto(ge, m.Typo, statName, &ge.HasGlobalEffect)
 	}
-	return l
 }
 
-// forEachTableValue walks the values of a generic list ([]any) or map.
-func forEachTableValue(v any, fn func(any)) {
-	switch t := v.(type) {
-	case nil:
-	case []any:
-		for _, e := range t {
-			fn(e)
+// processModBlindInto is the statMap metatable's pass, which treats every
+// element — group or typo record included — as a mod (source key, appended
+// ActorCondition tag). The hasGlobalEffect sink is exposed for the
+// calc-time lazy-copy path.
+func processModBlindInto(ge *GrantedEffect, m SkillMod, statName string, globalFlag *bool) {
+	switch {
+	case m.Mod != nil:
+		processModInto(ge, m.Mod, statName, globalFlag)
+	case m.Group != nil:
+		g := m.Group
+		g.Source = ge.ModSource
+		for _, tag := range g.Tags {
+			if _, ok := tag.(*modparser.GlobalEffectTag); ok {
+				*globalFlag = true
+				break
+			}
 		}
-	case map[string]any:
-		for _, e := range t {
-			fn(e)
+		if notMinionStatApplies(ge, statName) {
+			g.Tags = append(g.Tags, parentActorCond())
 		}
-	case *modparser.D:
-		for _, e := range t.Arr {
-			fn(e)
-		}
+	case m.Typo != nil:
+		processTypoInto(ge, m.Typo, statName, globalFlag)
 	}
 }
 
@@ -508,108 +559,50 @@ func processMod(ge *GrantedEffect, mod *modparser.Mod, statName string) {
 func processModInto(ge *GrantedEffect, mod *modparser.Mod, statName string, globalFlag *bool) {
 	mod.Source = ge.ModSource
 	mod.SourceSet = true
-	if vm, ok := mod.Value.(map[string]any); ok {
-		if inner, ok := vm["mod"].(*modparser.Mod); ok {
-			inner.Source = "Skill:" + ge.Id
-			inner.SourceSet = true
-		}
+	if ref, ok := mod.Value.(modparser.ModRef); ok && ref.Mod != nil {
+		ref.Mod.Source = "Skill:" + ge.Id
+		ref.Mod.SourceSet = true
 	}
 	for _, tag := range mod.Tags {
-		if tm, ok := tag.(map[string]any); ok && tm["type"] == "GlobalEffect" {
+		if _, ok := tag.(*modparser.GlobalEffectTag); ok {
 			*globalFlag = true
 			break
 		}
 	}
 	if statName != "" && notMinionStatApplies(ge, statName) {
-		mod.Tags = append(mod.Tags, map[string]any{"type": "ActorCondition", "actor": "parent", "neg": true})
+		mod.Tags = append(mod.Tags, parentActorCond())
 	}
 }
 
-// processTableMod is Lua processMod over a table-shaped mod (a group, or a
-// mod whose flags slot holds a tag — #EVAL: archive parity for both: the
-// table gets a source key, and any appended ActorCondition tag lands in its
-// array part).
-func processTableMod(ge *GrantedEffect, grp *modparser.D, statName string) {
-	processTableModInto(ge, grp, statName, &ge.HasGlobalEffect)
-}
-
-func processTableModInto(ge *GrantedEffect, grp *modparser.D, statName string, globalFlag *bool) {
-	if grp.KV == nil {
-		grp.KV = map[string]any{}
+// processTypoInto is processMod over a typo record: the table gets a
+// source key, and any appended ActorCondition tag lands in its array part.
+func processTypoInto(ge *GrantedEffect, t *TypoMod, statName string, globalFlag *bool) {
+	t.Source = ge.ModSource
+	if ref, ok := t.Value.(modparser.ModRef); ok && ref.Mod != nil {
+		ref.Mod.Source = "Skill:" + ge.Id
+		ref.Mod.SourceSet = true
 	}
-	grp.KV["source"] = ge.ModSource
-	if vm, ok := grp.KV["value"].(map[string]any); ok {
-		if inner, ok := vm["mod"].(*modparser.Mod); ok {
-			inner.Source = "Skill:" + ge.Id
-			inner.SourceSet = true
-		}
-	}
-	for _, e := range grp.Arr {
-		if tm, ok := e.(map[string]any); ok && tm["type"] == "GlobalEffect" {
+	for _, tag := range t.StrayTags {
+		if _, ok := tag.(*modparser.GlobalEffectTag); ok {
 			*globalFlag = true
 			break
 		}
 	}
 	if notMinionStatApplies(ge, statName) {
-		grp.Arr = append(grp.Arr, map[string]any{"type": "ActorCondition", "actor": "parent", "neg": true})
+		t.StrayTags = append(t.StrayTags, parentActorCond())
 	}
 }
 
-// processMapMod is Lua processMod over a hash-only mod table (a mod built
-// with a nil type slot stays a plain table in the generated data).
-func processMapMod(ge *GrantedEffect, m map[string]any, statName string) {
-	m["source"] = ge.ModSource
-	if vm, ok := m["value"].(map[string]any); ok {
-		if inner, ok := vm["mod"].(*modparser.Mod); ok {
-			inner.Source = "Skill:" + ge.Id
-			inner.SourceSet = true
-		}
-	}
-	if notMinionStatApplies(ge, statName) {
-		// t_insert appends at the (empty) array part's index 1
-		for i := 1; ; i++ {
-			key := itoa(i)
-			if m[key] == nil {
-				m[key] = map[string]any{"type": "ActorCondition", "actor": "parent", "neg": true}
-				break
-			}
-		}
-	}
-}
-
-// processModBlind is the statMap metatable's pass, which treats groups as
-// mods. Returns the possibly rewrapped element.
-func processModBlind(ge *GrantedEffect, m any, statName string) any {
-	return processModBlindInto(ge, m, statName, &ge.HasGlobalEffect)
-}
-
-// processModBlindInto is processModBlind with the hasGlobalEffect sink
-// exposed, for the calc-time lazy-copy path.
-func processModBlindInto(ge *GrantedEffect, m any, statName string, globalFlag *bool) any {
-	switch t := m.(type) {
-	case *modparser.Mod:
-		processModInto(ge, t, statName, globalFlag)
-		return t
-	case *modparser.D:
-		processTableModInto(ge, t, statName, globalFlag)
-		return t
-	case []any:
-		grp := &modparser.D{Arr: t}
-		processTableModInto(ge, grp, statName, globalFlag)
-		return grp
-	case map[string]any:
-		processMapMod(ge, t, statName)
-		return t
-	default:
-		panic("data: unexpected statMap element")
-	}
+// parentActorCond is the tag processMod appends to minion-excluded stats.
+func parentActorCond() modparser.Tag {
+	return &modparser.CondTag{IsActor: true, Actor: "parent", Neg: true}
 }
 
 func notMinionStatApplies(ge *GrantedEffect, statName string) bool {
 	if len(ge.NotMinionStat) == 0 || statName == "" {
 		return false
 	}
-	if !ge.Support && !ge.SkillTypes[modConstants["SkillType.Buff"]] {
+	if !ge.Support && !ge.SkillTypes[modparser.SkillTypeBuff] {
 		return false
 	}
 	for _, n := range ge.NotMinionStat {
@@ -620,59 +613,80 @@ func notMinionStatApplies(ge *GrantedEffect, statName string) bool {
 	return false
 }
 
-// copyStatMapEntry is copyTable over one skillStatMap entry.
-func copyStatMapEntry(e *StatMapEntry) *StatMapEntry {
-	out := &StatMapEntry{}
-	for _, m := range e.Mods {
-		out.Mods = append(out.Mods, deepCopyAny(m))
+// decodeBaseMods reads one template line's structured mods: codec mods, or
+// the exporter's {"kind":"mixed"} record for a mod() call with a tag in its
+// flags slot (one template line has one).
+func decodeBaseMods(blob []byte) ([]SkillMod, error) {
+	var list []json.RawMessage
+	if err := json.Unmarshal(blob, &list); err != nil {
+		return nil, fmt.Errorf("data: bad baseMods: %w", err)
 	}
-	if e.KV != nil {
-		out.KV = deepCopyAny(e.KV).(map[string]any)
+	out := make([]SkillMod, 0, len(list))
+	for _, e := range list {
+		var probe struct {
+			Kind string          `json:"kind"`
+			Arr  []float64       `json:"arr"`
+			KV   json.RawMessage `json:"kv"`
+		}
+		if err := json.Unmarshal(e, &probe); err != nil || probe.Kind != "mixed" {
+			out = append(out, SkillMod{Mod: modparser.DecodeMod(e)})
+			continue
+		}
+		typo, err := decodeTypoMod(probe.KV, probe.Arr)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, SkillMod{Typo: typo})
 	}
-	return out
+	return out, nil
 }
 
-func deepCopyAny(v any) any {
-	switch t := v.(type) {
-	case *modparser.Mod:
-		m := *t
-		m.Tags = nil
-		for _, tag := range t.Tags {
-			m.Tags = append(m.Tags, deepCopyAny(tag))
-		}
-		if t.Value != nil {
-			m.Value = deepCopyAny(t.Value)
-		}
-		return &m
-	case map[string]any:
-		out := map[string]any{}
-		for k, e := range t {
-			out[k] = deepCopyAny(e)
-		}
-		return out
-	case []any:
-		out := make([]any, len(t))
-		for i, e := range t {
-			out[i] = deepCopyAny(e)
-		}
-		return out
-	case *modparser.D:
-		out := &modparser.D{}
-		for _, e := range t.Arr {
-			out.Arr = append(out.Arr, deepCopyAny(e))
-		}
-		if t.KV != nil {
-			out.KV = deepCopyAny(t.KV).(map[string]any)
-		}
-		return out
-	default:
-		return v
+// decodeTypoMod reads a mixed record's hash part: the mod() fields with the
+// flags slot holding a tag table ({type = ..., ...}) or a number.
+func decodeTypoMod(kv json.RawMessage, nums []float64) (*TypoMod, error) {
+	var rec struct {
+		Name         string          `json:"name"`
+		Type         string          `json:"type"`
+		Value        json.RawMessage `json:"value"`
+		Flags        json.RawMessage `json:"flags"`
+		KeywordFlags float64         `json:"keywordFlags"`
 	}
+	if err := json.Unmarshal(kv, &rec); err != nil {
+		return nil, fmt.Errorf("data: bad mixed baseMods record: %w", err)
+	}
+	t := &TypoMod{Name: rec.Name, Type: rec.Type, KeywordFlags: rec.KeywordFlags, StrayNums: nums}
+	// The value and the flags-slot tag decode through the mod codec, as the
+	// value and first tag of a carrier mod (the tag table's "type" key is
+	// the codec's "kind").
+	var tagJSON json.RawMessage
+	if err := json.Unmarshal(rec.Flags, &t.Flags); err != nil {
+		var tag map[string]json.RawMessage
+		if err := json.Unmarshal(rec.Flags, &tag); err != nil {
+			return nil, fmt.Errorf("data: bad mixed baseMods flags: %w", err)
+		}
+		tag["kind"] = tag["type"]
+		delete(tag, "type")
+		tagJSON, _ = json.Marshal(tag)
+	}
+	carrier := map[string]any{"name": "", "type": "BASE", "flags": 0, "keywordFlags": 0, "tags": []json.RawMessage{}}
+	if rec.Value != nil {
+		carrier["value"] = rec.Value
+	}
+	if tagJSON != nil {
+		carrier["tags"] = []json.RawMessage{tagJSON}
+	}
+	raw, _ := json.Marshal(carrier)
+	decoded := modparser.DecodeMod(raw)
+	t.Value = decoded.Value
+	if len(decoded.Tags) > 0 {
+		t.FlagsTag = decoded.Tags[0]
+	}
+	return t, nil
 }
 
-func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedEffect {
+func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) (*GrantedEffect, error) {
 	ge := &GrantedEffect{
-		Name:                 luaUnescape(hdr.Name),
+		Name:                 hdr.Name,
 		Hidden:               hdr.Hidden,
 		Color:                float64(hdr.Color),
 		Support:              hdr.Support,
@@ -680,55 +694,29 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedE
 		SupportGemsOnly:      hdr.SupportGemsOnly,
 		IgnoreMinionTypes:    hdr.IgnoreMinionTypes,
 		PlusVersionOf:        hdr.PlusVersionOf,
-		SkillTotemId:         nil,
 		CannotBeSupported:    hdr.CannotBeSupported,
 		StatDescriptionScope: hdr.StatDescriptionScope,
 	}
-	if hdr.Description != nil {
-		s := luaUnescape(*hdr.Description)
-		ge.Description = &s
-	}
-	if hdr.BaseTypeName != nil {
-		s := luaUnescape(*hdr.BaseTypeName)
-		ge.BaseTypeName = &s
-	}
-	ge.HasFlavour = hdr.HasFlavour
+	ge.Description = hdr.Description
+	ge.BaseTypeName = hdr.BaseTypeName
 	if hdr.HasFlavour {
-		ge.FlavourText = unescapeAll(hdr.FlavourText)
-		if ge.FlavourText == nil {
-			ge.FlavourText = []string{}
-		}
+		ge.FlavourText = emptyIfNil(hdr.FlavourText)
 	}
 	ge.BaseEffectiveness = hdr.BaseEffectiveness
 	ge.IncrementalEffectiveness = hdr.IncrementalEffectiveness
 	if hdr.Support {
-		types := func(list []string) []any {
-			out := []any{}
-			for _, s := range list {
-				out = append(out, resolveSkillType(s))
-			}
-			return out
-		}
-		ge.RequireSkillTypes = types(hdr.RequireSkillTypes)
-		ge.AddSkillTypes = types(hdr.AddSkillTypes)
-		ge.ExcludeSkillTypes = types(hdr.ExcludeSkillTypes)
+		ge.RequireSkillTypes = emptyIfNil(hdr.RequireSkillTypes)
+		ge.AddSkillTypes = emptyIfNil(hdr.AddSkillTypes)
+		ge.ExcludeSkillTypes = emptyIfNil(hdr.ExcludeSkillTypes)
 	} else {
-		ge.SkillTypes = map[int64]bool{}
-		for _, s := range hdr.SkillTypes {
-			if v, ok := resolveSkillType(s).(int64); ok {
-				ge.SkillTypes[v] = true
-			} else {
-				panic("data: unknown skill type " + s)
-			}
+		ge.SkillTypes = map[modparser.SkillTypeID]bool{}
+		for _, id := range hdr.SkillTypes {
+			ge.SkillTypes[id] = true
 		}
 		if len(hdr.MinionSkillTypes) > 0 {
-			ge.MinionSkillTypes = map[int64]bool{}
-			for _, s := range hdr.MinionSkillTypes {
-				if v, ok := resolveSkillType(s).(int64); ok {
-					ge.MinionSkillTypes[v] = true
-				} else {
-					panic("data: unknown minion skill type " + s)
-				}
+			ge.MinionSkillTypes = map[modparser.SkillTypeID]bool{}
+			for _, id := range hdr.MinionSkillTypes {
+				ge.MinionSkillTypes[id] = true
 			}
 		}
 		ge.SkillTotemId = intPtrToFloat(hdr.SkillTotemId)
@@ -744,41 +732,35 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedE
 	args := tail.ModsArgs
 	noArg := func(flag string) bool { return strings.Contains(args, flag) }
 	if !noArg("noBaseFlags") && !tail.Support {
-		ge.HasBaseFlags = true
 		ge.BaseFlags = map[string]bool{}
 		for _, f := range tail.BaseFlags {
 			ge.BaseFlags[f] = true
 		}
 	}
 	if !noArg("noBaseMods") && len(tail.BaseMods) > 0 {
-		ge.BaseMods = []any{}
-		for _, line := range tail.BaseMods {
-			if mod, ok := evalModLine(line); ok {
-				ge.BaseMods = append(ge.BaseMods, mod)
+		ge.BaseMods = []SkillMod{}
+		for _, blob := range tail.BaseMods {
+			mods, err := decodeBaseMods(blob)
+			if err != nil {
+				return nil, fmt.Errorf("data: skill %s: %w", hdr.GrantedId, err)
 			}
+			ge.BaseMods = append(ge.BaseMods, mods...)
 		}
 	}
 	if !noArg("noQualityStats") && len(tail.QualityStats) > 0 {
 		for _, s := range tail.QualityStats {
-			ge.QualityStats = append(ge.QualityStats, []any{luaUnescape(s.Id), s.Value})
+			ge.QualityStats = append(ge.QualityStats, s)
 		}
 	}
 	if !noArg("noStats") {
-		if len(tail.ConstantStats) > 0 {
-			for _, s := range tail.ConstantStats {
-				ge.ConstantStats = append(ge.ConstantStats, []any{luaUnescape(s.Id), s.Value})
-			}
+		for _, s := range tail.ConstantStats {
+			ge.ConstantStats = append(ge.ConstantStats, s)
 		}
-		ge.HasStats = true
-		ge.Stats = unescapeAll(tail.Stats)
-		if ge.Stats == nil {
-			ge.Stats = []string{}
-		}
+		ge.Stats = emptyIfNil(tail.Stats)
 		ge.NotMinionStat = tail.NotMinionStat
 	}
 	if !noArg("noLevels") {
-		ge.HasLevels = true
-		ge.Levels = map[float64]*SkillLevel{}
+		ge.Levels = map[int]*SkillLevel{}
 		for _, l := range tail.Levels {
 			lvl := &SkillLevel{Values: l.Values}
 			if lvl.Values == nil {
@@ -786,9 +768,9 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedE
 			}
 			lvl.Extra = l.Extra
 			for _, s := range l.Interp {
-				n, err := parseLuaNumber(s)
-				if err != nil {
-					panic("data: bad statInterpolation value " + s)
+				n, ok := util.Tonumber(s)
+				if !ok {
+					return nil, fmt.Errorf("data: skill %s: bad statInterpolation value %s", hdr.GrantedId, s)
 				}
 				lvl.StatInterpolation = append(lvl.StatInterpolation, n)
 			}
@@ -798,179 +780,27 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) *GrantedE
 					lvl.Cost[k] = float64(v)
 				}
 			}
-			ge.Levels[float64(l.Level)] = lvl
+			ge.Levels[int(l.Level)] = lvl
 		}
 	}
 
-	if custom := skillCustom[hdr.GrantedId]; custom != nil {
-		if custom.StatMap != nil {
-			ge.StatMap = map[string]*StatMapEntry{}
-			for k, e := range custom.StatMap {
-				ge.StatMap[k] = copyStatMapEntry(e)
-			}
+	// The template's hand-written fragment: its statMap, custom keys, and
+	// the levels/stats/skillTypes the hand-written block supplies in place
+	// of the generated ones.
+	if tpl := skillTemplates[hdr.GrantedId]; tpl != nil {
+		ge.StatMap = cloneStatMap(tpl.StatMap)
+		ge.Custom = tpl.Skill.Custom.clone()
+		if tpl.Skill.Levels != nil {
+			ge.Levels = cloneLevels(tpl.Skill.Levels)
 		}
-		if custom.Keys != nil {
-			ge.Custom = deepCopyAny(custom.Keys).(map[string]any)
+		if tpl.Skill.Stats != nil {
+			ge.Stats = cloneSlice(tpl.Skill.Stats)
 		}
-	}
-	return ge
-}
-
-// --- canon shadows (used by the archive-comparison test) ---
-
-// GrantedEffectCanon builds the plain-table shape of a skill for the
-// archive canon (statMap._grantedEffect is elided on both sides).
-func GrantedEffectCanon(ge *GrantedEffect) map[string]any {
-	if ge.FullCustom {
-		m := map[string]any{
-			"name":      ge.Name,
-			"id":        ge.Id,
-			"modSource": ge.ModSource,
-			"statMap":   ge.StatMap,
-		}
-		if ge.HasGlobalEffect {
-			m["hasGlobalEffect"] = true
-		}
-		for k, v := range ge.Custom {
-			m[k] = v
-		}
-		return m
-	}
-	m := map[string]any{
-		"name":                 ge.Name,
-		"id":                   ge.Id,
-		"modSource":            ge.ModSource,
-		"color":                ge.Color,
-		"statDescriptionScope": ge.StatDescriptionScope,
-		"statMap":              ge.StatMap,
-	}
-	if ge.Hidden {
-		m["hidden"] = true
-	}
-	if ge.Description != nil {
-		m["description"] = *ge.Description
-	}
-	if ge.BaseTypeName != nil {
-		m["baseTypeName"] = *ge.BaseTypeName
-	}
-	if ge.HasFlavour {
-		m["flavourText"] = ge.FlavourText
-	}
-	if ge.BaseEffectiveness != nil {
-		m["baseEffectiveness"] = *ge.BaseEffectiveness
-	}
-	if ge.IncrementalEffectiveness != nil {
-		m["incrementalEffectiveness"] = *ge.IncrementalEffectiveness
-	}
-	if ge.Support {
-		m["support"] = true
-		m["requireSkillTypes"] = ge.RequireSkillTypes
-		m["addSkillTypes"] = ge.AddSkillTypes
-		m["excludeSkillTypes"] = ge.ExcludeSkillTypes
-		if ge.IsTrigger {
-			m["isTrigger"] = true
-		}
-		if ge.SupportGemsOnly {
-			m["supportGemsOnly"] = true
-		}
-		if ge.IgnoreMinionTypes {
-			m["ignoreMinionTypes"] = true
-		}
-		if ge.PlusVersionOf != nil {
-			m["plusVersionOf"] = *ge.PlusVersionOf
-		}
-	} else {
-		m["skillTypes"] = ge.SkillTypes
-		if ge.MinionSkillTypes != nil {
-			m["minionSkillTypes"] = ge.MinionSkillTypes
-		}
-		if ge.SkillTotemId != nil {
-			m["skillTotemId"] = *ge.SkillTotemId
-		}
-		if ge.CastTime != nil {
-			m["castTime"] = *ge.CastTime
-		}
-		if ge.CannotBeSupported {
-			m["cannotBeSupported"] = true
+		if tpl.Skill.SkillTypes != nil {
+			ge.SkillTypes = cloneMap(tpl.Skill.SkillTypes)
 		}
 	}
-	if ge.WeaponTypes != nil {
-		m["weaponTypes"] = ge.WeaponTypes
-	}
-	if ge.HasBaseFlags {
-		m["baseFlags"] = ge.BaseFlags
-	}
-	if len(ge.BaseMods) > 0 {
-		m["baseMods"] = ge.BaseMods
-	}
-	if len(ge.QualityStats) > 0 {
-		m["qualityStats"] = ge.QualityStats
-	}
-	if len(ge.ConstantStats) > 0 {
-		m["constantStats"] = ge.ConstantStats
-	}
-	if ge.HasStats {
-		m["stats"] = ge.Stats
-		if len(ge.NotMinionStat) > 0 {
-			m["notMinionStat"] = ge.NotMinionStat
-		}
-	}
-	if ge.HasLevels {
-		m["levels"] = ge.Levels
-	}
-	if ge.HasGlobalEffect {
-		m["hasGlobalEffect"] = true
-	}
-	for k, v := range ge.Custom {
-		m[k] = v
-	}
-	return m
-}
-
-// StatMapEntryCanon merges mods and scaling keys into one table shadow.
-func StatMapEntryCanon(e *StatMapEntry) map[string]any {
-	m := map[string]any{}
-	for i, mod := range e.Mods {
-		m[itoa(i+1)] = mod
-	}
-	for k, v := range e.KV {
-		m[k] = v
-	}
-	return m
-}
-
-// SkillLevelCanon merges a level's values, extras, interpolation and cost.
-func SkillLevelCanon(l *SkillLevel) map[string]any {
-	m := map[string]any{}
-	for i, v := range l.Values {
-		m[itoa(i+1)] = v
-	}
-	for k, v := range l.Extra {
-		m[k] = v
-	}
-	if len(l.StatInterpolation) > 0 {
-		m["statInterpolation"] = l.StatInterpolation
-	}
-	if len(l.Cost) > 0 {
-		m["cost"] = l.Cost
-	}
-	return m
-}
-
-// DCanon merges a mixed table's array and hash parts.
-func DCanon(t *modparser.D) map[string]any {
-	m := map[string]any{}
-	for i, v := range t.Arr {
-		m[itoa(i+1)] = v
-	}
-	for k, v := range t.KV {
-		m[k] = v
-	}
-	return m
-}
-
-func itoa(i int) string {
-	return luaIntString(float64(i))
+	return ge, nil
 }
 
 // sanitiseText ports Common.lua's sanitiseText.

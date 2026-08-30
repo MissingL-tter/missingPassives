@@ -2,7 +2,11 @@
 
 package data
 
-import "strings"
+import (
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/modparser"
+	"strings"
+)
 
 // Colour codes from Data/Global.lua (colorCodes).
 const (
@@ -162,14 +166,34 @@ type PowerStat struct {
 	IgnoreForNodes bool          `lua:"ignoreForNodes,omitempty"`
 	ReverseSort    bool          `lua:"reverseSort,omitempty"`
 	ItemField      *string       `lua:"itemField"`
-	Transform      func(any) any `lua:"transform"`
+	Transform      TransformKind `lua:"transform"`
 }
 
 func str(s string) *string { return &s }
 
-func negate(v any) any {
-	if n, ok := v.(float64); ok {
-		return -n
+func itoa(i int) string { return util.FormatInt(float64(i)) }
+
+// TransformKind is a powerStatList entry's value transform.
+type TransformKind uint8
+
+const (
+	TransformNone     TransformKind = iota
+	TransformNegate                 // damage-taken stats sort inverted
+	TransformStripThe               // item names drop a leading "The "
+)
+
+// Apply runs the transform: TransformNegate over a number, TransformStripThe
+// over a string; other inputs pass through, as the Lua closures do.
+func (k TransformKind) Apply(v any) any {
+	switch k {
+	case TransformNegate:
+		if n, ok := v.(float64); ok {
+			return -n
+		}
+	case TransformStripThe:
+		if s, ok := v.(string); ok && len(s) >= 4 && s[:4] == "The " {
+			return s[4:]
+		}
 	}
 	return v
 }
@@ -178,12 +202,7 @@ func buildPowerStatList() []PowerStat {
 	nameField := "Name"
 	list := []PowerStat{
 		{Stat: nil, Label: "Offence/Defence", CombinedOffDef: true, IgnoreForItems: true},
-		{Stat: nil, Label: "Name", ItemField: &nameField, IgnoreForNodes: true, ReverseSort: true, Transform: func(v any) any {
-			if s, ok := v.(string); ok && len(s) >= 4 && s[:4] == "The " {
-				return s[4:]
-			}
-			return v
-		}},
+		{Stat: nil, Label: "Name", ItemField: &nameField, IgnoreForNodes: true, ReverseSort: true, Transform: TransformStripThe},
 		{Stat: str("FullDPS"), Label: "Full DPS"},
 		{Stat: str("CombinedDPS"), Label: "Combined DPS"},
 		{Stat: str("TotalDPS"), Label: "Hit DPS"},
@@ -216,11 +235,11 @@ func buildPowerStatList() []PowerStat {
 		{Stat: str("ProjectileAvoidChance"), Label: "Projectile avoid chance"},
 		{Stat: str("TotalEHP"), Label: "Effective Hit Pool"},
 		{Stat: str("SecondMinimalMaximumHitTaken"), Label: "Eff. Maximum Hit Taken"},
-		{Stat: str("PhysicalTakenHit"), Label: "Taken Phys dmg", Transform: negate},
-		{Stat: str("LightningTakenHit"), Label: "Taken Lightning dmg", Transform: negate},
-		{Stat: str("ColdTakenHit"), Label: "Taken Cold dmg", Transform: negate},
-		{Stat: str("FireTakenHit"), Label: "Taken Fire dmg", Transform: negate},
-		{Stat: str("ChaosTakenHit"), Label: "Taken Chaos dmg", Transform: negate},
+		{Stat: str("PhysicalTakenHit"), Label: "Taken Phys dmg", Transform: TransformNegate},
+		{Stat: str("LightningTakenHit"), Label: "Taken Lightning dmg", Transform: TransformNegate},
+		{Stat: str("ColdTakenHit"), Label: "Taken Cold dmg", Transform: TransformNegate},
+		{Stat: str("FireTakenHit"), Label: "Taken Fire dmg", Transform: TransformNegate},
+		{Stat: str("ChaosTakenHit"), Label: "Taken Chaos dmg", Transform: TransformNegate},
 		{Stat: str("CritChance"), Label: "Crit Chance"},
 		{Stat: str("CritMultiplier"), Label: "Crit Multiplier"},
 		{Stat: str("BleedChance"), Label: "Bleed Chance"},
@@ -334,46 +353,46 @@ var nonDamagingAilment = map[string]Ailment{
 
 // highPrecisionMods duplicates modstore's copy for now; modstore consumes
 // this package's once game-data is wired through.
-var highPrecisionMods = map[string]map[string]int{
-	"CritChance":                       {"BASE": 2},
-	"SelfCritChance":                   {"BASE": 2},
-	"LifeRegenPercent":                 {"BASE": 2},
-	"ManaRegenPercent":                 {"BASE": 2},
-	"EnergyShieldRegenPercent":         {"BASE": 2},
-	"LifeRegen":                        {"BASE": 1},
-	"ManaRegen":                        {"BASE": 1},
-	"EnergyShieldRegen":                {"BASE": 1},
-	"RageRegen":                        {"BASE": 1},
-	"LifeDegenPercent":                 {"BASE": 2},
-	"LifeDegenPercentTincture":         {"BASE": 2},
-	"ManaDegenPercent":                 {"BASE": 2},
-	"ManaDegenPercentTincture":         {"BASE": 2},
-	"EnergyShieldDegenPercent":         {"BASE": 2},
-	"LifeDegen":                        {"BASE": 1},
-	"ManaDegen":                        {"BASE": 1},
-	"EnergyShieldDegen":                {"BASE": 1},
-	"DamageLifeLeech":                  {"BASE": 2},
-	"PhysicalDamageLifeLeech":          {"BASE": 2},
-	"ElementalDamageLifeLeech":         {"BASE": 2},
-	"FireDamageLifeLeech":              {"BASE": 2},
-	"ColdDamageLifeLeech":              {"BASE": 2},
-	"LightningDamageLifeLeech":         {"BASE": 2},
-	"ChaosDamageLifeLeech":             {"BASE": 2},
-	"DamageManaLeech":                  {"BASE": 2},
-	"PhysicalDamageManaLeech":          {"BASE": 2},
-	"ElementalDamageManaLeech":         {"BASE": 2},
-	"FireDamageManaLeech":              {"BASE": 2},
-	"ColdDamageManaLeech":              {"BASE": 2},
-	"LightningDamageManaLeech":         {"BASE": 2},
-	"ChaosDamageManaLeech":             {"BASE": 2},
-	"DamageEnergyShieldLeech":          {"BASE": 2},
-	"PhysicalDamageEnergyShieldLeech":  {"BASE": 2},
-	"ElementalDamageEnergyShieldLeech": {"BASE": 2},
-	"FireDamageEnergyShieldLeech":      {"BASE": 2},
-	"ColdDamageEnergyShieldLeech":      {"BASE": 2},
-	"LightningDamageEnergyShieldLeech": {"BASE": 2},
-	"ChaosDamageEnergyShieldLeech":     {"BASE": 2},
-	"SupportManaMultiplier":            {"MORE": 4},
+var highPrecisionMods = map[string]map[modparser.ModType]int{
+	"CritChance":                       {modparser.Base: 2},
+	"SelfCritChance":                   {modparser.Base: 2},
+	"LifeRegenPercent":                 {modparser.Base: 2},
+	"ManaRegenPercent":                 {modparser.Base: 2},
+	"EnergyShieldRegenPercent":         {modparser.Base: 2},
+	"LifeRegen":                        {modparser.Base: 1},
+	"ManaRegen":                        {modparser.Base: 1},
+	"EnergyShieldRegen":                {modparser.Base: 1},
+	"RageRegen":                        {modparser.Base: 1},
+	"LifeDegenPercent":                 {modparser.Base: 2},
+	"LifeDegenPercentTincture":         {modparser.Base: 2},
+	"ManaDegenPercent":                 {modparser.Base: 2},
+	"ManaDegenPercentTincture":         {modparser.Base: 2},
+	"EnergyShieldDegenPercent":         {modparser.Base: 2},
+	"LifeDegen":                        {modparser.Base: 1},
+	"ManaDegen":                        {modparser.Base: 1},
+	"EnergyShieldDegen":                {modparser.Base: 1},
+	"DamageLifeLeech":                  {modparser.Base: 2},
+	"PhysicalDamageLifeLeech":          {modparser.Base: 2},
+	"ElementalDamageLifeLeech":         {modparser.Base: 2},
+	"FireDamageLifeLeech":              {modparser.Base: 2},
+	"ColdDamageLifeLeech":              {modparser.Base: 2},
+	"LightningDamageLifeLeech":         {modparser.Base: 2},
+	"ChaosDamageLifeLeech":             {modparser.Base: 2},
+	"DamageManaLeech":                  {modparser.Base: 2},
+	"PhysicalDamageManaLeech":          {modparser.Base: 2},
+	"ElementalDamageManaLeech":         {modparser.Base: 2},
+	"FireDamageManaLeech":              {modparser.Base: 2},
+	"ColdDamageManaLeech":              {modparser.Base: 2},
+	"LightningDamageManaLeech":         {modparser.Base: 2},
+	"ChaosDamageManaLeech":             {modparser.Base: 2},
+	"DamageEnergyShieldLeech":          {modparser.Base: 2},
+	"PhysicalDamageEnergyShieldLeech":  {modparser.Base: 2},
+	"ElementalDamageEnergyShieldLeech": {modparser.Base: 2},
+	"FireDamageEnergyShieldLeech":      {modparser.Base: 2},
+	"ColdDamageEnergyShieldLeech":      {modparser.Base: 2},
+	"LightningDamageEnergyShieldLeech": {modparser.Base: 2},
+	"ChaosDamageEnergyShieldLeech":     {modparser.Base: 2},
+	"SupportManaMultiplier":            {modparser.More: 4},
 }
 
 // WeaponTypeInfo is one data.weaponTypeInfo entry.

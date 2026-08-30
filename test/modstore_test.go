@@ -8,10 +8,13 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
 // The mod-store differential test: replays tools/dump_modstore.lua's world —
@@ -38,6 +41,28 @@ func (i *msItem) FindModifierSubstring(sub, slot string) bool {
 }
 
 type msGem struct{ tags map[string]bool }
+
+func (g *msGem) IsType(keyword string) bool { return g.tags[toLower(keyword)] }
+
+// msWeapon is the fixture weapon-data table (countsAsAll1H plus Added* keys).
+type msWeapon struct {
+	all1H bool
+	added map[string]bool
+}
+
+func (w *msWeapon) CountsAsAll1H() bool { return w.all1H }
+func (w *msWeapon) AddedCond(cond string) (added, present bool) {
+	added, present = w.added[cond]
+	return
+}
+
+// msResolver serves the archive dump's gem-name → game-id table.
+type msResolver struct{ gameIds map[string]string }
+
+func (r *msResolver) GetGameIdFromGemName(name string, includeTransfigured bool) (string, bool) {
+	id, ok := r.gameIds[toLower(name)]
+	return id, ok
+}
 
 // msMurmur is Common.lua's murmurHash2 (verified against the archive by
 // the export archive dump's tradeHashes).
@@ -101,29 +126,29 @@ func tryAny(fn func() any) (v any, errSentinel bool) {
 }
 
 type msCfgRec struct {
-	Flags            *int64             `json:"flags"`
-	KeywordFlags     *int64             `json:"keywordFlags"`
-	Source           string             `json:"source"`
-	SkillName        string             `json:"skillName"`
-	SummonSkillName  string             `json:"summonSkillName"`
-	SkillDist        *float64           `json:"skillDist"`
-	SkillPartNum     *float64           `json:"skillPartNum"`
-	SkillPartStr     *string            `json:"skillPartStr"`
-	SlotName         string             `json:"slotName"`
-	SocketColor      string             `json:"socketColor"`
-	SocketNum        *float64           `json:"socketNum"`
-	StrengthGems     *float64           `json:"strengthGems"`
-	DexterityGems    *float64           `json:"dexterityGems"`
-	IntelligenceGems *float64           `json:"intelligenceGems"`
-	Actor            string             `json:"actor"`
-	SkillCond        map[string]bool    `json:"skillCond"`
-	SkillTypes       map[string]bool    `json:"skillTypes"`
-	BaseFlags        map[string]bool    `json:"baseFlags"`
-	GeId             *string            `json:"geId"`
-	GeBaseFlags      map[string]bool    `json:"geBaseFlags"`
-	Gem              string             `json:"gem"`
-	Item             string             `json:"item"`
-	SkillStats       map[string]float64 `json:"skillStats"`
+	Flags            *modparser.ModFlag     `json:"flags"`
+	KeywordFlags     *modparser.KeywordFlag `json:"keywordFlags"`
+	Source           string                 `json:"source"`
+	SkillName        string                 `json:"skillName"`
+	SummonSkillName  string                 `json:"summonSkillName"`
+	SkillDist        *float64               `json:"skillDist"`
+	SkillPartNum     *float64               `json:"skillPartNum"`
+	SkillPartStr     *string                `json:"skillPartStr"`
+	SlotName         string                 `json:"slotName"`
+	SocketColor      string                 `json:"socketColor"`
+	SocketNum        *float64               `json:"socketNum"`
+	StrengthGems     *float64               `json:"strengthGems"`
+	DexterityGems    *float64               `json:"dexterityGems"`
+	IntelligenceGems *float64               `json:"intelligenceGems"`
+	Actor            string                 `json:"actor"`
+	SkillCond        map[string]bool        `json:"skillCond"`
+	SkillTypes       map[string]bool        `json:"skillTypes"`
+	BaseFlags        map[string]bool        `json:"baseFlags"`
+	GeId             *string                `json:"geId"`
+	GeBaseFlags      map[string]bool        `json:"geBaseFlags"`
+	Gem              string                 `json:"gem"`
+	Item             string                 `json:"item"`
+	SkillStats       map[string]float64     `json:"skillStats"`
 }
 
 type msQRes struct {
@@ -169,11 +194,11 @@ func TestModStoreAgainstReference(t *testing.T) {
 	enemyActor.DB = enemyDB
 	enemyActor.Player = playerActor
 	parentActor.DB = parentDB
-	playerActor.WeaponData1 = map[string]any{"countsAsAll1H": true, "AddedSword": true, "AddedAxe": false}
-	playerActor.WeaponData2 = map[string]any{}
+	playerActor.WeaponData1 = &msWeapon{all1H: true, added: map[string]bool{"Sword": true, "Axe": false}}
+	playerActor.WeaponData2 = &msWeapon{}
 	playerActor.MinionData = &modstore.MinionData{MonsterTags: []string{"demon", "humanoid"}}
 	playerActor.ManaEfficiency = 20
-	hasRes := float64(modparser.SkillType.HasReservation)
+	hasRes := float64(modparser.SkillTypeHasReservation)
 	playerActor.HasReservation = hasRes
 	enemyActor.HasReservation = hasRes
 	parentActor.HasReservation = hasRes
@@ -189,17 +214,20 @@ func TestModStoreAgainstReference(t *testing.T) {
 		"enemy": &enemyDB.ModStore, "parentDB": &parentDB.ModStore,
 	}
 	actorsByName := map[string]*modstore.Actor{"player": playerActor, "enemy": enemyActor, "parent": parentActor}
+	outputs := map[string]modstore.Output{}
+	outputOf := func(actor string) modstore.Output {
+		if outputs[actor] == nil {
+			outputs[actor] = modstore.Output{}
+			actorsByName[actor].Output = outputs[actor]
+		}
+		return outputs[actor]
+	}
 
 	items := map[string]*msItem{}
 	gems := map[string]*msGem{}
-	gameIds := map[string]string{}
-	modstore.Externals.GemIsType = func(gem any, keyword string) bool {
-		g := gem.(*msGem)
-		return g.tags[toLower(keyword)]
-	}
-	modstore.Externals.GetGameIdFromGemName = func(name string, includeTransfigured bool) (string, bool) {
-		id, ok := gameIds[toLower(name)]
-		return id, ok
+	resolver := &msResolver{}
+	for _, actor := range actorsByName {
+		actor.Resolver = resolver
 	}
 
 	var cfgs []*modstore.Cfg
@@ -225,15 +253,16 @@ func TestModStoreAgainstReference(t *testing.T) {
 			BaseFlags:        rec.BaseFlags,
 		}
 		if rec.SkillStats != nil {
-			cfg.SkillStats = map[string]any{}
+			stats := modstore.Output{}
 			for k, v := range rec.SkillStats {
-				cfg.SkillStats[k] = v
+				stats.SetN(k, v)
 			}
+			cfg.SkillStats = stats
 		}
 		if rec.SkillPartNum != nil {
-			cfg.SkillPart = *rec.SkillPartNum
+			cfg.SkillPart = util.Some(*rec.SkillPartNum)
 		} else if rec.SkillPartStr != nil {
-			cfg.SkillPart = *rec.SkillPartStr
+			t.Fatalf("string skill part %q: the config models numeric parts only", *rec.SkillPartStr)
 		}
 		if rec.SkillTypes != nil {
 			cfg.SkillTypes = map[float64]bool{}
@@ -258,30 +287,26 @@ func TestModStoreAgainstReference(t *testing.T) {
 	}
 
 	parseLine := func(line string) []*modparser.Mod {
-		raw, _ := modparser.Parse(line)
-		mods := make([]*modparser.Mod, len(raw))
-		for i, m := range raw {
-			mods[i] = m.(*modparser.Mod)
-		}
+		mods, _, _ := modparser.Parse(line)
 		return mods
 	}
 
 	tabCanon := func(entries []modstore.TabEntry) string {
 		arr := make([]any, len(entries))
 		for i, e := range entries {
-			arr[i] = modparser.Tag{"value": e.Value, "mod": e.Mod}
+			arr[i] = map[string]any{"value": e.Value, "mod": e.Mod}
 		}
-		return modparser.Canon(arr)
+		return luacanon.CanonMods(arr)
 	}
-	listCanon := func(vals []any) string {
-		return modparser.Canon(vals)
+	listCanon := func(vals []modparser.Value) string {
+		return luacanon.CanonMods(vals)
 	}
 	modsCanon := func(mods []*modparser.Mod) string {
 		arr := make([]any, len(mods))
 		for i, m := range mods {
 			arr[i] = m
 		}
-		return modparser.Canon(arr)
+		return luacanon.CanonMods(arr)
 	}
 	dbCanon := func(db *modstore.DB) string {
 		m := map[string]any{}
@@ -292,10 +317,14 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			m[name] = arr
 		}
-		return modparser.Canon(m)
+		return luacanon.CanonMods(m)
 	}
 
 	var corpusLines []string
+	// q records whose reference canon carries coerced numeric-string tag
+	// fields (cfg1's full canon reveals it; the other cfgs only hash).
+	coercedRecords := map[string]bool{}
+	recKey := func(names []string) string { return strings.Join(names, ",") }
 	var synthDB *modstore.DB
 	var synthMods []*modparser.Mod
 	var checked, disagree, shown int
@@ -350,9 +379,9 @@ func TestModStoreAgainstReference(t *testing.T) {
 				Vals  map[string]bool `json:"vals"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			conds := map[string]any{}
+			conds := modstore.Conditions{}
 			for k, v := range rec.Vals {
-				conds[k] = v
+				conds.Set(k, v)
 			}
 			baseOf[rec.Store].Conditions = conds
 		case "output":
@@ -361,17 +390,18 @@ func TestModStoreAgainstReference(t *testing.T) {
 				Vals  map[string]float64 `json:"vals"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			outVals := map[string]any{}
+			out := modstore.Output{}
 			for k, v := range rec.Vals {
-				outVals[k] = v
+				out.SetN(k, v)
 			}
-			actorsByName[rec.Actor].Output = outVals
+			outputs[rec.Actor] = out
+			actorsByName[rec.Actor].Output = out
 		case "gameIds":
 			var rec struct {
 				Vals map[string]string `json:"vals"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			gameIds = rec.Vals
+			resolver.gameIds = rec.Vals
 		case "items":
 			var rec struct {
 				Vals map[string]struct {
@@ -436,8 +466,8 @@ func TestModStoreAgainstReference(t *testing.T) {
 						fail("q "+field, fmt.Sprintf("%v cfg%d: want %s got %s", rec.Names, ci+1, fromArchive, f17(got)))
 					}
 				}
-				checkNum("sum BASE", want.Sb, func() float64 { return leafDB.Sum("BASE", cfg, rec.Names...) })
-				checkNum("sum INC", want.Si, func() float64 { return leafDB.Sum("INC", cfg, rec.Names...) })
+				checkNum("sum BASE", want.Sb, func() float64 { return leafDB.Sum(modparser.Base, cfg, rec.Names...) })
+				checkNum("sum INC", want.Si, func() float64 { return leafDB.Sum(modparser.Inc, cfg, rec.Names...) })
 				checkNum("more", want.Mo, func() float64 { return leafDB.More(cfg, rec.Names...) })
 
 				gotFlag, flagPanic := tryAny(func() any { return leafDB.Flag(cfg, rec.Names...) })
@@ -451,15 +481,18 @@ func TestModStoreAgainstReference(t *testing.T) {
 					fail("q flag", fmt.Sprintf("%v cfg%d: want %s got %v", rec.Names, ci+1, want.Fl, gotFlag))
 				}
 
-				gotOvr, ovrPanic := tryAny(func() any { return leafDB.Override(cfg, rec.Names...) })
+				gotOvr, ovrPanic := tryAny(func() any {
+					v, _ := leafDB.Override(cfg, rec.Names...)
+					return v
+				})
 				if string(want.Ov) == `"!"` {
 					if !ovrPanic {
 						fail("q override", fmt.Sprintf("%v cfg%d: reference errored", rec.Names, ci+1))
 					}
 				} else if ovrPanic {
 					fail("q override", fmt.Sprintf("%v cfg%d: port panicked", rec.Names, ci+1))
-				} else if modparser.Canon(gotOvr) != string(want.Ov) {
-					fail("q override", fmt.Sprintf("%v cfg%d: want %s got %s", rec.Names, ci+1, want.Ov, modparser.Canon(gotOvr)))
+				} else if luacanon.CanonMods(gotOvr) != string(want.Ov) {
+					fail("q override", fmt.Sprintf("%v cfg%d: want %s got %s", rec.Names, ci+1, want.Ov, luacanon.CanonMods(gotOvr)))
 				}
 
 				gotList, listPanic := tryAny(func() any { return listCanon(leafDB.List(cfg, rec.Names...)) })
@@ -467,11 +500,22 @@ func TestModStoreAgainstReference(t *testing.T) {
 				if !listPanic {
 					listC = gotList.(string)
 				}
-				if msHash(listC) != want.Li {
-					fail("q list", fmt.Sprintf("%v cfg%d: hash mismatch (got %s)", rec.Names, ci+1, listC))
+				// The archive hashed its own canon text; where cfg1's full
+				// canon shows the reference kept a numeric tag field as
+				// text (luacanon.NormalizeArchiveMods), every cfg's hash is
+				// over that text and cannot be normalised, so cfg1's full
+				// canon comparison is the check for the record.
+				if want.LiC != nil {
+					wantLiC := luacanon.NormalizeArchiveMods(*want.LiC)
+					if wantLiC != *want.LiC {
+						coercedRecords[recKey(rec.Names)+"|li"] = true
+					}
+					if listC != wantLiC {
+						fail("q listC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantLiC, listC))
+					}
 				}
-				if want.LiC != nil && listC != *want.LiC {
-					fail("q listC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, *want.LiC, listC))
+				if msHash(listC) != want.Li && !coercedRecords[recKey(rec.Names)+"|li"] {
+					fail("q list", fmt.Sprintf("%v cfg%d: hash mismatch (got %s)", rec.Names, ci+1, listC))
 				}
 
 				gotTab, tabPanic := tryAny(func() any { return tabCanon(leafDB.TabulateAll(cfg, rec.Names...)) })
@@ -479,14 +523,20 @@ func TestModStoreAgainstReference(t *testing.T) {
 				if !tabPanic {
 					tabC = gotTab.(string)
 				}
-				if msHash(tabC) != want.Ta {
+				if want.TaC != nil {
+					wantTaC := luacanon.NormalizeArchiveMods(*want.TaC)
+					if wantTaC != *want.TaC {
+						coercedRecords[recKey(rec.Names)+"|ta"] = true
+					}
+					if tabC != wantTaC {
+						fail("q tabC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantTaC, tabC))
+					}
+				}
+				if msHash(tabC) != want.Ta && !coercedRecords[recKey(rec.Names)+"|ta"] {
 					fail("q tab", fmt.Sprintf("%v cfg%d: hash mismatch (got %s)", rec.Names, ci+1, tabC))
 				}
-				if want.TaC != nil && tabC != *want.TaC {
-					fail("q tabC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, *want.TaC, tabC))
-				}
 
-				if got := rootDB.HasMod("BASE", cfg, rec.Names...); got != want.Ha {
+				if got := rootDB.HasMod(modparser.Base, cfg, rec.Names...); got != want.Ha {
 					fail("q hasMod", fmt.Sprintf("%v cfg%d: want %v got %v", rec.Names, ci+1, want.Ha, got))
 				}
 
@@ -576,7 +626,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 					fail("eq "+field, fmt.Sprintf("%s: want %s got %s (panic=%v)", rec.Name, fromArchive, f17(got), panicked))
 				}
 			}
-			checkNumE("sum", rec.Sb, func() float64 { return enemyDB.Sum("BASE", cfgs[7], rec.Name) })
+			checkNumE("sum", rec.Sb, func() float64 { return enemyDB.Sum(modparser.Base, cfgs[7], rec.Name) })
 			checkNumE("more", rec.Mo, func() float64 { return enemyDB.More(cfgs[8], rec.Name) })
 			gotTab, tabPanic := tryAny(func() any { return tabCanon(enemyDB.TabulateAll(cfgs[1], rec.Name)) })
 			tabC := "!"
@@ -595,6 +645,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			json.Unmarshal(lineBytes, &rec)
 			checked++
+			rec.List, rec.DB = luacanon.NormalizeArchiveMods(rec.List), luacanon.NormalizeArchiveMods(rec.DB)
 			scale, _ := strconv.ParseFloat(rec.Scale, 64)
 			list := modstore.NewList(nil)
 			for _, mod := range parseLine(rec.Line) {
@@ -617,6 +668,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			json.Unmarshal(lineBytes, &rec)
 			checked++
+			rec.List = luacanon.NormalizeArchiveMods(rec.List)
 			list := modstore.NewList(nil)
 			for _, mod := range parseLine(rec.Line) {
 				list.MergeMod(mod, false)
@@ -635,20 +687,21 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			json.Unmarshal(lineBytes, &rec)
 			checked++
+			rec.Base, rec.DB = luacanon.NormalizeArchiveMods(rec.Base), luacanon.NormalizeArchiveMods(rec.DB)
 			base := modstore.NewList(nil)
 			db := modstore.NewDB(base)
 			for _, mod := range parseLine(rec.Line) {
 				base.AddMod(mod)
 			}
 			for _, mod := range parseLine(rec.Line) {
-				repl := modparser.CopyMod(mod)
-				if v, ok := repl.Value.(float64); ok {
+				repl := mod.Clone()
+				if v, ok := repl.Value.(modparser.Num); ok {
 					repl.Value = v + 100
 				}
 				if !db.ReplaceModInternal(repl) {
 					db.AddMod(repl)
 				}
-				conv := modparser.CopyMod(mod)
+				conv := mod.Clone()
 				conv.Name = mod.Name + "X"
 				if !db.ConvertModInternal(mod.Name, conv) {
 					db.AddMod(conv)
@@ -666,7 +719,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 				Stat  string `json:"stat"`
 			}
 			json.Unmarshal(lineBytes, &rec)
-			actorsByName[rec.Actor].Output[rec.Stat] = math.NaN()
+			outputOf(rec.Actor).SetN(rec.Stat, math.NaN())
 		case "outputSet":
 			var rec struct {
 				Actor string `json:"actor"`
@@ -675,24 +728,28 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			json.Unmarshal(lineBytes, &rec)
 			n, _ := strconv.ParseFloat(rec.Val, 64)
-			actorsByName[rec.Actor].Output[rec.Stat] = n
+			outputOf(rec.Actor).SetN(rec.Stat, n)
 		case "synth":
 			var rec struct {
 				Spec string `json:"spec"`
 			}
 			json.Unmarshal(lineBytes, &rec)
+			// One synthetic value carries an arbitrary extra key ("other")
+			// beside keyOfScaledMod; the typed record has no slot for it and
+			// the scaling under test does not read it.
+			rec.Spec = strings.Replace(rec.Spec, `"other":"x",`, "", 1)
 			var m map[string]any
 			if err := json.Unmarshal([]byte(rec.Spec), &m); err != nil {
 				t.Fatalf("bad synth spec: %v", err)
 			}
-			mod := decodeCanonMod(m)
+			mod := luacanon.ModFromTable(m)
 			if synthDB == nil {
 				synthDB = modstore.NewDB(midList)
 				synthDB.Actor = playerActor
 			}
 			synthDB.AddMod(mod)
 			synthMods = append(synthMods, mod)
-			if got := modparser.Canon(mod); got != rec.Spec {
+			if got := luacanon.CanonMods(mod); got != luacanon.NormalizeArchiveMods(rec.Spec) {
 				fail("synth spec", fmt.Sprintf("decode round-trip:\n  want %s\n  got  %s", rec.Spec, got))
 			}
 		case "sq":
@@ -724,8 +781,9 @@ func TestModStoreAgainstReference(t *testing.T) {
 						fail("sq "+field, fmt.Sprintf("%s cfg%d: want %s got %s (panic=%v)", rec.Name, ci+1, fromArchive, f17(got), panicked))
 					}
 				}
-				checkSyn("sum BASE", want.Sb, func() float64 { return synthDB.Sum("BASE", cfg, names...) })
-				checkSyn("sum INC", want.Si, func() float64 { return synthDB.Sum("INC", cfg, names...) })
+				checkSyn("sum BASE", want.Sb, func() float64 { return synthDB.Sum(modparser.Base, cfg, names...) })
+				checkSyn("sum INC", want.Si, func() float64 { return synthDB.Sum(modparser.Inc, cfg, names...) })
+				want.Ta = strings.ReplaceAll(want.Ta, `"other":"x",`, "") // see the synth case
 				if want.Ta != "skip" && want.Ta != "\"skip\"" {
 					gotTab, tabPanic := tryAny(func() any { return tabCanon(synthDB.TabulateAll(cfg, names...)) })
 					tabC := "!"
@@ -744,9 +802,10 @@ func TestModStoreAgainstReference(t *testing.T) {
 			json.Unmarshal(lineBytes, &rec)
 			checked++
 			list := modstore.NewList(nil)
-			list.ScaleAddMod(modparser.CopyMod(synthMods[len(synthMods)-1]), 2.5, false)
-			list.ScaleAddMod(modparser.CopyMod(synthMods[19]), 2.5, false)
-			list.ScaleAddMod(modparser.CopyMod(synthMods[18]), 2.5, false)
+			list.ScaleAddMod(synthMods[len(synthMods)-1].Clone(), 2.5, false)
+			list.ScaleAddMod(synthMods[19].Clone(), 2.5, false)
+			list.ScaleAddMod(synthMods[18].Clone(), 2.5, false)
+			rec.List = strings.Replace(rec.List, `"other":"x",`, "", 1)
 			if got := modsCanon(list.Mods); got != rec.List {
 				fail("synthScale", fmt.Sprintf("\n  want %s\n  got  %s", rec.List, got))
 			}
@@ -776,7 +835,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 				}
 			}
 			for name, wantCanon := range rec.Map {
-				if got := modsCanon(keystoneMods[name]); got != wantCanon {
+				if got := modsCanon(keystoneMods[name]); got != luacanon.NormalizeArchiveMods(wantCanon) {
 					fail("keystones map", fmt.Sprintf("%s:\n  want %s\n  got  %s", name, wantCanon, got))
 				}
 			}
@@ -786,12 +845,12 @@ func TestModStoreAgainstReference(t *testing.T) {
 				if (i+1)%2 == 0 {
 					src = "Tree:node"
 				}
-				db.AddMod(&modparser.Mod{Name: "Keystone", Type: "LIST", Value: ksName, Source: src, SourceSet: true})
+				db.AddMod(&modparser.Mod{Name: "Keystone", Type: modparser.List, Value: modparser.Str(ksName), Source: src, SourceSet: true})
 				if (i+1)%3 == 0 {
-					db.AddMod(&modparser.Mod{Name: "Keystone", Type: "LIST", Value: ksName, Source: "Item:6:Ring", SourceSet: true})
+					db.AddMod(&modparser.Mod{Name: "Keystone", Type: modparser.List, Value: modparser.Str(ksName), Source: "Item:6:Ring", SourceSet: true})
 				}
 			}
-			db.AddMod(&modparser.Mod{Name: "Keystone", Type: "LIST", Value: "UnknownKeystone", Source: "Tree:x", SourceSet: true})
+			db.AddMod(&modparser.Mod{Name: "Keystone", Type: modparser.List, Value: modparser.Str("UnknownKeystone"), Source: "Tree:x", SourceSet: true})
 			env := &modstore.KeystoneEnv{KeystoneMods: keystoneMods}
 			modstore.MergeKeystones(env, db)
 			var added []string
@@ -802,7 +861,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 			if fmt.Sprintf("%v", added) != fmt.Sprintf("%v", rec.Added) {
 				fail("keystones added", fmt.Sprintf("want %v got %v", rec.Added, added))
 			}
-			if got := dbCanon(db); got != rec.DB {
+			if got := dbCanon(db); got != luacanon.NormalizeArchiveMods(rec.DB) {
 				fail("keystones db", fmt.Sprintf("db:\n  want %s\n  got  %s", rec.DB, got))
 			}
 		}
@@ -833,65 +892,4 @@ func sortStrings(s []string) {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
 	}
-}
-
-// decodeCanonVal turns canon JSON back into the runtime value shapes:
-// objects with consecutive numeric keys become []any, mod-shaped objects
-// become *modparser.Mod, everything else a Tag map.
-func decodeCanonVal(v any) any {
-	m, ok := v.(map[string]any)
-	if !ok {
-		return v
-	}
-	if _, hasName := m["name"]; hasName {
-		if _, hasType := m["type"]; hasType {
-			if _, hasFlags := m["flags"]; hasFlags {
-				return decodeCanonMod(m)
-			}
-		}
-	}
-	numeric := len(m) > 0
-	for i := 1; i <= len(m); i++ {
-		if _, ok := m[strconv.Itoa(i)]; !ok {
-			numeric = false
-			break
-		}
-	}
-	if numeric {
-		out := make([]any, len(m))
-		for i := 1; i <= len(m); i++ {
-			out[i-1] = decodeCanonVal(m[strconv.Itoa(i)])
-		}
-		return out
-	}
-	out := modparser.Tag{}
-	for k, e := range m {
-		out[k] = decodeCanonVal(e)
-	}
-	return out
-}
-
-func decodeCanonMod(m map[string]any) *modparser.Mod {
-	mod := &modparser.Mod{
-		Name:         m["name"].(string),
-		Type:         m["type"].(string),
-		Flags:        int64(m["flags"].(float64)),
-		KeywordFlags: int64(m["keywordFlags"].(float64)),
-	}
-	if s, ok := m["source"].(string); ok {
-		mod.Source = s
-		mod.SourceSet = true
-	}
-	if s, ok := m["sourceSlot"].(string); ok {
-		mod.SourceSlot = s
-	}
-	mod.Value = decodeCanonVal(m["value"])
-	for i := 1; ; i++ {
-		tv, ok := m[strconv.Itoa(i)]
-		if !ok {
-			break
-		}
-		mod.Tags = append(mod.Tags, decodeCanonVal(tv))
-	}
-	return mod
 }

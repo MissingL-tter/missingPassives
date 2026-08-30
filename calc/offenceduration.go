@@ -28,74 +28,74 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 	if env.ModeEffective {
 		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
-	mineDur := truthy(skillData["mineDurationAppliesToSkill"])
+	mineDur := skillData.Flag("mineDurationAppliesToSkill")
 
 	durationMod := Mod(skillModList, skillCfg, optName(mineDur, []string{"Duration", "PrimaryDuration"}, "MineDuration")...)
 	durationMod = math.Max(durationMod, 0)
-	output["DurationMod"] = durationMod
+	output.SetN("DurationMod", durationMod)
 
-	durationBase := anyNum(skillData["duration"]) + skillModList.Sum("BASE", skillCfg, "Duration", "PrimaryDuration")
+	durationBase := skillData.N("duration") + skillModList.Sum(modparser.Base, skillCfg, "Duration", "PrimaryDuration")
 	permanent := activeSkill.Minion != nil && skillModList.Flag(skillCfg, activeSkill.Minion.Type+"PermanentDuration")
 	if durationBase > 0 && !permanent {
 		duration := durationBase * durationMod
-		if truthy(skillData["debuff"]) {
+		if skillData.Flag("debuff") {
 			duration *= debuffDurationMult
 		}
-		output["Duration"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output.SetN("Duration", math.Ceil(duration*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	durationBase = anyNum(skillData["durationSecondary"]) + skillModList.Sum("BASE", skillCfg, "Duration", "SecondaryDuration")
+	durationBase = skillData.N("durationSecondary") + skillModList.Sum(modparser.Base, skillCfg, "Duration", "SecondaryDuration")
 	if durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, optName(mineDur, []string{"Duration", "SecondaryDuration"}, "MineDuration")...), 0)
 		duration := durationBase * dm
-		if truthy(skillData["debuffSecondary"]) {
+		if skillData.Flag("debuffSecondary") {
 			duration *= debuffDurationMult
 		}
-		output["DurationSecondary"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output.SetN("DurationSecondary", math.Ceil(duration*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	durationBase = anyNum(skillData["durationTertiary"]) + skillModList.Sum("BASE", skillCfg, "Duration", "TertiaryDuration")
+	durationBase = skillData.N("durationTertiary") + skillModList.Sum(modparser.Base, skillCfg, "Duration", "TertiaryDuration")
 	if durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, optName(mineDur, []string{"Duration", "TertiaryDuration"}, "MineDuration")...), 0)
 		duration := durationBase * dm
-		if truthy(skillData["debuffTertiary"]) {
+		if skillData.Flag("debuffTertiary") {
 			duration *= debuffDurationMult
 		}
-		output["DurationTertiary"] = math.Ceil(duration*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output.SetN("DurationTertiary", math.Ceil(duration*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	if durationBase = anyNum(skillData["auraDuration"]); durationBase > 0 {
+	if durationBase = skillData.N("auraDuration"); durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, "Duration"), 0)
-		output["AuraDuration"] = math.Ceil(durationBase*dm*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output.SetN("AuraDuration", math.Ceil(durationBase*dm*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	if durationBase = anyNum(skillData["reserveDuration"]); durationBase > 0 {
+	if durationBase = skillData.N("reserveDuration"); durationBase > 0 {
 		dm := math.Max(Mod(skillModList, skillCfg, "Duration"), 0)
-		output["ReserveDuration"] = math.Ceil(durationBase*dm*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+		output.SetN("ReserveDuration", math.Ceil(durationBase*dm*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 	}
-	if durationBase = anyNum(skillData["soulPreventionDuration"]); durationBase > 0 {
+	if durationBase = skillData.N("soulPreventionDuration"); durationBase > 0 {
 		names := []string{"SoulGainPreventionDuration"}
-		names = optName(truthy(skillData["skillEffectAppliesToSoulGainPrevention"]), names, "Duration")
+		names = optName(skillData.Flag("skillEffectAppliesToSoulGainPrevention"), names, "Duration")
 		names = optName(mineDur, names, "MineDuration")
 		dm := math.Max(Mod(skillModList, skillCfg, names...), 0)
-		output["SoulGainPreventionDuration"] = math.Max(math.Ceil(durationBase*dm*data.Misc.ServerTickRate), 1) / data.Misc.ServerTickRate
+		output.SetN("SoulGainPreventionDuration", math.Max(math.Ceil(durationBase*dm*data.Misc.ServerTickRate), 1)/data.Misc.ServerTickRate)
 	}
 	totemDurationMod := math.Max(Mod(skillModList, skillCfg, "TotemDuration"), 0)
-	output["TotemDurationMod"] = totemDurationMod
-	totemDurationBase := skillModList.Sum("BASE", skillCfg, "TotemDuration")
-	output["TotemDuration"] = math.Ceil(totemDurationBase*totemDurationMod*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
+	output.SetN("TotemDurationMod", totemDurationMod)
+	totemDurationBase := skillModList.Sum(modparser.Base, skillCfg, "TotemDuration")
+	output.SetN("TotemDuration", math.Ceil(totemDurationBase*totemDurationMod*data.Misc.ServerTickRate)/data.Misc.ServerTickRate)
 
 	impaleDurationMod := math.Max(Mod(skillModList, skillCfg, "ImpaleDuration"), 0)
-	output["ImpaleDurationMod"] = impaleDurationMod
+	output.SetN("ImpaleDurationMod", impaleDurationMod)
 	impaleDurationBase := data.CharacterConstants["impaled_debuff_base_duration_ms"] / 1000
-	output["ImpaleDuration"] = math.Ceil(impaleDurationBase*impaleDurationMod*data.Misc.ServerTickRate*debuffDurationMult) / data.Misc.ServerTickRate
+	output.SetN("ImpaleDuration", math.Ceil(impaleDurationBase*impaleDurationMod*data.Misc.ServerTickRate*debuffDurationMult)/data.Misc.ServerTickRate)
 
 	// Skill uptime
 	// exclude vaal skills as we currently don't support soul generation or
 	// gain prevention.
-	if !activeSkill.SkillTypes[modparser.SkillType.Vaal] {
-		cooldown := outNum(output, "Cooldown")
+	if !activeSkill.SkillTypes[modparser.SkillTypeVaal] {
+		cooldown := output.N("Cooldown")
 		// #EVAL: "reserveDuration" is lowercase in the reference's list
 		// while the output key is "ReserveDuration", so that entry never
 		// finds a duration and never writes reserveDurationUptime.
 		for _, durationType := range []string{"Duration", "DurationSecondary", "DurationTertiary", "AuraDuration", "reserveDuration"} {
-			duration := outNum(output, durationType)
+			duration := output.N(durationType)
 			if duration != 0 && cooldown != 0 {
 				var uptime float64
 				if skillModList.Flag(skillCfg, "NoCooldownRecoveryInDuration") {
@@ -104,7 +104,7 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 					uptime = duration / cooldown
 				}
 				uptime = math.Min(uptime, 1)
-				output[durationType+"Uptime"] = uptime * 100
+				output.SetN(durationType+"Uptime", uptime*100)
 			}
 		}
 	}

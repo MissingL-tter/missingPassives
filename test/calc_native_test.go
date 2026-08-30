@@ -29,7 +29,7 @@ func copyMods(mods []*modparser.Mod) []*modparser.Mod {
 	out := make([]*modparser.Mod, len(mods))
 	for i, m := range mods {
 		if m != nil {
-			out[i] = modparser.CopyMod(m)
+			out[i] = m.Clone()
 		}
 	}
 	return out
@@ -40,20 +40,20 @@ func copyMods(mods []*modparser.Mod) []*modparser.Mod {
 func nodeInputOf(n *tree.SpecNode) *calc.NodeInput {
 	in := &calc.NodeInput{
 		ID:                   float64(n.ID()),
-		Type:                 n.Type(),
+		Type:                 n.Type().String(),
 		Name:                 n.EffectiveName(),
 		DN:                   strPtr(n.Dn),
 		DistanceToClassStart: n.DistanceToClassStart,
 		ModList:              copyMods(referenceOrderModList(n)),
 	}
 	if n.KeystoneMod != nil {
-		in.KeystoneMod = modparser.CopyMod(n.KeystoneMod)
+		in.KeystoneMod = n.KeystoneMod.Clone()
 	}
 	if n.IsTattoo {
 		in.IsTattoo = truePtr(true)
 	}
 	if n.OverrideType != "" {
-		ot := n.OverrideType
+		ot := string(n.OverrideType)
 		in.OverrideType = &ot
 	}
 	if n.ConqueredBy != nil {
@@ -101,7 +101,7 @@ func nativeSpecInput(spec *tree.Spec, items map[int]*item.Item) *calc.SpecInput 
 		out.AllocatedMasteryTypes[k] = v
 	}
 	for k, v := range spec.AllocatedTattooTypes {
-		out.AllocatedTattooTypes[k] = v
+		out.AllocatedTattooTypes[string(k)] = v
 	}
 	return out
 }
@@ -157,13 +157,9 @@ func applyNativeBuild(t *testing.T, buildKey, variant string, in *calc.BuildInpu
 		tab.UpdateSocketGroups(func(slotName string) *item.Item { return slotSel[slotName] })
 		native := &calc.SkillsTabInput{ImbuedSupportBySlot: map[string]string{}}
 		for _, group := range tab.SocketGroupList {
-			g := &calc.SocketGroupInput{KV: group.KV}
+			g := &calc.SocketGroupInput{SocketGroup: group}
 			for _, gem := range group.GemList {
-				g.GemList = append(g.GemList, &calc.SocketGemInput{
-					KV:              gem.KV,
-					GemDataID:       gemDataID(gem),
-					GrantedEffectID: grantedEffectID(gem),
-				})
+				g.GemList = append(g.GemList, &calc.SocketGemInput{Gem: gem})
 			}
 			native.SocketGroups = append(native.SocketGroups, g)
 		}

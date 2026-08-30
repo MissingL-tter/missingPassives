@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -91,16 +92,16 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 		mult := floorDec(skillModList.More(skillCfg, "SupportManaMultiplier"), 4)
 		// First pass to calculate base costs. Used for cost conversion
 		// (e.g. Petrified Blood)
-		additionalLifeCost := skillModList.Sum("BASE", skillCfg, "ManaCostAsLifeCost") / 100
-		additionalESCost := skillModList.Sum("BASE", skillCfg, "ManaCostAsEnergyShieldCost") / 100
-		hybridLifeCost := skillModList.Sum("BASE", skillCfg, "HybridManaAndLifeCost_Life") / 100
+		additionalLifeCost := skillModList.Sum(modparser.Base, skillCfg, "ManaCostAsLifeCost") / 100
+		additionalESCost := skillModList.Sum(modparser.Base, skillCfg, "ManaCostAsEnergyShieldCost") / 100
+		hybridLifeCost := skillModList.Sum(modparser.Base, skillCfg, "HybridManaAndLifeCost_Life") / 100
 		gel := activeSkill.ActiveEffect.GrantedEffectLevel
 
 		for _, resource := range costOrder {
 			val := costs[resource]
 			skillCost, hasSkillCost := 0.0, false
-			if ov := skillModList.Override(skillCfg, "Base"+resource+"CostOverride"); truthy(ov) {
-				skillCost, hasSkillCost = anyNum(ov), true
+			if ov, ok := skillModList.Override(skillCfg, "Base"+resource+"CostOverride"); ok {
+				skillCost, hasSkillCost = valueNum(ov), true
 			} else if gel != nil && gel.Cost != nil && !env.TriggeredCostWipes[gel] {
 				// ProcessSocketGroup wipes the level's cost table for a
 				// triggered item-granted skill; the replay records that mark
@@ -111,26 +112,26 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 			}
 			baseCost := 0.0
 			if hasSkillCost {
-				baseCost = roundDec(skillCost/costDivisor(resource), 2)
+				baseCost = util.RoundHalfUp(skillCost/costDivisor(resource), 2)
 			}
 			// Flat cost from gem e.g. Divine Blessing
-			baseCostNoMult := skillModList.Sum("BASE", skillCfg, resource+"CostNoMult")
+			baseCostNoMult := skillModList.Sum(modparser.Base, skillCfg, resource+"CostNoMult")
 			divineBlessingCorrection := 0.0
 			if val.upfront {
-				baseCost += skillModList.Sum("BASE", skillCfg, resource+"CostBase") // Rage Cost
-				val.totalCost = skillModList.Sum("BASE", skillCfg, resource+"Cost", "Cost")
-				if resource == "Mana" && activeSkill.SkillTypes[modparser.SkillType.ReservationBecomesCost] && !val.percent &&
+				baseCost += skillModList.Sum(modparser.Base, skillCfg, resource+"CostBase") // Rage Cost
+				val.totalCost = skillModList.Sum(modparser.Base, skillCfg, resource+"Cost", "Cost")
+				if resource == "Mana" && activeSkill.SkillTypes[modparser.SkillTypeReservationBecomesCost] && !val.percent &&
 					!skillModList.Flag(skillCfg, "CostESInsteadOfManaOrLife") && !skillModList.Flag(skillCfg, "CostLifeInsteadOfMana") {
 					// Divine Blessing / Totem auras
 					reservedFlat := skillDataOrLevel(activeSkill.SkillData, gel, val.text+"ReservationFlat")
 					baseCost += reservedFlat
 					reservedPercent := skillDataOrLevel(activeSkill.SkillData, gel, val.text+"ReservationPercent")
-					baseCost += math.Floor(outNum(output, resource) * reservedPercent / 100)
+					baseCost += math.Floor(output.N(resource) * reservedPercent / 100)
 					// Divine Blessing / Totem aura skills that have a percent
 					// reservation, round instead of floor the value. This
 					// corrects the final result if it would round up
-					divineBlessingCorrection = roundDec(outNum(output, resource)*reservedPercent/100*mult, 0) -
-						math.Floor(outNum(output, resource)*reservedPercent/100*mult)
+					divineBlessingCorrection = util.RoundHalfUp(output.N(resource)*reservedPercent/100*mult, 0) -
+						math.Floor(output.N(resource)*reservedPercent/100*mult)
 				}
 			}
 			val.baseCost += baseCost
@@ -152,7 +153,7 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 					manaType.baseCostNoMult = 0
 				} else if (additionalLifeCost > 0 || hybridLifeCost > 0) && !skillModList.Flag(skillCfg, "CostESInsteadOfManaOrLife") {
 					val.baseCost = manaType.baseCost
-					val.finalBaseCost += roundDec(manaType.finalBaseCost*(hybridLifeCost+additionalLifeCost), 0)
+					val.finalBaseCost += util.RoundHalfUp(manaType.finalBaseCost*(hybridLifeCost+additionalLifeCost), 0)
 				}
 			case "ES":
 				manaType := costs[strings.Replace(resource, "ES", "Mana", -1)]
@@ -171,7 +172,7 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 					lifeType.baseCostNoMult = 0
 				} else if additionalESCost > 0 {
 					val.baseCost = manaType.baseCost
-					val.finalBaseCost += roundDec(manaType.finalBaseCost*additionalESCost, 0)
+					val.finalBaseCost += util.RoundHalfUp(manaType.finalBaseCost*additionalESCost, 0)
 				}
 			case "Rage":
 				if skillModList.Flag(skillCfg, "CostRageInsteadOfSouls") { // Hateforge
@@ -193,7 +194,7 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 				resource = strings.Replace(resource, "Minute", "Second", -1)
 			}
 			hasCost := val.baseCost > 0 || val.totalCost > 0 || val.baseCostNoMult > 0 || val.finalBaseCost > 0
-			output[resource+"HasCost"] = hasCost
+			output.SetFlag(resource+"HasCost", hasCost)
 			costName := resource + "Cost"
 			costNameRaw := costName + "Raw"
 			moreType := 1.0
@@ -204,11 +205,11 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 				cost := val.finalBaseCost
 				moreType = skillModList.More(skillCfg, val.typ+"Cost")
 				moreCost = skillModList.More(skillCfg, "Cost")
-				inc = skillModList.Sum("INC", skillCfg, val.typ+"Cost", "Cost")
+				inc = skillModList.Sum(modparser.Inc, skillCfg, val.typ+"Cost", "Cost")
 				if val.hasBaseCostRaw {
-					output[costNameRaw] = math.Max(0, math.Max(0, (1+inc/100)*val.baseCostRaw*moreType*moreCost/costEfficiency)+val.totalCost)
+					output.SetN(costNameRaw, math.Max(0, math.Max(0, (1+inc/100)*val.baseCostRaw*moreType*moreCost/costEfficiency)+val.totalCost))
 				} else {
-					delete(output, costNameRaw)
+					output.Del(costNameRaw)
 				}
 				if inc < 0 {
 					cost = math.Max(0, math.Ceil((1+inc/100)*cost))
@@ -231,24 +232,24 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 				if val.typ == "Mana" && hybridLifeCost > 0 { // Life/Mana Mastery
 					cost = math.Max(0, math.Floor((1-hybridLifeCost)*cost))
 					if val.hasBaseCostRaw {
-						output[costNameRaw] = math.Max(0, (1-hybridLifeCost)*outNum(output, costNameRaw))
+						output.SetN(costNameRaw, math.Max(0, (1-hybridLifeCost)*output.N(costNameRaw)))
 					}
 				}
-				output[costName] = cost
+				output.SetN(costName, cost)
 			} else {
 				moreType = skillModList.More(skillCfg, val.typ+"Cost")
-				inc = skillModList.Sum("INC", skillCfg, val.typ+"Cost")
+				inc = skillModList.Sum(modparser.Inc, skillCfg, val.typ+"Cost")
 				cost := math.Floor(val.baseCost + val.baseCostNoMult)
 				cost = math.Max(0, (1+inc/100)*cost)
 				cost = math.Max(0, moreType*cost)
 				// Apply cost efficiency for unaffected costs too
 				cost = math.Max(0, cost/costEfficiency)
 				cost = math.Max(0, cost+val.totalCost)
-				output[costName] = cost
+				output.SetN(costName, cost)
 				if val.hasBaseCostRaw {
-					output[costNameRaw] = math.Max(0, math.Max(0, (1+inc/100)*(val.baseCostRaw+val.baseCostNoMult)*moreType/costEfficiency)+val.totalCost)
+					output.SetN(costNameRaw, math.Max(0, math.Max(0, (1+inc/100)*(val.baseCostRaw+val.baseCostNoMult)*moreType/costEfficiency)+val.totalCost))
 				} else {
-					delete(output, costNameRaw)
+					output.Del(costNameRaw)
 				}
 			}
 		}
@@ -258,22 +259,22 @@ func (env *Env) offenceCosts(c *offenceCtx) {
 	// Note: Sacrificial Zeal grants Added Spell Physical Damage equal to 25%
 	// of the Skill's Mana Cost, and causes you to take Physical Damage over
 	// Time, for 4 seconds
-	if skillModList.Flag(nil, "Condition:SacrificialZeal") && truthy(output["ManaHasCost"]) {
+	if skillModList.Flag(nil, "Condition:SacrificialZeal") && output.Flag("ManaHasCost") {
 		multiplier := 0.25
-		skillModList.AddMod(newMod("PhysicalMin", "BASE", math.Floor(outNum(output, "ManaCost")*multiplier), "Sacrificial Zeal", modparser.ModFlag.Spell))
-		skillModList.AddMod(newMod("PhysicalMax", "BASE", math.Floor(outNum(output, "ManaCost")*multiplier), "Sacrificial Zeal", modparser.ModFlag.Spell))
+		skillModList.AddMod(newModSF("PhysicalMin", modparser.Base, modparser.Num(math.Floor(output.N("ManaCost")*multiplier)), "Sacrificial Zeal", modparser.FlagSpell, modparser.KeywordNone))
+		skillModList.AddMod(newModSF("PhysicalMax", modparser.Base, modparser.Num(math.Floor(output.N("ManaCost")*multiplier)), "Sacrificial Zeal", modparser.FlagSpell, modparser.KeywordNone))
 	}
 
-	env.runSkillFunc(c, "preDamageFunc")
+	env.runSkillFunc(c, data.CallbackPreDamage)
 
 	env.offenceConversion(c)
 }
 
 // skillDataOrLevel is `skillData[key] or grantedEffectLevel[key] or 0`,
 // honouring a present 0 in either (0 is truthy in Lua).
-func skillDataOrLevel(sd map[string]any, gel *data.SkillLevel, key string) float64 {
-	if v, ok := sd[key]; ok && v != nil && v != false {
-		return anyNum(v)
+func skillDataOrLevel(sd *SkillData, gel *data.SkillLevel, key string) float64 {
+	if v := sd.Get(key); v.Truthy() {
+		return v.Num()
 	}
 	if v, ok := lvlExtra(gel, key); ok {
 		return v

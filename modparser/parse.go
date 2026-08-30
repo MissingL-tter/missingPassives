@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 // The scan tables, built once. specialModList is assembled exactly as the
@@ -30,19 +32,19 @@ var (
 	jewelFuncKeys = sortedJewelKeys()
 )
 
-func buildSpecialTable() *scanTable {
+func buildSpecialTable() *scanTable[modsValue] {
 	// The reference anchors its literal entries (and the keystone entries added
 	// just before) at ModParser.lua:5887-5891, and only AFTERWARDS the gem loop
 	// at 6045 adds per-skill entries carrying their own partial anchoring.
-	merged := map[string]any{}
-	for _, part := range []map[string]any{
+	merged := map[string]modsValue{}
+	for _, part := range []map[string]modsValue{
 		specialModListData, specialModListHand, keystoneSpecialMods(),
 	} {
 		for k, v := range part {
 			merged[k] = v
 		}
 	}
-	anchored := make(map[string]any, len(merged)+len(gemSpecialMods))
+	anchored := make(map[string]modsValue, len(merged)+len(gemSpecialMods))
 	for k, v := range merged {
 		anchored["^"+k+"$"] = v
 	}
@@ -61,24 +63,38 @@ func sortedJewelKeys() []string {
 	return keys
 }
 
-// jewelEntryValue is what a JewelFunc modifier carries: the function (or its
-// factory result) plus the type label — canonically {"func":…, "type":…}.
-func (e jewelFuncEntry) tagValue(c caps) Tag {
+// value is what a JewelFunc modifier carries: the function (or its factory
+// result) plus the type label and the identity FormatValue spells.
+func (e jewelFuncEntry) value(key string, c caps) JewelFn {
 	if e.factory != nil {
-		return Tag{"func": e.factory(c), "type": e.typ}
+		return JewelFn{Func: e.factory(c), Type: e.typ, ID: JewelFnID(key, c...)}
 	}
-	return Tag{"func": e.nodeFn, "type": e.typ}
+	return JewelFn{Func: e.nodeFn, Type: e.typ, ID: JewelFnID(key)}
 }
+
+// JewelFnID builds a JewelFn.ID from the table key that produced the
+// function and the captures its factory closed over. '/' and '}' are folded
+// out because the mod text separates params with '/' and closes a tag with
+// '}'.
+func JewelFnID(key string, caps ...string) string {
+	if len(caps) > 0 {
+		key += "(" + strings.Join(caps, ",") + ")"
+	}
+	return jewelIDUnsafe.Replace(key)
+}
+
+var jewelIDUnsafe = strings.NewReplacer("/", "_", "}", "_")
 
 // Parse runs the reference's two-pass protocol over one line of modifier text:
 // pass 1, then pass 2 when pass 1 produced modifiers but left a remainder.
-// It returns the modifier list (nil when the line was not understood) and the
-// unconsumed remainder ("" when everything was consumed).
+// recognised is false when the line was not understood (an expected state:
+// garbage item text); extra is the unconsumed remainder ("" when everything
+// was consumed).
 //
 // Results are cached per line and deep-copied on every return, exactly as the
 // reference's cache wrapper does — callers (SetSource among them) mutate what
 // they are given.
-func Parse(line string) (mods []any, extra string) {
+func Parse(line string) (mods []*Mod, extra string, recognised bool) {
 	parseCacheMu.Lock()
 	entry, hit := parseCache[line]
 	if !hit {
@@ -92,31 +108,28 @@ func Parse(line string) (mods []any, extra string) {
 	}
 	parseCacheMu.Unlock()
 	if !hit {
-		entry.mods, entry.extra = parseMod(line, 1)
-		if entry.mods != nil && entry.extra != "" {
-			entry.mods, entry.extra = parseMod(line, 2)
+		entry = parseMod(line, 1)
+		if entry.recognised && entry.extra != "" {
+			entry = parseMod(line, 2)
 		}
 		parseCacheMu.Lock()
 		parseCache[line] = entry
 		parseCacheMu.Unlock()
 	}
-	if entry.mods == nil {
-		return nil, entry.extra
+	if !entry.recognised {
+		return nil, entry.extra, false
 	}
-	out := make([]any, len(entry.mods))
+	out := make([]*Mod, len(entry.mods))
 	for i, m := range entry.mods {
-		if mm, ok := m.(*Mod); ok {
-			out[i] = CopyMod(mm)
-		} else {
-			out[i] = copyAny(m)
-		}
+		out[i] = m.Clone()
 	}
-	return out, entry.extra
+	return out, entry.extra, true
 }
 
 type parseResult struct {
-	mods  []any
-	extra string
+	mods       []*Mod
+	extra      string
+	recognised bool
 }
 
 var (
@@ -124,10 +137,19 @@ var (
 	parseCacheMu sync.Mutex
 )
 
+func unrecognised(extra string) parseResult { return parseResult{extra: extra} }
+
+func recognised(mods []*Mod, extra string) parseResult {
+	if mods == nil {
+		mods = []*Mod{}
+	}
+	return parseResult{mods: mods, extra: extra, recognised: true}
+}
+
 // parseMod ports ModParser.lua's parseMod (line 6580). order decides whether
 // the skill name is looked for after (1) or before (2) the modifier name.
-func parseMod(line string, order int) ([]any, string) {
-	lineLower := asciiLower(line)
+func parseMod(line string, order int) parseResult {
+	lineLower := strings.ToLower(line)
 
 	// Check if the line describes a jewel radius function; parametric entries
 	// are tried as patterns first, then the whole line as an exact key —
@@ -138,309 +160,285 @@ func parseMod(line string, order int) ([]any, string) {
 			continue
 		}
 		if c := entry.re.FindStringSubmatch(lineLower); c != nil && len(c) > 1 && c[1] != "" {
-			return []any{mod("JewelFunc", "LIST", entry.tagValue(caps(c[1:])))}, ""
+			return recognised([]*Mod{mod("JewelFunc", List, entry.value(pattern, caps(c[1:])))}, "")
 		}
 	}
 	if entry, ok := jewelFuncList[lineLower]; ok {
-		return []any{mod("JewelFunc", "LIST", entry.tagValue(nil))}, ""
+		return recognised([]*Mod{mod("JewelFunc", List, entry.value(lineLower, nil))}, "")
 	}
 	if v, ok := clusterJewelSkills[lineLower]; ok {
-		return v.([]any), ""
+		return recognised(v, "")
 	}
 	if unsupportedModList[lineLower] {
-		return []any{}, line
+		return recognised([]*Mod{}, line)
 	}
 
 	// Check if this is a special modifier — ModParser.lua:6600.
-	specialVal, specialLine, specialCaps := scan(line, specialT)
-	if specialVal != nil && len(specialLine) == 0 {
-		if f, isFn := specialVal.(fn); isFn {
-			result := f(caps(specialCaps))
-			if result == nil {
-				return nil, ""
-			}
-			return asModList(result), ""
+	specialVal, specialFound, specialLine, specialCaps := scan(line, specialT)
+	if specialFound && len(specialLine) == 0 {
+		result := specialVal.modsFor(caps(specialCaps))
+		if result == nil {
+			return unrecognised("")
 		}
-		return copyModList(asModList(specialVal)), ""
+		return recognised(result, "")
 	}
 
 	// Check for add-to-cluster-jewel special — ModParser.lua:6610 (original
 	// case, not the lowered line).
 	if m := addToClusterRe.FindStringSubmatch(line); m != nil {
-		return []any{mod("AddToClusterJewelNode", "LIST", m[1])}, ""
+		return recognised([]*Mod{mod("AddToClusterJewelNode", List, Str(m[1]))}, "")
 	}
 
 	line = line + " "
 
 	// Flag/tag specifications at the start of the line — ModParser.lua:6618.
-	preFlagVal, line, preFlagCaps := scan(line, preFlagsT)
-	if f, isFn := preFlagVal.(fn); isFn {
-		preFlagVal = f(caps(preFlagCaps))
+	var preFlag *PatternEntry
+	if v, found, rest, preFlagCaps := scan(line, preFlagsT); found {
+		preFlag = v.entryFor(caps(preFlagCaps))
+		line = rest
 	}
 
 	// Skill name at the start of the line.
-	skillTag, line, _ := scan(line, preSkillsT)
+	var skillTag *PatternEntry
+	if v, found, rest, _ := scan(line, preSkillsT); found {
+		skillTag, line = v, rest
+	}
 
 	// Modifier form.
-	modFormVal, line, formCaps := scan(line, formsT)
-	if modFormVal == nil {
-		return nil, remainder(line)
+	form, found, line, formCaps := scan(line, formsT)
+	if !found {
+		return unrecognised(remainder(line))
 	}
-	modForm := modFormVal.(string)
 
 	// Tags (per-charge, conditionals) — up to two.
-	modTag, line, tagCaps := scan(line, tagsT)
-	if f, isFn := modTag.(fn); isFn {
-		modTag = f(caps(tagCaps))
-	}
-	var modTag2 any
-	if modTag != nil {
-		modTag2, line, tagCaps = scan(line, tagsT)
-		if f, isFn := modTag2.(fn); isFn {
-			modTag2 = f(caps(tagCaps))
+	var modTag, modTag2 *PatternEntry
+	if v, found, rest, tagCaps := scan(line, tagsT); found {
+		modTag, line = v.entryFor(caps(tagCaps)), rest
+		if v2, found2, rest2, tagCaps2 := scan(line, tagsT); found2 {
+			modTag2, line = v2.entryFor(caps(tagCaps2)), rest2
 		}
 	}
 
 	// Modifier name and skill name — ModParser.lua:6656.
 	if order == 2 && skillTag == nil {
-		skillTag, line, _ = scan(line, skillsT)
+		if v, found, rest, _ := scan(line, skillsT); found {
+			skillTag, line = v, rest
+		}
 	}
-	var modName any
-	var flagVal any
-	switch modForm {
-	case "PEN":
-		modName, line, _ = scan(line, penT)
-		if modName == nil {
-			return []any{}, remainder(line)
+	var modName *PatternEntry
+	scanName := func(t *scanTable[nameValue]) bool {
+		v, found, rest, _ := scan(line, t)
+		line = rest
+		if found {
+			modName = v.nameEntry()
 		}
-		_, line, _ = scan(line, namesT)
-	case "BASECOST":
-		modName, line, _ = scan(line, baseCostT)
-		if modName == nil {
-			return []any{}, remainder(line)
+		return found
+	}
+	var flagType flagTypeValue
+	switch form {
+	case formPen:
+		if !scanName(penT) {
+			return recognised([]*Mod{}, remainder(line))
 		}
-		_, line, _ = scan(line, namesT)
-	case "TOTALCOST":
-		modName, line, _ = scan(line, costT)
-		if modName == nil {
-			return []any{}, remainder(line)
+		_, _, line, _ = scan(line, namesT)
+	case formBaseCost:
+		if !scanName(baseCostT) {
+			return recognised([]*Mod{}, remainder(line))
 		}
-		_, line, _ = scan(line, namesT)
-	case "FLAG":
-		flagVal, line, _ = scan(line, flagTypesT)
-		if flagVal == nil {
-			return nil, remainder(line)
+		_, _, line, _ = scan(line, namesT)
+	case formTotalCost:
+		if !scanName(costT) {
+			return recognised([]*Mod{}, remainder(line))
 		}
-		modName, line, _ = scan(line, namesT)
+		_, _, line, _ = scan(line, namesT)
+	case formFlag:
+		v, found, rest, _ := scan(line, flagTypesT)
+		if !found {
+			return unrecognised(remainder(rest))
+		}
+		flagType, line = v, rest
+		scanName(namesT)
 	default:
-		modName, line, _ = scan(line, namesT)
+		scanName(namesT)
 	}
 	if order == 1 && skillTag == nil {
-		skillTag, line, _ = scan(line, skillsT)
+		if v, found, rest, _ := scan(line, skillsT); found {
+			skillTag, line = v, rest
+		}
 	}
 
 	// Scan for flags.
-	modFlag, line, _ := scan(line, modFlagsT)
+	var modFlag *PatternEntry
+	if v, found, rest, _ := scan(line, modFlagsT); found {
+		modFlag, line = v, rest
+	}
 
 	// Find modifier value and type according to form — ModParser.lua:6699.
-	var modValue any = cap1(formCaps, 1)
-	if n, ok := tonumber(cap1(formCaps, 1)); ok {
-		modValue = n
+	var modValue Value = Str(cap1(formCaps, 1))
+	if n, ok := util.Tonumber(cap1(formCaps, 1)); ok {
+		modValue = Num(n)
 	}
-	modType := "BASE"
-	var modTypes []any // per-name types when DOUBLED
+	var modValues []Value // per-name values (DMG forms, DOUBLED)
+	modType := Base
+	var modTypes []ModType // per-name types when DOUBLED
 	var modSuffix string
 	suffixSet := false
-	var modExtraTags *D
+	var modExtraTags *PatternEntry
 
 	scanSuffix := func() {
-		v, rest, _ := scan(line, suffixT)
-		if v != nil {
-			modSuffix = v.(string)
+		v, found, rest, _ := scan(line, suffixT)
+		if found {
+			modSuffix = v
 			suffixSet = true
 		}
 		line = rest
 	}
+	localHand := &PatternEntry{Tag: &CondTag{Var: "{Hand}Attack"}}
 
-	switch modForm {
-	case "INC":
-		modType = "INC"
-	case "RED":
+	switch form {
+	case formInc:
+		modType = Inc
+	case formRed:
 		modValue = negateNum(modValue)
-		modType = "INC"
-	case "MORE":
-		modType = "MORE"
-	case "LESS":
+		modType = Inc
+	case formMore:
+		modType = More
+	case formLess:
 		modValue = negateNum(modValue)
-		modType = "MORE"
-	case "BASE":
+		modType = More
+	case formBase:
 		scanSuffix()
-	case "GAIN":
-		modType = "BASE"
+	case formGain:
+		modType = Base
 		scanSuffix()
-	case "LOSE":
+	case formLose:
 		modValue = negateNum(modValue)
-		modType = "BASE"
+		modType = Base
 		scanSuffix()
-	case "GRANTS": // local
-		modType = "BASE"
-		modExtraTags = d(p("tag", Tag{"type": "Condition", "var": "{Hand}Attack"}))
+	case formGrants: // local
+		modType = Base
+		modExtraTags = localHand
 		scanSuffix()
-	case "GRANTS_GLOBAL":
-		modType = "BASE"
+	case formGrantsGlobal:
+		modType = Base
 		scanSuffix()
-	case "REMOVES": // local
+	case formRemoves: // local
 		modValue = negateNum(modValue)
-		modType = "BASE"
-		modExtraTags = d(p("tag", Tag{"type": "Condition", "var": "{Hand}Attack"}))
+		modType = Base
+		modExtraTags = localHand
 		scanSuffix()
-	case "CHANCE":
+	case formChance:
 		// value and type already correct
-	case "REGENPERCENT":
-		modName = regenTypes[cap1(formCaps, 2)]
+	case formRegenPercent:
+		modName = nameEntryOf(regenTypes[cap1(formCaps, 2)])
 		modSuffix, suffixSet = "Percent", true
-	case "REGENFLAT":
-		modName = regenTypes[cap1(formCaps, 2)]
-	case "DEGENPERCENT":
-		modName = degenTypes[cap1(formCaps, 2)]
+	case formRegenFlat:
+		modName = nameEntryOf(regenTypes[cap1(formCaps, 2)])
+	case formDegenPercent:
+		modName = nameEntryOf(degenTypes[cap1(formCaps, 2)])
 		modSuffix, suffixSet = "Percent", true
-	case "DEGENFLAT":
-		modName = degenTypes[cap1(formCaps, 2)]
-	case "DEGEN":
+	case formDegenFlat:
+		modName = nameEntryOf(degenTypes[cap1(formCaps, 2)])
+	case formDegen:
 		damageType, ok := dmgTypes[cap1(formCaps, 2)]
 		if !ok {
-			return []any{}, remainder(line)
+			return recognised([]*Mod{}, remainder(line))
 		}
-		modName = damageType.(string) + "Degen"
+		modName = name(damageType + "Degen").nameEntry()
 		modSuffix, suffixSet = "", true
-	case "DMG", "DMGATTACKS", "DMGSPELLS", "DMGBOTH":
+	case formDmg, formDmgAttacks, formDmgSpells, formDmgBoth:
 		damageType, ok := dmgTypes[cap1(formCaps, 3)]
 		if !ok {
-			return []any{}, remainder(line)
+			return recognised([]*Mod{}, remainder(line))
 		}
-		n1, _ := tonumber(cap1(formCaps, 1))
-		n2, _ := tonumber(cap1(formCaps, 2))
-		modValue = []any{n1, n2}
-		modName = []any{damageType.(string) + "Min", damageType.(string) + "Max"}
+		n1, _ := util.Tonumber(cap1(formCaps, 1))
+		n2, _ := util.Tonumber(cap1(formCaps, 2))
+		modValues = []Value{Num(n1), Num(n2)}
+		modName = nameList{damageType + "Min", damageType + "Max"}.nameEntry()
 		if modFlag == nil {
-			switch modForm {
-			case "DMGATTACKS":
-				modFlag = d(p("keywordFlags", KeywordFlag.Attack))
-			case "DMGSPELLS":
-				modFlag = d(p("keywordFlags", KeywordFlag.Spell))
-			case "DMGBOTH":
-				modFlag = d(p("keywordFlags", KeywordFlag.Attack|KeywordFlag.Spell))
+			switch form {
+			case formDmgAttacks:
+				modFlag = &PatternEntry{KeywordFlags: KeywordAttack}
+			case formDmgSpells:
+				modFlag = &PatternEntry{KeywordFlags: KeywordSpell}
+			case formDmgBoth:
+				modFlag = &PatternEntry{KeywordFlags: KeywordAttack | KeywordSpell}
 			}
 		}
-	case "FLAG":
-		if t, isTag := flagVal.(Tag); isTag {
-			modName = t["name"]
-			modType, _ = t["type"].(string)
-			modValue = t["value"]
+	case formFlag:
+		if t, isMod := flagType.(FlagTypeMod); isMod {
+			modName = name(t.Name).nameEntry()
+			modType = t.Type
+			modValue = t.Value
 		} else {
-			modName = flagVal
-			modType = "FLAG"
-			modValue = true
+			modName = name(string(flagType.(flagName))).nameEntry()
+			modType = Flag
+			modValue = Bool(true)
 		}
-	case "OVERRIDE":
-		modType = "OVERRIDE"
-	case "DOUBLED":
+	case formOverride:
+		modType = Override
+	case formDoubled:
 		// One MORE mod plus a limited multiplier so the doubling cannot stack —
 		// ModParser.lua:6795.
-		var modNameString string
-		switch n := modName.(type) {
-		case *D:
-			if len(n.Arr) > 0 {
-				modNameString, _ = n.Arr[0].(string)
-				for len(n.Arr) < 2 {
-					n.Arr = append(n.Arr, nil)
-				}
-				n.Arr[1] = "Multiplier:" + modNameString + "Doubled"
+		if modName != nil && len(modName.Names) > 0 {
+			modNameString := modName.Names[0]
+			// The reference writes into its (shared) name table entry.
+			for len(modName.Names) < 2 {
+				modName.Names = append(modName.Names, "")
 			}
-		case string:
-			modNameString = n
-			modName = d(n, "Multiplier:"+n+"Doubled")
-		}
-		if modNameString != "" {
-			modTypes = []any{"MORE", "OVERRIDE"}
-			modValue = []any{100.0, 1.0}
-			modExtraTags = d(
-				Tag{"tag": Tag{"type": "Multiplier", "var": modNameString + "Doubled", "globalLimit": 100.0, "globalLimitKey": modNameString + "DoubledLimit"}},
-				p("tag", true),
-			)
+			modName.Names[1] = "Multiplier:" + modNameString + "Doubled"
+			modTypes = []ModType{More, Override}
+			modValues = []Value{Num(100), Num(1)}
+			modExtraTags = &PatternEntry{PerModTags: [][]Tag{{
+				&MultiplierTag{Var: modNameString + "Doubled", GlobalLimit: opt(100), GlobalLimitKey: modNameString + "DoubledLimit"},
+			}}}
 		}
 	}
 
 	if modName == nil {
-		return []any{}, remainder(line)
+		return recognised([]*Mod{}, remainder(line))
 	}
 
 	// Combine flags and tags — ModParser.lua:6817.
-	var flags, keywordFlags int64
-	var tagList []any
-	var perModTags [][]any
-	misc := map[string]any{}
-	for _, data := range []any{modName, preFlagVal, modFlag, modTag, modTag2, skillTag, modExtraTags} {
-		dd := asTable(data)
-		if dd == nil {
+	ctl := &PatternEntry{}
+	var tagList []Tag
+	var perModTags [][]Tag
+	for _, data := range []*PatternEntry{modName, preFlag, modFlag, modTag, modTag2, skillTag, modExtraTags} {
+		if data == nil {
 			continue
 		}
-		flags |= i64Field(dd.KV, "flags")
-		keywordFlags |= i64Field(dd.KV, "keywordFlags")
-		if tag, has := dd.KV["tag"]; has {
-			if per, ok := perEntryTags(dd, "tag"); ok {
-				perModTags = per
-			} else if tm := asTag(tag); tm != nil {
-				tagList = append(tagList, copyTag(tm))
+		ctl.merge(data)
+		switch {
+		case data.PerModTags != nil:
+			perModTags = data.PerModTags
+		case data.Tag != nil:
+			tagList = append(tagList, data.Tag.Clone())
+		case data.TagList != nil:
+			for _, tag := range data.TagList {
+				tagList = append(tagList, tag.Clone())
 			}
-		} else if tl, has := dd.KV["tagList"]; has {
-			if per, ok := perEntryTags(dd, "tagList"); ok {
-				perModTags = per
-			} else {
-				for _, tag := range anyList(tl) {
-					if tm := asTag(tag); tm != nil {
-						tagList = append(tagList, copyTag(tm))
-					}
-				}
-			}
-		}
-		for k, v := range dd.KV {
-			misc[k] = v
 		}
 	}
 
 	// Generate modifier list — ModParser.lua:6875.
-	var nameList []any
-	switch n := modName.(type) {
-	case *D:
-		nameList = n.Arr
-	case []any:
-		nameList = n
-	default:
-		nameList = []any{modName}
-	}
 	suffix := modSuffix
 	if !suffixSet {
-		if ms, ok := misc["modSuffix"].(string); ok {
-			suffix = ms
-		}
+		suffix = ctl.ModSuffix
 	}
-	var modList []any
-	for i, name := range nameList {
-		nameStr, _ := name.(string)
+	var modList []*Mod
+	for i, nameStr := range modName.Names {
 		typ := modType
 		if modTypes != nil && i < len(modTypes) {
-			typ = modTypes[i].(string)
+			typ = modTypes[i]
 		}
 		value := modValue
-		if vl, isList := modValue.([]any); isList {
-			if i < len(vl) {
-				value = vl[i]
-			} else {
-				value = nil
+		if modValues != nil {
+			value = nil
+			if i < len(modValues) {
+				value = modValues[i]
 			}
 		}
-		m := &Mod{Name: nameStr + suffix, Type: typ, Value: value, Flags: flags, KeywordFlags: keywordFlags}
+		m := &Mod{Name: nameStr + suffix, Type: typ, Value: value, Flags: ctl.Flags, KeywordFlags: ctl.KeywordFlags}
 		m.Tags = append(m.Tags, tagList...)
 		if i < len(perModTags) {
 			m.Tags = append(m.Tags, perModTags[i]...)
@@ -451,70 +449,65 @@ func parseMod(line string, order int) ([]any, string) {
 	if len(modList) > 0 {
 		// Special handling for various modifier types — ModParser.lua:6890.
 		switch {
-		case truthy(misc["addToAura"]):
+		case ctl.AddToAura:
 			for i, effectMod := range modList {
-				if truthy(misc["onlyAddToBanners"]) {
-					modList[i] = mod("ExtraAuraEffect", "LIST", Tag{"mod": effectMod},
-						Tag{"type": "SkillType", "skillType": SkillType.Banner})
+				if ctl.OnlyAddToBanners {
+					modList[i] = mod("ExtraAuraEffect", List, ModRef{Mod: effectMod}, &SkillTypeTag{SkillType: SkillTypeBanner})
 				} else {
-					modList[i] = mod("ExtraAuraEffect", "LIST", Tag{"mod": effectMod})
+					modList[i] = mod("ExtraAuraEffect", List, ModRef{Mod: effectMod})
 				}
 			}
-		case truthy(misc["newAura"]):
+		case ctl.NewAura:
 			for i, effectMod := range modList {
-				em := effectMod.(*Mod)
-				tags := em.Tags
-				em.Tags = nil
-				value := Tag{"mod": em}
-				if v, has := misc["newAuraOnlyAllies"]; has && v != nil {
-					value["onlyAllies"] = v
-				}
-				modList[i] = mod("ExtraAura", "LIST", value, tags...)
+				tags := effectMod.Tags
+				effectMod.Tags = nil
+				modList[i] = mod("ExtraAura", List, ModRef{Mod: effectMod, OnlyAllies: ctl.NewAuraOnlyAllies}, tags...)
 			}
-		case truthy(misc["addToMinion"]):
+		case ctl.AddToMinion:
 			for i, effectMod := range modList {
-				var tags []any
-				if t, has := misc["playerTag"]; has && t != nil {
-					tags = append(tags, t)
+				var tags []Tag
+				if ctl.PlayerTag != nil {
+					tags = append(tags, ctl.PlayerTag)
 				}
-				if t, has := misc["addToMinionTag"]; has && t != nil {
-					tags = append(tags, t)
+				if ctl.AddToMinionTag != nil {
+					tags = append(tags, ctl.AddToMinionTag)
 				}
-				tags = append(tags, anyList(misc["playerTagList"])...)
-				modList[i] = mod("MinionModifier", "LIST", Tag{"mod": effectMod}, tags...)
+				tags = append(tags, ctl.PlayerTagList...)
+				modList[i] = mod("MinionModifier", List, ModRef{Mod: effectMod}, tags...)
 			}
-		case truthy(misc["addToSkill"]):
+		case ctl.AddToSkill != nil:
 			for i, effectMod := range modList {
-				modList[i] = mod("ExtraSkillMod", "LIST", Tag{"mod": effectMod}, misc["addToSkill"])
+				modList[i] = mod("ExtraSkillMod", List, ModRef{Mod: effectMod}, ctl.AddToSkill)
 			}
-		case truthy(misc["applyToEnemy"]):
+		case ctl.ApplyToEnemy:
 			for i, effectMod := range modList {
-				var tags []any
-				if t, has := misc["playerTag"]; has && t != nil {
-					tags = append(tags, t)
+				var tags []Tag
+				if ctl.PlayerTag != nil {
+					tags = append(tags, ctl.PlayerTag)
 				}
-				tags = append(tags, anyList(misc["playerTagList"])...)
+				tags = append(tags, ctl.PlayerTagList...)
 				newMod := effectMod
-				if em, isMod := effectMod.(*Mod); isMod && len(em.Tags) > 0 && truthy(misc["actorEnemy"]) {
-					cp := *em
-					cp.Tags = make([]any, len(em.Tags))
-					for ti, t := range em.Tags {
-						if tt, isTag := t.(Tag); isTag {
-							cp.Tags[ti] = copyTag(tt)
-						} else {
-							cp.Tags[ti] = t
-						}
-					}
-					if t0, isTag := cp.Tags[0].(Tag); isTag {
-						t0["actor"] = "enemy"
+				if len(effectMod.Tags) > 0 && ctl.ActorEnemy {
+					cp := *effectMod
+					cp.Tags = CloneTags(effectMod.Tags)
+					if t0, isCond := cp.Tags[0].(*CondTag); isCond {
+						t0.Actor = "enemy"
 					}
 					newMod = &cp
 				}
-				modList[i] = mod("EnemyModifier", "LIST", Tag{"mod": newMod}, tags...)
+				modList[i] = mod("EnemyModifier", List, ModRef{Mod: newMod}, tags...)
 			}
 		}
 	}
-	return modList, remainder(line)
+	return recognised(modList, remainder(line))
+}
+
+// nameEntryOrNil is a map lookup's nil-safe view.
+func nameEntryOf(n nameValue) *PatternEntry {
+	if n == nil {
+		return nil
+	}
+	return n.nameEntry()
 }
 
 // remainder mirrors `line:match("%S") and line`: nil when only whitespace.
@@ -525,124 +518,11 @@ func remainder(line string) string {
 	return line
 }
 
-func negateNum(v any) any {
-	if f, ok := v.(float64); ok {
+func negateNum(v Value) Value {
+	if f, ok := v.(Num); ok {
 		return -f
 	}
 	return v
-}
-
-// asTable views a scanned value as a mixed table: *D directly, Tag as hash-only.
-func asTable(v any) *D {
-	switch t := v.(type) {
-	case *D:
-		return t
-	case Tag:
-		return &D{KV: t}
-	}
-	return nil
-}
-
-func i64Field(kv map[string]any, key string) int64 {
-	if kv == nil {
-		return 0
-	}
-	if n, ok := asInt64(kv[key]); ok {
-		return n
-	}
-	return 0
-}
-
-// perEntryTags handles the array-of-per-mod-tags shape (data[1].tag /
-// data[1].tagList) — ModParser.lua:6826-6852.
-func perEntryTags(dd *D, key string) ([][]any, bool) {
-	if len(dd.Arr) == 0 {
-		return nil, false
-	}
-	first := asTable(dd.Arr[0])
-	if first == nil {
-		return nil, false
-	}
-	if _, has := first.KV[key]; !has {
-		return nil, false
-	}
-	var out [][]any
-	for _, entry := range dd.Arr {
-		e := asTable(entry)
-		if e == nil {
-			break
-		}
-		var tags []any
-		if key == "tag" {
-			if t := asTag(e.KV["tag"]); t != nil {
-				tags = append(tags, copyTag(t))
-			}
-		} else {
-			for _, t := range anyList(e.KV["tagList"]) {
-				if tt := asTag(t); tt != nil {
-					tags = append(tags, copyTag(tt))
-				}
-			}
-		}
-		out = append(out, tags)
-	}
-	return out, true
-}
-
-// anyList reads a list-ish value: []any directly, a *D's array part.
-func anyList(v any) []any {
-	switch t := v.(type) {
-	case []any:
-		return t
-	case *D:
-		return t.Arr
-	}
-	return nil
-}
-
-func copyTag(t Tag) Tag {
-	out := make(Tag, len(t))
-	for k, v := range t {
-		out[k] = v
-	}
-	return out
-}
-
-// copyModList mirrors the copyTable the reference applies to data-valued
-// special entries before returning them.
-func copyModList(list []any) []any {
-	out := make([]any, len(list))
-	copy(out, list)
-	return out
-}
-
-// asTag views any table-like value as a tag: a Tag map directly, or a *D whose
-// hash part carries the fields (the transform stores tags whose strings contain
-// literal braces that way).
-func asTag(v any) Tag {
-	switch t := v.(type) {
-	case Tag:
-		return t
-	case *D:
-		if len(t.Arr) == 0 && t.KV != nil {
-			return Tag(t.KV)
-		}
-	}
-	return nil
-}
-
-// asModList views a closure or table result as a modifier list. An empty Lua
-// table arrives as an empty *D.
-func asModList(v any) []any {
-	switch t := v.(type) {
-	case []any:
-		return t
-	case *D:
-		return t.Arr
-	case nil:
-		return nil
-	}
-	return []any{v}
 }
 
 var addToClusterRe = regexp.MustCompile(`^Added Small Passive Skills also grant: (.+)$`)

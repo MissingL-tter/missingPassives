@@ -4,6 +4,8 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -13,7 +15,7 @@ func hitChance(evasion, accuracy float64) float64 {
 		return 5
 	}
 	rawChance := accuracy / (accuracy + math.Pow(evasion/5, 0.9)) * 125
-	return math.Max(math.Min(roundDec(rawChance, 0), 100), 5)
+	return math.Max(math.Min(util.RoundHalfUp(rawChance, 0), 100), 5)
 }
 
 // armourReductionF ports calcs.armourReductionF.
@@ -26,15 +28,15 @@ func armourReductionF(armour, raw float64) float64 {
 
 // armourReduction ports calcs.armourReduction.
 func armourReduction(armour, raw float64) float64 {
-	return roundDec(armourReductionF(armour, raw), 0)
+	return util.RoundHalfUp(armourReductionF(armour, raw), 0)
 }
 
-// armourDataOf reads one numeric field of a slot's armourData, or 0.
-func armourDataOf(it *Item, key string) float64 {
+// armourDataOf reads one defence stat of a slot's armourData, or 0.
+func armourDataOf(it *Item, stat string) float64 {
 	if it == nil || it.In == nil || it.In.ArmourData == nil {
 		return 0
 	}
-	return anyNum(it.In.ArmourData[key])
+	return it.In.ArmourData.Defence(stat).Value.Or(0)
 }
 
 // RunDefence runs the defence stage the way the reference reaches it after
@@ -53,14 +55,13 @@ func (env *Env) defence(actor *performActor) {
 	output := actor.output
 
 	// Action Speed
-	output["ActionSpeedMod"] = env.actionSpeedMod(actor)
+	output.SetN("ActionSpeedMod", env.actionSpeedMod(actor))
 
 	env.Resistances(actor)
-	if env.Minion != nil && modDB.Sum("BASE", nil, "ResistanceAddedToMinions") > 0 {
+	if env.Minion != nil && modDB.Sum(modparser.Base, nil, "ResistanceAddedToMinions") > 0 {
 		for _, elem := range resistTypeList {
-			final := outNum(output, elem+"Resist")
-			env.Minion.DB.AddMod(newMod(elem+"Resist", "BASE",
-				math.Floor(final*modDB.Sum("BASE", nil, "ResistanceAddedToMinions")/100), "Player"))
+			final := output.N(elem + "Resist")
+			env.Minion.DB.AddMod(newModS(elem+"Resist", modparser.Base, modparser.Num(math.Floor(final*modDB.Sum(modparser.Base, nil, "ResistanceAddedToMinions")/100)), "Player"))
 		}
 	}
 	// Formless Inferno
@@ -70,80 +71,82 @@ func (env *Env) defence(actor *performActor) {
 	}
 
 	// Block
-	output["BlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "BlockChanceMax"), data.Misc.BlockChanceCap)
+	output.SetN("BlockChanceMax", math.Min(modDB.Sum(modparser.Base, nil, "BlockChanceMax"), data.Misc.BlockChanceCap))
 	if modDB.Flag(nil, "MaximumBlockAttackChanceIsEqualToParent") {
-		output["BlockChanceMax"] = outNum(actor.parent.output, "BlockChanceMax")
+		output.SetN("BlockChanceMax", actor.parent.output.N("BlockChanceMax"))
 	} else if modDB.Flag(nil, "MaximumBlockAttackChanceIsEqualToPartyMember") {
 		panic("defence: MaximumBlockAttackChanceIsEqualToPartyMember needs the party tab")
 	}
-	output["BlockChanceOverCap"] = 0.0
-	output["SpellBlockChanceOverCap"] = 0.0
+	output.SetN("BlockChanceOverCap", 0.0)
+	output.SetN("SpellBlockChanceOverCap", 0.0)
 	baseBlockChance := 0.0
 	for _, slot := range []string{"Weapon 2", "Weapon 3"} {
 		it, _ := actor.ms.ItemList[slot].(*Item)
-		baseBlockChance += armourDataOf(it, "BlockChance")
+		if it != nil && it.In.ArmourData != nil {
+			baseBlockChance += it.In.ArmourData.BlockChance.Or(0)
+		}
 	}
-	output["ShieldBlockChance"] = baseBlockChance
+	output.SetN("ShieldBlockChance", baseBlockChance)
 	if !env.Keystone.KeystonesAdded["Necromantic Aegis"] {
-		if ov := modDB.Override(nil, "ReplaceShieldBlock"); truthy(ov) {
-			baseBlockChance = anyNum(ov)
+		if ov, ok := modDB.Override(nil, "ReplaceShieldBlock"); ok {
+			baseBlockChance = valueNum(ov)
 		}
 	}
 	// Apply player block overrides if Necromantic Aegis allocated
 	if actor == env.minionPA && env.Keystone.KeystonesAdded["Necromantic Aegis"] {
-		if ov := env.ModDB.Override(nil, "ReplaceShieldBlock"); truthy(ov) {
-			baseBlockChance = anyNum(ov)
+		if ov, ok := env.ModDB.Override(nil, "ReplaceShieldBlock"); ok {
+			baseBlockChance = valueNum(ov)
 		}
 	}
 
 	if modDB.Flag(nil, "BlockAttackChanceIsEqualToParent") {
-		output["BlockChance"] = math.Min(outNum(actor.parent.output, "BlockChance"), outNum(output, "BlockChanceMax"))
+		output.SetN("BlockChance", math.Min(actor.parent.output.N("BlockChance"), output.N("BlockChanceMax")))
 	} else if modDB.Flag(nil, "BlockAttackChanceIsEqualToPartyMember") {
 		panic("defence: BlockAttackChanceIsEqualToPartyMember needs the party tab")
 	} else if modDB.Flag(nil, "MaxBlockIfNotBlockedRecently") {
-		output["BlockChance"] = outNum(output, "BlockChanceMax")
+		output.SetN("BlockChance", output.N("BlockChanceMax"))
 	} else {
-		inc := modDB.Sum("INC", nil, "BlockChance")
+		inc := modDB.Sum(modparser.Inc, nil, "BlockChance")
 		more := modDB.More(nil, "BlockChance")
-		totalBlockChance := roundDec((baseBlockChance+modDB.Sum("BASE", nil, "BlockChance"))*(1+inc/100)*more, 0)
-		output["BlockChance"] = math.Min(totalBlockChance, outNum(output, "BlockChanceMax"))
-		output["BlockChanceOverCap"] = math.Max(0, totalBlockChance-outNum(output, "BlockChanceMax"))
+		totalBlockChance := util.RoundHalfUp((baseBlockChance+modDB.Sum(modparser.Base, nil, "BlockChance"))*(1+inc/100)*more, 0)
+		output.SetN("BlockChance", math.Min(totalBlockChance, output.N("BlockChanceMax")))
+		output.SetN("BlockChanceOverCap", math.Max(0, totalBlockChance-output.N("BlockChanceMax")))
 	}
 
-	output["ProjectileBlockChance"] = math.Min(outNum(output, "BlockChance")+modDB.Sum("BASE", nil, "ProjectileBlockChance")*Mod(modDB, nil, "BlockChance"), outNum(output, "BlockChanceMax"))
+	output.SetN("ProjectileBlockChance", math.Min(output.N("BlockChance")+modDB.Sum(modparser.Base, nil, "ProjectileBlockChance")*Mod(modDB, nil, "BlockChance"), output.N("BlockChanceMax")))
 	if modDB.Flag(nil, "SpellBlockChanceMaxIsBlockChanceMax") {
-		output["SpellBlockChanceMax"] = outNum(output, "BlockChanceMax")
+		output.SetN("SpellBlockChanceMax", output.N("BlockChanceMax"))
 	} else {
-		output["SpellBlockChanceMax"] = math.Min(modDB.Sum("BASE", nil, "SpellBlockChanceMax"), data.Misc.BlockChanceCap)
+		output.SetN("SpellBlockChanceMax", math.Min(modDB.Sum(modparser.Base, nil, "SpellBlockChanceMax"), data.Misc.BlockChanceCap))
 	}
 	if modDB.Flag(nil, "MaxSpellBlockIfNotBlockedRecently") {
-		output["SpellBlockChance"] = outNum(output, "SpellBlockChanceMax")
-		output["SpellProjectileBlockChance"] = outNum(output, "SpellBlockChanceMax")
+		output.SetN("SpellBlockChance", output.N("SpellBlockChanceMax"))
+		output.SetN("SpellProjectileBlockChance", output.N("SpellBlockChanceMax"))
 	} else if modDB.Flag(nil, "SpellBlockChanceIsBlockChance") {
-		output["SpellBlockChance"] = outNum(output, "BlockChance")
-		output["SpellProjectileBlockChance"] = outNum(output, "ProjectileBlockChance")
-		output["SpellBlockChanceOverCap"] = outNum(output, "BlockChanceOverCap")
+		output.SetN("SpellBlockChance", output.N("BlockChance"))
+		output.SetN("SpellProjectileBlockChance", output.N("ProjectileBlockChance"))
+		output.SetN("SpellBlockChanceOverCap", output.N("BlockChanceOverCap"))
 	} else {
-		inc := modDB.Sum("INC", nil, "BlockChance")
+		inc := modDB.Sum(modparser.Inc, nil, "BlockChance")
 		more := modDB.More(nil, "BlockChance")
-		totalSpellBlockChance := roundDec(modDB.Sum("BASE", nil, "SpellBlockChance")*(1+inc/100)*more, 0)
-		output["SpellBlockChance"] = math.Min(totalSpellBlockChance, outNum(output, "SpellBlockChanceMax"))
-		output["SpellBlockChanceOverCap"] = math.Max(0, totalSpellBlockChance-outNum(output, "SpellBlockChanceMax"))
-		output["SpellProjectileBlockChance"] = math.Max(math.Min(outNum(output, "SpellBlockChance")+modDB.Sum("BASE", nil, "ProjectileSpellBlockChance")*Mod(modDB, nil, "SpellBlockChance"), outNum(output, "SpellBlockChanceMax")), 0)
+		totalSpellBlockChance := util.RoundHalfUp(modDB.Sum(modparser.Base, nil, "SpellBlockChance")*(1+inc/100)*more, 0)
+		output.SetN("SpellBlockChance", math.Min(totalSpellBlockChance, output.N("SpellBlockChanceMax")))
+		output.SetN("SpellBlockChanceOverCap", math.Max(0, totalSpellBlockChance-output.N("SpellBlockChanceMax")))
+		output.SetN("SpellProjectileBlockChance", math.Max(math.Min(output.N("SpellBlockChance")+modDB.Sum(modparser.Base, nil, "ProjectileSpellBlockChance")*Mod(modDB, nil, "SpellBlockChance"), output.N("SpellBlockChanceMax")), 0))
 	}
 	if modDB.Flag(nil, "CannotBlockAttacks") {
-		output["BlockChance"] = 0.0
-		output["ProjectileBlockChance"] = 0.0
+		output.SetN("BlockChance", 0.0)
+		output.SetN("ProjectileBlockChance", 0.0)
 	}
 	if modDB.Flag(nil, "CannotBlockSpells") {
-		output["SpellBlockChance"] = 0.0
-		output["SpellProjectileBlockChance"] = 0.0
+		output.SetN("SpellBlockChance", 0.0)
+		output.SetN("SpellProjectileBlockChance", 0.0)
 	}
 	for _, blockType := range []string{"BlockChance", "ProjectileBlockChance", "SpellBlockChance", "SpellProjectileBlockChance"} {
 		if env.ModeEffective {
-			output["Effective"+blockType] = math.Max(outNum(output, blockType)-enemyDB.Sum("BASE", nil, "reduceEnemyBlock"), 0)
+			output.SetN("Effective"+blockType, math.Max(output.N(blockType)-enemyDB.Sum(modparser.Base, nil, "reduceEnemyBlock"), 0))
 		} else {
-			output["Effective"+blockType] = outNum(output, blockType)
+			output.SetN("Effective"+blockType, output.N(blockType))
 		}
 		blockRolls := 0.0
 		if env.ModeEffective {
@@ -158,27 +161,27 @@ func (env *Env) defence(actor *performActor) {
 			}
 		}
 		// unlucky config to lower the value of block, dodge, evade etc for ehp
-		if worstOf := env.ConfigInput["EHPUnluckyWorstOf"]; truthy(worstOf) && anyNum(worstOf) != 1 {
-			blockRolls = -anyNum(worstOf) / 2
+		if worstOf := env.ConfigInput.EHPUnluckyWorstOf; worstOf.Set && worstOf.V != 1 {
+			blockRolls = -worstOf.V / 2
 		}
 		if blockRolls != 0 {
-			blockChance := outNum(output, "Effective"+blockType) / 100
+			blockChance := output.N("Effective"+blockType) / 100
 			if modDB.Flag(nil, "Unexciting") {
 				// Unexciting rolls three times and keeps the median result
-				output["Effective"+blockType] = (3*math.Pow(blockChance, 2) - 2*math.Pow(blockChance, 3)) * 100
+				output.SetN("Effective"+blockType, (3*math.Pow(blockChance, 2)-2*math.Pow(blockChance, 3))*100)
 			} else if blockRolls > 0 {
-				output["Effective"+blockType] = (1 - math.Pow(1-blockChance, blockRolls+1)) * 100
+				output.SetN("Effective"+blockType, (1-math.Pow(1-blockChance, blockRolls+1))*100)
 			} else {
-				output["Effective"+blockType] = math.Pow(blockChance, math.Abs(blockRolls)) * outNum(output, "Effective"+blockType)
+				output.SetN("Effective"+blockType, math.Pow(blockChance, math.Abs(blockRolls))*output.N("Effective"+blockType))
 			}
 		}
 	}
-	output["EffectiveAverageBlockChance"] = (outNum(output, "EffectiveBlockChance") + outNum(output, "EffectiveProjectileBlockChance") +
-		outNum(output, "EffectiveSpellBlockChance") + outNum(output, "EffectiveSpellProjectileBlockChance")) / 4
-	output["BlockEffect"] = 100 - modDB.Sum("BASE", nil, "BlockEffect")
-	if outNum(output, "BlockEffect") != 0 {
-		output["ShowBlockEffect"] = true
-		output["DamageTakenOnBlock"] = 100 - outNum(output, "BlockEffect")
+	output.SetN("EffectiveAverageBlockChance", (output.N("EffectiveBlockChance")+output.N("EffectiveProjectileBlockChance")+
+		output.N("EffectiveSpellBlockChance")+output.N("EffectiveSpellProjectileBlockChance"))/4)
+	output.SetN("BlockEffect", 100-modDB.Sum(modparser.Base, nil, "BlockEffect"))
+	if output.N("BlockEffect") != 0 {
+		output.SetFlag("ShowBlockEffect", true)
+		output.SetN("DamageTakenOnBlock", 100-output.N("BlockEffect"))
 	}
 
 	if modDB.Flag(nil, "ArmourAppliesToEnergyShieldRecharge") {
@@ -188,12 +191,10 @@ func (env *Env) defence(actor *performActor) {
 			multiplier = v
 		}
 		multiplier = multiplier / 100
-		for _, value := range modDB.Tabulate("INC", nil, "Armour", "ArmourAndEvasion", "Defences") {
+		for _, value := range modDB.Tabulate(modparser.Inc, nil, "Armour", "ArmourAndEvasion", "Defences") {
 			mod := value.Mod
 			modifiers := GetConvertedModTags(mod, multiplier, false)
-			args := []any{mod.Source, mod.Flags, mod.KeywordFlags}
-			args = append(args, modifiers...)
-			modDB.AddMod(newMod("EnergyShieldRecharge", "INC", math.Floor(anyNum(mod.Value)*multiplier), args...))
+			modDB.AddMod(modparser.NewModFull("EnergyShieldRecharge", modparser.Inc, modparser.Num(math.Floor(valueNum(mod.Value)*multiplier)), mod.Source, mod.SourceSet, mod.Flags, mod.KeywordFlags, modifiers...))
 		}
 	}
 
@@ -208,8 +209,8 @@ func (env *Env) defence(actor *performActor) {
 		{"EnergyShieldIncreasedByChaosResistance", "EnergyShield", "ChaosResist"},
 	} {
 		if modDB.Flag(nil, conv.flag) {
-			for _, value := range modDB.Tabulate("FLAG", nil, conv.flag) {
-				modDB.AddMod(newMod(conv.target, "INC", outNum(output, conv.from), value.Mod.Source))
+			for _, value := range modDB.Tabulate(modparser.Flag, nil, conv.flag) {
+				modDB.AddMod(newModS(conv.target, modparser.Inc, modparser.Num(output.N(conv.from)), value.Mod.Source))
 				break
 			}
 		}

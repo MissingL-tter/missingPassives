@@ -1,5 +1,5 @@
-// Code generated from .archive/src/Data/Uniques/Special/race.lua (one-time
-// transform, Go-maintained): the race-event unique items.
+// Converted once from the reference's Data/Uniques/Special/race.lua;
+// Go-maintained since: the race-event unique items.
 
 package data
 

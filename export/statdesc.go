@@ -27,16 +27,19 @@ type limitVal struct {
 	num  float64
 }
 
-type kv struct {
-	k string
-	v any // float64, string, or true (canonical_line)
+// descSpecial is one descriptor-line transform ("negate 1", "canonical_line"):
+// the name and its numeric stat-slot argument when it has one.
+type descSpecial struct {
+	name   string
+	arg    float64
+	hasArg bool
 }
 
 // descLine is one language line of a descriptor ("1|# ... "text" specials").
 type descLine struct {
 	text     string
 	limits   [][2]limitVal
-	specials []kv
+	specials []descSpecial
 	quality  map[string]bool // desc[quality] = true for gem_quality lines
 }
 
@@ -190,15 +193,14 @@ func (x *Ctx) parseStatFile(target map[string]*statDescriptor, order float64, fi
 		for ti := 0; ti < len(tokens); {
 			token := tokens[ti]
 			if token == "canonical_line" {
-				desc.specials = append(desc.specials, kv{k: "canonical_line", v: true})
+				desc.specials = append(desc.specials, descSpecial{name: "canonical_line"})
 				ti++
 			} else if ti+1 < len(tokens) {
-				value := tokens[ti+1]
-				var v any = value
-				if n, err := strconv.ParseFloat(value, 64); err == nil {
-					v = n
+				sp := descSpecial{name: token}
+				if n, err := strconv.ParseFloat(tokens[ti+1], 64); err == nil {
+					sp.arg, sp.hasArg = n, true
 				}
-				desc.specials = append(desc.specials, kv{k: token, v: v})
+				desc.specials = append(desc.specials, sp)
 				ti += 2
 			} else {
 				ti++
@@ -318,9 +320,9 @@ func matchLimit(lang []*descLine, val []*statVal) *descLine {
 	return nil
 }
 
-// luaFormat is string.format("%"..prefix..fmt, v) for the format kinds
+// format is string.format("%"..prefix..fmt, v) for the format kinds
 // describeStats produces: d, g, .2f, s, optionally with a "+" prefix.
-func (v *statVal) format(which byte, prefix string) string {
+func (v *statVal) format(which byte, prefix string) (string, error) {
 	var num float64
 	var str string
 	isStr := false
@@ -330,25 +332,38 @@ func (v *statVal) format(which byte, prefix string) string {
 		num, str, isStr = v.max, v.maxS, v.fmt == "s"
 	}
 	if isStr {
-		return str
+		return str, nil
 	}
 	switch v.fmt {
 	case "d":
-		return fmt.Sprintf("%"+prefix+"d", int64(num))
+		return fmt.Sprintf("%"+prefix+"d", int64(num)), nil
 	case "g":
-		return fmt.Sprintf("%"+prefix+".6g", num)
+		return fmt.Sprintf("%"+prefix+".6g", num), nil
 	case ".2f":
-		return fmt.Sprintf("%"+prefix+".2f", num)
+		return fmt.Sprintf("%"+prefix+".2f", num), nil
 	}
-	panic("unknown stat format " + v.fmt)
+	return "", fmt.Errorf("unknown stat format %q", v.fmt)
 }
 
-func formatMinMax(v *statVal, prefix string) string {
+// formatRange is "(min-max)" with each end formatted by prefix.
+func (v *statVal) formatRange(prefix string) (string, error) {
+	mn, err := v.format('n', prefix)
+	if err != nil {
+		return "", err
+	}
+	mx, err := v.format('x', prefix)
+	if err != nil {
+		return "", err
+	}
+	return "(" + mn + "-" + mx + ")", nil
+}
+
+func formatMinMax(v *statVal, prefix string) (string, error) {
 	if v.fmt == "s" {
 		if v.minS == v.maxS {
-			return v.minS
+			return v.minS, nil
 		}
-		return "(" + v.minS + "-" + v.maxS + ")"
+		return "(" + v.minS + "-" + v.maxS + ")", nil
 	}
 	if v.min == v.max {
 		return v.format('n', prefix)
@@ -356,11 +371,13 @@ func formatMinMax(v *statVal, prefix string) string {
 	if prefix == "+" {
 		if v.max < 0 {
 			neg := &statVal{min: -v.min, max: -v.max, fmt: v.fmt}
-			return "-(" + neg.format('n', "") + "-" + neg.format('x', "") + ")"
+			r, err := neg.formatRange("")
+			return "-" + r, err
 		}
-		return "+(" + v.format('n', "") + "-" + v.format('x', "") + ")"
+		r, err := v.formatRange("")
+		return "+" + r, err
 	}
-	return "(" + v.format('n', prefix) + "-" + v.format('x', prefix) + ")"
+	return v.formatRange(prefix)
 }
 
 // StatLines is describeStats' result: the description lines, their orders,
@@ -373,7 +390,7 @@ type StatLines struct {
 
 // DescribeStats ports describeStats. stats maps stat ids to their values;
 // entries are mutated by the description transforms exactly as in the Lua.
-func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
+func (x *Ctx) DescribeStats(stats map[string]*statVal) (StatLines, error) {
 	sd := x.statdesc()
 	var out StatLines
 	descriptors := map[*statDescriptor]bool{}
@@ -426,9 +443,8 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
 			continue
 		}
 		for _, spec := range desc.specials {
-			idxf, _ := spec.v.(float64)
-			vi := func() *statVal { return val[int(idxf)-1] }
-			switch spec.k {
+			vi := func() *statVal { return val[int(spec.arg)-1] }
+			switch spec.name {
 			case "negate":
 				v := vi()
 				v.max, v.min = -v.min, -v.max
@@ -522,7 +538,7 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
 			case "mod_value_to_item_class":
 				// #EVAL: archive parity — ItemClasses is never defined in the
 				// Lua either; reaching this errored there too.
-				panic("mod_value_to_item_class hit: ItemClasses is nil in the reference")
+				return out, fmt.Errorf("mod_value_to_item_class hit for %s: ItemClasses is nil in the reference", descriptor.name)
 			case "multiplicative_damage_modifier":
 				v := vi()
 				v.min, v.max = 100+v.min, 100+v.max
@@ -547,12 +563,20 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
 				// The Lua ConPrintfs "Unknown description function"; ignore.
 			}
 		}
+		var fmtErr error
+		fmtVal := func(v *statVal, prefix string) string {
+			s, err := formatMinMax(v, prefix)
+			if err != nil && fmtErr == nil {
+				fmtErr = err
+			}
+			return s
+		}
 		statDesc := reFmtNum.ReplaceAllStringFunc(desc.text, func(tok string) string {
 			n, _ := strconv.Atoi(tok[1 : len(tok)-1])
-			return formatMinMax(val[n], "")
+			return fmtVal(val[n], "")
 		})
 		statDesc = replaceAll(statDesc, "{}", func() string {
-			return formatMinMax(val[0], "")
+			return fmtVal(val[0], "")
 		})
 		statDesc = reFmtColon.ReplaceAllStringFunc(statDesc, func(tok string) string {
 			m := reFmtColon.FindStringSubmatch(tok)
@@ -560,8 +584,11 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
 			if m[1] != "" {
 				n, _ = strconv.Atoi(m[1])
 			}
-			return formatMinMax(val[n], m[2])
+			return fmtVal(val[n], m[2])
 		})
+		if fmtErr != nil {
+			return out, fmtErr
+		}
 		statDesc = strings.ReplaceAll(statDesc, "%%", "%")
 		order := descriptor.order
 		for _, seg := range reDescSeg.FindAllStringSubmatch(statDesc+"\\n", -1) {
@@ -570,7 +597,7 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) StatLines {
 			order += 0.1
 		}
 	}
-	return out
+	return out, nil
 }
 
 // replaceAll replaces every occurrence of the literal token with the callback
@@ -590,53 +617,45 @@ func replaceAll(s, token string, repl func() string) string {
 }
 
 // DescribeModTags ports describeModTags.
-func (x *Ctx) DescribeModTags(modTags any) string {
-	list, ok := modTags.([]any)
-	if !ok {
-		return ""
-	}
+func (x *Ctx) DescribeModTags(modTags []*Row) string {
 	var b strings.Builder
-	for _, t := range list {
-		row := t.(*Row)
+	for _, row := range modTags {
 		if b.Len() > 0 {
 			b.WriteString(", ")
 		}
 		b.WriteString("\"")
-		b.WriteString(luaStr(row.Get("Id")))
+		b.WriteString(row.Str("Id"))
 		b.WriteString("\"")
 	}
 	return b.String()
 }
 
 // DescribeMod ports describeMod.
-func (x *Ctx) DescribeMod(mod *Row) StatLines {
+func (x *Ctx) DescribeMod(mod *Row) (StatLines, error) {
 	stats := map[string]*statVal{}
 	buffTemplateStats := map[string]bool{}
-	for _, key := range []string{"BuffTemplate1", "BuffTemplate2"} {
-		// BuffTemplate2 is a list column: the Lua indexes .Stats on the list
-		// table and gets nil, so only BuffTemplate1 ever contributes.
-		if bt, ok := mod.Get(key).(*Row); ok {
-			if sl, ok := bt.Get("Stats").([]any); ok {
-				for _, s := range sl {
-					if sr, ok := s.(*Row); ok {
-						buffTemplateStats[luaStr(sr.Get("Id"))] = true
-					}
-				}
-			}
+	// The Lua also reads BuffTemplate2, but that is a list column: indexing
+	// .Stats on the list table yields nil, so only BuffTemplate1 contributes.
+	if bt := mod.Ref("BuffTemplate1"); bt != nil {
+		for _, sr := range bt.Refs("Stats") {
+			buffTemplateStats[sr.Str("Id")] = true
 		}
 	}
 	for i := 1; i <= 6; i++ {
-		if sr, ok := mod.Get(fmt.Sprintf("Stat%d", i)).(*Row); ok {
-			id := luaStr(sr.Get("Id"))
+		if sr := mod.Ref(fmt.Sprintf("Stat%d", i)); sr != nil {
+			id := sr.Str("Id")
 			if !buffTemplateStats[id] {
-				iv := mod.Get(fmt.Sprintf("Stat%dValue", i)).(Interval)
+				iv := mod.Ivl(fmt.Sprintf("Stat%dValue", i))
 				stats[id] = &statVal{min: float64(iv[0]), max: float64(iv[1])}
 			}
 		}
 	}
-	out := x.DescribeStats(stats)
-	out.ModTags = x.DescribeModTags(mod.Get("ImplicitTags"))
-	return out
+	out, err := x.DescribeStats(stats)
+	if err != nil {
+		return out, err
+	}
+	out.ModTags = x.DescribeModTags(mod.Refs("ImplicitTags"))
+	return out, nil
 }
 
 // DescribeScalability ports describeScalability.
@@ -645,10 +664,13 @@ type scalability struct {
 	formats    []string
 }
 
-func (x *Ctx) DescribeScalability(fileName string) map[string][]scalability {
+func (x *Ctx) DescribeScalability(fileName string) (map[string][]scalability, error) {
 	sd := x.statdesc()
 	out := map[string][]scalability{}
-	stats := x.Dat("stats")
+	stats, err := x.Dat("stats")
+	if err != nil {
+		return nil, err
+	}
 	descs := sd.byFile[fileName]
 	keys := make([]string, 0, len(descs))
 	for k := range descs {
@@ -662,13 +684,13 @@ func (x *Ctx) DescribeScalability(fileName string) map[string][]scalability {
 		}
 		var scal []bool
 		for _, s := range statDescription.stats {
-			scal = append(scal, stats.GetRow("Id", s).Get("IsScalable").(bool))
+			scal = append(scal, stats.GetRow("Id", s).Bool("IsScalable"))
 		}
 		for _, wordings := range statDescription.lang {
 			wordingFormats := map[int][]string{}
 			for _, format := range wordings.specials {
-				if v, ok := format.v.(float64); ok {
-					wordingFormats[int(v)] = append(wordingFormats[int(v)], format.k)
+				if format.hasArg {
+					wordingFormats[int(format.arg)] = append(wordingFormats[int(format.arg)], format.name)
 				}
 			}
 			var inOrder []scalability
@@ -705,5 +727,5 @@ func (x *Ctx) DescribeScalability(fileName string) map[string][]scalability {
 			}
 		}
 	}
-	return out
+	return out, nil
 }

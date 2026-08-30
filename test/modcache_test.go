@@ -43,8 +43,8 @@ func readModCacheRecs(t *testing.T) []modCacheRec {
 	return recs
 }
 
-func canonOrNull(mods []any) string {
-	if mods == nil {
+func canonOrNull(mods []*modparser.Mod, recognised bool) string {
+	if !recognised {
 		return "null"
 	}
 	return string(modparser.EncodeMods(mods))
@@ -65,8 +65,8 @@ func TestModCacheAgainstShippedFile(t *testing.T) {
 	modparser.SetModCache(data.LoadedModCache)
 	echoBad := 0
 	for _, rec := range recs {
-		mods, extra := modparser.Parse(rec.K)
-		if got, want := canonOrNull(mods), string(rec.M); got != want {
+		mods, extra, recognised := modparser.Parse(rec.K)
+		if got, want := canonOrNull(mods, recognised), string(rec.M); got != want {
 			echoBad++
 			if echoBad <= 3 {
 				t.Errorf("decode-echo %q:\n%s", rec.K, diffWindow(got, want))
@@ -82,8 +82,8 @@ func TestModCacheAgainstShippedFile(t *testing.T) {
 	modparser.SetModCache(nil)
 	freshBad := 0
 	for _, rec := range recs {
-		mods, extra := modparser.Parse(rec.K)
-		if got, want := canonOrNull(modparser.Quantize14(mods)), string(rec.M); got != want {
+		mods, extra, recognised := modparser.Parse(rec.K)
+		if got, want := canonOrNull(modparser.Quantize14(mods), recognised), string(rec.M); got != want {
 			freshBad++
 			if freshBad <= 3 {
 				t.Errorf("fresh-parse %q:\n%s", rec.K, diffWindow(got, want))

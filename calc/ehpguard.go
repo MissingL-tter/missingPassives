@@ -2,7 +2,11 @@
 // shield, minions, totems, soul link), Vaal Arctic Armour and total pools.
 package calc
 
-import "math"
+import (
+	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/modstore"
+	"math"
+)
 
 // allyLifePool mirrors one allyLifePoolList entry (CalcDefence.lua L32).
 type allyLifePool struct {
@@ -33,13 +37,13 @@ type allyPoolState struct {
 }
 
 // buildAllyLifePools ports the local of the same name.
-func buildAllyLifePools(output map[string]any) map[string]*allyPoolState {
+func buildAllyLifePools(output modstore.Output) map[string]*allyPoolState {
 	pools := map[string]*allyPoolState{}
 	for _, ally := range allyLifePoolList {
 		life, hasLife := output[ally.life]
 		mitigation, hasMit := output[ally.mitigation]
-		if hasLife && anyNum(life) > 0 && hasMit && anyNum(mitigation) > 0 {
-			pools[ally.key] = &allyPoolState{remaining: anyNum(life), percent: math.Min(anyNum(mitigation), 100) / 100}
+		if hasLife && life.Num() > 0 && hasMit && mitigation.Num() > 0 {
+			pools[ally.key] = &allyPoolState{remaining: life.Num(), percent: math.Min(mitigation.Num(), 100) / 100}
 		}
 	}
 	return pools
@@ -50,52 +54,52 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
 	output := actor.output
 
 	// Guard
-	output["AnyGuard"] = false
-	output["sharedGuardAbsorbRate"] = math.Min(modDB.Sum("BASE", nil, "GuardAbsorbRate"), 100)
-	if outNum(output, "sharedGuardAbsorbRate") > 0 {
-		output["OnlySharedGuard"] = true
-		output["sharedGuardAbsorb"] = Val(modDB, "GuardAbsorbLimit", nil)
+	output.SetFlag("AnyGuard", false)
+	output.SetN("sharedGuardAbsorbRate", math.Min(modDB.Sum(modparser.Base, nil, "GuardAbsorbRate"), 100))
+	if output.N("sharedGuardAbsorbRate") > 0 {
+		output.SetFlag("OnlySharedGuard", true)
+		output.SetN("sharedGuardAbsorb", Val(modDB, "GuardAbsorbLimit", nil))
 	}
 	for _, damageType := range dmgTypeList {
-		output[damageType+"GuardAbsorbRate"] = math.Min(modDB.Sum("BASE", nil, damageType+"GuardAbsorbRate"), 100)
-		if outNum(output, damageType+"GuardAbsorbRate") > 0 {
-			output["ehpSectionAnySpecificTypes"] = true
-			output["AnyGuard"] = true
-			output["OnlySharedGuard"] = false
-			output[damageType+"GuardAbsorb"] = Val(modDB, damageType+"GuardAbsorbLimit", nil)
+		output.SetN(damageType+"GuardAbsorbRate", math.Min(modDB.Sum(modparser.Base, nil, damageType+"GuardAbsorbRate"), 100))
+		if output.N(damageType+"GuardAbsorbRate") > 0 {
+			output.SetFlag("ehpSectionAnySpecificTypes", true)
+			output.SetFlag("AnyGuard", true)
+			output.SetFlag("OnlySharedGuard", false)
+			output.SetN(damageType+"GuardAbsorb", Val(modDB, damageType+"GuardAbsorbLimit", nil))
 		}
 	}
 
 	// aegis
-	output["AnyAegis"] = false
+	output.SetFlag("AnyAegis", false)
 	sharedAegis, _ := modDB.Max(nil, "AegisValue")
 	sharedElementalAegis, _ := modDB.Max(nil, "ElementalAegisValue")
-	output["sharedAegis"] = sharedAegis
-	output["sharedElementalAegis"] = sharedElementalAegis
+	output.SetN("sharedAegis", sharedAegis)
+	output.SetN("sharedElementalAegis", sharedElementalAegis)
 	if sharedAegis > 0 {
-		output["AnyAegis"] = true
+		output.SetFlag("AnyAegis", true)
 	}
 	if sharedElementalAegis > 0 {
-		output["ehpSectionAnySpecificTypes"] = true
-		output["AnyAegis"] = true
+		output.SetFlag("ehpSectionAnySpecificTypes", true)
+		output.SetFlag("AnyAegis", true)
 	}
 	for _, damageType := range dmgTypeList {
 		aegisValue, _ := modDB.Max(nil, damageType+"AegisValue")
 		if aegisValue > 0 {
-			output["ehpSectionAnySpecificTypes"] = true
-			output["AnyAegis"] = true
-			output[damageType+"Aegis"] = aegisValue
+			output.SetFlag("ehpSectionAnySpecificTypes", true)
+			output.SetFlag("AnyAegis", true)
+			output.SetN(damageType+"Aegis", aegisValue)
 		} else {
-			output[damageType+"Aegis"] = 0.0
+			output.SetN(damageType+"Aegis", 0.0)
 		}
 		if isElementalRes[damageType] {
-			output[damageType+"AegisDisplay"] = outNum(output, damageType+"Aegis") + sharedElementalAegis
+			output.SetN(damageType+"AegisDisplay", output.N(damageType+"Aegis")+sharedElementalAegis)
 		}
 	}
 
 	// taken from allies before you, eg. frost shield
-	output["FrostShieldLife"] = modDB.Sum("BASE", nil, "FrostGlobeHealth")
-	output["FrostShieldDamageMitigation"] = modDB.Sum("BASE", nil, "FrostGlobeDamageMitigation")
+	output.SetN("FrostShieldLife", modDB.Sum(modparser.Base, nil, "FrostGlobeHealth"))
+	output.SetN("FrostShieldDamageMitigation", modDB.Sum(modparser.Base, nil, "FrostGlobeDamageMitigation"))
 
 	// Every ally redirect uses the same pool rules; the Safeguarding Golem
 	// is the only melee-only case.
@@ -103,7 +107,7 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
 		if ally.redirect == "" {
 			continue
 		}
-		mitigation := modDB.Sum("BASE", nil, ally.redirect)
+		mitigation := modDB.Sum(modparser.Base, nil, ally.redirect)
 		if ally.meleeOnly {
 			switch damageCategoryConfig {
 			case "Melee":
@@ -114,16 +118,16 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
 				mitigation = 0
 			}
 		}
-		output[ally.mitigation] = mitigation
+		output.SetN(ally.mitigation, mitigation)
 		if mitigation != 0 {
-			life := modDB.Sum("BASE", nil, ally.life)
+			life := modDB.Sum(modparser.Base, nil, ally.life)
 			if life == 0 && ally.fallback != "" {
-				life = modDB.Sum("BASE", nil, ally.fallback)
+				life = modDB.Sum(modparser.Base, nil, ally.fallback)
 			}
-			if ov := modDB.Override(nil, ally.life); truthy(ov) {
-				output[ally.life] = anyNum(ov)
+			if ov, ok := modDB.Override(nil, ally.life); ok {
+				output.SetN(ally.life, valueNum(ov))
 			} else {
-				output[ally.life] = life
+				output.SetN(ally.life, life)
 			}
 		}
 	}
@@ -132,57 +136,57 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig string) {
 	// minion's Life.
 	for _, ally := range allyLifePoolList {
 		if modDB.Flag(nil, "MinionLifeShares"+ally.life) {
-			specificOverride := modDB.Override(nil, ally.life)
-			if !truthy(modDB.Override(nil, "TotalMinionLife")) && specificOverride != nil {
-				output["TotalMinionLife"] = anyNum(specificOverride)
-			} else if !truthy(output["TotalMinionLife"]) {
-				output["TotalMinionLife"] = outNum(output, ally.life)
+			specificOverride, _ := modDB.Override(nil, ally.life)
+			if !hasOverride(modDB, nil, "TotalMinionLife") && specificOverride != nil {
+				output.SetN("TotalMinionLife", valueNum(specificOverride))
+			} else if !output.Has("TotalMinionLife") {
+				output.SetN("TotalMinionLife", output.N(ally.life))
 			}
-			output["MinionAllyDamageMitigation"] = outNum(output, "MinionAllyDamageMitigation") + outNum(output, ally.mitigation)
-			output[ally.mitigation] = 0.0
-			delete(output, ally.life)
+			output.SetN("MinionAllyDamageMitigation", output.N("MinionAllyDamageMitigation")+output.N(ally.mitigation))
+			output.SetN(ally.mitigation, 0.0)
+			output.Del(ally.life)
 		}
 	}
 
 	// When Vaal Rejuvenation is treated as the nearest Totem, both
 	// redirects use its Life.
-	if outNum(output, "TotemAllyDamageMitigation") > 0 && outNum(output, "TotalTotemLife") == 0 &&
-		outNum(output, "TotalVaalRejuvenationTotemLife") > 0 {
-		output["VaalRejuvenationTotemAllyDamageMitigation"] = outNum(output, "VaalRejuvenationTotemAllyDamageMitigation") + outNum(output, "TotemAllyDamageMitigation")
-		output["TotemAllyDamageMitigation"] = 0.0
-		delete(output, "TotalTotemLife")
+	if output.N("TotemAllyDamageMitigation") > 0 && output.N("TotalTotemLife") == 0 &&
+		output.N("TotalVaalRejuvenationTotemLife") > 0 {
+		output.SetN("VaalRejuvenationTotemAllyDamageMitigation", output.N("VaalRejuvenationTotemAllyDamageMitigation")+output.N("TotemAllyDamageMitigation"))
+		output.SetN("TotemAllyDamageMitigation", 0.0)
+		output.Del("TotalTotemLife")
 	}
 
 	// from Allied Energy Shield
-	output["SoulLinkMitigation"] = modDB.Sum("BASE", nil, "TakenFromParentESBeforeYou")
-	if outNum(output, "SoulLinkMitigation") != 0 {
-		output["AlliedEnergyShield"] = outNum(actor.parent.output, "EnergyShieldRecoveryCap")
+	output.SetN("SoulLinkMitigation", modDB.Sum(modparser.Base, nil, "TakenFromParentESBeforeYou"))
+	if output.N("SoulLinkMitigation") != 0 {
+		output.SetN("AlliedEnergyShield", actor.parent.output.N("EnergyShieldRecoveryCap"))
 	} else {
-		output["SoulLinkMitigation"] = modDB.Sum("BASE", nil, "TakenFromPartyMemberESBeforeYou")
-		if outNum(output, "SoulLinkMitigation") != 0 {
+		output.SetN("SoulLinkMitigation", modDB.Sum(modparser.Base, nil, "TakenFromPartyMemberESBeforeYou"))
+		if output.N("SoulLinkMitigation") != 0 {
 			panic("ehp: TakenFromPartyMemberESBeforeYou needs the party tab")
 		}
 	}
 
 	// Vaal Arctic Armour
-	output["VaalArcticArmourLife"] = modDB.Sum("BASE", nil, "VaalArcticArmourMaxHits")
-	output["VaalArcticArmourMitigation"] = math.Min(-modDB.Sum("MORE", nil, "VaalArcticArmourMitigation")/100, 1)
+	output.SetN("VaalArcticArmourLife", modDB.Sum(modparser.Base, nil, "VaalArcticArmourMaxHits"))
+	output.SetN("VaalArcticArmourMitigation", math.Min(-modDB.Sum(modparser.More, nil, "VaalArcticArmourMitigation")/100, 1))
 
 	// total pool
 	for _, damageType := range dmgTypeList {
-		output[damageType+"TotalPool"] = outNum(output, damageType+"ManaEffectiveLife")
-		output[damageType+"TotalHitPool"] = outNum(output, damageType+"MoMHitPool")
-		if outNum(output, damageType+"EnergyShieldBypass") < 100 && !modDB.Flag(nil, "EnergyShieldProtectsMana") {
-			bypass := outNum(output, damageType+"EnergyShieldBypass")
+		output.SetN(damageType+"TotalPool", output.N(damageType+"ManaEffectiveLife"))
+		output.SetN(damageType+"TotalHitPool", output.N(damageType+"MoMHitPool"))
+		if output.N(damageType+"EnergyShieldBypass") < 100 && !modDB.Flag(nil, "EnergyShieldProtectsMana") {
+			bypass := output.N(damageType + "EnergyShieldBypass")
 			if bypass > 0 {
-				poolProtected := outNum(output, "EnergyShieldRecoveryCap") / (1 - bypass/100) * (bypass / 100)
-				output[damageType+"TotalPool"] = math.Max(outNum(output, damageType+"TotalPool")-poolProtected, 0) +
-					math.Min(outNum(output, damageType+"TotalPool"), poolProtected)/(bypass/100)
-				output[damageType+"TotalHitPool"] = math.Max(outNum(output, damageType+"TotalHitPool")-poolProtected, 0) +
-					math.Min(outNum(output, damageType+"TotalHitPool"), poolProtected)/(bypass/100)
+				poolProtected := output.N("EnergyShieldRecoveryCap") / (1 - bypass/100) * (bypass / 100)
+				output.SetN(damageType+"TotalPool", math.Max(output.N(damageType+"TotalPool")-poolProtected, 0)+
+					math.Min(output.N(damageType+"TotalPool"), poolProtected)/(bypass/100))
+				output.SetN(damageType+"TotalHitPool", math.Max(output.N(damageType+"TotalHitPool")-poolProtected, 0)+
+					math.Min(output.N(damageType+"TotalHitPool"), poolProtected)/(bypass/100))
 			} else {
-				output[damageType+"TotalPool"] = outNum(output, damageType+"TotalPool") + outNum(output, "EnergyShieldRecoveryCap")
-				output[damageType+"TotalHitPool"] = outNum(output, damageType+"TotalHitPool") + outNum(output, "EnergyShieldRecoveryCap")
+				output.SetN(damageType+"TotalPool", output.N(damageType+"TotalPool")+output.N("EnergyShieldRecoveryCap"))
+				output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+output.N("EnergyShieldRecoveryCap"))
 			}
 		}
 	}

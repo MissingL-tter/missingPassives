@@ -4,6 +4,8 @@ package schema
 // only).
 type Essences []Essence
 
+func (Essences) isDocument() {}
+
 type Essence struct {
 	BaseId string            `json:"baseId"`
 	Name   string            `json:"name"`
@@ -16,6 +18,8 @@ type Essence struct {
 // values.
 type ModScalability map[string][]Scalability
 
+func (ModScalability) isDocument() {}
+
 type Scalability struct {
 	IsScalable bool     `json:"isScalable"`
 	Formats    []string `json:"formats"` // nil when the value carries no formats
@@ -24,6 +28,8 @@ type Scalability struct {
 // MasterCrafts holds the crafting bench options, in CraftingBenchOptions row
 // order (enabled rows with a mod only).
 type MasterCrafts []MasterCraft
+
+func (MasterCrafts) isDocument() {}
 
 type MasterCraft struct {
 	Type       string    `json:"type"` // "Prefix", "Suffix" or ""
@@ -39,6 +45,8 @@ type MasterCraft struct {
 // CrucibleNodes holds the crucible passive data, in WeaponPassiveSkills row
 // order (HardMode and stat-less mods excluded).
 type CrucibleNodes []CrucibleNode
+
+func (CrucibleNodes) isDocument() {}
 
 type CrucibleNode struct {
 	ModId               string    `json:"modId"`

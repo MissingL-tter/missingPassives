@@ -29,25 +29,25 @@ func (env *Env) sortedFlasks(set map[*Item]bool) []*Item {
 }
 
 func flaskBaseLife(item *Item) bool {
-	return item.In.Base != nil && item.In.Base.Flask != nil && truthy(item.In.Base.Flask.Life)
+	return item.In.Base != nil && item.In.Base.Flask != nil && item.In.Base.Flask.Life.Set
 }
 
 func flaskBaseMana(item *Item) bool {
-	return item.In.Base != nil && item.In.Base.Flask != nil && truthy(item.In.Base.Flask.Mana)
+	return item.In.Base != nil && item.In.Base.Flask != nil && item.In.Base.Flask.Mana.Set
 }
 
 // getFlaskInstantRecovery ports the local getFlaskInstantRecovery.
 func (env *Env) getFlaskInstantRecovery(item *Item) float64 {
 	modDB := env.ModDB
-	instantPerc := anyNum(item.In.FlaskData["instantPerc"])
+	instantPerc := item.In.FlaskData.InstantPerc.Or(0)
 	if modDB.Flag(nil, "Condition:LowLife") {
-		instantPerc += anyNum(item.In.FlaskData["instantLowLifePerc"])
+		instantPerc += item.In.FlaskData.InstantLowLifePerc.Or(0)
 	}
 	if flaskBaseLife(item) {
-		instantPerc += modDB.Sum("BASE", nil, "LifeFlaskInstantRecovery")
+		instantPerc += modDB.Sum(modparser.Base, nil, "LifeFlaskInstantRecovery")
 	}
 	if flaskBaseMana(item) {
-		instantPerc += modDB.Sum("BASE", nil, "ManaFlaskInstantRecovery")
+		instantPerc += modDB.Sum(modparser.Base, nil, "ManaFlaskInstantRecovery")
 	}
 	return math.Min(100, instantPerc)
 }
@@ -56,19 +56,22 @@ func (env *Env) getFlaskInstantRecovery(item *Item) float64 {
 func (env *Env) calcFlaskRecovery(typ string, item *Item, effectInc, flaskTotalRateInc, flaskDurInc float64) []*modparser.Mod {
 	modDB := env.ModDB
 	var out []*modparser.Mod
-	lType := luaLower(typ)
+	pool := item.In.FlaskData.Pool(typ)
 
-	if !truthy(item.In.FlaskData[lType+"EffectNotRemoved"]) && !modDB.Flag(nil, typ+"FlaskEffectNotRemoved") {
+	if !(pool != nil && pool.EffectNotRemoved) && !modDB.Flag(nil, typ+"FlaskEffectNotRemoved") {
 		return out
 	}
 
 	name := item.In.Name
-	base := anyNum(item.In.FlaskData[lType+"Base"])
-	dur := anyNum(item.In.FlaskData["duration"])
+	base := 0.0
+	if pool != nil {
+		base = pool.Base
+	}
+	dur := item.In.FlaskData.Duration
 	instPerc := env.getFlaskInstantRecovery(item)
-	flaskRecInc := modDB.Sum("INC", nil, "Flask"+typ+"Recovery")
+	flaskRecInc := modDB.Sum(modparser.Inc, nil, "Flask"+typ+"Recovery")
 	flaskRecMore := modDB.More(nil, "Flask"+typ+"Recovery")
-	flaskRateInc := modDB.Sum("INC", nil, "Flask"+typ+"RecoveryRate")
+	flaskRateInc := modDB.Sum(modparser.Inc, nil, "Flask"+typ+"RecoveryRate")
 	flaskTotal := base * (1 - instPerc/100) * (1 + flaskRecInc/100) * flaskRecMore * (1 + flaskDurInc/100)
 	flaskDur := dur * (1 + flaskDurInc/100) / (1 + flaskTotalRateInc/100) / (1 + flaskRateInc/100)
 
@@ -76,17 +79,17 @@ func (env *Env) calcFlaskRecovery(typ string, item *Item, effectInc, flaskTotalR
 	// ingame); counteract by removing flask effect beforehand
 	lowLifeFlaskRecMore := modDB.More(nil, "FlaskLifeRecoveryLowLife")
 	if lowLifeFlaskRecMore > 1 {
-		if lType == "life" {
+		if typ == "Life" {
 			flaskTotal = flaskTotal * ((lowLifeFlaskRecMore-1)/(1+effectInc/100) + 1)
 		}
 	}
 
-	out = append(out, newMod(typ+"Recovery", "BASE", flaskTotal/flaskDur, name))
+	out = append(out, newModS(typ+"Recovery", modparser.Base, modparser.Num(flaskTotal/flaskDur), name))
 	if modDB.Flag(nil, typ+"FlaskAppliesToEnergyShield") {
-		out = append(out, newMod("EnergyShieldRecovery", "BASE", flaskTotal/flaskDur, name))
+		out = append(out, newModS("EnergyShieldRecovery", modparser.Base, modparser.Num(flaskTotal/flaskDur), name))
 	}
 	if modDB.Flag(nil, typ+"FlaskAppliesToLife") {
-		out = append(out, newMod("LifeRecovery", "BASE", flaskTotal/flaskDur, name))
+		out = append(out, newModS("LifeRecovery", modparser.Base, modparser.Num(flaskTotal/flaskDur), name))
 	}
 	return out
 }
@@ -95,15 +98,15 @@ func (env *Env) calcFlaskRecovery(typ string, item *Item, effectInc, flaskTotalR
 func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecoveryFlasksForMinions bool, nonUniqueFlasksApplyToMinion bool) {
 	modDB := env.ModDB
 	playerCfg := &modstore.Cfg{Actor: "player"}
-	effectInc := modDB.Sum("INC", playerCfg, "FlaskEffect")
-	effectIncMagic := modDB.Sum("INC", playerCfg, "MagicUtilityFlaskEffect")
-	effectIncMagicNoAdjacent := modDB.Sum("INC", playerCfg, "MagicFlaskNoAdjacentEffect")
-	effectIncNonPlayer := modDB.Sum("INC", nil, "FlaskEffect")
-	effectIncMagicNonPlayer := modDB.Sum("INC", nil, "MagicUtilityFlaskEffect")
+	effectInc := modDB.Sum(modparser.Inc, playerCfg, "FlaskEffect")
+	effectIncMagic := modDB.Sum(modparser.Inc, playerCfg, "MagicUtilityFlaskEffect")
+	effectIncMagicNoAdjacent := modDB.Sum(modparser.Inc, playerCfg, "MagicFlaskNoAdjacentEffect")
+	effectIncNonPlayer := modDB.Sum(modparser.Inc, nil, "FlaskEffect")
+	effectIncMagicNonPlayer := modDB.Sum(modparser.Inc, nil, "MagicUtilityFlaskEffect")
 	flasksApplyToMinion := env.Minion != nil && modDB.Flag(env.PlayerMainSkill.SkillCfg, "FlasksApplyToMinion")
 	quickSilverAppliesToAllies := env.Minion != nil && modDB.Flag(env.PlayerMainSkill.SkillCfg, "QuickSilverAppliesToAllies")
-	flaskTotalRateInc := modDB.Sum("INC", nil, "FlaskRecoveryRate")
-	flaskDurInc := modDB.Sum("INC", nil, "FlaskDuration")
+	flaskTotalRateInc := modDB.Sum(modparser.Inc, nil, "FlaskRecoveryRate")
+	flaskDurInc := modDB.Sum(modparser.Inc, nil, "FlaskDuration")
 
 	flaskBuffs := map[string]*modstore.List{}
 	flaskConditions := map[string]bool{}
@@ -114,8 +117,8 @@ func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecover
 	flaskBuffsNonUtility := map[string]*modstore.List{}
 
 	calcFlaskMods := func(item *Item, baseName string, buffModList, modList []*modparser.Mod, onlyMinion bool) {
-		flaskEffectInc := effectInc + anyNum(item.In.FlaskData["effectInc"])
-		flaskEffectIncNonPlayer := effectIncNonPlayer + anyNum(item.In.FlaskData["effectInc"])
+		flaskEffectInc := effectInc + item.In.FlaskData.EffectInc
+		flaskEffectIncNonPlayer := effectIncNonPlayer + item.In.FlaskData.EffectInc
 		if item.In.Rarity == "MAGIC" && !(flaskBaseLife(item) || flaskBaseMana(item)) {
 			flaskEffectInc += effectIncMagic
 			flaskEffectIncNonPlayer += effectIncMagicNonPlayer
@@ -204,10 +207,10 @@ func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecover
 			}
 		}
 		if baseName == "Iron Flask" {
-			chargesGeneratedOnWardBreak := modDB.Sum("BASE", nil, "IronFlaskChargesGeneratedOnWardBreak")
+			chargesGeneratedOnWardBreak := modDB.Sum(modparser.Base, nil, "IronFlaskChargesGeneratedOnWardBreak")
 			if chargesGeneratedOnWardBreak > 0 {
-				gainMod := anyNum(item.In.FlaskData["gainMod"]) * (1 + modDB.Sum("INC", nil, "FlaskChargesGained")/100)
-				chargesUsed := anyNum(item.In.FlaskData["chargesUsed"]) * (1 + modDB.Sum("INC", nil, "FlaskChargesUsed")/100)
+				gainMod := item.In.FlaskData.GainMod * (1 + modDB.Sum(modparser.Inc, nil, "FlaskChargesGained")/100)
+				chargesUsed := item.In.FlaskData.ChargesUsed * (1 + modDB.Sum(modparser.Inc, nil, "FlaskChargesUsed")/100)
 				if chargesGeneratedOnWardBreak*gainMod > chargesUsed {
 					flaskConditions["UnbrokenWard"] = true
 				}
@@ -246,14 +249,14 @@ func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecover
 	}
 	if modDB.Flag(nil, "UtilityFlasksDoNotApplyToPlayer") {
 		for _, cond := range sortedBoolKeys(flaskConditionsNonUtility) {
-			modDB.Conditions[cond] = flaskConditionsNonUtility[cond]
+			modDB.Conditions.Set(cond, flaskConditionsNonUtility[cond])
 		}
 		for _, k := range sortedListKeys(flaskBuffsNonUtility) {
 			modDB.AddList(flaskBuffsNonUtility[k].Mods)
 		}
 	} else if !modDB.Flag(nil, "FlasksDoNotApplyToPlayer") {
 		for _, cond := range sortedBoolKeys(flaskConditions) {
-			modDB.Conditions[cond] = flaskConditions[cond]
+			modDB.Conditions.Set(cond, flaskConditions[cond])
 		}
 		for _, k := range sortedListKeys(flaskBuffs) {
 			modDB.AddList(flaskBuffs[k].Mods)
@@ -263,15 +266,15 @@ func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecover
 		if flasksApplyToMinion || nonUniqueFlasksApplyToMinion {
 			minionModDB := env.Minion.DB
 			for _, cond := range sortedBoolKeys(flaskConditions) {
-				minionModDB.Conditions[cond] = flaskConditions[cond]
+				minionModDB.Conditions.Set(cond, flaskConditions[cond])
 			}
 			for _, k := range sortedListKeys(flaskBuffsNonPlayer) {
 				minionModDB.AddList(flaskBuffsNonPlayer[k].Mods)
 			}
 		} else if quickSilverAppliesToAllies && flaskBuffsPerBaseNonPlayer["Quicksilver Flask"] != nil {
 			minionModDB := env.Minion.DB
-			minionModDB.Conditions["UsingQuicksilverFlask"] = flaskConditions["UsingQuicksilverFlask"]
-			minionModDB.Conditions["UsingFlask"] = flaskConditions["UsingFlask"]
+			minionModDB.Conditions.Set("UsingQuicksilverFlask", flaskConditions["UsingQuicksilverFlask"])
+			minionModDB.Conditions.Set("UsingFlask", flaskConditions["UsingFlask"])
 			for _, k := range sortedListKeys(flaskBuffsPerBaseNonPlayer["Quicksilver Flask"]) {
 				minionModDB.AddList(flaskBuffsPerBaseNonPlayer["Quicksilver Flask"][k].Mods)
 			}
@@ -283,13 +286,13 @@ func (env *Env) mergeFlasks(flasks map[*Item]bool, onlyRecovery, checkNonRecover
 func (env *Env) mergeTinctures(tinctures map[*Item]bool) {
 	modDB := env.ModDB
 	playerCfg := &modstore.Cfg{Actor: "player"}
-	effectInc := modDB.Sum("INC", playerCfg, "TinctureEffect")
-	effectIncMagic := modDB.Sum("INC", playerCfg, "MagicTinctureEffect")
-	tinctureLimit := modDB.Sum("BASE", nil, "TinctureLimit")
+	effectInc := modDB.Sum(modparser.Inc, playerCfg, "TinctureEffect")
+	effectIncMagic := modDB.Sum(modparser.Inc, playerCfg, "MagicTinctureEffect")
+	tinctureLimit := modDB.Sum(modparser.Base, nil, "TinctureLimit")
 
-	tincturesNotInflictManaBurn := math.Min(modDB.Sum("BASE", nil, "TincturesNotInflictManaBurn"), 100)
+	tincturesNotInflictManaBurn := math.Min(modDB.Sum(modparser.Base, nil, "TincturesNotInflictManaBurn"), 100)
 	canGainRequiredBurn := modDB.Flag(nil, "Condition:WeepingWoundsInsteadOfManaBurn") ||
-		(tincturesNotInflictManaBurn < 100 && outNum(env.playerPA.output, "ManaUnreserved") > 0)
+		(tincturesNotInflictManaBurn < 100 && env.playerPA.output.N("ManaUnreserved") > 0)
 	if !canGainRequiredBurn {
 		return
 	}
@@ -298,7 +301,7 @@ func (env *Env) mergeTinctures(tinctures map[*Item]bool) {
 	tinctureBuffsPerBase := map[string]map[string]*modstore.List{}
 
 	calcTinctureMods := func(item *Item, baseName string, buffModList, modList []*modparser.Mod) {
-		tinctureEffectInc := effectInc + anyNum(item.In.TinctureData["effectInc"])
+		tinctureEffectInc := effectInc + item.In.TinctureData.EffectInc
 		if item.In.Rarity == "MAGIC" {
 			tinctureEffectInc += effectIncMagic
 		}
@@ -350,7 +353,7 @@ func (env *Env) mergeTinctures(tinctures map[*Item]bool) {
 	}
 	sort.Strings(condKeys)
 	for _, cond := range condKeys {
-		modDB.Conditions[cond] = tinctureConditions[cond]
+		modDB.Conditions.Set(cond, tinctureConditions[cond])
 	}
 	buffKeys := make([]string, 0, len(tinctureBuffs))
 	for k := range tinctureBuffs {
@@ -363,9 +366,9 @@ func (env *Env) mergeTinctures(tinctures map[*Item]bool) {
 	if modDB.Flag(nil, "TinctureRangedWeapons") {
 		for _, k := range buffKeys {
 			for _, buff := range tinctureBuffs[k].Mods {
-				if buff.Flags&modparser.ModFlag.WeaponMelee == modparser.ModFlag.WeaponMelee {
-					nm := modparser.CopyMod(buff)
-					nm.Flags = (nm.Flags &^ modparser.ModFlag.WeaponMelee) | modparser.ModFlag.WeaponRanged
+				if buff.Flags&modparser.FlagWeaponMelee == modparser.FlagWeaponMelee {
+					nm := cloneMod(buff)
+					nm.Flags = (nm.Flags &^ modparser.FlagWeaponMelee) | modparser.FlagWeaponRanged
 					modDB.AddList([]*modparser.Mod{nm})
 				}
 			}

@@ -77,8 +77,8 @@ lookups, boss stat means, item base lists, the full skill database (granted
 effects with structured mods, template statMaps and hand fragments), gems
 with their lookups and synthesized Vaal Alt gems, minions/spectres, and the
 programmatically generated uniques. The hand-written `mod(...)` fragments in
-templates are evaluated by a small constructor-expression parser
-(`data/modexpr.go`) — no Lua anywhere.
+templates are structured mods built at export and decoded by the modparser
+codec — no Lua anywhere.
 
 **`TestGameDataAgainstReference`** boots the archive application, dumps the
 loaded `data` table subtree by subtree (`tools/dump_gamedata.lua` →
@@ -140,8 +140,8 @@ luajit ../../tools/dump_modtables.lua   # -> test/testdata/tables_archive.jsonl
 | `modparser/jewels.go` | radius-jewel node functions (getSimpleConv / getPerStat / getThreshold families) against narrow `modStoreWriter` interfaces, for the future calc-engine port. Keys are exact mod text; parametric entries are keyed by regex and wrapped in `jewelFactory` |
 | `modparser/tables_build.go` | the data-driven construction loops (skill names, gem specials, keystones, cluster jewel skills) |
 | `modparser/vocab.go` | the game vocabulary the loops consume (skills, gems, cluster notables, ailment defaults). Extracted one-time from the reference, Go-maintained; regeneration lands with the game-data module |
-| `modparser/canon.go` | canonical serialiser, byte-compatible with `tools/canon.lua` |
-| `internal/luapat` | Lua-pattern → regex converter, used only by the table-archive test to map the archive's keys; deleted with the Lua |
+| `test/luacanon` | canonical serialiser, byte-compatible with `tools/canon.lua`; test-only |
+| `test/luapat` | Lua-pattern → regex converter, used only by the table-archive test to map the archive's keys; deleted with the Lua |
 
 ## Public API
 

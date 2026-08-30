@@ -38,20 +38,38 @@ func mustJSON(s string) []byte {
 
 // jewelFuncSkipped mirrors SaveModCache's skip: entries whose first mod is
 // the unserializable JewelFunc/ExtraJewelFunc closure.
-func jewelFuncSkipped(mods []any) bool {
+func jewelFuncSkipped(mods []*modparser.Mod) bool {
 	if len(mods) == 0 {
 		return false
 	}
-	m, ok := mods[0].(*modparser.Mod)
-	return ok && (m.Name == "JewelFunc" || m.Name == "ExtraJewelFunc")
+	m := mods[0]
+	return m.Name == "JewelFunc" || m.Name == "ExtraJewelFunc"
 }
 
-// Build regenerates the mod cache document for the given tree version.
+// Build regenerates the mod cache document for the given tree version
+// from the embedded data set.
 func Build(treeVersion string) []byte {
+	src, err := data.RawSources()
+	if err != nil {
+		panic(err)
+	}
+	return BuildFrom(src, treeVersion)
+}
+
+// BuildFrom regenerates the mod cache document over src (cmd/sourceupdate
+// passes the directory it has just written). It runs data.Load itself —
+// the unique walk needs the tree-dependent uniques — so prior Load state
+// is irrelevant.
+func BuildFrom(src data.Sources, treeVersion string) []byte {
+	if err := data.Load(src); err != nil {
+		panic(err)
+	}
 	modparser.SetModCache(nil) // record fresh parses
 	defer modparser.SetModCache(data.LoadedModCache)
 
-	tree.Load(treeVersion)
+	if _, err := tree.Load(treeVersion); err != nil {
+		panic(err)
+	}
 
 	for _, typeList := range data.Uniques {
 		for _, raw := range typeList {
@@ -85,12 +103,12 @@ func Build(treeVersion string) []byte {
 	sort.Strings(lines)
 	var buf bytes.Buffer
 	for _, line := range lines {
-		mods, extra := modparser.Parse(line)
+		mods, extra, recognised := modparser.Parse(line)
 		if jewelFuncSkipped(mods) {
 			continue
 		}
 		m := "null"
-		if mods != nil {
+		if recognised {
 			m = string(modparser.EncodeMods(modparser.Quantize14(mods)))
 		}
 		e := "null"

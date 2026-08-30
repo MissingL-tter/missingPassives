@@ -7,6 +7,7 @@ package calc
 
 import (
 	"fmt"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"math"
 	"regexp"
 	"sort"
@@ -27,7 +28,9 @@ type GrantedSkill struct {
 	NameSpec   string
 	SourceItem *Item
 	SlotName   string
-	Raw        map[string]any // the item's raw grantedSkills entry
+	// Triggered/TriggerChance come from the item's ExtraSkill modifier.
+	Triggered     bool
+	TriggerChance util.Opt[float64]
 }
 
 // Item is the runtime item: the fixture payload plus mutable state.
@@ -44,6 +47,15 @@ func (it *Item) Rarity() string   { return it.In.Rarity }
 func (it *Item) Corrupted() bool  { return it.In.Corrupted != nil && *it.In.Corrupted }
 func (it *Item) Shaper() bool     { return it.In.Shaper != nil && *it.In.Shaper }
 func (it *Item) Elder() bool      { return it.In.Elder != nil && *it.In.Elder }
+
+// ExplodeKey implements ExplodeSource: the item's mod source. An item
+// without one is unreachable from Item:BuildModList (the Lua errors).
+func (it *Item) ExplodeKey() string {
+	if it.In.ModSource == nil {
+		panic("calc: explode-source item without modSource (the Lua errors)")
+	}
+	return *it.In.ModSource
+}
 
 // patFind reports whether pat matches s. The item-tag patterns are Go
 // regex, like the rest of the shipped tables: the only syntax they use is
@@ -149,7 +161,7 @@ func listFlagOf(mods []*modparser.Mod, name string) bool {
 type Env struct {
 	Build       *BuildInput
 	Mode        string
-	ConfigInput map[string]any
+	ConfigInput *ConfigInput
 
 	ModDB     *modstore.DB
 	EnemyDB   *modstore.DB
@@ -173,12 +185,7 @@ type Env struct {
 	Replay        *ReplayInput
 	allocOrderIdx int
 	// buildDepth counts nested BuildActiveSkill environments (defensive).
-	buildDepth int
-	// StubHandoff makes nested performs body-only, mirroring the archive
-	// dump's checkpoint phase where calcs.defence/offence are stubbed out;
-	// the reference's nested calls inherit whatever those functions
-	// currently are. Driver environments leave it false (full perform).
-	StubHandoff      bool
+	buildDepth       int
 	AllocNodes       map[int]*NodeInput
 	InitialNodeModDB *modstore.List
 	Keystone         modstore.KeystoneEnv
@@ -193,7 +200,7 @@ type Env struct {
 	GrantedSkillsNodes []GrantedSkill
 	GrantedSkillsItems []GrantedSkill
 	GrantedSkills      []GrantedSkill
-	ExplodeSources     []any
+	ExplodeSources     []ExplodeSource
 	GrantedPassives    map[int]bool
 
 	// items stage state
@@ -244,7 +251,7 @@ type Env struct {
 	Buffs                       map[string]*modstore.List
 	MinionBuffsOut              map[string]*modstore.List
 	Debuffs                     map[string]*modstore.List
-	CurseSlots                  []any
+	CurseSlots                  []*curseEntry
 
 	// GlobalCache is GlobalCache.cachedData[mode] as the trigger stage
 	// finds it, supplied by the replay (see calc/globalcache.go).
@@ -301,111 +308,130 @@ type ItemRequirement struct {
 	Str, Dex, Int float64
 }
 
-func newMod(name, typ string, value any, rest ...any) *modparser.Mod {
-	return modparser.NewMod(name, typ, value, rest...)
+func newMod(name string, typ modparser.ModType, value modparser.Value, tags ...modparser.Tag) *modparser.Mod {
+	return modparser.NewMod(name, typ, value, tags...)
 }
+
+// newModS is newMod with a source.
+func newModS(name string, typ modparser.ModType, value modparser.Value, source string, tags ...modparser.Tag) *modparser.Mod {
+	return modparser.NewModFull(name, typ, value, source, true, 0, 0, tags...)
+}
+
+// newModF is newMod with flags.
+func newModF(name string, typ modparser.ModType, value modparser.Value, flags modparser.ModFlag, kw modparser.KeywordFlag, tags ...modparser.Tag) *modparser.Mod {
+	return modparser.NewModFull(name, typ, value, "", false, flags, kw, tags...)
+}
+
+// newModSF is newMod with a source and flags.
+func newModSF(name string, typ modparser.ModType, value modparser.Value, source string, flags modparser.ModFlag, kw modparser.KeywordFlag, tags ...modparser.Tag) *modparser.Mod {
+	return modparser.NewModFull(name, typ, value, source, true, flags, kw, tags...)
+}
+
+// cloneMod deep-copies a mod (the reference's copyTable before mutation).
+func cloneMod(m *modparser.Mod) *modparser.Mod { return m.Clone() }
+
+func opt(v float64) util.Opt[float64] { return util.Some(v) }
 
 // initModDB ports calcs.initModDB: stats and conditions common to all
 // actors, in the reference's statement order.
 func (env *Env) initModDB(modDB *modstore.DB) {
 	cc := data.CharacterConstants
-	tag := func(kv modparser.Tag) modparser.Tag { return kv }
 	add := func(m *modparser.Mod) { modDB.AddMod(m) }
-	add(newMod("FireResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("ColdResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("LightningResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("ChaosResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("TotemFireResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("TotemColdResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("TotemLightningResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("TotemChaosResistMax", "BASE", cc["base_maximum_all_resistances_%"], "Base"))
-	add(newMod("BlockChanceMax", "BASE", cc["maximum_block_%"], "Base"))
-	add(newMod("SpellBlockChanceMax", "BASE", cc["base_maximum_spell_block_%"], "Base"))
-	add(newMod("SpellDodgeChanceMax", "BASE", 75.0, "Base"))
-	add(newMod("ChargeDuration", "BASE", 10.0, "Base"))
-	add(newMod("PowerChargesMax", "BASE", cc["max_power_charges"], "Base"))
-	add(newMod("FrenzyChargesMax", "BASE", cc["max_frenzy_charges"], "Base"))
-	add(newMod("EnduranceChargesMax", "BASE", cc["max_endurance_charges"], "Base"))
-	add(newMod("SiphoningChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("ChallengerChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("BlitzChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("InspirationChargesMax", "BASE", cc["maximum_righteous_charges"], "Base"))
-	add(newMod("CrabBarriersMax", "BASE", 0.0, "Base"))
-	add(newMod("BrutalChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("BrineChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("PhysicalDamageGainAsCold", "BASE", cc["physical_damage_%_to_add_as_cold_per_brine_charge"], "Base", tag(modparser.Tag{"type": "Multiplier", "var": "BrineCharge"})))
-	add(newMod("PhysicalDamageGainAsLightning", "BASE", cc["physical_damage_%_to_add_as_lightning_per_brine_charge"], "Base", tag(modparser.Tag{"type": "Multiplier", "var": "BrineCharge"})))
-	add(newMod("AbsorptionChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("AfflictionChargesMax", "BASE", 0.0, "Base"))
-	add(newMod("BloodChargesMax", "BASE", cc["maximum_blood_scythe_charges"], "Base"))
-	add(newMod("MaxLifeLeechRate", "BASE", cc["maximum_life_leech_rate_%_per_minute"]/60, "Base"))
-	add(newMod("MaxManaLeechRate", "BASE", cc["maximum_mana_leech_rate_%_per_minute"]/60, "Base"))
-	add(newMod("ImpaleStacksMax", "BASE", cc["impaled_debuff_number_of_reflected_hits"], "Base"))
-	add(newMod("SoulEaterMax", "BASE", cc["soul_eater_maximum_stacks"], "Base"))
-	add(newMod("BleedStacksMax", "BASE", 1.0, "Base"))
-	add(newMod("MaxEnergyShieldLeechRate", "BASE", 10.0, "Base"))
-	add(newMod("MaxLifeLeechInstance", "BASE", cc["maximum_life_leech_amount_per_leech_%_max_life"], "Base"))
-	add(newMod("MaxManaLeechInstance", "BASE", cc["maximum_mana_leech_amount_per_leech_%_max_mana"], "Base"))
-	add(newMod("MaxEnergyShieldLeechInstance", "BASE", cc["maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield"], "Base"))
-	add(newMod("TrapThrowingTime", "BASE", 0.6, "Base"))
-	add(newMod("MineLayingTime", "BASE", 0.3, "Base"))
-	add(newMod("WarcryCastTime", "BASE", 0.8, "Base"))
-	add(newMod("TotemPlacementTime", "BASE", 0.6, "Base"))
-	add(newMod("BallistaPlacementTime", "BASE", 0.5, "Base"))
-	add(newMod("ActiveTotemLimit", "BASE", cc["base_number_of_totems_allowed"], "Base"))
-	add(newMod("ShockStacksMax", "BASE", 1.0, "Base"))
-	add(newMod("ScorchStacksMax", "BASE", 1.0, "Base"))
-	add(newMod("MovementSpeed", "INC", -30.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "Maimed"})))
-	add(newMod("DamageTaken", "INC", 10.0, "Base", modparser.ModFlag.Attack, tag(modparser.Tag{"type": "Condition", "var": "Intimidated"})))
-	add(newMod("DamageTaken", "INC", 10.0, "Base", modparser.ModFlag.Attack, tag(modparser.Tag{"type": "Condition", "var": "Intimidated", "neg": true}), tag(modparser.Tag{"type": "Condition", "var": "Party:Intimidated"})))
-	add(newMod("DamageTaken", "INC", 10.0, "Base", modparser.ModFlag.Spell, tag(modparser.Tag{"type": "Condition", "var": "Unnerved"})))
-	add(newMod("DamageTaken", "INC", 10.0, "Base", modparser.ModFlag.Spell, tag(modparser.Tag{"type": "Condition", "var": "Unnerved", "neg": true}), tag(modparser.Tag{"type": "Condition", "var": "Party:Unnerved"})))
-	add(newMod("Damage", "MORE", -10.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "Debilitated"}), tag(modparser.Tag{"type": "GlobalEffect", "effectName": "Debilitated", "effectType": "Debuff"})))
-	add(newMod("MovementSpeed", "MORE", -20.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "Debilitated"}), tag(modparser.Tag{"type": "GlobalEffect", "effectName": "Debilitated", "effectType": "Debuff"})))
-	add(newMod("Damage", "MORE", -10.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "MalignantMadness"}), tag(modparser.Tag{"type": "GlobalEffect", "effectName": "Malignant Madness", "effectType": "Debuff"})))
-	add(newMod("ActionSpeed", "MORE", -10.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "MalignantMadness"}), tag(modparser.Tag{"type": "GlobalEffect", "effectName": "Malignant Madness", "effectType": "Debuff"})))
-	add(newMod("Condition:Burning", "FLAG", true, "Base", tag(modparser.Tag{"type": "IgnoreCond"}), tag(modparser.Tag{"type": "Condition", "var": "Ignited"})))
-	add(newMod("Condition:Poisoned", "FLAG", true, "Base", tag(modparser.Tag{"type": "IgnoreCond"}), tag(modparser.Tag{"type": "MultiplierThreshold", "var": "PoisonStack", "threshold": 1.0})))
-	add(newMod("Blind", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Blinded"})))
-	add(newMod("Chill", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Chilled"})))
-	add(newMod("Freeze", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Frozen"})))
-	add(newMod("Fortify", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Fortify"})))
-	add(newMod("Fortified", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Fortified"})))
-	add(newMod("Excommunicated", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Excommunicated"})))
-	add(newMod("Fanaticism", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Fanaticism"})))
-	add(newMod("Onslaught", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Onslaught"})))
-	add(newMod("UnholyMight", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "UnholyMight"})))
-	add(newMod("ChaoticMight", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "ChaoticMight"})))
-	add(newMod("Tailwind", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Tailwind"})))
-	add(newMod("Adrenaline", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Adrenaline"})))
-	add(newMod("AccelerationShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "AccelerationShrine"})))
-	add(newMod("BrutalShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "BrutalShrine"})))
-	add(newMod("DiamondShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "DiamondShrine"})))
-	add(newMod("DivineShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "DivineShrine"})))
-	add(newMod("EchoingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "EchoingShrine"})))
-	add(newMod("GloomShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "GloomShrine"})))
-	add(newMod("GreaterFreezingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "GreaterFreezingShrine"})))
-	add(newMod("GreaterShockingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "GreaterShockingShrine"})))
-	add(newMod("GreaterSkeletalShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "GreaterSkeletalShrine"})))
-	add(newMod("ImpenetrableShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "ImpenetrableShrine"})))
-	add(newMod("MassiveShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "MassiveShrine"})))
-	add(newMod("ReplenishingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "ReplenishingShrine"})))
-	add(newMod("ResistanceShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "ResistanceShrine"})))
-	add(newMod("ResonatingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "ResonatingShrine"})))
-	add(newMod("LesserAccelerationShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserAccelerationShrine"}), tag(modparser.Tag{"type": "Condition", "var": "AccelerationShrine", "neg": true})))
-	add(newMod("LesserBrutalShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserBrutalShrine"}), tag(modparser.Tag{"type": "Condition", "var": "BrutalShrine", "neg": true})))
-	add(newMod("LesserImpenetrableShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserImpenetrableShrine"}), tag(modparser.Tag{"type": "Condition", "var": "ImpenetrableShrine", "neg": true})))
-	add(newMod("LesserMassiveShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserMassiveShrine"}), tag(modparser.Tag{"type": "Condition", "var": "MassiveShrine", "neg": true})))
-	add(newMod("LesserReplenishingShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserReplenishingShrine"}), tag(modparser.Tag{"type": "Condition", "var": "ReplenishingShrine", "neg": true})))
-	add(newMod("LesserResistanceShrine", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LesserResistanceShrine"}), tag(modparser.Tag{"type": "Condition", "var": "ResistanceShrine", "neg": true})))
-	add(newMod("AlchemistsGenius", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "AlchemistsGenius"})))
-	add(newMod("LuckyHits", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "LuckyHits"})))
-	add(newMod("Convergence", "FLAG", true, "Base", tag(modparser.Tag{"type": "Condition", "var": "Convergence"})))
-	add(newMod("PhysicalDamageReduction", "BASE", -15.0, "Base", tag(modparser.Tag{"type": "Condition", "var": "Crushed"})))
-	add(newMod("CritChanceCap", "BASE", 100.0, "Base"))
-	modDB.Conditions["Buffed"] = env.ModeBuffs
-	modDB.Conditions["Combat"] = env.ModeCombat
-	modDB.Conditions["Effective"] = env.ModeEffective
+	add(newModS("FireResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("ColdResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("LightningResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("ChaosResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("TotemFireResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("TotemColdResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("TotemLightningResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("TotemChaosResistMax", modparser.Base, modparser.Num(cc["base_maximum_all_resistances_%"]), "Base"))
+	add(newModS("BlockChanceMax", modparser.Base, modparser.Num(cc["maximum_block_%"]), "Base"))
+	add(newModS("SpellBlockChanceMax", modparser.Base, modparser.Num(cc["base_maximum_spell_block_%"]), "Base"))
+	add(newModS("SpellDodgeChanceMax", modparser.Base, modparser.Num(75.0), "Base"))
+	add(newModS("ChargeDuration", modparser.Base, modparser.Num(10.0), "Base"))
+	add(newModS("PowerChargesMax", modparser.Base, modparser.Num(cc["max_power_charges"]), "Base"))
+	add(newModS("FrenzyChargesMax", modparser.Base, modparser.Num(cc["max_frenzy_charges"]), "Base"))
+	add(newModS("EnduranceChargesMax", modparser.Base, modparser.Num(cc["max_endurance_charges"]), "Base"))
+	add(newModS("SiphoningChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("ChallengerChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("BlitzChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("InspirationChargesMax", modparser.Base, modparser.Num(cc["maximum_righteous_charges"]), "Base"))
+	add(newModS("CrabBarriersMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("BrutalChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("BrineChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("PhysicalDamageGainAsCold", modparser.Base, modparser.Num(cc["physical_damage_%_to_add_as_cold_per_brine_charge"]), "Base", &modparser.MultiplierTag{Var: "BrineCharge"}))
+	add(newModS("PhysicalDamageGainAsLightning", modparser.Base, modparser.Num(cc["physical_damage_%_to_add_as_lightning_per_brine_charge"]), "Base", &modparser.MultiplierTag{Var: "BrineCharge"}))
+	add(newModS("AbsorptionChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("AfflictionChargesMax", modparser.Base, modparser.Num(0.0), "Base"))
+	add(newModS("BloodChargesMax", modparser.Base, modparser.Num(cc["maximum_blood_scythe_charges"]), "Base"))
+	add(newModS("MaxLifeLeechRate", modparser.Base, modparser.Num(cc["maximum_life_leech_rate_%_per_minute"]/60), "Base"))
+	add(newModS("MaxManaLeechRate", modparser.Base, modparser.Num(cc["maximum_mana_leech_rate_%_per_minute"]/60), "Base"))
+	add(newModS("ImpaleStacksMax", modparser.Base, modparser.Num(cc["impaled_debuff_number_of_reflected_hits"]), "Base"))
+	add(newModS("SoulEaterMax", modparser.Base, modparser.Num(cc["soul_eater_maximum_stacks"]), "Base"))
+	add(newModS("BleedStacksMax", modparser.Base, modparser.Num(1.0), "Base"))
+	add(newModS("MaxEnergyShieldLeechRate", modparser.Base, modparser.Num(10.0), "Base"))
+	add(newModS("MaxLifeLeechInstance", modparser.Base, modparser.Num(cc["maximum_life_leech_amount_per_leech_%_max_life"]), "Base"))
+	add(newModS("MaxManaLeechInstance", modparser.Base, modparser.Num(cc["maximum_mana_leech_amount_per_leech_%_max_mana"]), "Base"))
+	add(newModS("MaxEnergyShieldLeechInstance", modparser.Base, modparser.Num(cc["maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield"]), "Base"))
+	add(newModS("TrapThrowingTime", modparser.Base, modparser.Num(0.6), "Base"))
+	add(newModS("MineLayingTime", modparser.Base, modparser.Num(0.3), "Base"))
+	add(newModS("WarcryCastTime", modparser.Base, modparser.Num(0.8), "Base"))
+	add(newModS("TotemPlacementTime", modparser.Base, modparser.Num(0.6), "Base"))
+	add(newModS("BallistaPlacementTime", modparser.Base, modparser.Num(0.5), "Base"))
+	add(newModS("ActiveTotemLimit", modparser.Base, modparser.Num(cc["base_number_of_totems_allowed"]), "Base"))
+	add(newModS("ShockStacksMax", modparser.Base, modparser.Num(1.0), "Base"))
+	add(newModS("ScorchStacksMax", modparser.Base, modparser.Num(1.0), "Base"))
+	add(newModS("MovementSpeed", modparser.Inc, modparser.Num(-30.0), "Base", &modparser.CondTag{Var: "Maimed"}))
+	add(newModSF("DamageTaken", modparser.Inc, modparser.Num(10.0), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.CondTag{Var: "Intimidated"}))
+	add(newModSF("DamageTaken", modparser.Inc, modparser.Num(10.0), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.CondTag{Var: "Intimidated", Neg: true}, &modparser.CondTag{Var: "Party:Intimidated"}))
+	add(newModSF("DamageTaken", modparser.Inc, modparser.Num(10.0), "Base", modparser.FlagSpell, modparser.KeywordNone, &modparser.CondTag{Var: "Unnerved"}))
+	add(newModSF("DamageTaken", modparser.Inc, modparser.Num(10.0), "Base", modparser.FlagSpell, modparser.KeywordNone, &modparser.CondTag{Var: "Unnerved", Neg: true}, &modparser.CondTag{Var: "Party:Unnerved"}))
+	add(newModS("Damage", modparser.More, modparser.Num(-10.0), "Base", &modparser.CondTag{Var: "Debilitated"}, &modparser.GlobalEffectTag{EffectName: "Debilitated", EffectType: "Debuff"}))
+	add(newModS("MovementSpeed", modparser.More, modparser.Num(-20.0), "Base", &modparser.CondTag{Var: "Debilitated"}, &modparser.GlobalEffectTag{EffectName: "Debilitated", EffectType: "Debuff"}))
+	add(newModS("Damage", modparser.More, modparser.Num(-10.0), "Base", &modparser.CondTag{Var: "MalignantMadness"}, &modparser.GlobalEffectTag{EffectName: "Malignant Madness", EffectType: "Debuff"}))
+	add(newModS("ActionSpeed", modparser.More, modparser.Num(-10.0), "Base", &modparser.CondTag{Var: "MalignantMadness"}, &modparser.GlobalEffectTag{EffectName: "Malignant Madness", EffectType: "Debuff"}))
+	add(newModS("Condition:Burning", modparser.Flag, modparser.Bool(true), "Base", &modparser.MarkerTag{Marker: modparser.TagIgnoreCond}, &modparser.CondTag{Var: "Ignited"}))
+	add(newModS("Condition:Poisoned", modparser.Flag, modparser.Bool(true), "Base", &modparser.MarkerTag{Marker: modparser.TagIgnoreCond}, &modparser.MultiplierTag{IsThreshold: true, Var: "PoisonStack", Threshold: opt(1.0)}))
+	add(newModS("Blind", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Blinded"}))
+	add(newModS("Chill", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Chilled"}))
+	add(newModS("Freeze", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Frozen"}))
+	add(newModS("Fortify", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Fortify"}))
+	add(newModS("Fortified", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Fortified"}))
+	add(newModS("Excommunicated", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Excommunicated"}))
+	add(newModS("Fanaticism", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Fanaticism"}))
+	add(newModS("Onslaught", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Onslaught"}))
+	add(newModS("UnholyMight", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "UnholyMight"}))
+	add(newModS("ChaoticMight", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "ChaoticMight"}))
+	add(newModS("Tailwind", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Tailwind"}))
+	add(newModS("Adrenaline", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Adrenaline"}))
+	add(newModS("AccelerationShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "AccelerationShrine"}))
+	add(newModS("BrutalShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "BrutalShrine"}))
+	add(newModS("DiamondShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "DiamondShrine"}))
+	add(newModS("DivineShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "DivineShrine"}))
+	add(newModS("EchoingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "EchoingShrine"}))
+	add(newModS("GloomShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "GloomShrine"}))
+	add(newModS("GreaterFreezingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "GreaterFreezingShrine"}))
+	add(newModS("GreaterShockingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "GreaterShockingShrine"}))
+	add(newModS("GreaterSkeletalShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "GreaterSkeletalShrine"}))
+	add(newModS("ImpenetrableShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "ImpenetrableShrine"}))
+	add(newModS("MassiveShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "MassiveShrine"}))
+	add(newModS("ReplenishingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "ReplenishingShrine"}))
+	add(newModS("ResistanceShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "ResistanceShrine"}))
+	add(newModS("ResonatingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "ResonatingShrine"}))
+	add(newModS("LesserAccelerationShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserAccelerationShrine"}, &modparser.CondTag{Var: "AccelerationShrine", Neg: true}))
+	add(newModS("LesserBrutalShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserBrutalShrine"}, &modparser.CondTag{Var: "BrutalShrine", Neg: true}))
+	add(newModS("LesserImpenetrableShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserImpenetrableShrine"}, &modparser.CondTag{Var: "ImpenetrableShrine", Neg: true}))
+	add(newModS("LesserMassiveShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserMassiveShrine"}, &modparser.CondTag{Var: "MassiveShrine", Neg: true}))
+	add(newModS("LesserReplenishingShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserReplenishingShrine"}, &modparser.CondTag{Var: "ReplenishingShrine", Neg: true}))
+	add(newModS("LesserResistanceShrine", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LesserResistanceShrine"}, &modparser.CondTag{Var: "ResistanceShrine", Neg: true}))
+	add(newModS("AlchemistsGenius", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "AlchemistsGenius"}))
+	add(newModS("LuckyHits", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "LuckyHits"}))
+	add(newModS("Convergence", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "Convergence"}))
+	add(newModS("PhysicalDamageReduction", modparser.Base, modparser.Num(-15.0), "Base", &modparser.CondTag{Var: "Crushed"}))
+	add(newModS("CritChanceCap", modparser.Base, modparser.Num(100.0), "Base"))
+	modDB.Conditions.Set("Buffed", env.ModeBuffs)
+	modDB.Conditions.Set("Combat", env.ModeCombat)
+	modDB.Conditions.Set("Effective", env.ModeEffective)
 }
 
 // applySoulMod ports pantheon.applySoulMod (PantheonTools.lua).
@@ -417,11 +443,10 @@ func applySoulMod(db *modstore.DB, god data.Pantheon) {
 	sort.Ints(soulKeys)
 	for _, k := range soulKeys {
 		for _, soulMod := range god.Souls[k].Mods {
-			mods, extra := modparser.Parse(soulMod.Line)
-			if mods != nil && extra == "" {
+			mods, extra, parsed := modparser.Parse(soulMod.Line)
+			if parsed && extra == "" {
 				list := make([]*modparser.Mod, len(mods))
-				for i, m := range mods {
-					mod := m.(*modparser.Mod)
+				for i, mod := range mods {
 					mod.Source = "Pantheon:" + god.Souls[1].Name
 					mod.SourceSet = true
 					list[i] = mod
@@ -444,7 +469,7 @@ func mergeDB(dst, src *modstore.DB) {
 }
 
 // buildModListForNode ports calcs.buildModListForNode.
-func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, any) {
+func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, ExplodeSource) {
 	modList := modstore.NewList(nil)
 	if node.Type == "Keystone" {
 		modList.AddMod(node.KeystoneMod)
@@ -485,17 +510,17 @@ func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, any) {
 			if i == 0 {
 				modList = modstore.NewList(nil) // wipeTable(modList)
 			}
-			modList.AddMod(v.(modparser.Tag)["mod"].(*modparser.Mod))
+			modList.AddMod(v.(modparser.ModRef).Mod)
 		}
 	}
 
 	node.GrantedSkills = nil
 	for _, v := range modList.List(nil, "ExtraSkill") {
-		skill := v.(modparser.Tag)
-		if skill["name"] != "Unknown" {
+		skill := v.(modparser.SkillRef)
+		{
 			node.GrantedSkills = append(node.GrantedSkills, GrantedSkill{
-				SkillID:    skill["skillId"].(string),
-				Level:      anyNum(skill["level"]),
+				SkillID:    skill.SkillID,
+				Level:      skill.Level.Or(0),
 				NoSupports: true,
 				Source:     fmt.Sprintf("Tree:%d", int64(node.ID)),
 			})
@@ -523,19 +548,16 @@ func (env *Env) nextAllocOrder() []int {
 
 // buildModListForNodeList ports calcs.buildModListForNodeList over the
 // captured pairs() orders.
-func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []any) {
+func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []ExplodeSource) {
 	callIdx := env.allocOrderIdx
 	// Initialise radius jewels
 	for _, rad := range env.RadiusJewelList {
-		for k := range rad.Data {
-			delete(rad.Data, k)
-		}
-		rad.Data["modSource"] = fmt.Sprintf("Tree:%d", rad.NodeID)
+		rad.Data = &modparser.JewelFuncTag{ModSource: fmt.Sprintf("Tree:%d", rad.NodeID)}
 	}
 
 	// Add node modifiers
 	modList := modstore.NewList(nil)
-	explodeSources := []any{}
+	explodeSources := []ExplodeSource{}
 	for _, id := range env.nextAllocOrder() {
 		node := env.AllocNodes[id]
 		if node == nil {
@@ -599,6 +621,12 @@ type ReplayInput struct {
 	// path takes over. Empty for a build with no mirages.
 	MirageAllocOrders [][]int
 	MirageNodeOrders  [][]int
+	// StubHandoff makes nested performs body-only, mirroring the archive
+	// dump's checkpoint phase where calcs.defence/offence are stubbed out
+	// (the reference's nested calls inherit whatever those functions
+	// currently are). Fixture-mode only: the differential harness sets it
+	// for its checkpoint replay; driver runs leave it false (full perform).
+	StubHandoff bool
 }
 
 // InitEnv ports calcs.initEnv for the one-shot MAIN mode over a fixture
@@ -635,17 +663,11 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	if mode != "MAIN" && mode != "CALCULATOR" {
 		panic("calc: only MAIN and CALCULATOR modes are ported")
 	}
-	// Wire the calcLib externals mod evaluation reaches into.
-	modstore.Externals.GemIsType = func(gem any, keyword string) bool {
-		g, ok := gem.(*data.Gem)
-		if !ok {
-			panic("calc: non-gem skillGem in SocketedIn eval")
-		}
-		return GemIsType(g, keyword, false)
+	if in.ConfigInput == nil {
+		in.ConfigInput = &ConfigInput{}
 	}
-	modstore.Externals.GetGameIdFromGemName = func(name string, dropVaal bool) (string, bool) {
-		id := GetGameIdFromGemName(name, dropVaal)
-		return id, id != ""
+	if in.ConfigPlaceholder == nil {
+		in.ConfigPlaceholder = &ConfigInput{}
 	}
 	env := &Env{
 		Build:               in,
@@ -688,9 +710,9 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	}
 
 	// Create player/enemy actors
-	env.Player = &modstore.Actor{DB: modDB, Level: in.CharacterLevel, ItemList: map[string]modstore.Item{}}
+	env.Player = &modstore.Actor{DB: modDB, Level: in.CharacterLevel, ItemList: map[string]modstore.Item{}, Resolver: gemIds{}}
 	modDB.Actor = env.Player
-	env.Enemy = &modstore.Actor{DB: enemyDB, Level: env.EnemyLevel}
+	env.Enemy = &modstore.Actor{DB: enemyDB, Level: env.EnemyLevel, Resolver: gemIds{}}
 	enemyDB.Actor = env.Enemy
 	env.Player.Enemy = env.Enemy
 	env.Enemy.Enemy = env.Player
@@ -707,93 +729,93 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 		name string
 		base float64
 	}{{"Str", in.ClassStats.BaseStr}, {"Dex", in.ClassStats.BaseDex}, {"Int", in.ClassStats.BaseInt}} {
-		modDB.AddMod(newMod(s.name, "BASE", s.base, "Base"))
+		modDB.AddMod(newModS(s.name, modparser.Base, modparser.Num(s.base), "Base"))
 	}
 	modDB.Multipliers["Level"] = math.Max(1, math.Min(100, in.CharacterLevel))
 	env.initModDB(modDB)
 	cc := data.CharacterConstants
 	resistPenalty := -60.0
-	if v, ok := in.ConfigInput["resistancePenalty"]; ok && truthy(v) {
-		resistPenalty = anyNum(v)
+	if in.ConfigInput.ResistancePenalty.Set {
+		resistPenalty = in.ConfigInput.ResistancePenalty.V
 	}
-	modDB.AddMod(newMod("Life", "BASE", cc["life_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": 38.0}))
-	modDB.AddMod(newMod("Mana", "BASE", cc["mana_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": 34.0}))
-	modDB.AddMod(newMod("ManaRegen", "BASE", data.Misc.ManaRegenBase, "Base", modparser.Tag{"type": "PerStat", "stat": "Mana", "div": 1.0}))
-	modDB.AddMod(newMod("Devotion", "BASE", 0.0, "Base"))
-	modDB.AddMod(newMod("Evasion", "BASE", cc["base_evasion_rating"], "Base"))
-	modDB.AddMod(newMod("Accuracy", "BASE", cc["accuracy_rating_per_level"], "Base", modparser.Tag{"type": "Multiplier", "var": "Level", "base": -cc["accuracy_rating_per_level"]}))
-	modDB.AddMod(newMod("CritMultiplier", "BASE", cc["base_critical_strike_multiplier"]-100, "Base"))
-	modDB.AddMod(newMod("DotMultiplier", "BASE", cc["critical_ailment_dot_multiplier_+"], "Base", modparser.Tag{"type": "Condition", "var": "CriticalStrike"}))
-	modDB.AddMod(newMod("FireResist", "BASE", resistPenalty, "Base"))
-	modDB.AddMod(newMod("ColdResist", "BASE", resistPenalty, "Base"))
-	modDB.AddMod(newMod("LightningResist", "BASE", resistPenalty, "Base"))
-	modDB.AddMod(newMod("ChaosResist", "BASE", resistPenalty, "Base"))
-	modDB.AddMod(newMod("TotemFireResist", "BASE", 40.0, "Base"))
-	modDB.AddMod(newMod("TotemColdResist", "BASE", 40.0, "Base"))
-	modDB.AddMod(newMod("TotemLightningResist", "BASE", 40.0, "Base"))
-	modDB.AddMod(newMod("TotemChaosResist", "BASE", 20.0, "Base"))
-	modDB.AddMod(newMod("CritChance", "INC", cc["critical_strike_chance_+%_per_power_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "PowerCharge"}))
-	modDB.AddMod(newMod("Speed", "INC", cc["base_attack_speed_+%_per_frenzy_charge"], "Base", modparser.ModFlag.Attack, modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	modDB.AddMod(newMod("Speed", "INC", cc["base_cast_speed_+%_per_frenzy_charge"], "Base", modparser.ModFlag.Cast, modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	modDB.AddMod(newMod("Damage", "MORE", cc["object_inherent_damage_+%_final_per_frenzy_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "FrenzyCharge"}))
-	modDB.AddMod(newMod("PhysicalDamageReduction", "BASE", cc["physical_damage_reduction_%_per_endurance_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "EnduranceCharge"}))
-	modDB.AddMod(newMod("ElementalDamageReduction", "BASE", cc["elemental_damage_reduction_%_per_endurance_charge"], "Base", modparser.Tag{"type": "Multiplier", "var": "EnduranceCharge"}))
-	modDB.AddMod(newMod("MaximumRage", "BASE", cc["maximum_rage"], "Base"))
-	modDB.AddMod(newMod("Multiplier:GaleForce", "BASE", 0.0, "Base"))
-	modDB.AddMod(newMod("MaximumGaleForce", "BASE", 10.0, "Base"))
-	modDB.AddMod(newMod("MaximumFortification", "BASE", cc["base_max_fortification"], "Base"))
-	modDB.AddMod(newMod("MaximumValour", "BASE", 50.0, "Base"))
-	modDB.AddMod(newMod("Multiplier:IntensityLimit", "BASE", 3.0, "Base"))
-	modDB.AddMod(newMod("Damage", "INC", cc["damage_+%_per_10_rampage_stacks"], "Base", modparser.Tag{"type": "Multiplier", "var": "Rampage", "limit": cc["max_rampage_stacks"] / 20, "div": 20.0}))
-	modDB.AddMod(newMod("MovementSpeed", "INC", cc["movement_velocity_+%_per_10_rampage_stacks"], "Base", modparser.Tag{"type": "Multiplier", "var": "Rampage", "limit": cc["max_rampage_stacks"] / 20, "div": 20.0}))
-	modDB.AddMod(newMod("ActiveTrapLimit", "BASE", cc["base_number_of_traps_allowed"], "Base"))
-	modDB.AddMod(newMod("ActiveMineLimit", "BASE", cc["base_number_of_remote_mines_allowed"], "Base"))
-	modDB.AddMod(newMod("MineThrowCount", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("TrapThrowCount", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("ActiveBrandLimit", "BASE", 3.0, "Base"))
-	modDB.AddMod(newMod("EnemyCurseLimit", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("SocketedCursesHexLimitValue", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("ProjectileCount", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("Speed", "MORE", cc["dual_wield_inherent_attack_speed_+%_final"], "Base", modparser.ModFlag.Attack, modparser.Tag{"type": "Condition", "var": "DualWielding"}, modparser.Tag{"type": "Condition", "var": "DoubledInherentDualWieldingSpeed", "neg": true}))
-	modDB.AddMod(newMod("Speed", "MORE", 2*cc["dual_wield_inherent_attack_speed_+%_final"], "Base", modparser.ModFlag.Attack, modparser.Tag{"type": "Condition", "var": "DualWielding"}, modparser.Tag{"type": "Condition", "var": "DoubledInherentDualWieldingSpeed"}))
-	modDB.AddMod(newMod("BlockChance", "BASE", cc["inherent_block_while_dual_wielding_%"], "Base", modparser.Tag{"type": "Condition", "var": "DualWielding"}, modparser.Tag{"type": "Condition", "var": "NoInherentBlock", "neg": true}, modparser.Tag{"type": "Condition", "var": "DoubledInherentDualWieldingBlock", "neg": true}))
-	modDB.AddMod(newMod("BlockChance", "BASE", 2*cc["inherent_block_while_dual_wielding_%"], "Base", modparser.Tag{"type": "Condition", "var": "DualWielding"}, modparser.Tag{"type": "Condition", "var": "NoInherentBlock", "neg": true}, modparser.Tag{"type": "Condition", "var": "DoubledInherentDualWieldingBlock"}))
-	modDB.AddMod(newMod("Damage", "MORE", 200.0, "Base", int64(0), modparser.KeywordFlag.Bleed, modparser.Tag{"type": "ActorCondition", "actor": "enemy", "var": "Moving"}, modparser.Tag{"type": "Condition", "var": "NoExtraBleedDamageToMovingEnemy", "neg": true}))
-	modDB.AddMod(newMod("Condition:BloodStance", "FLAG", true, "Base", modparser.Tag{"type": "Condition", "var": "SandStance", "neg": true}))
-	modDB.AddMod(newMod("Condition:PrideMinEffect", "FLAG", true, "Base", modparser.Tag{"type": "Condition", "var": "PrideMaxEffect", "neg": true}))
-	modDB.AddMod(newMod("PerBrutalTripleDamageChance", "BASE", cc["chance_to_deal_triple_damage_%_per_brutal_charge"], "Base"))
-	modDB.AddMod(newMod("PerAfflictionAilmentDamage", "BASE", cc["ailment_damage_+%_final_per_affliction_charge"], "Base"))
-	modDB.AddMod(newMod("PerAfflictionNonDamageEffect", "BASE", cc["non_damaging_ailment_effect_+%_final_per_affliction_charge"], "Base"))
-	modDB.AddMod(newMod("PerAbsorptionElementalEnergyShieldRecoup", "BASE", cc["elemental_damage_taken_goes_to_energy_shield_over_4_seconds_%_per_absorption_charge"], "Base"))
-	modDB.AddMod(newMod("TinctureLimit", "BASE", 1.0, "Base"))
-	modDB.AddMod(newMod("ManaDegenPercentTincture", "BASE", 1.0, "Base", modparser.Tag{"type": "Multiplier", "var": "EffectiveManaBurnStacks"}))
-	modDB.AddMod(newMod("LifeDegenPercentTincture", "BASE", 1.0, "Base", modparser.Tag{"type": "Multiplier", "var": "WeepingWoundsStacks"}))
-	modDB.AddMod(newMod("PresenceRadius", "BASE", cc["base_presence_radius"], "Base"))
+	modDB.AddMod(newModS("Life", modparser.Base, modparser.Num(cc["life_per_level"]), "Base", &modparser.MultiplierTag{Var: "Level", Base: opt(38.0)}))
+	modDB.AddMod(newModS("Mana", modparser.Base, modparser.Num(cc["mana_per_level"]), "Base", &modparser.MultiplierTag{Var: "Level", Base: opt(34.0)}))
+	modDB.AddMod(newModS("ManaRegen", modparser.Base, modparser.Num(data.Misc.ManaRegenBase), "Base", &modparser.StatTag{StatKind: modparser.TagPerStat, Stat: "Mana", Div: opt(1.0)}))
+	modDB.AddMod(newModS("Devotion", modparser.Base, modparser.Num(0.0), "Base"))
+	modDB.AddMod(newModS("Evasion", modparser.Base, modparser.Num(cc["base_evasion_rating"]), "Base"))
+	modDB.AddMod(newModS("Accuracy", modparser.Base, modparser.Num(cc["accuracy_rating_per_level"]), "Base", &modparser.MultiplierTag{Var: "Level", Base: opt(-cc["accuracy_rating_per_level"])}))
+	modDB.AddMod(newModS("CritMultiplier", modparser.Base, modparser.Num(cc["base_critical_strike_multiplier"]-100), "Base"))
+	modDB.AddMod(newModS("DotMultiplier", modparser.Base, modparser.Num(cc["critical_ailment_dot_multiplier_+"]), "Base", &modparser.CondTag{Var: "CriticalStrike"}))
+	modDB.AddMod(newModS("FireResist", modparser.Base, modparser.Num(resistPenalty), "Base"))
+	modDB.AddMod(newModS("ColdResist", modparser.Base, modparser.Num(resistPenalty), "Base"))
+	modDB.AddMod(newModS("LightningResist", modparser.Base, modparser.Num(resistPenalty), "Base"))
+	modDB.AddMod(newModS("ChaosResist", modparser.Base, modparser.Num(resistPenalty), "Base"))
+	modDB.AddMod(newModS("TotemFireResist", modparser.Base, modparser.Num(40.0), "Base"))
+	modDB.AddMod(newModS("TotemColdResist", modparser.Base, modparser.Num(40.0), "Base"))
+	modDB.AddMod(newModS("TotemLightningResist", modparser.Base, modparser.Num(40.0), "Base"))
+	modDB.AddMod(newModS("TotemChaosResist", modparser.Base, modparser.Num(20.0), "Base"))
+	modDB.AddMod(newModS("CritChance", modparser.Inc, modparser.Num(cc["critical_strike_chance_+%_per_power_charge"]), "Base", &modparser.MultiplierTag{Var: "PowerCharge"}))
+	modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(cc["base_attack_speed_+%_per_frenzy_charge"]), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(cc["base_cast_speed_+%_per_frenzy_charge"]), "Base", modparser.FlagCast, modparser.KeywordNone, &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	modDB.AddMod(newModS("Damage", modparser.More, modparser.Num(cc["object_inherent_damage_+%_final_per_frenzy_charge"]), "Base", &modparser.MultiplierTag{Var: "FrenzyCharge"}))
+	modDB.AddMod(newModS("PhysicalDamageReduction", modparser.Base, modparser.Num(cc["physical_damage_reduction_%_per_endurance_charge"]), "Base", &modparser.MultiplierTag{Var: "EnduranceCharge"}))
+	modDB.AddMod(newModS("ElementalDamageReduction", modparser.Base, modparser.Num(cc["elemental_damage_reduction_%_per_endurance_charge"]), "Base", &modparser.MultiplierTag{Var: "EnduranceCharge"}))
+	modDB.AddMod(newModS("MaximumRage", modparser.Base, modparser.Num(cc["maximum_rage"]), "Base"))
+	modDB.AddMod(newModS("Multiplier:GaleForce", modparser.Base, modparser.Num(0.0), "Base"))
+	modDB.AddMod(newModS("MaximumGaleForce", modparser.Base, modparser.Num(10.0), "Base"))
+	modDB.AddMod(newModS("MaximumFortification", modparser.Base, modparser.Num(cc["base_max_fortification"]), "Base"))
+	modDB.AddMod(newModS("MaximumValour", modparser.Base, modparser.Num(50.0), "Base"))
+	modDB.AddMod(newModS("Multiplier:IntensityLimit", modparser.Base, modparser.Num(3.0), "Base"))
+	modDB.AddMod(newModS("Damage", modparser.Inc, modparser.Num(cc["damage_+%_per_10_rampage_stacks"]), "Base", &modparser.MultiplierTag{Var: "Rampage", Limit: opt(cc["max_rampage_stacks"] / 20), Div: opt(20.0)}))
+	modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(cc["movement_velocity_+%_per_10_rampage_stacks"]), "Base", &modparser.MultiplierTag{Var: "Rampage", Limit: opt(cc["max_rampage_stacks"] / 20), Div: opt(20.0)}))
+	modDB.AddMod(newModS("ActiveTrapLimit", modparser.Base, modparser.Num(cc["base_number_of_traps_allowed"]), "Base"))
+	modDB.AddMod(newModS("ActiveMineLimit", modparser.Base, modparser.Num(cc["base_number_of_remote_mines_allowed"]), "Base"))
+	modDB.AddMod(newModS("MineThrowCount", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModS("TrapThrowCount", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModS("ActiveBrandLimit", modparser.Base, modparser.Num(3.0), "Base"))
+	modDB.AddMod(newModS("EnemyCurseLimit", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModS("SocketedCursesHexLimitValue", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModS("ProjectileCount", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModSF("Speed", modparser.More, modparser.Num(cc["dual_wield_inherent_attack_speed_+%_final"]), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.CondTag{Var: "DualWielding"}, &modparser.CondTag{Var: "DoubledInherentDualWieldingSpeed", Neg: true}))
+	modDB.AddMod(newModSF("Speed", modparser.More, modparser.Num(2*cc["dual_wield_inherent_attack_speed_+%_final"]), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.CondTag{Var: "DualWielding"}, &modparser.CondTag{Var: "DoubledInherentDualWieldingSpeed"}))
+	modDB.AddMod(newModS("BlockChance", modparser.Base, modparser.Num(cc["inherent_block_while_dual_wielding_%"]), "Base", &modparser.CondTag{Var: "DualWielding"}, &modparser.CondTag{Var: "NoInherentBlock", Neg: true}, &modparser.CondTag{Var: "DoubledInherentDualWieldingBlock", Neg: true}))
+	modDB.AddMod(newModS("BlockChance", modparser.Base, modparser.Num(2*cc["inherent_block_while_dual_wielding_%"]), "Base", &modparser.CondTag{Var: "DualWielding"}, &modparser.CondTag{Var: "NoInherentBlock", Neg: true}, &modparser.CondTag{Var: "DoubledInherentDualWieldingBlock"}))
+	modDB.AddMod(newModSF("Damage", modparser.More, modparser.Num(200.0), "Base", modparser.FlagNone, modparser.KeywordBleed, &modparser.CondTag{IsActor: true, Actor: "enemy", Var: "Moving"}, &modparser.CondTag{Var: "NoExtraBleedDamageToMovingEnemy", Neg: true}))
+	modDB.AddMod(newModS("Condition:BloodStance", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "SandStance", Neg: true}))
+	modDB.AddMod(newModS("Condition:PrideMinEffect", modparser.Flag, modparser.Bool(true), "Base", &modparser.CondTag{Var: "PrideMaxEffect", Neg: true}))
+	modDB.AddMod(newModS("PerBrutalTripleDamageChance", modparser.Base, modparser.Num(cc["chance_to_deal_triple_damage_%_per_brutal_charge"]), "Base"))
+	modDB.AddMod(newModS("PerAfflictionAilmentDamage", modparser.Base, modparser.Num(cc["ailment_damage_+%_final_per_affliction_charge"]), "Base"))
+	modDB.AddMod(newModS("PerAfflictionNonDamageEffect", modparser.Base, modparser.Num(cc["non_damaging_ailment_effect_+%_final_per_affliction_charge"]), "Base"))
+	modDB.AddMod(newModS("PerAbsorptionElementalEnergyShieldRecoup", modparser.Base, modparser.Num(cc["elemental_damage_taken_goes_to_energy_shield_over_4_seconds_%_per_absorption_charge"]), "Base"))
+	modDB.AddMod(newModS("TinctureLimit", modparser.Base, modparser.Num(1.0), "Base"))
+	modDB.AddMod(newModS("ManaDegenPercentTincture", modparser.Base, modparser.Num(1.0), "Base", &modparser.MultiplierTag{Var: "EffectiveManaBurnStacks"}))
+	modDB.AddMod(newModS("LifeDegenPercentTincture", modparser.Base, modparser.Num(1.0), "Base", &modparser.MultiplierTag{Var: "WeepingWoundsStacks"}))
+	modDB.AddMod(newModS("PresenceRadius", modparser.Base, modparser.Num(cc["base_presence_radius"]), "Base"))
 
 	// Add bandit mods
-	switch in.ConfigInput["bandit"] {
+	switch in.ConfigInput.Bandit {
 	case "Alira":
-		modDB.AddMod(newMod("ElementalResist", "BASE", 15.0, "Bandit"))
+		modDB.AddMod(newModS("ElementalResist", modparser.Base, modparser.Num(15.0), "Bandit"))
 	case "Kraityn":
-		modDB.AddMod(newMod("MovementSpeed", "INC", 8.0, "Bandit"))
+		modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(8.0), "Bandit"))
 	case "Oak":
-		modDB.AddMod(newMod("Life", "BASE", 40.0, "Bandit"))
+		modDB.AddMod(newModS("Life", modparser.Base, modparser.Num(40.0), "Bandit"))
 	default:
-		modDB.AddMod(newMod("ExtraPoints", "BASE", 1.0, "Bandit"))
+		modDB.AddMod(newModS("ExtraPoints", modparser.Base, modparser.Num(1.0), "Bandit"))
 	}
 
 	// Add Pantheon mods
-	if god, _ := in.ConfigInput["pantheonMajorGod"].(string); god != "None" && god != "" {
+	if god := in.ConfigInput.PantheonMajorGod; god != "None" && god != "" {
 		applySoulMod(modDB, data.Pantheons[god])
 	}
-	if god, _ := in.ConfigInput["pantheonMinorGod"].(string); god != "None" && god != "" {
+	if god := in.ConfigInput.PantheonMinorGod; god != "None" && god != "" {
 		applySoulMod(modDB, data.Pantheons[god])
 	}
 
 	// Initialise enemy modifier database
 	env.initModDB(enemyDB)
-	enemyDB.AddMod(newMod("Accuracy", "BASE", data.MonsterAccuracyTable[int(env.EnemyLevel)-1], "Base"))
-	enemyDB.AddMod(newMod("Condition:AgainstDamageOverTime", "FLAG", true, "Base", modparser.ModFlag.Dot, modparser.Tag{"type": "ActorCondition", "actor": "player", "var": "Combat"}))
+	enemyDB.AddMod(newModS("Accuracy", modparser.Base, modparser.Num(data.MonsterAccuracyTable[int(env.EnemyLevel)-1]), "Base"))
+	enemyDB.AddMod(newModSF("Condition:AgainstDamageOverTime", modparser.Flag, modparser.Bool(true), "Base", modparser.FlagDot, modparser.KeywordNone, &modparser.CondTag{IsActor: true, Actor: "player", Var: "Combat"}))
 
 	// Add mods from the config tab, then the party tab
 	modDB.AddList(in.ConfigModList)
@@ -802,7 +824,7 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 
 	// (specCopy caching skipped: one-shot replay)
 	for _, flag := range overrideConditions {
-		modDB.Conditions[flag] = true
+		modDB.Conditions.Set(flag, true)
 	}
 
 	allocatedNotableCount := in.Spec.AllocatedNotableCount
@@ -829,19 +851,19 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	modstore.MergeKeystones(&env.Keystone, initialList)
 
 	if allocatedNotableCount > 0 {
-		modDB.AddMod(newMod("Multiplier:AllocatedNotable", "BASE", allocatedNotableCount))
+		modDB.AddMod(newMod("Multiplier:AllocatedNotable", modparser.Base, modparser.Num(allocatedNotableCount)))
 	}
 	if allocatedKeystoneCount > 0 {
-		modDB.AddMod(newMod("Multiplier:AllocatedKeystone", "BASE", allocatedKeystoneCount))
+		modDB.AddMod(newMod("Multiplier:AllocatedKeystone", modparser.Base, modparser.Num(allocatedKeystoneCount)))
 	}
 	if allocatedMasteryCount > 0 {
-		modDB.AddMod(newMod("Multiplier:AllocatedMastery", "BASE", allocatedMasteryCount))
+		modDB.AddMod(newMod("Multiplier:AllocatedMastery", modparser.Base, modparser.Num(allocatedMasteryCount)))
 	}
 	if allocatedMasteryTypeCount > 0 {
-		modDB.AddMod(newMod("Multiplier:AllocatedMasteryType", "BASE", allocatedMasteryTypeCount))
+		modDB.AddMod(newMod("Multiplier:AllocatedMasteryType", modparser.Base, modparser.Num(allocatedMasteryTypeCount)))
 	}
 	if allocatedMasteryTypes["Life Mastery"] > 0 {
-		modDB.AddMod(newMod("Multiplier:AllocatedLifeMastery", "BASE", allocatedMasteryTypes["Life Mastery"]))
+		modDB.AddMod(newMod("Multiplier:AllocatedLifeMastery", modparser.Base, modparser.Num(allocatedMasteryTypes["Life Mastery"])))
 	}
 	for typ, count := range allocatedTattooTypes {
 		modDB.Multipliers[typ] = count
@@ -875,10 +897,11 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	// Add granted passives (e.g., amulet anoints)
 	env.GrantedPassives = map[int]bool{}
 	for _, pv := range modDB.List(nil, "GrantedPassive") {
-		passive, ok := pv.(string)
+		passiveStr, ok := pv.(modparser.Str)
 		if !ok {
 			continue
 		}
+		passive := string(passiveStr)
 		node := replay.GrantedPassiveNodes[passive]
 		if node == nil {
 			// name resolved through none of the tree maps
@@ -895,20 +918,20 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 	}
 	matchedName := map[string]*ascMatch{}
 	for _, v := range modDB.List(nil, "GrantedAscendancyNode") {
-		ascTbl, _ := v.(modparser.Tag)
-		name := str(ascTbl["name"])
-		if m := matchedName[name]; m != nil && m.side != str(ascTbl["side"]) && !m.matched {
+		ascTbl, _ := v.(modparser.AscendancyNodeRef)
+		name := ascTbl.Name
+		if m := matchedName[name]; m != nil && m.side != ascTbl.Side && !m.matched {
 			m.matched = true
 			node := replay.GrantedAscendancyNodes[name]
 			if node != nil {
-				if env.ItemModDB.Conditions["ForbiddenFlesh"] == in.CurClassName &&
-					env.ItemModDB.Conditions["ForbiddenFlame"] == in.CurClassName {
+				if condClass(env.ItemModDB.Conditions, "ForbiddenFlesh") == in.CurClassName &&
+					condClass(env.ItemModDB.Conditions, "ForbiddenFlame") == in.CurClassName {
 					env.AllocNodes[int(node.ID)] = node
 					env.GrantedPassives[int(node.ID)] = true
 				}
 			}
 		} else {
-			matchedName[name] = &ascMatch{side: str(ascTbl["side"])}
+			matchedName[name] = &ascMatch{side: ascTbl.Side}
 		}
 	}
 
@@ -918,7 +941,7 @@ func initEnvPass(in *BuildInput, mode string, replay *ReplayInput, orderStart in
 		modDB.AddList(modList.Mods)
 		env.ExplodeSources = append(explodeSources, env.ExplodeSources...)
 	}
-	if got := modDB.Tabulate("LIST", nil, "ExtraJewelFunc"); len(got) > 0 {
+	if got := modDB.Tabulate(modparser.List, nil, "ExtraJewelFunc"); len(got) > 0 {
 		panic("calc: ExtraJewelFunc re-entry reached - items stage not ported")
 	}
 

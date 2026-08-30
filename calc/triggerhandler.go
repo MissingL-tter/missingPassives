@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // defaultTriggerHandler ports the local of the same name (L401).
@@ -23,7 +24,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	// Only attacks using the granting weapon can activate source-weapon triggers
 	sourceWeaponFlag := ""
 	if config.sourceWeapon && main.SocketGroup != nil {
-		if slot := str(main.SocketGroup.KV["slot"]); slot != "" {
+		if slot := main.SocketGroup.Slot; slot != "" {
 			if strings.HasPrefix(slot, "Weapon 2") {
 				sourceWeaponFlag = "weapon2Attack"
 			} else {
@@ -50,18 +51,18 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		return
 	}
 	if source == nil && !(main.SkillFlags["globalTrigger"] && config.triggeredSkillCond != nil) {
-		delete(main.SkillData, "triggered")
+		main.SkillData.Del("triggered")
 		return
 	}
-	main.SkillData["triggered"] = true
+	main.SkillData.SetFlag("triggered", true)
 
 	// Dual wield triggers
 	sourceWeaponTrigger := config.sourceWeapon && source != nil && source.SkillFlags["bothWeaponAttack"]
 	itemSupportTrigger := main.TriggeredBy != nil && main.TriggeredBy.GrantedEffect.Support &&
 		env.geFromItem(main.TriggeredBy.GrantedEffect)
-	if trigRate != nil && source != nil && truthy(env.Player.WeaponData1["type"]) && truthy(env.Player.WeaponData2["type"]) &&
-		!truthy(source.SkillData["doubleHitsWhenDualWielding"]) &&
-		(source.SkillTypes[modparser.SkillType.Melee] || source.SkillTypes[modparser.SkillType.Attack]) &&
+	if trigRate != nil && source != nil && weaponType(weaponOf(env.Player.WeaponData1)) != "" && weaponType(weaponOf(env.Player.WeaponData2)) != "" &&
+		!source.SkillData.Flag("doubleHitsWhenDualWielding") &&
+		(source.SkillTypes[modparser.SkillTypeMelee] || source.SkillTypes[modparser.SkillTypeAttack]) &&
 		(sourceWeaponTrigger || itemSupportTrigger) {
 		halved := *trigRate / 2
 		trigRate = &halved
@@ -70,15 +71,15 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	// `ignoresTickRate = ignoresTickRate or (storedUses and storedUses > 1)`.
 	// With storedUses present but 1, the right side is a real `false`, so the
 	// key is WRITTEN false rather than left absent.
-	if !truthy(main.SkillData["ignoresTickRate"]) {
-		su, hasSU := main.SkillData["storedUses"]
+	if !main.SkillData.Flag("ignoresTickRate") {
+		su := main.SkillData.Get("storedUses")
 		switch {
-		case truthy(su):
-			main.SkillData["ignoresTickRate"] = anyNum(su) > 1
-		case hasSU && su != nil: // storedUses is itself false
-			main.SkillData["ignoresTickRate"] = su
+		case su.Truthy():
+			main.SkillData.SetFlag("ignoresTickRate", su.Num() > 1)
+		case su.Kind != modstore.OutAbsent: // storedUses is itself false
+			main.SkillData.Set("ignoresTickRate", su)
 		default:
-			delete(main.SkillData, "ignoresTickRate")
+			main.SkillData.Del("ignoresTickRate")
 		}
 	}
 
@@ -86,15 +87,15 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 
 	// Account for source unleash
 	if source != nil && cached != nil && source.SkillModList.Flag(nil, "HasSeals") &&
-		source.SkillTypes[modparser.SkillType.CanRapidFire] {
+		source.SkillTypes[modparser.SkillTypeCanRapidFire] {
 		unleashDpsMult := 1.0
-		if v, ok := cached.activeSkillData("dpsMultiplier"); ok && truthy(v) {
-			unleashDpsMult = anyNum(v)
+		if v := cached.activeSkillData("dpsMultiplier"); v.Truthy() {
+			unleashDpsMult = v.Num()
 		}
 		scaled := *trigRate * unleashDpsMult
 		trigRate = &scaled
 		main.SkillFlags["HasSeals"] = true
-		main.SkillData["ignoresTickRate"] = true
+		main.SkillData.SetFlag("ignoresTickRate", true)
 	}
 
 	// Account for skills that can hit multiple times per use
@@ -102,8 +103,8 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		strings.Contains(source.SkillPartName, "All") && strings.Contains(source.SkillPartName, "Projectiles") &&
 		source.SkillFlags["projectile"] {
 		multiHitDpsMult := 1.0
-		if v := cached.out("ProjectileCount"); truthy(v) {
-			multiHitDpsMult = anyNum(v)
+		if v := cached.out("ProjectileCount"); v.Truthy() {
+			multiHitDpsMult = v.Num()
 		}
 		scaled := *trigRate * multiHitDpsMult
 		trigRate = &scaled
@@ -111,21 +112,21 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 
 	// Special handling for Kitava's Thirst: repeated hits do not consume
 	// mana and do not trigger it.
-	if truthy(main.SkillData["triggeredByManaSpent"]) && source != nil && trigRate != nil {
-		repeats := 1 + source.SkillModList.Sum("BASE", nil, "RepeatCount")
+	if main.SkillData.Flag("triggeredByManaSpent") && source != nil && trigRate != nil {
+		repeats := 1 + source.SkillModList.Sum(modparser.Base, nil, "RepeatCount")
 		scaled := *trigRate / repeats
 		trigRate = &scaled
 	}
 	// Battlemage's Cry uptime
-	if truthy(main.SkillData["triggeredByBattleMageCry"]) && cached != nil && source != nil &&
-		source.SkillTypes[modparser.SkillType.Melee] && trigRate != nil {
+	if main.SkillData.Flag("triggeredByBattleMageCry") && cached != nil && source != nil &&
+		source.SkillTypes[modparser.SkillTypeMelee] && trigRate != nil {
 		ceilB := func(x float64) float64 {
 			return data.Misc.ServerTickTime * math.Ceil(x/data.Misc.ServerTickTime)
 		}
-		battleMageExertsCount := anyNum(cached.out("BattleCryExertsCount"))
-		battleMageDuration := ceilB(anyNum(cached.out("BattleMageCryDuration")))
-		battleMageCastTime := anyNum(cached.out("BattleMageCryCastTime"))
-		battleMageCooldown := ceilB(anyNum(cached.out("BattleMageCryCooldown")))
+		battleMageExertsCount := cached.out("BattleCryExertsCount").Num()
+		battleMageDuration := ceilB(cached.out("BattleMageCryDuration").Num())
+		battleMageCastTime := cached.out("BattleMageCryCastTime").Num()
+		battleMageCooldown := ceilB(cached.out("BattleMageCryCooldown").Num())
 		// Cap the number of hits that happen during the duration; they
 		// happen every battlemage cooldown + duration.
 		battleMageHits := math.Max(math.Min(*trigRate*battleMageDuration, battleMageExertsCount), 0)
@@ -134,14 +135,14 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	}
 	// Infernal Cry uptime
 	if main.ActiveEffect.GrantedEffect.Name == "Combust" && cached != nil && source != nil &&
-		source.SkillTypes[modparser.SkillType.Melee] && trigRate != nil {
+		source.SkillTypes[modparser.SkillTypeMelee] && trigRate != nil {
 		ceilB := func(x float64) float64 {
 			return data.Misc.ServerTickTime * math.Ceil(x/data.Misc.ServerTickTime)
 		}
-		infernalCryExertsCount := anyNum(cached.out("InfernalExertsCount"))
-		infernalCryDuration := ceilB(anyNum(cached.out("InfernalCryDuration")))
-		infernalCryCastTime := anyNum(cached.out("InfernalCryCastTime"))
-		infernalCryCooldown := ceilB(anyNum(cached.out("InfernalCryCooldown")))
+		infernalCryExertsCount := cached.out("InfernalExertsCount").Num()
+		infernalCryDuration := ceilB(cached.out("InfernalCryDuration").Num())
+		infernalCryCastTime := cached.out("InfernalCryCastTime").Num()
+		infernalCryCooldown := ceilB(cached.out("InfernalCryCooldown").Num())
 		// Cap the number of hits that happen during the duration; they
 		// happen every Infernal Cry cooldown + duration.
 		infernalCryHits := math.Max(math.Min(*trigRate*infernalCryDuration, infernalCryExertsCount), 0)
@@ -149,17 +150,17 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		trigRate = &scaled
 	}
 	// Handling for mana spending rate for Manaforged Arrows Support
-	if truthy(main.SkillData["triggeredByManaforged"]) && trigRate != nil && *trigRate > 0 {
+	if main.SkillData.Flag("triggeredByManaforged") && trigRate != nil && *trigRate > 0 {
 		triggeredUUID := env.cacheSkillUUID(main)
 		if env.GlobalCache[triggeredUUID] == nil {
 			env.BuildActiveSkill(env.Mode, main, triggeredUUID, triggeredUUID)
 		}
-		triggeredManaCost := anyNum(env.GlobalCache[triggeredUUID].out("ManaCostRaw"))
+		triggeredManaCost := env.GlobalCache[triggeredUUID].out("ManaCostRaw").Num()
 		if triggeredManaCost > 0 {
-			manaSpentThreshold := triggeredManaCost * anyNum(main.SkillData["ManaForgedArrowsPercentThreshold"])
+			manaSpentThreshold := triggeredManaCost * main.SkillData.N("ManaForgedArrowsPercentThreshold")
 			sourceManaCost := 0.0
 			if cached != nil {
-				sourceManaCost = anyNum(cached.out("ManaCostRaw"))
+				sourceManaCost = cached.out("ManaCostRaw").Num()
 			}
 			if sourceManaCost > 0 {
 				scaled := *trigRate / math.Ceil(manaSpentThreshold/sourceManaCost)
@@ -172,14 +173,14 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	}
 
 	icdr := Mod(main.SkillModList, main.SkillCfg, "CooldownRecovery")
-	addedCooldownVal := main.SkillModList.Sum("BASE", main.SkillCfg, "CooldownRecovery")
+	addedCooldownVal := main.SkillModList.Sum(modparser.Base, main.SkillCfg, "CooldownRecovery")
 	var addedCooldown *float64
 	if addedCooldownVal != 0 {
 		addedCooldown = &addedCooldownVal
 	}
 	var cooldownOverride *float64
-	if ov := main.SkillModList.Override(main.SkillCfg, "CooldownRecovery"); truthy(ov) {
-		n := anyNum(ov)
+	if ov, ok := main.SkillModList.Override(main.SkillCfg, "CooldownRecovery"); ok {
+		n := valueNum(ov)
 		cooldownOverride = &n
 	}
 	// #EVAL: the guard is on actor.mainSkill.triggeredBy but the read is on
@@ -192,16 +193,16 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		triggerCD = triggeredByCooldown(source.TriggeredBy)
 	}
 	var triggeredCD *float64
-	if v, ok := main.SkillData["cooldown"]; ok && truthy(v) {
-		n := anyNum(v)
+	if main.SkillData.Flag("cooldown") {
+		n := main.SkillData.N("cooldown")
 		triggeredCD = &n
 	}
 
-	if truthy(main.SkillData["triggeredByBrand"]) && main.TriggeredBy != nil {
+	if main.SkillData.Flag("triggeredByBrand") && main.TriggeredBy != nil {
 		// The brand's activation interval stands in for the trigger CD; the
 		// icdr multiplication cancels out the division below -- brand
 		// activation rate is not affected by icdr.
-		n := anyNum(main.TriggeredBy.MainSkill.SkillData["repeatFrequency"]) /
+		n := main.TriggeredBy.MainSkill.SkillData.N("repeatFrequency") /
 			main.TriggeredBy.ActivationFreqMore / main.TriggeredBy.ActivationFreqInc * icdr
 		triggerCD = &n
 	}
@@ -212,12 +213,12 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		}
 		return *p
 	}
-	addsCastTime := anyNum(output["addsCastTime"])
+	addsCastTime := output.N("addsCastTime")
 
 	triggeredCDAdjusted := (num(triggeredCD) + num(addedCooldown)) / icdr
 	triggerCDAdjusted := (num(triggerCD) + addsCastTime) / icdr
 	triggeredCDTickRounded := math.Ceil(triggeredCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
-	if truthy(main.SkillData["ignoresTickRate"]) {
+	if main.SkillData.Flag("ignoresTickRate") {
 		triggeredCDTickRounded = triggeredCDAdjusted
 	}
 	// triggeredBy.ignoresTickRate has exactly one writer: the Arcanist
@@ -233,21 +234,21 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 	}
 
 	// `source == mainSkill and triggerRateCapOverride or m_huge`
-	output["TriggerRateCap"] = math.Inf(1)
-	if source == main && truthy(main.SkillData["triggerRateCapOverride"]) {
-		output["TriggerRateCap"] = anyNum(main.SkillData["triggerRateCapOverride"])
+	output.SetN("TriggerRateCap", math.Inf(1))
+	if source == main && main.SkillData.Has("triggerRateCapOverride") {
+		output.SetN("TriggerRateCap", main.SkillData.N("triggerRateCapOverride"))
 	}
 	if actionCooldownTickRounded != 0 {
-		output["TriggerRateCap"] = 1 / actionCooldownTickRounded
+		output.SetN("TriggerRateCap", 1/actionCooldownTickRounded)
 	}
 	if config.triggerName == "Doom Blast" {
-		switch str(env.ConfigInput["doomBlastSource"]) {
+		switch env.ConfigInput.DoomBlastSource {
 		case "expiration":
 			// The hexes fall off on their own; if they'd expire faster than
 			// they're recast, expiration behaves like replacement (overlaps).
-			expirationRate := 1 / anyNum(env.GlobalCache[uuid].out("Duration"))
+			expirationRate := 1 / env.GlobalCache[uuid].out("Duration").Num()
 			if trigRate != nil && expirationRate > *trigRate {
-				env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+				env.ModDB.AddMod(newModS("UsesCurseOverlaps", modparser.Flag, modparser.Bool(true), "Config"))
 			} else {
 				trigRate = &expirationRate
 			}
@@ -267,50 +268,50 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		}
 	}
 	switch {
-	case env.PlayerMainSkill.ActiveEffect.GrantedEffect.Name == "Doom Blast" && str(env.ConfigInput["doomBlastSource"]) == "vixen":
+	case env.PlayerMainSkill.ActiveEffect.GrantedEffect.Name == "Doom Blast" && env.ConfigInput.DoomBlastSource == "vixen":
 		// A curse socketed in Vixen's Entrapment is triggered on its own
 		// cooldown, so the effective rate is that rotation, not the cast
 		// rate of the curse.
 		gloves, _ := env.Player.ItemList["Gloves"].(*Item)
 		if gloves == nil || gloves.In.Title == nil || !strings.Contains(*gloves.In.Title, "Vixen's Entrapment") {
-			output["VixenModeNoVixenGlovesWarn"] = true
+			output.SetFlag("VixenModeNoVixenGlovesWarn", true)
 		}
-		env.ModDB.AddMod(newMod("UsesCurseOverlaps", "FLAG", true, "Config"))
+		env.ModDB.AddMod(newModS("UsesCurseOverlaps", modparser.Flag, modparser.Bool(true), "Config"))
 		var vixensCD *float64
 		if vixens := data.Skills["SupportUniqueCastCurseOnCurse"]; vixens != nil {
-			cd := anyNum(vixens.Levels[1].Extra["cooldown"]) / icdr
+			cd := vixens.Levels[1].Extra["cooldown"] / icdr
 			vixensCD = &cd
 		}
 		rate := env.calcMultiSpellRotationImpact(
 			[]*simSkill{{uuid: env.cacheSkillUUID(env.PlayerMainSkill), icdr: &icdr}},
 			num(trigRate), vixensCD, 100, actor)
-		output["EffectiveSourceRate"] = rate
-		output["VixensTooMuchCastSpeedWarn"] = vixensCD != nil && *vixensCD > (1/num(trigRate))
+		output.SetN("EffectiveSourceRate", rate)
+		output.SetFlag("VixensTooMuchCastSpeedWarn", vixensCD != nil && *vixensCD > (1/num(trigRate)))
 	case trigRate != nil && !main.SkillFlags["globalTrigger"] && !config.ignoreSourceRate:
-		output["EffectiveSourceRate"] = *trigRate
+		output.SetN("EffectiveSourceRate", *trigRate)
 	default:
-		output["EffectiveSourceRate"] = output["TriggerRateCap"]
+		output.Set("EffectiveSourceRate", output.Get("TriggerRateCap"))
 		main.SkillFlags["globalTrigger"] = true
 	}
 
-	if outNum(output, "EffectiveSourceRate") != 0 && !env.PlayerMainSkill.SkillFlags["skipEffectiveRate"] {
+	if output.N("EffectiveSourceRate") != 0 && !env.PlayerMainSkill.SkillFlags["skipEffectiveRate"] {
 		triggerChance := 100.0
 
 		// Accuracy and crit chance
-		if source != nil && (source.SkillTypes[modparser.SkillType.Melee] || source.SkillTypes[modparser.SkillType.Attack]) &&
+		if source != nil && (source.SkillTypes[modparser.SkillTypeMelee] || source.SkillTypes[modparser.SkillTypeAttack]) &&
 			cached != nil && !config.triggerOnUse {
 			sourceHitChance := 0.0
 			if cached.HitChance != nil {
 				sourceHitChance = *cached.HitChance
 			}
-			dualRolls := truthy(env.Player.WeaponData1["type"]) && truthy(env.Player.WeaponData2["type"]) &&
-				truthy(source.SkillData["doubleHitsWhenDualWielding"])
+			dualRolls := weaponType(weaponOf(env.Player.WeaponData1)) != "" && weaponType(weaponOf(env.Player.WeaponData2)) != "" &&
+				source.SkillData.Flag("doubleHitsWhenDualWielding")
 			if sourceHitChance != 100 {
 				if dualRolls {
 					// Some skills hit with both weapons at once; each rolls
 					// accuracy independently.
-					mainHandHit := anyNum(cached.outputMainHand("HitChance"))
-					offHandHit := anyNum(cached.outputOffHand("HitChance"))
+					mainHandHit := cached.outputMainHand("HitChance").Num()
+					offHandHit := cached.outputOffHand("HitChance").Num()
 					bothHit := mainHandHit * offHandHit / 100
 					effectiveHitChance := bothHit + mainHandHit*(100-offHandHit)/100 + (100-mainHandHit)*offHandHit/100
 					triggerChance = triggerChance * effectiveHitChance / 100
@@ -318,13 +319,13 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 					triggerChance = triggerChance * sourceHitChance / 100
 				}
 			}
-			if truthy(main.SkillData["triggerOnCrit"]) {
+			if main.SkillData.Flag("triggerOnCrit") {
 				if config.triggerChance == nil {
-					if v, ok := main.SkillData["chanceToTriggerOnCrit"]; ok && truthy(v) {
-						n := anyNum(v)
+					if main.SkillData.Flag("chanceToTriggerOnCrit") {
+						n := main.SkillData.N("chanceToTriggerOnCrit")
 						config.triggerChance = &n
-					} else if v, ok := cached.mainSkillData("chanceToTriggerOnCrit"); ok && truthy(v) {
-						n := anyNum(v)
+					} else if v := cached.mainSkillData("chanceToTriggerOnCrit"); v.Truthy() {
+						n := v.Num()
 						config.triggerChance = &n
 					}
 				}
@@ -334,8 +335,8 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 				}
 				if sourceCritChance != 100 {
 					if dualRolls {
-						mainHandCrit := anyNum(cached.outputMainHand("CritChance"))
-						offHandCrit := anyNum(cached.outputOffHand("CritChance"))
+						mainHandCrit := cached.outputMainHand("CritChance").Num()
+						offHandCrit := cached.outputOffHand("CritChance").Num()
 						bothHit := mainHandCrit * offHandCrit / 100
 						effectiveCritChance := bothHit + mainHandCrit*(100-offHandCrit)/100 + (100-mainHandCrit)*offHandCrit/100
 						triggerChance = triggerChance * effectiveCritChance / 100
@@ -356,17 +357,17 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		// which is never true in Lua, so this reduces to
 		// `ignoresTickRate and not config.triggeredSkillCond`.
 		switch {
-		case truthy(main.SkillData["ignoresTickRate"]) && config.triggeredSkillCond == nil:
+		case main.SkillData.Flag("ignoresTickRate") && config.triggeredSkillCond == nil:
 			overlaps := 1.0
 			if v, ok := env.stageOverlaps(config); ok {
 				overlaps = v
 			} else if config.overlaps != nil {
 				overlaps = *config.overlaps
 			}
-			output["SkillTriggerRate"] = math.Min(outNum(output, "TriggerRateCap"), outNum(output, "EffectiveSourceRate")*overlaps)
+			output.SetN("SkillTriggerRate", math.Min(output.N("TriggerRateCap"), output.N("EffectiveSourceRate")*overlaps))
 		case main.SkillFlags["globalTrigger"] && config.triggeredSkillCond == nil:
 			// Trigger does not use source rate breakpoints
-			output["SkillTriggerRate"] = output["EffectiveSourceRate"]
+			output.Set("SkillTriggerRate", output.Get("EffectiveSourceRate"))
 		default:
 			// Triggers like Cast on Crit go through the simulation
 			rotation := triggeredSkills
@@ -374,15 +375,15 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 				rotation = []*simSkill{env.packageSkillDataForSimulation(main)}
 			}
 			var simCD *float64
-			if !truthy(main.SkillData["triggeredByBrand"]) {
+			if !main.SkillData.Flag("triggeredByBrand") {
 				if triggerCD != nil {
 					simCD = triggerCD
 				} else {
 					simCD = triggeredCD
 				}
 			}
-			rate := env.calcMultiSpellRotationImpact(rotation, outNum(output, "EffectiveSourceRate"), simCD, triggerChance, actor)
-			if actor.db.Flag(nil, "HaveTriggerBots") && main.SkillTypes[modparser.SkillType.Spell] {
+			rate := env.calcMultiSpellRotationImpact(rotation, output.N("EffectiveSourceRate"), simCD, triggerChance, actor)
+			if actor.db.Flag(nil, "HaveTriggerBots") && main.SkillTypes[modparser.SkillTypeSpell] {
 				rate = 2 * rate
 			}
 			// stagesAreOverlaps is the skill part which makes the stages
@@ -390,22 +391,22 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 			if hitsPerCast, ok := env.stageOverlaps(config); ok {
 				rate = hitsPerCast * rate
 			}
-			output["SkillTriggerRate"] = rate
+			output.SetN("SkillTriggerRate", rate)
 		}
 	} else {
-		output["SkillTriggerRate"] = 0.0
+		output.SetN("SkillTriggerRate", 0.0)
 	}
-	main.SkillData["triggerRate"] = output["SkillTriggerRate"]
+	main.SkillData.Set("triggerRate", output.Get("SkillTriggerRate"))
 
 	// Account for Trigger-related INC/MORE modifiers
-	output["Speed"] = main.SkillData["triggerRate"]
+	output.Set("Speed", main.SkillData.Get("triggerRate"))
 	if source != nil {
 		addTriggerIncMoreMods(main, source)
 	} else {
 		addTriggerIncMoreMods(main, main)
 	}
 	if source != nil && source != main {
-		main.SkillData["triggerSourceUUID"] = env.cacheSkillUUID(source)
+		main.SkillData.SetStr("triggerSourceUUID", env.cacheSkillUUID(source))
 	}
 }
 
@@ -415,7 +416,7 @@ func triggeredByCooldown(triggeredBy *ActiveEffect) *float64 {
 	if triggeredBy == nil || triggeredBy.GrantedEffect == nil {
 		return nil
 	}
-	lvl := triggeredBy.GrantedEffect.Levels[triggeredBy.Level]
+	lvl := triggeredBy.GrantedEffect.LevelData(triggeredBy.Level)
 	if lvl == nil {
 		return nil
 	}
@@ -442,10 +443,10 @@ func (env *Env) cwcHandler() {
 		if source == nil {
 			canSupport := main.TriggeredBy != nil && main.TriggeredBy.GemData != nil &&
 				env.canGrantedEffectSupportActiveSkill(main.TriggeredBy.GemData.GrantedEffect, skill, false)
-			if truthy(skill.SkillData["triggerTime"]) && canSupport && skill != main && slotMatch && !isTriggered(skill) {
+			if skill.SkillData.Has("triggerTime") && canSupport && skill != main && slotMatch && !isTriggered(skill) {
 				source = skill
 			} else if disabledSource == nil && canSupport && skill.SkillFlags["disable"] &&
-				skill.SkillTypes[modparser.SkillType.Channel] && skill != main && slotMatch {
+				skill.SkillTypes[modparser.SkillTypeChannel] && skill != main && slotMatch {
 				// A channelling skill is socketed but unusable (commonly a
 				// support gem restricting its weapon types). Remember it so
 				// we don't fall through to the Self-Cast estimate below,
@@ -454,7 +455,7 @@ func (env *Env) cwcHandler() {
 				disabledSource = skill
 			}
 		}
-		if truthy(skill.SkillData["triggeredWhileChannelling"]) && slotMatch {
+		if skill.SkillData.Flag("triggeredWhileChannelling") && slotMatch {
 			triggeredSkills = append(triggeredSkills, env.packageSkillDataForSimulation(skill))
 		}
 	}
@@ -463,45 +464,45 @@ func (env *Env) cwcHandler() {
 		main.DisableReason = disabledSource.ActiveEffect.GrantedEffect.Name + " is disabled"
 		main.InfoMessage = triggerName + " Triggering Skill is disabled"
 	} else if source == nil || len(triggeredSkills) < 1 {
-		delete(main.SkillData, "triggered")
+		main.SkillData.Del("triggered")
 		main.InfoMessage2 = "DPS reported assuming Self-Cast"
 		main.InfoMessage = "No " + triggerName + " Triggering Skill Found"
 	} else {
 		if act := processAddedCastTime(main); act != nil {
-			output["addsCastTime"] = *act
+			output.SetN("addsCastTime", *act)
 		}
 
 		icdr := Mod(main.SkillModList, main.SkillCfg, "CooldownRecovery")
-		triggerInterval := anyNum(source.SkillData["triggerTime"])
+		triggerInterval := source.SkillData.N("triggerTime")
 		triggerRateOfTrigger := 1 / triggerInterval
-		cooldownOverride := main.SkillModList.Override(main.SkillCfg, "CooldownRecovery")
-		if truthy(cooldownOverride) {
+		cooldownOverride, _ := main.SkillModList.Override(main.SkillCfg, "CooldownRecovery")
+		if modparser.Truthy(cooldownOverride) {
 			main.SkillFlags["hasOverride"] = true
 		}
 
 		// `cooldownOverride or m_max(triggeredCD or 0, addsCastTime or 0) / icdr`
-		triggeredTotalCooldown := math.Max(anyNum(main.SkillData["cooldown"]), anyNum(output["addsCastTime"])) / icdr
-		if truthy(cooldownOverride) {
-			triggeredTotalCooldown = anyNum(cooldownOverride)
+		triggeredTotalCooldown := math.Max(main.SkillData.N("cooldown"), output.N("addsCastTime")) / icdr
+		if modparser.Truthy(cooldownOverride) {
+			triggeredTotalCooldown = valueNum(cooldownOverride)
 		}
 		triggeredCDAdjusted := math.Ceil(triggeredTotalCooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 		effCDTriggeredSkill := math.Ceil(triggeredCDAdjusted*triggerRateOfTrigger) / triggerRateOfTrigger
 
-		output["TriggerRateCap"] = math.Min(1/effCDTriggeredSkill, triggerRateOfTrigger)
+		output.SetN("TriggerRateCap", math.Min(1/effCDTriggeredSkill, triggerRateOfTrigger))
 		zero := 0.0
 		rate := env.calcMultiSpellRotationImpact(triggeredSkills, triggerRateOfTrigger, &zero, 100, env.playerPA)
-		if env.ModDB.Flag(nil, "HaveTriggerBots") && main.SkillTypes[modparser.SkillType.Spell] {
+		if env.ModDB.Flag(nil, "HaveTriggerBots") && main.SkillTypes[modparser.SkillTypeSpell] {
 			rate = 2 * rate
 		}
-		output["SkillTriggerRate"] = rate
+		output.SetN("SkillTriggerRate", rate)
 
 		// Account for Trigger-related INC/MORE modifiers
 		addTriggerIncMoreMods(main, main)
-		output["ChannelTimeToTrigger"] = triggerInterval
-		main.SkillData["triggered"] = true
+		output.SetN("ChannelTimeToTrigger", triggerInterval)
+		main.SkillData.SetFlag("triggered", true)
 		main.SkillFlags["globalTrigger"] = true
-		main.SkillData["triggerRate"] = output["SkillTriggerRate"]
-		main.SkillData["triggerSourceUUID"] = env.cacheSkillUUID(source)
+		main.SkillData.Set("triggerRate", output.Get("SkillTriggerRate"))
+		main.SkillData.SetStr("triggerSourceUUID", env.cacheSkillUUID(source))
 		main.InfoMessage = triggerName + "'s Trigger: " + source.ActiveEffect.GrantedEffect.Name
 	}
 }
@@ -515,31 +516,31 @@ func (env *Env) helmetFocusHandler() {
 		return
 	}
 	output := env.Player.Output
-	main.SkillData["triggered"] = true
+	main.SkillData.SetFlag("triggered", true)
 	triggerCD := triggeredByCooldown(main.TriggeredBy)
 	icdrFocus := Mod(main.SkillModList, main.SkillCfg, "FocusCooldownRecovery")
 	icdrSkill := Mod(main.SkillModList, main.SkillCfg, "CooldownRecovery")
 
 	// Next possible activation is duration + cooldown.
 	skillFocus := data.Skills["Focus"]
-	focusDuration := anyNum(skillFocus.ConstantStats[0][1]) / 1000
+	focusDuration := skillFocus.ConstantStats[0].Value / 1000
 	focusCD := skillFocus.Levels[1].Extra["cooldown"] / icdrFocus
 	focusTotalCD := focusDuration + focusCD
 
 	// The skill's own cooldown still applies to focus triggers.
-	modActionCooldown := math.Max(anyNum(main.SkillData["cooldown"]), num64(triggerCD)/icdrSkill)
+	modActionCooldown := math.Max(main.SkillData.N("cooldown"), num64(triggerCD)/icdrSkill)
 	rateCapAdjusted := math.Ceil(modActionCooldown*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	triggerRate := math.Inf(1)
 	if rateCapAdjusted != 0 {
 		triggerRate = 1 / rateCapAdjusted
 	}
-	output["TriggerRateCap"] = triggerRate
-	output["SkillTriggerRate"] = 1 / focusTotalCD
+	output.SetN("TriggerRateCap", triggerRate)
+	output.SetN("SkillTriggerRate", 1/focusTotalCD)
 
 	// Account for Trigger-related INC/MORE modifiers
 	addTriggerIncMoreMods(main, main)
 	main.InfoMessage = "Assuming perfect focus Re-Use"
-	main.SkillData["triggerRate"] = output["SkillTriggerRate"]
+	main.SkillData.Set("triggerRate", output.Get("SkillTriggerRate"))
 	main.SkillFlags["globalTrigger"] = true
 }
 
@@ -554,12 +555,12 @@ func (env *Env) stageOverlaps(config *triggerConfig) (float64, bool) {
 		return 0, false
 	}
 	main := env.PlayerMainSkill
-	if anyNum(main.SkillPart) != anyNum(config.stagesAreOverlaps) || main.ActiveEffect.SrcInstance == nil {
+	if main.SkillPart.V != *config.stagesAreOverlaps || main.ActiveEffect.SrcInstance == nil {
 		return 0, false
 	}
-	v, ok := main.ActiveEffect.SrcInstance.KV["skillStageCount"]
-	if !ok || !truthy(v) {
+	v := main.ActiveEffect.SrcInstance.SkillStageCount
+	if !v.Set {
 		return 0, false
 	}
-	return anyNum(v), true
+	return v.V, true
 }

@@ -8,11 +8,12 @@ package calc
 
 import (
 	"math"
-	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -27,70 +28,67 @@ type Minion struct {
 	EnemyActor  *modstore.Actor // minion.enemy
 	Level       float64
 	ItemList    map[string]modstore.Item
-	Uses        map[string]any
+	Uses        map[string]bool
 	ItemSet     *ItemSetInput
 	LifeTable   []float64
-	WeaponData1 map[string]any
-	WeaponData2 map[string]any
+	WeaponData1 *item.WeaponData
+	WeaponData2 *item.WeaponData
 
 	// perform-stage actor state
 	DB              *modstore.DB
 	Ms              *modstore.Actor
-	Output          map[string]any
+	Output          modstore.Output
 	ActiveSkillList []*ActiveSkill
 	MainSkill       *ActiveSkill
 }
 
-// Buff is one activeSkill.buffList entry: scalar keys as a bag plus the
-// separated modifiers.
+// Buff is one activeSkill.buffList entry. The Opt flags are plain Lua
+// assignments from skillData, so absent, false and true are all distinct
+// (the archive comparison sees the key set).
 type Buff struct {
-	KV      map[string]any
-	ModList []*modparser.Mod
+	Type, Name      string
+	ActiveSkillBuff bool
+	ApplyNotPlayer  util.Opt[bool]
+	ApplyMinions    util.Opt[bool]
+	ApplyAllies     util.Opt[bool]
+	AllowTotemBuff  util.Opt[bool]
+	Cond            string
+	StackVar        string
+	StackLimit      util.Opt[float64]
+	ModList         []*modparser.Mod
 }
-
-// modFlagByName is ModFlag[name] (getWeaponFlags looks flags up by the
-// weaponTypeInfo flag string).
-var modFlagByName = func() map[string]int64 {
-	out := map[string]int64{}
-	rv := reflect.ValueOf(modparser.ModFlag)
-	rt := rv.Type()
-	for i := 0; i < rt.NumField(); i++ {
-		out[rt.Field(i).Name] = rv.Field(i).Int()
-	}
-	return out
-}()
 
 // getWeaponFlags ports the local getWeaponFlags. The reference returns
 // `flags, info`; the callers only ever consume info's Melee field and its
 // non-nilness, so the port returns exactly those: nil flags means the
 // weapon is unusable, known reports whether the weapon type was recognized
 // at all (the reference's info ~= nil).
-func (env *Env) getWeaponFlags(weaponData map[string]any, weaponTypes []map[string]bool) (_ *int64, melee, known bool) {
-	info, ok := data.WeaponTypeInfo[str(weaponData["type"])]
+func (env *Env) getWeaponFlags(weaponData *item.WeaponData, weaponTypes []map[string]bool) (_ *modparser.ModFlag, melee, known bool) {
+	info, ok := data.WeaponTypeInfo[weaponType(weaponData)]
 	if !ok {
 		return nil, false, false
 	}
 	for _, types := range weaponTypes {
-		if !types[str(weaponData["type"])] &&
-			(!truthy(weaponData["countsAsAll1H"]) || !(types["Claw"] || types["Dagger"] || types["One Handed Axe"] || types["One Handed Mace"] || types["One Handed Sword"])) {
+		if !types[weaponData.Type] &&
+			(!weaponData.CountsAsAll1H || !(types["Claw"] || types["Dagger"] || types["One Handed Axe"] || types["One Handed Mace"] || types["One Handed Sword"])) {
 			return nil, info.Melee, true
 		}
 	}
-	flags := modFlagByName[info.Flag]
-	if truthy(weaponData["countsAsAll1H"]) {
-		flags = modparser.ModFlag.Axe | modparser.ModFlag.Claw | modparser.ModFlag.Dagger | modparser.ModFlag.Mace | modparser.ModFlag.Sword
+	flags := modparser.ModFlagByName[info.Flag]
+	if weaponData.CountsAsAll1H {
+		flags = modparser.FlagAxe | modparser.FlagClaw | modparser.FlagDagger | modparser.FlagMace | modparser.FlagSword
 	}
-	if str(weaponData["type"]) != "None" {
-		flags |= modparser.ModFlag.Weapon
+	if weaponData.Type != "None" {
+		flags |= modparser.FlagWeapon
 		if info.OneHand {
-			flags |= modparser.ModFlag.Weapon1H
+			flags |= modparser.FlagWeapon1H
 		} else {
-			flags |= modparser.ModFlag.Weapon2H
+			flags |= modparser.FlagWeapon2H
 		}
 		if info.Melee {
-			flags |= modparser.ModFlag.WeaponMelee
+			flags |= modparser.FlagWeaponMelee
 		} else {
-			flags |= modparser.ModFlag.WeaponRanged
+			flags |= modparser.FlagWeaponRanged
 		}
 	}
 	return &flags, info.Melee, true
@@ -103,57 +101,45 @@ func mergeLevelMod(modList *modstore.List, mod *modparser.Mod, value *float64) {
 		modList.AddMod(mod)
 		return
 	}
-	newMod := modparser.CopyMod(mod)
+	newMod := cloneMod(mod)
 	switch v := newMod.Value.(type) {
-	case modparser.Tag:
-		if inner, ok := v["mod"].(*modparser.Mod); ok {
-			innerCopy := modparser.CopyMod(inner)
-			innerCopy.Value = *value
-			v["mod"] = innerCopy
-		} else {
-			v["value"] = *value
-		}
+	case modparser.ModRef:
+		innerCopy := cloneMod(v.Mod)
+		innerCopy.Value = modparser.Num(*value)
+		v.Mod = innerCopy
+		newMod.Value = v
+	case modparser.DataRef:
+		v.Value = modparser.Num(*value)
+		newMod.Value = v
+	case modparser.GemPropertyRef:
+		v.Value = opt(*value)
+		newMod.Value = v
 	default:
-		newMod.Value = *value
+		newMod.Value = modparser.Num(*value)
 	}
 	modList.AddMod(newMod)
 }
 
-// statMapKV reads a statMap scale key from an entry or group KV.
-func statMapScale(kv map[string]any, statValue float64) *float64 {
-	if v, ok := kv["value"]; ok && truthy(v) {
-		n := anyNum(v)
-		return &n
+// statMapScale applies a statMap entry's or group's scale keys to the
+// stat value (a present value replaces it; 0 is a value, as in Lua).
+func statMapScale(value, mult, div, base util.Opt[float64], statValue float64) *float64 {
+	if value.Set {
+		return &value.V
 	}
-	mult, div, base := 1.0, 1.0, 0.0
-	scaled := false
-	if v, ok := kv["mult"]; ok && truthy(v) {
-		mult = anyNum(v)
-		scaled = true
-	}
-	if v, ok := kv["div"]; ok && truthy(v) {
-		div = anyNum(v)
-		scaled = true
-	}
-	if v, ok := kv["base"]; ok && truthy(v) {
-		base = anyNum(v)
-		scaled = true
-	}
-	_ = scaled
-	n := statValue*mult/div + base
+	n := statValue*mult.Or(1)/div.Or(1) + base.Or(0)
 	return &n
 }
 
 // mergeSkillInstanceMods ports calcs.mergeSkillInstanceMods with SORTED
 // stat iteration (matching the dump-side replacement).
-func (env *Env) mergeSkillInstanceMods(modList *modstore.List, skillEffect *ActiveEffect, extraStats []any) {
+func (env *Env) mergeSkillInstanceMods(modList *modstore.List, skillEffect *ActiveEffect, extraStats []modparser.Value) {
 	ValidateGemLevel(skillEffect)
 	grantedEffect := skillEffect.GrantedEffect
 	stats := BuildSkillInstanceStats(skillEffect, grantedEffect)
 	if len(extraStats) > 0 {
 		for _, sv := range extraStats {
-			tag, _ := sv.(modparser.Tag)
-			stats[str(tag["key"])] += anyNum(tag["value"])
+			tag, _ := sv.(modparser.DataRef)
+			stats[tag.Key] += valueNum(tag.Value)
 		}
 	}
 	statKeys := make([]string, 0, len(stats))
@@ -167,33 +153,27 @@ func (env *Env) mergeSkillInstanceMods(modList *modstore.List, skillEffect *Acti
 		if mapEntry == nil {
 			continue
 		}
-		for _, modOrGroup := range mapEntry.Mods {
-			switch m := modOrGroup.(type) {
-			case *modparser.Mod:
-				mergeLevelMod(modList, m, statMapScale(mapEntry.KV, statValue))
-			case *modparser.D:
-				if m.KV["name"] != nil {
-					panic("calc: D-shaped statMap mod reached mergeLevelMod (flags-slot-tag artifact) for stat " + stat)
-				}
+		for _, m := range mapEntry.Mods {
+			switch {
+			case m.Mod != nil:
+				mergeLevelMod(modList, m.Mod, statMapScale(mapEntry.Value, mapEntry.Mult, mapEntry.Div, mapEntry.Base, statValue))
+			case m.Group != nil:
 				// a group: its own scale over its member mods
-				for _, gv := range m.Arr {
-					gm, ok := gv.(*modparser.Mod)
-					if !ok {
-						panic("calc: unexpected statMap group member for stat " + stat)
-					}
-					mergeLevelMod(modList, gm, statMapScale(m.KV, statValue))
+				for _, gm := range m.Group.Mods {
+					mergeLevelMod(modList, gm, statMapScale(util.Opt[float64]{}, m.Group.Mult, m.Group.Div, util.Opt[float64]{}, statValue))
 				}
-			default:
-				panic("calc: unexpected statMap entry shape for stat " + stat)
+			case m.Typo != nil:
+				// the reference would error on the malformed table
+				panic("calc: typo statMap record reached mergeLevelMod for stat " + stat)
 			}
 		}
 	}
-	for _, bm := range grantedEffect.BaseMods {
-		mod, ok := bm.(*modparser.Mod)
-		if !ok {
-			panic("calc: non-mod baseMods entry (unported skill callback?)")
+	for _, m := range grantedEffect.BaseMods {
+		if m.Mod == nil {
+			// the reference would error on the malformed table
+			panic("calc: typo baseMods record reached the skill mod list of " + grantedEffect.Id)
 		}
-		modList.AddMod(mod)
+		modList.AddMod(m.Mod)
 	}
 }
 
@@ -214,6 +194,7 @@ func lvlExtra(level *data.SkillLevel, key string) (float64, bool) {
 }
 
 // buildActiveSkillModList ports calcs.buildActiveSkillModList.
+// #EVAL: ~800-line function, a straight transliteration of the reference body; left unsplit by decision (2026-08-29).
 func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	skillTypes := activeSkill.SkillTypes
 	skillFlags := activeSkill.SkillFlags
@@ -226,39 +207,34 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	setFlag(skillFlags, "effective", env.ModeEffective)
 
 	// Handle multipart skills
-	activeGemParts, _ := activeGrantedEffect.Custom["parts"].([]any)
+	activeGemParts := activeGrantedEffect.Custom.Parts
 	if len(activeGemParts) > 1 {
-		cur := anyNum(activeEffect.SrcInstance.KV["skillPart"])
+		cur := activeEffect.SrcInstance.SkillPart.V
 		if cur == 0 {
 			cur = 1
 		}
 		if cur > float64(len(activeGemParts)) {
 			cur = float64(len(activeGemParts))
 		}
-		activeEffect.SrcInstance.KV["skillPart"] = cur
-		activeSkill.SkillPart = cur
-		part, _ := activeGemParts[int(cur)-1].(map[string]any)
-		partKeys := make([]string, 0, len(part))
-		for k := range part {
-			partKeys = append(partKeys, k)
-		}
-		sort.Strings(partKeys) // pairs order; only true/false writes, order-free
-		for _, k := range partKeys {
-			if part[k] == true {
+		activeEffect.SrcInstance.SkillPart = util.Some(cur)
+		activeSkill.SkillPart = util.Some(cur)
+		part := activeGemParts[int(cur)-1]
+		for k, set := range part.Flags { // pairs order; only true/false writes, order-free
+			if set {
 				skillFlags[k] = true
-			} else if part[k] == false {
+			} else {
 				delete(skillFlags, k)
 			}
 		}
-		activeSkill.SkillPartName = str(part["name"])
+		activeSkill.SkillPartName = part.Name
 		skillFlags["multiPart"] = true
 	} else if activeEffect.SrcInstance != nil && !(activeEffect.GemData != nil && activeEffect.GemData.SecondaryGrantedEffect != nil) {
-		delete(activeEffect.SrcInstance.KV, "skillPart")
-		delete(activeEffect.SrcInstance.KV, "skillPartCalcs")
+		activeEffect.SrcInstance.SkillPart = util.Opt[float64]{}
+		activeEffect.SrcInstance.SkillPartCalcs = util.Opt[float64]{}
 	}
 
 	w2Item := activeSkill.Actor.ItemList["Weapon 2"]
-	if (skillTypes[modparser.SkillType.RequiresShield] || skillFlags["shieldAttack"]) && activeSkill.SummonSkill == nil &&
+	if (skillTypes[modparser.SkillTypeRequiresShield] || skillFlags["shieldAttack"]) && activeSkill.SummonSkill == nil &&
 		(w2Item == nil || w2Item.ItemType() != "Shield") {
 		// Skill requires a shield to be equipped
 		skillFlags["disable"] = true
@@ -268,14 +244,14 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	if skillFlags["shieldAttack"] {
 		// Special handling for Spectral Shield Throw
 		skillFlags["weapon2Attack"] = true
-		zero := int64(0)
+		zero := modparser.FlagNone
 		activeSkill.Weapon2Flags = &zero
 	} else {
 		// Set weapon flags
 		if skillFlags["forceSourceWeapon"] && activeSkill.SocketGroup != nil && activeSkill.SocketGroup.SourceItem != nil {
 			// Some item-granted attacks must use the weapon that grants them.
 			// The reference assigns match(...)~=nil — false is stored.
-			sourceSlot := str(activeSkill.SocketGroup.KV["slot"])
+			sourceSlot := activeSkill.SocketGroup.Slot
 			skillFlags["forceMainHand"] = strings.HasPrefix(sourceSlot, "Weapon 1")
 			skillFlags["forceOffHand"] = strings.HasPrefix(sourceSlot, "Weapon 2")
 		}
@@ -288,14 +264,14 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 				weaponTypes = append(weaponTypes, skillEffect.GrantedEffect.WeaponTypes)
 			}
 		}
-		var weapon1Flags *int64
+		var weapon1Flags *modparser.ModFlag
 		var weapon1Melee, weapon1Known bool
 		if !skillFlags["forceOffHand"] {
-			weapon1Flags, weapon1Melee, weapon1Known = env.getWeaponFlags(activeSkill.Actor.WeaponData1, weaponTypes)
+			weapon1Flags, weapon1Melee, weapon1Known = env.getWeaponFlags(weaponOf(activeSkill.Actor.WeaponData1), weaponTypes)
 		}
 		if weapon1Flags == nil && activeSkill.SummonSkill != nil {
 			// Minion skills seem to ignore weapon types
-			f := modFlagByName[data.WeaponTypeInfo["None"].Flag]
+			f := modparser.ModFlagByName[data.WeaponTypeInfo["None"].Flag]
 			weapon1Flags, weapon1Melee, weapon1Known = &f, data.WeaponTypeInfo["None"].Melee, true
 		}
 		if weapon1Flags != nil {
@@ -308,17 +284,18 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					delete(skillFlags, "melee")
 				}
 			}
-		} else if (skillTypes[modparser.SkillType.DualWieldOnly] || skillFlags["forceMainHand"] || weapon1Known) && activeSkill.SummonSkill == nil {
+		} else if (skillTypes[modparser.SkillTypeDualWieldOnly] || skillFlags["forceMainHand"] || weapon1Known) && activeSkill.SummonSkill == nil {
 			// Skill requires a compatible main hand weapon
 			skillFlags["disable"] = true
 			activeSkill.DisableReason = "Main Hand weapon is not usable with this skill"
 		}
 		if !skillFlags["forceMainHand"] {
-			weapon2Flags, _, weapon2Known := env.getWeaponFlags(activeSkill.Actor.WeaponData2, weaponTypes)
+			weapon2Flags, _, weapon2Known := env.getWeaponFlags(weaponOf(activeSkill.Actor.WeaponData2), weaponTypes)
 			if weapon2Flags != nil {
-				if skillTypes[modparser.SkillType.DualWieldRequiresDifferentTypes] &&
-					str(activeSkill.Actor.WeaponData1["type"]) == str(activeSkill.Actor.WeaponData2["type"]) &&
-					!(truthy(activeSkill.Actor.WeaponData2["countsAsAll1H"]) || truthy(activeSkill.Actor.WeaponData1["countsAsAll1H"])) {
+				if skillTypes[modparser.SkillTypeDualWieldRequiresDifferentTypes] &&
+					weaponType(weaponOf(activeSkill.Actor.WeaponData1)) == weaponType(weaponOf(activeSkill.Actor.WeaponData2)) &&
+					!(weaponOf(activeSkill.Actor.WeaponData2) != nil && weaponOf(activeSkill.Actor.WeaponData2).CountsAsAll1H ||
+						weaponOf(activeSkill.Actor.WeaponData1) != nil && weaponOf(activeSkill.Actor.WeaponData1).CountsAsAll1H) {
 					skillFlags["disable"] = true
 					if activeSkill.DisableReason == "" {
 						activeSkill.DisableReason = "Weapon Types Need to be Different"
@@ -327,7 +304,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					activeSkill.Weapon2Flags = weapon2Flags
 					skillFlags["weapon2Attack"] = true
 				}
-			} else if (skillTypes[modparser.SkillType.DualWieldOnly] || weapon2Known) && activeSkill.SummonSkill == nil {
+			} else if (skillTypes[modparser.SkillTypeDualWieldOnly] || weapon2Known) && activeSkill.SummonSkill == nil {
 				skillFlags["disable"] = true
 				if activeSkill.DisableReason == "" {
 					activeSkill.DisableReason = "Off Hand weapon is not usable with this skill"
@@ -345,81 +322,81 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	for stat, statValue := range BuildSkillInstanceStats(activeEffect, activeGrantedEffect) {
 		mapEntry := env.statMapLookup(activeGrantedEffect, stat)
 		if statValue != 0 && mapEntry != nil {
-			if sf := str(mapEntry.KV["skillFlag"]); sf != "" {
+			if sf := mapEntry.SkillFlag; sf != "" {
 				skillFlags[sf] = true
 			}
 		}
 	}
 	// Build skill mod flag set
-	var skillModFlags int64
+	var skillModFlags modparser.ModFlag
 	if skillFlags["hit"] {
-		skillModFlags |= modparser.ModFlag.Hit
+		skillModFlags |= modparser.FlagHit
 	}
 	if skillFlags["attack"] {
-		skillModFlags |= modparser.ModFlag.Attack
+		skillModFlags |= modparser.FlagAttack
 	} else {
-		skillModFlags |= modparser.ModFlag.Cast
+		skillModFlags |= modparser.FlagCast
 		if skillFlags["spell"] {
-			skillModFlags |= modparser.ModFlag.Spell
+			skillModFlags |= modparser.FlagSpell
 		}
 	}
 	if skillFlags["melee"] {
-		skillModFlags |= modparser.ModFlag.Melee
+		skillModFlags |= modparser.FlagMelee
 	} else if skillFlags["projectile"] {
-		skillModFlags |= modparser.ModFlag.Projectile
+		skillModFlags |= modparser.FlagProjectile
 		skillFlags["chaining"] = true
 	}
 	if skillFlags["area"] {
-		skillModFlags |= modparser.ModFlag.Area
+		skillModFlags |= modparser.FlagArea
 	}
 
 	// Build skill keyword flag set
-	var skillKeywordFlags int64
+	var skillKeywordFlags modparser.KeywordFlag
 	if skillFlags["hit"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Hit
+		skillKeywordFlags |= modparser.KeywordHit
 	}
 	for _, e := range []struct {
-		st int64
-		kw int64
+		st modparser.SkillTypeID
+		kw modparser.KeywordFlag
 	}{
-		{modparser.SkillType.Aura, modparser.KeywordFlag.Aura},
-		{modparser.SkillType.AppliesCurse, modparser.KeywordFlag.Curse},
-		{modparser.SkillType.Warcry, modparser.KeywordFlag.Warcry},
-		{modparser.SkillType.Movement, modparser.KeywordFlag.Movement},
-		{modparser.SkillType.Vaal, modparser.KeywordFlag.Vaal},
-		{modparser.SkillType.Lightning, modparser.KeywordFlag.Lightning},
-		{modparser.SkillType.Cold, modparser.KeywordFlag.Cold},
-		{modparser.SkillType.Fire, modparser.KeywordFlag.Fire},
-		{modparser.SkillType.Chaos, modparser.KeywordFlag.Chaos},
-		{modparser.SkillType.Physical, modparser.KeywordFlag.Physical},
+		{modparser.SkillTypeAura, modparser.KeywordAura},
+		{modparser.SkillTypeAppliesCurse, modparser.KeywordCurse},
+		{modparser.SkillTypeWarcry, modparser.KeywordWarcry},
+		{modparser.SkillTypeMovement, modparser.KeywordMovement},
+		{modparser.SkillTypeVaal, modparser.KeywordVaal},
+		{modparser.SkillTypeLightning, modparser.KeywordLightning},
+		{modparser.SkillTypeCold, modparser.KeywordCold},
+		{modparser.SkillTypeFire, modparser.KeywordFire},
+		{modparser.SkillTypeChaos, modparser.KeywordChaos},
+		{modparser.SkillTypePhysical, modparser.KeywordPhysical},
 	} {
 		if skillTypes[e.st] {
 			skillKeywordFlags |= e.kw
 		}
 	}
-	if skillFlags["weapon1Attack"] && activeSkill.Weapon1Flags != nil && *activeSkill.Weapon1Flags&modparser.ModFlag.Bow != 0 {
-		skillKeywordFlags |= modparser.KeywordFlag.Bow
+	if skillFlags["weapon1Attack"] && activeSkill.Weapon1Flags != nil && *activeSkill.Weapon1Flags&modparser.FlagBow != 0 {
+		skillKeywordFlags |= modparser.KeywordBow
 	}
 	if skillFlags["brand"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Brand
+		skillKeywordFlags |= modparser.KeywordBrand
 	}
 	if skillFlags["arrow"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Arrow
+		skillKeywordFlags |= modparser.KeywordArrow
 	}
 	if skillFlags["totem"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Totem
+		skillKeywordFlags |= modparser.KeywordTotem
 	} else if skillFlags["trap"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Trap
+		skillKeywordFlags |= modparser.KeywordTrap
 	} else if skillFlags["mine"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Mine
-	} else if !skillTypes[modparser.SkillType.Triggered] {
+		skillKeywordFlags |= modparser.KeywordMine
+	} else if !skillTypes[modparser.SkillTypeTriggered] {
 		skillFlags["selfCast"] = true
 	}
-	if skillTypes[modparser.SkillType.Attack] {
-		skillKeywordFlags |= modparser.KeywordFlag.Attack
+	if skillTypes[modparser.SkillTypeAttack] {
+		skillKeywordFlags |= modparser.KeywordAttack
 	}
-	if skillTypes[modparser.SkillType.Spell] && !skillFlags["cast"] {
-		skillKeywordFlags |= modparser.KeywordFlag.Spell
+	if skillTypes[modparser.SkillTypeSpell] && !skillFlags["cast"] {
+		skillKeywordFlags |= modparser.KeywordSpell
 	}
 
 	// Get skill totem ID for totem skills
@@ -438,17 +415,17 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	}
 
 	// Calculate melee/projectile distance
-	distKey := "projectileDistance"
-	if skillFlags["melee"] {
-		distKey = "meleeDistance"
+	distance := func(c *ConfigInput) util.Opt[float64] {
+		if skillFlags["melee"] {
+			return c.MeleeDistance
+		}
+		return c.ProjectileDistance
 	}
 	var effectiveRange *float64
-	if v, ok := env.ConfigInput[distKey]; ok && truthy(v) {
-		n := anyNum(v)
-		effectiveRange = &n
-	} else if v, ok := env.Build.ConfigPlaceholder[distKey]; ok && truthy(v) {
-		n := anyNum(v)
-		effectiveRange = &n
+	if v := distance(env.ConfigInput); v.Set {
+		effectiveRange = &v.V
+	} else if v := distance(env.Build.ConfigPlaceholder); v.Set {
+		effectiveRange = &v.V
 	}
 
 	// Build config structure for modifier searches
@@ -475,7 +452,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	if activeEffect.GemData != nil {
 		// typed-nil guard: a nil *data.Gem in the any field would defeat
 		// the eval's skillGem nil check
-		activeSkill.SkillCfg.SkillGem = activeEffect.GemData
+		activeSkill.SkillCfg.SkillGem = gemRef{activeEffect.GemData}
 	}
 	if activeSkill.SummonSkill != nil {
 		activeSkill.SkillCfg.SummonSkillName = activeSkill.SummonSkill.ActiveEffect.GrantedEffect.Name
@@ -519,14 +496,14 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	if md := activeSkill.Actor.MinionData; md != nil && md.DamageFixup != nil {
 		// Spell damage fixup for a few minions whose attack time was
 		// rebalanced: less damage, more speed, net-neutral DPS.
-		skillModList.AddMod(newMod("Damage", "MORE", -100**md.DamageFixup, "Damage Fixup", modparser.ModFlag.Attack))
-		skillModList.AddMod(newMod("Speed", "MORE", 100**md.DamageFixup, "Damage Fixup", modparser.ModFlag.Attack))
+		skillModList.AddMod(newModSF("Damage", modparser.More, modparser.Num(-100**md.DamageFixup), "Damage Fixup", modparser.FlagAttack, modparser.KeywordNone))
+		skillModList.AddMod(newModSF("Speed", modparser.More, modparser.Num(100**md.DamageFixup), "Damage Fixup", modparser.FlagAttack, modparser.KeywordNone))
 	}
 
 	// Mods which apply curses are not disabled by Gruthkul's Pelt
 	curseApplicationSkill := activeSkill.SocketGroup != nil && activeSkill.SocketGroup.SourceItem != nil &&
 		skillFlags["curse"] && activeEffect.SrcInstance != nil &&
-		truthy(activeEffect.SrcInstance.KV["noSupports"]) && truthy(activeEffect.SrcInstance.KV["triggered"])
+		activeEffect.SrcInstance.NoSupports && activeEffect.SrcInstance.Triggered
 	if skillModList.Flag(activeSkill.SkillCfg, "DisableSkill") &&
 		!(skillModList.Flag(activeSkill.SkillCfg, "EnableSkill") || (curseApplicationSkill && skillModList.Flag(nil, "ForceEnableCurseApplication"))) {
 		skillFlags["disable"] = true
@@ -539,7 +516,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		}
 		skillFlags["disable"] = true
 		ValidateGemLevel(activeEffect)
-		activeEffect.GrantedEffectLevel = activeGrantedEffect.Levels[activeEffect.Level]
+		activeEffect.GrantedEffectLevel = activeGrantedEffect.LevelData(activeEffect.Level)
 		return
 	}
 
@@ -549,12 +526,12 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			continue
 		}
 		env.mergeSkillInstanceMods(skillModList, skillEffect, nil)
-		level := skillEffect.GrantedEffect.Levels[skillEffect.Level]
+		level := skillEffect.GrantedEffect.LevelData(skillEffect.Level)
 		if v, ok := lvlExtra(level, "manaMultiplier"); ok {
-			skillModList.AddMod(newMod("SupportManaMultiplier", "MORE", v, skillEffect.GrantedEffect.ModSource))
+			skillModList.AddMod(newModS("SupportManaMultiplier", modparser.More, modparser.Num(v), skillEffect.GrantedEffect.ModSource))
 		}
 		if v, ok := lvlExtra(level, "manaReservationPercent"); ok {
-			activeSkill.SkillData["manaReservationPercent"] = v
+			activeSkill.SkillData.SetN("manaReservationPercent", v)
 		}
 		if skillEffect.GrantedEffect.AddSkillTypes != nil && !skillFlags["disable"] && skillEffect.GrantedEffect.IsTrigger {
 			if activeSkill.TriggeredBy != nil {
@@ -565,15 +542,15 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			}
 		}
 		if v, ok := lvlExtra(level, "PvPDamageMultiplier"); ok {
-			skillModList.AddMod(newMod("PvpDamageMultiplier", "MORE", v, skillEffect.GrantedEffect.ModSource))
+			skillModList.AddMod(newModS("PvpDamageMultiplier", modparser.More, modparser.Num(v), skillEffect.GrantedEffect.ModSource))
 		}
 		if v, ok := lvlExtra(level, "storedUses"); ok {
-			activeSkill.SkillData["storedUses"] = v
+			activeSkill.SkillData.SetN("storedUses", v)
 		}
 		if v, ok := lvlExtra(level, "vaalStoredUses"); ok {
 			// reference precedence: a or (0 + b)
-			if _, has := activeSkill.SkillData["storedUses"]; !has {
-				activeSkill.SkillData["storedUses"] = 0 + v
+			if !activeSkill.SkillData.Has("storedUses") {
+				activeSkill.SkillData.SetN("storedUses", 0+v)
 			}
 		}
 	}
@@ -582,20 +559,20 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	gemLevel := activeEffect.Level
 	gemQuality := activeEffect.Quality
 	if activeEffect.SrcInstance != nil {
-		gemLevel = anyNum(activeEffect.SrcInstance.KV["level"])
-		gemQuality = anyNum(activeEffect.SrcInstance.KV["quality"])
+		gemLevel = activeEffect.SrcInstance.Level
+		gemQuality = activeEffect.SrcInstance.Quality
 	}
-	skillModList.AddMod(newMod("GemLevel", "BASE", gemLevel, "Max Level"))
-	skillModList.AddMod(newMod("GemQuality", "BASE", gemQuality, "Max Quality"))
-	socketMatches := activeEffect.SrcInstance != nil && truthy(activeEffect.SrcInstance.KV["matchesSocket"])
+	skillModList.AddMod(newModS("GemLevel", modparser.Base, modparser.Num(gemLevel), "Max Level"))
+	skillModList.AddMod(newModS("GemQuality", modparser.Base, modparser.Num(gemQuality), "Max Quality"))
+	socketMatches := activeEffect.SrcInstance != nil && activeEffect.SrcInstance.MatchesSocket.V
 	if socketMatches {
-		skillModList.AddMod(newMod("GemSocketQuality", "BASE", data.Misc.MatchingSocketQualityBonus, "Socket Quality"))
+		skillModList.AddMod(newModS("GemSocketQuality", modparser.Base, modparser.Num(data.Misc.MatchingSocketQualityBonus), "Socket Quality"))
 	}
-	for _, supportProperty := range skillModList.Tabulate("LIST", activeSkill.SkillCfg, "SupportedGemProperty") {
-		value, _ := supportProperty.Value.(modparser.Tag)
-		if str(value["keyword"]) == "grants_active_skill" && activeEffect.GemData != nil && !activeEffect.GemData.Tags["support"] {
-			key := str(value["key"])
-			v := anyNum(value["value"])
+	for _, supportProperty := range skillModList.Tabulate(modparser.List, activeSkill.SkillCfg, "SupportedGemProperty") {
+		value, _ := supportProperty.Value.(modparser.GemPropertyRef)
+		if value.Keyword == "grants_active_skill" && activeEffect.GemData != nil && !activeEffect.GemData.Tags["support"] {
+			key := value.Key
+			v := value.Value.Or(0)
 			if key == "quality" {
 				activeEffect.SupportQuality += v
 			}
@@ -610,65 +587,56 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 				}
 				activeEffect.Extra[key] += v
 			}
-			args := []any{supportProperty.Mod.Source}
-			if len(supportProperty.Mod.Tags) > 0 && supportProperty.Mod.Tags[0] != nil {
-				args = append(args, supportProperty.Mod.Tags[0])
-			}
-			skillModList.AddMod(newMod("GemSupport"+firstUpper(key), "BASE", v, args...))
+			skillModList.AddMod(newModS("GemSupport"+firstUpper(key), modparser.Base, modparser.Num(v), supportProperty.Mod.Source, firstTag(supportProperty.Mod)...))
 		}
 	}
 
 	for _, gemProperty := range activeEffect.GemPropertyInfo {
-		value, _ := gemProperty.Value.(modparser.Tag)
-		args := []any{gemProperty.Mod.Source}
-		if len(gemProperty.Mod.Tags) > 0 && gemProperty.Mod.Tags[0] != nil {
-			args = append(args, gemProperty.Mod.Tags[0])
-		}
-		skillModList.AddMod(newMod("GemItem"+firstUpper(str(value["key"])), "BASE", anyNum(value["value"]), args...))
+		value, _ := gemProperty.Value.(modparser.GemPropertyRef)
+		skillModList.AddMod(newModS("GemItem"+firstUpper(value.Key), modparser.Base, modparser.Num(value.Value.Or(0)), gemProperty.Mod.Source, firstTag(gemProperty.Mod)...))
 	}
 
 	// Add active gem modifiers
 	activeEffect.ActorLevel = nil // actor.minionData and actor.level
 	env.mergeSkillInstanceMods(skillModList, activeEffect, skillModList.List(activeSkill.SkillCfg, "ExtraSkillStat"))
-	activeEffect.GrantedEffectLevel = activeGrantedEffect.Levels[activeEffect.Level]
+	activeEffect.GrantedEffectLevel = activeGrantedEffect.LevelData(activeEffect.Level)
 
 	// Add extra modifiers from granted effect level
 	level := activeEffect.GrantedEffectLevel
 	if v, ok := lvlExtra(level, "critChance"); ok {
-		activeSkill.SkillData["CritChance"] = v
+		activeSkill.SkillData.SetN("CritChance", v)
 	}
 	if v, ok := lvlExtra(level, "damageMultiplier"); ok {
-		skillModList.AddMod(newMod("Damage", "MORE", v, activeGrantedEffect.ModSource, modparser.ModFlag.Attack))
+		skillModList.AddMod(newModF("Damage", modparser.More, modparser.Num(v), modparser.FlagAttack, modparser.KeywordNone))
 	}
 	if v, ok := lvlExtra(level, "attackTime"); ok {
-		activeSkill.SkillData["attackTime"] = v
+		activeSkill.SkillData.SetN("attackTime", v)
 	}
 	if v, ok := lvlExtra(level, "attackSpeedMultiplier"); ok {
-		activeSkill.SkillData["attackSpeedMultiplier"] = v
+		activeSkill.SkillData.SetN("attackSpeedMultiplier", v)
 	}
 	if v, ok := lvlExtra(level, "cooldown"); ok {
-		activeSkill.SkillData["cooldown"] = v
+		activeSkill.SkillData.SetN("cooldown", v)
 	}
 	if v, ok := lvlExtra(level, "storedUses"); ok {
-		activeSkill.SkillData["storedUses"] = v
+		activeSkill.SkillData.SetN("storedUses", v)
 	}
 	if v, ok := lvlExtra(level, "vaalStoredUses"); ok {
-		if _, has := activeSkill.SkillData["storedUses"]; !has {
-			activeSkill.SkillData["storedUses"] = 0 + v
+		if !activeSkill.SkillData.Has("storedUses") {
+			activeSkill.SkillData.SetN("storedUses", 0+v)
 		}
 	}
 	if v, ok := lvlExtra(level, "soulPreventionDuration"); ok {
-		activeSkill.SkillData["soulPreventionDuration"] = v
+		activeSkill.SkillData.SetN("soulPreventionDuration", v)
 	}
 	if v, ok := lvlExtra(level, "PvPDamageMultiplier"); ok {
-		skillModList.AddMod(newMod("PvpDamageMultiplier", "MORE", v, activeGrantedEffect.ModSource))
+		skillModList.AddMod(newModS("PvpDamageMultiplier", modparser.More, modparser.Num(v), activeGrantedEffect.ModSource))
 	}
 
 	// Add extra modifiers from other sources
 	activeSkill.ExtraSkillModList = nil
 	for _, v := range skillModList.List(activeSkill.SkillCfg, "ExtraSkillMod") {
-		tag, _ := v.(modparser.Tag)
-		mod, _ := tag["mod"].(*modparser.Mod)
+		mod := modRefOf(v)
 		if mod == nil {
 			continue
 		}
@@ -679,18 +647,18 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	// Find totem level
 	if skillFlags["totem"] {
 		if v, ok := lvlExtra(activeEffect.GrantedEffectLevel, "levelRequirement"); ok {
-			activeSkill.SkillData["totemLevel"] = v
+			activeSkill.SkillData.SetN("totemLevel", v)
 		}
 	}
 
 	// Add active mine multiplier
 	if skillFlags["mine"] {
 		if activeEffect.SrcInstance != nil {
-			if v, ok := activeEffect.SrcInstance.KV["skillMineCount"]; ok && truthy(v) {
-				count := anyNum(v)
+			if v := activeEffect.SrcInstance.SkillMineCount; v.Set {
+				count := v.V
 				activeSkill.ActiveMineCount = &count
 				if count > 0 {
-					skillModList.AddMod(newMod("Multiplier:ActiveMineCount", "BASE", count, "Base"))
+					skillModList.AddMod(newModS("Multiplier:ActiveMineCount", modparser.Base, modparser.Num(count), "Base"))
 					existing := env.EnemyDB.Multipliers["ActiveMineCount"]
 					if count > existing {
 						existing = count
@@ -700,67 +668,64 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			}
 		}
 	} else if activeEffect.SrcInstance != nil && !(activeEffect.GemData != nil && activeEffect.GemData.SecondaryGrantedEffect != nil) {
-		delete(activeEffect.SrcInstance.KV, "skillMineCountCalcs")
-		delete(activeEffect.SrcInstance.KV, "skillMineCount")
+		activeEffect.SrcInstance.SkillMineCountCalcs = util.Opt[float64]{}
+		activeEffect.SrcInstance.SkillMineCount = util.Opt[float64]{}
 	}
 
 	// Stages
 	noPotentialStage := true
 	for _, pv := range activeGemParts {
-		if part, ok := pv.(map[string]any); ok && truthy(part["stages"]) {
+		if pv.Flags["stages"] {
 			noPotentialStage = false
 			break
 		}
 	}
 	strippedName := stripSpaces(activeGrantedEffect.Name)
-	limit := skillModList.Sum("BASE", activeSkill.SkillCfg, "Multiplier:"+strippedName+"MaxStages")
+	limit := skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "Multiplier:"+strippedName+"MaxStages")
 	if limit > 0 {
-		activeSkill.SkillData["stagesMax"] = limit
+		activeSkill.SkillData.SetN("stagesMax", limit)
 		skillFlags["multiStage"] = true
 		// srcInstance.skillStageCount or stagesMax or 1 (Lua truthiness:
 		// a present 0 wins over the fallback)
 		cur := limit
 		if activeEffect.SrcInstance != nil {
-			if v, ok := activeEffect.SrcInstance.KV["skillStageCount"]; ok && truthy(v) {
-				cur = anyNum(v)
+			if v := activeEffect.SrcInstance.SkillStageCount; v.Set {
+				cur = v.V
 			}
 		}
-		minStage := 1 + skillModList.Sum("BASE", activeSkill.SkillCfg, "Multiplier:"+strippedName+"MinimumStage")
+		minStage := 1 + skillModList.Sum(modparser.Base, activeSkill.SkillCfg, "Multiplier:"+strippedName+"MinimumStage")
 		if cur < minStage {
 			cur = minStage
 		}
 		activeSkill.ActiveStageCount = &cur
 		if cur > 0 {
-			skillModList.AddMod(newMod("Multiplier:"+strippedName+"Stage", "BASE", minFloat(limit, cur), "Base"))
+			skillModList.AddMod(newModS("Multiplier:"+strippedName+"Stage", modparser.Base, modparser.Num(minFloat(limit, cur)), "Base"))
 			cur = cur - 1
 			activeSkill.ActiveStageCount = &cur
-			skillModList.AddMod(newMod("Multiplier:"+strippedName+"StageAfterFirst", "BASE", minFloat(limit-1, cur), "Base"))
+			skillModList.AddMod(newModS("Multiplier:"+strippedName+"StageAfterFirst", modparser.Base, modparser.Num(minFloat(limit-1, cur)), "Base"))
 		}
 	} else if noPotentialStage && activeEffect.SrcInstance != nil && !(activeEffect.GemData != nil && activeEffect.GemData.SecondaryGrantedEffect != nil) {
-		delete(activeEffect.SrcInstance.KV, "skillStageCountCalcs")
-		delete(activeEffect.SrcInstance.KV, "skillStageCount")
+		activeEffect.SrcInstance.SkillStageCountCalcs = util.Opt[float64]{}
+		activeEffect.SrcInstance.SkillStageCount = util.Opt[float64]{}
 	}
 
 	// Extract skill data
 	for _, v := range env.ModDB.List(activeSkill.SkillCfg, "SkillData") {
-		tag, _ := v.(modparser.Tag)
-		activeSkill.SkillData[str(tag["key"])] = tag["value"]
+		tag, _ := v.(modparser.DataRef)
+		activeSkill.SkillData.Set(tag.Key, outValueOf(tag.Value))
 	}
 	for _, v := range skillModList.List(activeSkill.SkillCfg, "SkillData") {
-		tag, _ := v.(modparser.Tag)
-		activeSkill.SkillData[str(tag["key"])] = tag["value"]
+		tag, _ := v.(modparser.DataRef)
+		activeSkill.SkillData.Set(tag.Key, outValueOf(tag.Value))
 	}
 
 	// Create minion
 	var minionList []string
 	isSpectre := false
 	minionSupportLevel := map[string]float64{}
-	if mlv, ok := activeGrantedEffect.Custom["minionList"]; ok {
-		ml, _ := mlv.([]any)
+	if ml := activeGrantedEffect.Custom.MinionList; ml != nil {
 		if len(ml) > 0 {
-			for _, m := range ml {
-				minionList = append(minionList, str(m))
-			}
+			minionList = append(minionList, ml...)
 		} else {
 			minionList = append([]string{}, env.Build.SpectreList...)
 			isSpectre = true
@@ -770,10 +735,8 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		if !skillEffect.GrantedEffect.Support {
 			continue
 		}
-		if amv, ok := skillEffect.GrantedEffect.Custom["addMinionList"]; ok {
-			am, _ := amv.([]any)
-			for _, mv := range am {
-				minionType := str(mv)
+		{
+			for _, minionType := range skillEffect.GrantedEffect.Custom.AddMinionList {
 				found := false
 				for _, existing := range minionList {
 					if existing == minionType {
@@ -782,7 +745,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					}
 				}
 				if !found {
-					lvl := skillEffect.GrantedEffect.Levels[skillEffect.Level]
+					lvl := skillEffect.GrantedEffect.LevelData(skillEffect.Level)
 					req, _ := lvlExtra(lvl, "levelRequirement")
 					minionSupportLevel[minionType] = req
 					minionList = append(minionList, minionType)
@@ -798,7 +761,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		// select minion type from srcInstance state
 		minionType := minionList[0]
 		if activeEffect.SrcInstance != nil {
-			if sel := str(activeEffect.SrcInstance.KV["skillMinion"]); sel != "" {
+			if sel := activeEffect.SrcInstance.SkillMinion; sel != "" {
 				for _, m := range minionList {
 					if m == sel {
 						minionType = sel
@@ -806,13 +769,13 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					}
 				}
 			}
-			activeEffect.SrcInstance.KV["skillMinion"] = minionType
+			activeEffect.SrcInstance.SkillMinion = minionType
 		}
 		minionData := data.Minions[minionType]
 		if minionData == nil {
 			panic("calc: unknown minion type " + minionType)
 		}
-		minion := &Minion{Type: minionType, MinionData: minionData, Hostile: truthy(minionData.Hostile)}
+		minion := &Minion{Type: minionType, MinionData: minionData, Hostile: minionData.Hostile}
 		activeSkill.Minion = minion
 		skillFlags["haveMinion"] = true
 		if minion.Hostile {
@@ -822,24 +785,24 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 			minion.Parent = env.Player
 			minion.EnemyActor = env.Enemy
 		}
-		sd := func(key string) any { return activeSkill.SkillData[key] }
+		sd := activeSkill.SkillData
 		lvlReq, _ := lvlExtra(activeEffect.GrantedEffectLevel, "levelRequirement")
-		if truthy(sd("minionLevelIsEnemyLevel")) {
+		if sd.Flag("minionLevelIsEnemyLevel") {
 			minion.Level = env.EnemyLevel
-		} else if truthy(sd("minionLevelIsPlayerLevel")) {
+		} else if sd.Flag("minionLevelIsPlayerLevel") {
 			// min(build.characterLevel [or skillData.minionLevel or lvlReq —
 			// env.build is always set here], minionLevelIsPlayerLevel)
-			minion.Level = math.Min(env.Build.CharacterLevel, anyNum(sd("minionLevelIsPlayerLevel")))
+			minion.Level = math.Min(env.Build.CharacterLevel, sd.N("minionLevelIsPlayerLevel"))
 		} else if v, ok := minionSupportLevel[minionType]; ok {
 			minion.Level = v
-		} else if truthy(sd("minionLevel")) {
-			minion.Level = anyNum(sd("minionLevel"))
+		} else if sd.Flag("minionLevel") {
+			minion.Level = sd.N("minionLevel")
 		} else {
 			minion.Level = lvlReq
 		}
 		minion.Level = math.Min(math.Max(minion.Level, 1), 100)
 		minion.ItemList = map[string]modstore.Item{}
-		if uses, ok := activeGrantedEffect.Custom["minionUses"].(map[string]any); ok {
+		if uses := activeGrantedEffect.Custom.MinionUses; uses != nil {
 			minion.Uses = uses
 		}
 		if minion.Hostile {
@@ -862,41 +825,43 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 		if !minionData.BaseDamageIgnoresAttackSpeed {
 			damage = damage * attackTime
 		}
-		if _, ok := activeGrantedEffect.Custom["minionHasItemSet"]; ok {
+		if activeGrantedEffect.Custom.MinionHasItemSet {
 			cur := 0
 			if activeEffect.SrcInstance != nil {
-				cur = int(anyNum(activeEffect.SrcInstance.KV["skillMinionItemSet"]))
+				cur = int(activeEffect.SrcInstance.SkillMinionItemSet.V)
 			}
 			if env.Build.ItemsTab.ItemSets[cur] == nil {
 				cur = int(env.Build.ItemsTab.ItemSetOrderList[0])
 				if activeEffect.SrcInstance != nil {
-					activeEffect.SrcInstance.KV["skillMinionItemSet"] = float64(cur)
+					activeEffect.SrcInstance.SkillMinionItemSet = util.Some(float64(cur))
 				}
 			}
 			minion.ItemSet = env.Build.ItemsTab.ItemSets[cur]
 		} else if activeEffect.SrcInstance != nil && !(activeEffect.GemData != nil && activeEffect.GemData.SecondaryGrantedEffect != nil) {
-			delete(activeEffect.SrcInstance.KV, "skillMinionItemSetCalcs")
-			delete(activeEffect.SrcInstance.KV, "skillMinionItemSet")
+			activeEffect.SrcInstance.SkillMinionItemSetCalcs = util.Opt[float64]{}
+			activeEffect.SrcInstance.SkillMinionItemSet = util.Opt[float64]{}
 		}
-		if (truthy(sd("minionUseBowAndQuiver")) && str(env.Player.WeaponData1["type"]) == "Bow") || truthy(sd("minionUseMainHandWeapon")) {
-			minion.WeaponData1 = env.Player.WeaponData1
+		if (sd.Flag("minionUseBowAndQuiver") && weaponType(weaponOf(env.Player.WeaponData1)) == "Bow") || sd.Flag("minionUseMainHandWeapon") {
+			minion.WeaponData1 = weaponOf(env.Player.WeaponData1)
 		} else if env.TheIronMass != nil && minionType == "RaisedSkeleton" {
-			minion.WeaponData1 = env.Player.WeaponData1
+			minion.WeaponData1 = weaponOf(env.Player.WeaponData1)
 		} else {
 			wtype := "None"
 			if minionData.WeaponType1 != nil {
 				wtype = *minionData.WeaponType1
 			}
-			minion.WeaponData1 = map[string]any{
-				"type":        wtype,
-				"AttackRate":  1 / attackTime,
-				"CritChance":  5.0,
-				"PhysicalMin": round(damage * (1 - minionData.DamageSpread)),
-				"PhysicalMax": round(damage * (1 + minionData.DamageSpread)),
-				"range":       minionData.AttackRange,
+			minion.WeaponData1 = &item.WeaponData{
+				Type:       wtype,
+				AttackRate: 1 / attackTime,
+				CritChance: util.Some(5.0),
+				Physical: item.DamageRange{
+					Min: util.RoundHalfUp(damage*(1-minionData.DamageSpread), 0),
+					Max: util.RoundHalfUp(damage*(1+minionData.DamageSpread), 0),
+				},
+				Range: minionData.AttackRange,
 			}
 		}
-		minion.WeaponData2 = map[string]any{}
+		minion.WeaponData2 = &item.WeaponData{}
 		if minion.Uses != nil {
 			setSlot := func(base string) string {
 				if minion.ItemSet != nil && minion.ItemSet.UseSecondWeaponSet != nil && *minion.ItemSet.UseSecondWeaponSet {
@@ -904,41 +869,39 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 				}
 				return base
 			}
-			if truthy(minion.Uses["Weapon 1"]) {
+			if minion.Uses["Weapon 1"] {
 				if minion.ItemSet != nil {
 					item := env.Build.ItemsTab.Items[int(minion.ItemSet.Slots[setSlot("Weapon 1")])]
 					if item != nil && item.WeaponData != nil {
 						minion.WeaponData1 = item.WeaponData[1]
 					}
 				} else {
-					minion.WeaponData1 = env.Player.WeaponData1
+					minion.WeaponData1 = weaponOf(env.Player.WeaponData1)
 				}
 			}
-			if truthy(minion.Uses["Weapon 2"]) {
+			if minion.Uses["Weapon 2"] {
 				if minion.ItemSet != nil {
 					item := env.Build.ItemsTab.Items[int(minion.ItemSet.Slots[setSlot("Weapon 2")])]
 					if item != nil && item.WeaponData != nil {
 						minion.WeaponData2 = item.WeaponData[2]
 					}
 				} else {
-					minion.WeaponData2 = env.Player.WeaponData2
+					minion.WeaponData2 = weaponOf(env.Player.WeaponData2)
 				}
 			}
 		}
 		if !isSpectre && skillModList.Flag(activeSkill.SkillCfg, "NonSpectreMinionsUseParentMainHandAttackTime") &&
-			truthy(env.Player.WeaponData1["AttackRate"]) && anyNum(env.Player.WeaponData1["AttackRate"]) > 0 {
+			weaponOf(env.Player.WeaponData1).AttackRate > 0 {
 			// copy before replacing only the base attack rate
-			cp := map[string]any{}
-			for k, v := range minion.WeaponData1 {
-				cp[k] = v
-			}
-			cp["AttackRate"] = env.Player.WeaponData1["AttackRate"]
+			cp := minion.WeaponData1.Clone()
+			cp.AttackRate = weaponOf(env.Player.WeaponData1).AttackRate
 			minion.WeaponData1 = cp
 		}
 	} else if activeEffect.SrcInstance != nil && !(activeEffect.GemData != nil && activeEffect.GemData.SecondaryGrantedEffect != nil) {
-		for _, k := range []string{"skillMinionCalcs", "skillMinion", "skillMinionItemSetCalcs", "skillMinionItemSet", "skillMinionSkill", "skillMinionSkillCalcs"} {
-			delete(activeEffect.SrcInstance.KV, k)
-		}
+		src := activeEffect.SrcInstance
+		src.SkillMinionCalcs, src.SkillMinion = "", ""
+		src.SkillMinionItemSetCalcs, src.SkillMinionItemSet = util.Opt[float64]{}, util.Opt[float64]{}
+		src.SkillMinionSkill, src.SkillMinionSkillCalcs = util.Opt[float64]{}, util.Opt[float64]{}
 	}
 
 	// Separate global effect modifiers
@@ -946,14 +909,14 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	for i < len(skillModList.Mods) {
 		mod := skillModList.Mods[i]
 		var effectType, effectName string
-		var effectTag modparser.Tag
+		var effectTag *modparser.GlobalEffectTag
 		for _, tv := range mod.Tags {
 			if tv == nil {
 				break
 			}
-			if tag, ok := tv.(modparser.Tag); ok && tag["type"] == "GlobalEffect" {
-				effectType = str(tag["effectType"])
-				effectName = str(tag["effectName"])
+			if tag, ok := tv.(*modparser.GlobalEffectTag); ok {
+				effectType = tag.EffectType
+				effectName = tag.EffectName
 				if effectName == "" {
 					effectName = activeGrantedEffect.Name
 				}
@@ -961,52 +924,61 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 				break
 			}
 		}
-		if effectTag != nil && truthy(effectTag["modCond"]) && !skillModList.GetCondition(str(effectTag["modCond"]), activeSkill.SkillCfg) {
+		if effectTag != nil && effectTag.ModCond != "" && !skillModList.GetCondition(effectTag.ModCond, activeSkill.SkillCfg) {
 			skillModList.Mods = append(skillModList.Mods[:i], skillModList.Mods[i+1:]...)
 		} else if effectType != "" {
 			var buff *Buff
 			for _, skillBuff := range activeSkill.BuffListTyped {
-				if str(skillBuff.KV["type"]) == effectType && str(skillBuff.KV["name"]) == effectName {
+				if skillBuff.Type == effectType && skillBuff.Name == effectName {
 					buff = skillBuff
 					break
 				}
 			}
 			if buff == nil {
-				buff = &Buff{KV: map[string]any{"type": effectType, "name": effectName}}
-				for src, dst := range map[string]string{
-					"allowTotemBuff":      "allowTotemBuff",
-					"effectCond":          "cond",
-					"effectEnemyCond":     "enemyCond",
-					"effectStackVar":      "stackVar",
-					"effectStackLimit":    "stackLimit",
-					"effectStackLimitVar": "stackLimitVar",
-					"applyNotPlayer":      "applyNotPlayer",
-					"applyMinions":        "applyMinions",
-				} {
-					if v, ok := effectTag[src]; ok && v != nil {
-						buff.KV[dst] = v
-					}
+				buff = &Buff{
+					Type:       effectType,
+					Name:       effectName,
+					Cond:       effectTag.EffectCond,
+					StackVar:   effectTag.EffectStackVar,
+					StackLimit: effectTag.EffectStackLimit,
+				}
+				if effectTag.AllowTotemBuff {
+					buff.AllowTotemBuff = util.Some(true)
+				}
+				if effectTag.ApplyNotPlayer {
+					buff.ApplyNotPlayer = util.Some(true)
+				}
+				if effectTag.ApplyMinions {
+					buff.ApplyMinions = util.Some(true)
 				}
 				if mod.Source == activeGrantedEffect.ModSource {
-					// Inherit buff configuration from the active skill
+					// Inherit buff configuration from the active skill.
 					// These are plain assignments in the reference, so a nil
-					// on the right removes whatever the effect tag put
-					// there -- notably allowTotemBuff, which a GlobalEffect
-					// tag can set and a skill without skillData.
-					// allowTotemBuff then clears again.
-					buff.KV["activeSkillBuff"] = true
-					assignKV(buff.KV, "applyNotPlayer", luaOr(buff.KV["applyNotPlayer"], activeSkill.SkillData["buffNotPlayer"]))
-					assignKV(buff.KV, "applyMinions", luaOr(buff.KV["applyMinions"], activeSkill.SkillData["buffMinions"]))
-					assignKV(buff.KV, "applyAllies", activeSkill.SkillData["buffAllies"])
-					assignKV(buff.KV, "allowTotemBuff", activeSkill.SkillData["allowTotemBuff"])
+					// on the right clears whatever the effect tag put there
+					// -- notably allowTotemBuff.
+					sd := func(key string) util.Opt[bool] {
+						if !activeSkill.SkillData.Has(key) {
+							return util.Opt[bool]{}
+						}
+						return util.Some(activeSkill.SkillData.Flag(key))
+					}
+					buff.ActiveSkillBuff = true
+					if !buff.ApplyNotPlayer.Or(false) {
+						buff.ApplyNotPlayer = sd("buffNotPlayer")
+					}
+					if !buff.ApplyMinions.Or(false) {
+						buff.ApplyMinions = sd("buffMinions")
+					}
+					buff.ApplyAllies = sd("buffAllies")
+					buff.AllowTotemBuff = sd("allowTotemBuff")
 				}
 				activeSkill.BuffListTyped = append(activeSkill.BuffListTyped, buff)
 			}
 			match := false
 			for di, destMod := range buff.ModList {
-				if modparser.CompareModParams(mod, destMod) && (destMod.Type == "BASE" || destMod.Type == "INC") {
-					cp := modparser.CopyMod(destMod)
-					cp.Value = anyNum(cp.Value) + anyNum(mod.Value)
+				if modparser.CompareModParams(mod, destMod) && (destMod.Type == modparser.Base || destMod.Type == modparser.Inc) {
+					cp := cloneMod(destMod)
+					cp.Value = modparser.Num(valueNum(cp.Value) + valueNum(mod.Value))
 					buff.ModList[di] = cp
 					match = true
 					break
@@ -1040,39 +1012,3 @@ func firstUpper(s string) string {
 	}
 	return s
 }
-
-// setKV assigns only non-nil values (Lua nil assignment leaves the key
-// absent; false is stored).
-func setKV(kv map[string]any, k string, v any) {
-	if v != nil {
-		kv[k] = v
-	}
-}
-
-// assignKV is a plain Lua field assignment: storing nil removes the key.
-func assignKV(kv map[string]any, k string, v any) {
-	if v == nil {
-		delete(kv, k)
-		return
-	}
-	kv[k] = v
-}
-
-// luaOr is `a or b`: b whenever a is nil or false.
-func luaOr(a, b any) any {
-	if truthy(a) {
-		return a
-	}
-	return b
-}
-
-// keywordFlagByName is KeywordFlag[name] for dynamic lookups.
-var keywordFlagByName = func() map[string]int64 {
-	out := map[string]int64{}
-	rv := reflect.ValueOf(modparser.KeywordFlag)
-	rt := rv.Type()
-	for i := 0; i < rt.NumField(); i++ {
-		out[rt.Field(i).Name] = rv.Field(i).Int()
-	}
-	return out
-}()

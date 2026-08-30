@@ -1,10 +1,11 @@
 package test
 
 // Skills-tab differential: load each corpus build's <Skills> element
-// natively (package skillstab) and byte-compare every socket group's and
-// gem's scalar bag against the calc fixture's skillsTab dump. Runtime keys
-// the calc stamps after load (and view-only keys the port skips) are
-// masked on the fixture side, each with its owner noted.
+// natively (package skills) and byte-compare every socket group's and
+// gem's reference table (the typed fields rendered by luacanon) against the
+// calc fixture's skillsTab dump. Runtime keys the calc stamps after load
+// (and view-only keys the port skips) are masked on the fixture side, each
+// with its owner noted.
 
 import (
 	"encoding/json"
@@ -28,20 +29,16 @@ type xmlSkillsDoc struct {
 	Skills skills.XMLSkills `xml:"Skills"`
 }
 
-// gemMaskedKeys: fixture gem bag keys the native load does not produce.
+// gemMaskedKeys: fixture gem keys the native load does not produce.
 var gemMaskedKeys = map[string]string{
-	"color":         "view-only (colour code)",
-	"triggered":     "calc runtime mark (persisted by the app's load-time calc)",
-	"displayEffect": "view-only",
-	"srcInstance":   "view-only reference",
+	"color":     "view-only (colour code)",
+	"triggered": "calc runtime mark (persisted by the app's load-time calc)",
 }
 
-// groupMaskedKeys: fixture group bag keys the native load does not produce.
+// groupMaskedKeys: fixture group keys the native load does not produce.
 var groupMaskedKeys = map[string]string{
-	"displayLabel":     "view-only",
-	"enabledInternal":  "calc runtime mark",
-	"slotEnabled":      "calc runtime mark (items stage)",
-	"disabledInternal": "calc runtime mark",
+	"displayLabel": "view-only",
+	"slotEnabled":  "calc runtime mark (items stage)",
 }
 
 // grantedGroupKeys: what LoadSkill itself owns on a granted group.
@@ -65,6 +62,24 @@ func maskBag(bag map[string]any, mask map[string]string) map[string]any {
 		}
 	}
 	return out
+}
+
+// groupTable/gemTable: the typed scalars plus the fixture's view-only keys
+// (masked above), as the reference table.
+func groupTable(g *skills.SocketGroup) map[string]any {
+	t := luacanon.SocketGroupTable(g)
+	for k, v := range luacanon.Extras[g] {
+		t[k] = v
+	}
+	return t
+}
+
+func gemTable(g *skills.Gem) map[string]any {
+	t := luacanon.GemInstanceTable(g)
+	for k, v := range luacanon.Extras[g] {
+		t[k] = v
+	}
+	return t
 }
 
 func TestSkillsTabAgainstReference(t *testing.T) {
@@ -132,27 +147,27 @@ func TestSkillsTabAgainstReference(t *testing.T) {
 		// never re-saved). Our calc's match-or-create makes them too; the
 		// load half only requires that every extra is a source group.
 		for i := len(tab.SocketGroupList); i < len(refGroups); i++ {
-			if _, ok := refGroups[i].KV["source"]; !ok {
+			if !refGroups[i].Granted() {
 				t.Errorf("%s: fixture-only group %d is not a granted group", buildKey, i+1)
 			}
 		}
 		refGroups = refGroups[:len(tab.SocketGroupList)]
 		for i, group := range tab.SocketGroupList {
 			refGroup := refGroups[i]
-			if _, granted := group.KV["source"]; granted {
+			if group.Granted() {
 				// Item/tree-granted groups: the calc's granted-skill update
 				// rewrites their gems after load (that update is ported in
 				// calc); the load half owns only the XML-loaded group keys.
-				got := luacanon.EncodeExact(pickKeys(group.KV, grantedGroupKeys))
-				want := luacanon.EncodeExact(pickKeys(refGroup.KV, grantedGroupKeys))
+				got := luacanon.EncodeExact(pickKeys(groupTable(group), grantedGroupKeys))
+				want := luacanon.EncodeExact(pickKeys(groupTable(refGroup.SocketGroup), grantedGroupKeys))
 				if got != want {
 					t.Errorf("%s granted group %d diverged\n%s", buildKey, i+1, diffWindow(got, want))
 				}
 				groupsCompared++
 				continue
 			}
-			got := luacanon.EncodeExact(maskBag(group.KV, groupMaskedKeys))
-			want := luacanon.EncodeExact(maskBag(refGroup.KV, groupMaskedKeys))
+			got := luacanon.EncodeExact(maskBag(groupTable(group), groupMaskedKeys))
+			want := luacanon.EncodeExact(maskBag(groupTable(refGroup.SocketGroup), groupMaskedKeys))
 			if got != want {
 				t.Errorf("%s group %d diverged\n%s", buildKey, i+1, diffWindow(got, want))
 			}
@@ -163,13 +178,13 @@ func TestSkillsTabAgainstReference(t *testing.T) {
 			}
 			for j, gem := range group.GemList {
 				refGem := refGroup.GemList[j]
-				gotShadow := gemShadow(gem.KV, gemDataID(gem), grantedEffectID(gem))
-				wantShadow := gemShadow(refGem.KV, refGem.GemDataID, refGem.GrantedEffectID)
+				gotShadow := gemShadow(gemTable(gem), gemDataID(gem), grantedEffectID(gem))
+				wantShadow := gemShadow(gemTable(refGem.Gem), refGem.GemDataID, refGem.GrantedEffectID)
 				dropCalcStamped(gotShadow.KV, wantShadow.KV)
 				gotGem := luacanon.EncodeExact(gotShadow)
 				wantGem := luacanon.EncodeExact(wantShadow)
 				if gotGem != wantGem {
-					t.Errorf("%s group %d gem %d (%v) diverged\n%s", buildKey, i+1, j+1, gem.KV["nameSpec"], diffWindow(gotGem, wantGem))
+					t.Errorf("%s group %d gem %d (%s) diverged\n%s", buildKey, i+1, j+1, gem.NameSpec, diffWindow(gotGem, wantGem))
 				}
 				gemsCompared++
 			}
@@ -217,14 +232,14 @@ func dropCalcStamped(native, fixture map[string]any) {
 	}
 }
 
-func gemDataID(g *skills.GemInstance) *string {
+func gemDataID(g *skills.Gem) *string {
 	if g.GemData == nil {
 		return nil
 	}
 	return &g.GemData.Id
 }
 
-func grantedEffectID(g *skills.GemInstance) *string {
+func grantedEffectID(g *skills.Gem) *string {
 	if g.GrantedEffect == nil {
 		return nil
 	}

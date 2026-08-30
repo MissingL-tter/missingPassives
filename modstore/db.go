@@ -36,7 +36,7 @@ func sourceOK(mod *modparser.Mod, source string, guardNil bool) bool {
 	return sourceMatch(mod.Source, source)
 }
 
-func modMatches(mod *modparser.Mod, flags, keywordFlags int64) bool {
+func modMatches(mod *modparser.Mod, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag) bool {
 	return flags&mod.Flags == mod.Flags && matchKeywordFlags(keywordFlags, mod.KeywordFlags)
 }
 
@@ -110,7 +110,7 @@ func (db *DB) AddDB(other *DB) {
 	}
 }
 
-func (db *DB) SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64 {
+func (db *DB) SumInternal(ctx Store, modType modparser.ModType, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 0.0
 	globalLimits := map[string]float64{}
 	for _, name := range names {
@@ -118,10 +118,10 @@ func (db *DB) SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFla
 			if mod.Type == modType && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, true) {
 				if hasTags(mod) {
 					if v := evalMod(ctx, mod, cfg, globalLimits); v != nil {
-						result += arithNum(v)
+						result += valueNum(v)
 					}
 				} else {
-					result += arithNum(mod.Value)
+					result += valueNum(mod.Value)
 				}
 			}
 		}
@@ -132,7 +132,7 @@ func (db *DB) SumInternal(ctx Store, modType string, cfg *Cfg, flags, keywordFla
 	return result
 }
 
-func (db *DB) MoreInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) float64 {
+func (db *DB) MoreInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) float64 {
 	result := 1.0
 	var modPrecision int
 	hasPrecision := false
@@ -140,14 +140,14 @@ func (db *DB) MoreInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, sourc
 	for _, name := range names {
 		modResult := 1.0
 		for _, mod := range db.Mods[name] {
-			if mod.Type == "MORE" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Type == modparser.More && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				var value float64
 				if hasTags(mod) {
 					if v := evalMod(ctx, mod, cfg, globalLimits); v != nil {
-						value = arithNum(v)
+						value = valueNum(v)
 					}
-				} else if truthy(mod.Value) {
-					value = arithNum(mod.Value)
+				} else if modparser.Truthy(mod.Value) {
+					value = valueNum(mod.Value)
 				}
 				modResult *= 1 + value/100
 				if p, ok := highPrecision(mod.Name, mod.Type); ok {
@@ -174,15 +174,15 @@ func applyMorePrecision(result, modResult float64, modPrecision int, hasPrecisio
 	return result * round(modResult, 2)
 }
 
-func (db *DB) FlagInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) bool {
+func (db *DB) FlagInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
-			if mod.Type == "FLAG" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Type == modparser.Flag && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					if truthy(evalMod(ctx, mod, cfg, nil)) {
+					if modparser.Truthy(evalMod(ctx, mod, cfg, nil)) {
 						return true
 					}
-				} else if truthy(mod.Value) {
+				} else if modparser.Truthy(mod.Value) {
 					return true
 				}
 			}
@@ -194,15 +194,15 @@ func (db *DB) FlagInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, sourc
 	return false
 }
 
-func (db *DB) OverrideInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) any {
+func (db *DB) OverrideInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) modparser.Value {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
-			if mod.Type == "OVERRIDE" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Type == modparser.Override && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					if v := evalMod(ctx, mod, cfg, nil); truthy(v) {
+					if v := evalMod(ctx, mod, cfg, nil); modparser.Truthy(v) {
 						return v
 					}
-				} else if truthy(mod.Value) {
+				} else if modparser.Truthy(mod.Value) {
 					return mod.Value
 				}
 			}
@@ -214,62 +214,66 @@ func (db *DB) OverrideInternal(ctx Store, cfg *Cfg, flags, keywordFlags int64, s
 	return nil
 }
 
-func (db *DB) ListInternal(ctx Store, result *[]any, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) {
+func (db *DB) ListInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []modparser.Value {
+	var result []modparser.Value
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
-			if mod.Type == "LIST" && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
+			if mod.Type == modparser.List && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
 					// #EVAL: archive parity — `or nullValue` reads an undefined
 					// global (nil), so failed evaluations are dropped silently.
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
-						*result = append(*result, v)
+						result = append(result, v)
 					}
-				} else if truthy(mod.Value) {
-					*result = append(*result, mod.Value)
+				} else if modparser.Truthy(mod.Value) {
+					result = append(result, mod.Value)
 				}
 			}
 		}
 	}
 	if db.Parent != nil {
-		db.Parent.ListInternal(ctx, result, cfg, flags, keywordFlags, source, names...)
+		result = append(result, db.Parent.ListInternal(ctx, cfg, flags, keywordFlags, source, names...)...)
 	}
+	return result
 }
 
-func (db *DB) TabulateInternal(ctx Store, result *[]TabEntry, modType string, hasType bool, cfg *Cfg, flags, keywordFlags int64, source string, names ...string) {
+func (db *DB) TabulateInternal(ctx Store, modType modparser.ModType, hasType bool, cfg *Cfg, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) []TabEntry {
+	var result []TabEntry
 	globalLimits := map[string]float64{}
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
 			if (!hasType || mod.Type == modType) && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
-				var value any
+				var value modparser.Value
 				if hasTags(mod) {
 					value = evalMod(ctx, mod, cfg, globalLimits)
 				} else {
 					value = mod.Value
 				}
 				if tabValueKept(value, mod.Type) {
-					*result = append(*result, TabEntry{Value: value, Mod: mod})
+					result = append(result, TabEntry{Value: value, Mod: mod})
 				}
 			}
 		}
 	}
 	if db.Parent != nil {
-		db.Parent.TabulateInternal(ctx, result, modType, hasType, cfg, flags, keywordFlags, source, names...)
+		result = append(result, db.Parent.TabulateInternal(ctx, modType, hasType, cfg, flags, keywordFlags, source, names...)...)
 	}
+	return result
 }
 
 // tabValueKept is `value and (value ~= 0 or mod.type == "OVERRIDE")`.
-func tabValueKept(value any, modType string) bool {
-	if !truthy(value) {
+func tabValueKept(value modparser.Value, modType modparser.ModType) bool {
+	if !modparser.Truthy(value) {
 		return false
 	}
 	if n, ok := numValue(value); ok && n == 0 {
-		return modType == "OVERRIDE"
+		return modType == modparser.Override
 	}
 	return true
 }
 
 // HasModInternal ports ModDB:HasModInternal.
-func (db *DB) HasModInternal(modType string, flags, keywordFlags int64, source string, names ...string) bool {
+func (db *DB) HasModInternal(modType modparser.ModType, flags modparser.ModFlag, keywordFlags modparser.KeywordFlag, source string, names ...string) bool {
 	for _, name := range names {
 		for _, mod := range db.Mods[name] {
 			if mod.Type == modType && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {

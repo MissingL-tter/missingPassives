@@ -62,9 +62,13 @@ type MiscData struct {
 	CurrencyNames CurrencyNames `json:"currencyNames"`
 }
 
+func (MiscData) isDocument() {}
+
 // FlavourTexts holds unique item flavour text, in the exporter's emission
 // order (forced names first, then sorted visual-identity ids).
 type FlavourTexts []FlavourText
+
+func (FlavourTexts) isDocument() {}
 
 type FlavourText struct {
 	Id   string   `json:"id"`
@@ -75,11 +79,15 @@ type FlavourText struct {
 // FoulbornMap maps unique item names to their Foulborn-transformed mod lines.
 type FoulbornMap map[string][]string
 
+func (FoulbornMap) isDocument() {}
+
 // SkillGemList is the gem list grouped by attribute colour (the
 // Export/Skills/SkillGems.txt template helper).
 type SkillGemList struct {
 	Groups []SkillGemGroup `json:"groups"`
 }
+
+func (SkillGemList) isDocument() {}
 
 type SkillGemGroup struct {
 	Type    string          `json:"type"`

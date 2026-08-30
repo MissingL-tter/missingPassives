@@ -441,10 +441,10 @@
 						"TalismanHasOneSocket_"
 					],
 					"flavourText": [
-						"\\\"I know where we found our belief in",
+						"\"I know where we found our belief in",
 						"the First Ones. I see it every time I walk",
 						"the untouched forests and hills. The",
-						"primordial world is still here. With us.\\\""
+						"primordial world is still here. With us.\""
 					]
 				},
 				{
@@ -467,9 +467,9 @@
 						"TalismanIncreasedMana"
 					],
 					"flavourText": [
-						"\\\"We held our trust in the First Ones long",
+						"\"We held our trust in the First Ones long",
 						"before we learned runes. Long before we",
-						"were shown the ways of cities and roads.\\\""
+						"were shown the ways of cities and roads.\""
 					]
 				},
 				{
@@ -492,10 +492,10 @@
 						"TalismanIncreasedFireDamage"
 					],
 					"flavourText": [
-						"\\\"This land was always harsh and brutal,",
+						"\"This land was always harsh and brutal,",
 						"ever seeking ways to kill and maim us.",
 						"We had to grow and change to survive,",
-						"but each clan had its own ideas how...\\\""
+						"but each clan had its own ideas how...\""
 					]
 				},
 				{
@@ -518,10 +518,10 @@
 						"TalismanIncreasedLightningDamage"
 					],
 					"flavourText": [
-						"\\\"A great rift formed, between clans,",
+						"\"A great rift formed, between clans,",
 						"between families. Those that remained",
 						"resolved to endure times of struggle,",
-						"if it meant we could keep our ways.\\\""
+						"if it meant we could keep our ways.\""
 					]
 				},
 				{
@@ -544,10 +544,10 @@
 						"TalismanIncreasedColdDamage"
 					],
 					"flavourText": [
-						"\\\"Those that departed sought the way of",
+						"\"Those that departed sought the way of",
 						"cities and roads. Theirs would be a path",
 						"fraught with danger and hardship, as they",
-						"set out to find and build a new home.\\\""
+						"set out to find and build a new home.\""
 					]
 				},
 				{
@@ -570,10 +570,10 @@
 						"TalismanIncreasedPhysicalDamage"
 					],
 					"flavourText": [
-						"\\\"When they set out to find and build",
+						"\"When they set out to find and build",
 						"Ezomyr, they encountered creatures of",
 						"deadly variety and intent. Many died,",
-						"for none yet knew how to fight back.\\\""
+						"for none yet knew how to fight back.\""
 					]
 				},
 				{
@@ -596,10 +596,10 @@
 						"TalismanIncreasedChaosDamage"
 					],
 					"flavourText": [
-						"\\\"Lysanda of Myr was but a girl on that exodus.",
+						"\"Lysanda of Myr was but a girl on that exodus.",
 						"Ezomyr almost met its end before it began...",
 						"but she could not hear that deadly lure. She",
-						"took the Siren's head with her bare hands.\\\""
+						"took the Siren's head with her bare hands.\""
 					]
 				},
 				{
@@ -622,10 +622,10 @@
 						"TalismanAdditionalZombie"
 					],
 					"flavourText": [
-						"\\\"It turned out, Lysanda made for an excellent",
+						"\"It turned out, Lysanda made for an excellent",
 						"vanguard - a light, evasive girl who could scout",
 						"and lead the way. The people came to see her",
-						"as their guide, their hope, and then... their leader.\\\""
+						"as their guide, their hope, and then... their leader.\""
 					]
 				},
 				{
@@ -648,10 +648,10 @@
 						"TalismanFishBiteSensitivity"
 					],
 					"flavourText": [
-						"\\\"Those that swore loyalty to Lysanda, that",
+						"\"Those that swore loyalty to Lysanda, that",
 						"forged ahead with her to clear the way.",
 						"became known as the first Knights...",
-						"armoured, battered, and courageous.\\\""
+						"armoured, battered, and courageous.\""
 					]
 				},
 				{
@@ -674,10 +674,10 @@
 						"TalismanAttackAndCastSpeed"
 					],
 					"flavourText": [
-						"\\\"Lysanda and her Knights brought the",
+						"\"Lysanda and her Knights brought the",
 						"settling clans to what would become",
 						"Ezomyr... but there was one beast against",
-						"which even they could not stand.\\\""
+						"which even they could not stand.\""
 					]
 				},
 				{
@@ -700,10 +700,10 @@
 						"TalismanSpellDamage"
 					],
 					"flavourText": [
-						"\\\"A great headless monstrosity with arms like",
+						"\"A great headless monstrosity with arms like",
 						"teeth stalked the lands they hoped to settle.",
 						"No other weapon would find purchase. They",
-						"surrounded it with fire, burning it for days.\\\""
+						"surrounded it with fire, burning it for days.\""
 					]
 				},
 				{
@@ -726,10 +726,10 @@
 						"TalismanAttackDamage"
 					],
 					"flavourText": [
-						"\\\"With the headless beast incinerated, the",
+						"\"With the headless beast incinerated, the",
 						"settlers rejoiced, and began building homes.",
 						"They would soon find that this hostile land",
-						"had more insidious ways of rejecting them.\\\""
+						"had more insidious ways of rejecting them.\""
 					]
 				},
 				{
@@ -752,10 +752,10 @@
 						"TalismanIncreasedCriticalChance"
 					],
 					"flavourText": [
-						"\\\"The clans had travelled to their new home",
+						"\"The clans had travelled to their new home",
 						"united, and they did love Lysanda, but some",
 						"men must go their own way. Those that braved",
-						"the inland sea settled the Isles of Skothe.\\\""
+						"the inland sea settled the Isles of Skothe.\""
 					]
 				},
 				{
@@ -778,10 +778,10 @@
 						"TalismanPercentLifeRegeneration"
 					],
 					"flavourText": [
-						"\\\"The journey was over, the land was being",
+						"\"The journey was over, the land was being",
 						"secured, and the foundations for the first city",
 						"had been laid. Winter hit them with horrible",
-						"fury, sent not by nature, but by a curse.\\\""
+						"fury, sent not by nature, but by a curse.\""
 					]
 				},
 				{
@@ -804,10 +804,10 @@
 						"TalismanIncreasedCriticalStrikeMultiplier_"
 					],
 					"flavourText": [
-						"\\\"Against the Winter Curse, only the forges of",
+						"\"Against the Winter Curse, only the forges of",
 						"runesmiths could stand. The people huddled,",
 						"shoulder to shoulder, while those within were",
-						"pressed against the fires, screaming in agony.\\\""
+						"pressed against the fires, screaming in agony.\""
 					]
 				},
 				{
@@ -830,10 +830,10 @@
 						"TalismanChanceToFreezeShockIgnite_"
 					],
 					"flavourText": [
-						"\\\"And still the Winter Curse raged in through",
+						"\"And still the Winter Curse raged in through",
 						"every window and every door. The fathers",
 						"and mothers of those within let themselves",
-						"freeze solid, sealing the gaps with their lives.\\\""
+						"freeze solid, sealing the gaps with their lives.\""
 					]
 				},
 				{
@@ -856,10 +856,10 @@
 						"TalismanGlobalDefensesPercent"
 					],
 					"flavourText": [
-						"\\\"The night refused to end, and the Winter Curse",
+						"\"The night refused to end, and the Winter Curse",
 						"howled. The people wailed, and Lysanda raged.",
 						"It was then that the sky tore open, unleashing",
-						"a saviour fury... at the behest of the Druids.\\\""
+						"a saviour fury... at the behest of the Druids.\""
 					]
 				},
 				{
@@ -882,10 +882,10 @@
 						"TalismanFireTakenAsCold"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -908,10 +908,10 @@
 						"TalismanFireTakenAsLightning"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -934,10 +934,10 @@
 						"TalismanColdTakenAsFire"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -960,10 +960,10 @@
 						"TalismanColdTakenAsLightning"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -986,10 +986,10 @@
 						"TalismanLightningTakenAsCold"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -1012,10 +1012,10 @@
 						"TalismanLightningTakenAsFire"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -1038,10 +1038,10 @@
 						"TalismanIncreasedLife"
 					],
 					"flavourText": [
-						"\\\"As the Ezomytes of Myr prospered, they",
+						"\"As the Ezomytes of Myr prospered, they",
 						"needed more and spreading lands. Queen",
 						"Lysanda led the ongoing campaign to",
-						"slaughter every last creature of darkness.\\\""
+						"slaughter every last creature of darkness.\""
 					]
 				},
 				{
@@ -1064,10 +1064,10 @@
 						"TalismanAdditionalPierce"
 					],
 					"flavourText": [
-						"\\\"Each new valley, each new grove, held new",
+						"\"Each new valley, each new grove, held new",
 						"dangers. Many Knights paid the price. Lysanda",
 						"had never been known for her beauty, but she",
-						"bore a new scar each season, earned gladly.\\\""
+						"bore a new scar each season, earned gladly.\""
 					]
 				},
 				{
@@ -1090,10 +1090,10 @@
 						"TalismanGlobalDamageOverTimeMultiplier"
 					],
 					"flavourText": [
-						"\\\"Romance never interested Queen Lysanda,",
+						"\"Romance never interested Queen Lysanda,",
 						"but her advisors insisted heirs were needed.",
 						"To spite them, she took the Hag's only son as",
-						"her Consort - a quiet, pale, and strange man.\\\""
+						"her Consort - a quiet, pale, and strange man.\""
 					]
 				},
 				{
@@ -1116,10 +1116,10 @@
 						"TalismanIncreasedAllAttributes"
 					],
 					"flavourText": [
-						"\\\"Queen Lysanda's spiteful choice of Consort",
+						"\"Queen Lysanda's spiteful choice of Consort",
 						"spited only herself. Alasdair was unlike any",
 						"man she had ever met. It was not long before",
-						"the trumpets sounded for the Royal Wedding.\\\""
+						"the trumpets sounded for the Royal Wedding.\""
 					]
 				},
 				{
@@ -1142,10 +1142,10 @@
 						"TalismanIncreasedAreaOfEffect"
 					],
 					"flavourText": [
-						"\\\"The Royal Wedding of Lysanda of Myr",
+						"\"The Royal Wedding of Lysanda of Myr",
 						"lasted for a full month. The hunts were",
 						"vigorous, and the meat and drink flowed",
-						"freely for all. There was much rejoicing.\\\""
+						"freely for all. There was much rejoicing.\""
 					]
 				},
 				{
@@ -1168,10 +1168,10 @@
 						"TalismanReducedPhysicalDamageTaken_"
 					],
 					"flavourText": [
-						"\\\"But there were some who could not forget",
+						"\"But there were some who could not forget",
 						"the horrors of the Winter Curse, and of the",
 						"Hag that had sent it. Alasdair dropped his",
-						"wine goblet, and fell to the ground, choking.\\\""
+						"wine goblet, and fell to the ground, choking.\""
 					]
 				},
 				{
@@ -1194,10 +1194,10 @@
 						"TalismanIncreasedDamage"
 					],
 					"flavourText": [
-						"\\\"There followed a time of fear and fire.",
+						"\"There followed a time of fear and fire.",
 						"None would speak against their fellows.",
 						"None would say who had poisoned him.",
-						"Lysanda's justice was swift and brutal.\\\""
+						"Lysanda's justice was swift and brutal.\""
 					]
 				},
 				{
@@ -1220,10 +1220,10 @@
 						"TalismanPowerChargeOnKill"
 					],
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				},
 				{
@@ -1246,10 +1246,10 @@
 						"TalismanFrenzyChargeOnKill"
 					],
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				},
 				{
@@ -1272,10 +1272,10 @@
 						"TalismanEnduranceChargeOnKill_"
 					],
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				},
 				{
@@ -1298,10 +1298,10 @@
 						"TalismanDamageDealtAddedAsRandomElement"
 					],
 					"flavourText": [
-						"\\\"The Blue Knight stood against the swarm,",
+						"\"The Blue Knight stood against the swarm,",
 						"icy and unassailable. His identity was not",
 						"known, and he never removed his helmet.",
-						"Glimpses were caught of piercing blue eyes.\\\""
+						"Glimpses were caught of piercing blue eyes.\""
 					]
 				},
 				{
@@ -1343,10 +1343,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"I know where we found our belief in",
+						"\"I know where we found our belief in",
 						"the First Ones. I see it every time I walk",
 						"the untouched forests and hills. The",
-						"primordial world is still here. With us.\\\""
+						"primordial world is still here. With us.\""
 					]
 				},
 				{
@@ -1371,9 +1371,9 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"We held our trust in the First Ones long",
+						"\"We held our trust in the First Ones long",
 						"before we learned runes. Long before we",
-						"were shown the ways of cities and roads.\\\""
+						"were shown the ways of cities and roads.\""
 					]
 				},
 				{
@@ -1398,10 +1398,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"This land was always harsh and brutal,",
+						"\"This land was always harsh and brutal,",
 						"ever seeking ways to kill and maim us.",
 						"We had to grow and change to survive,",
-						"but each clan had its own ideas how...\\\""
+						"but each clan had its own ideas how...\""
 					]
 				},
 				{
@@ -1426,10 +1426,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"A great rift formed, between clans,",
+						"\"A great rift formed, between clans,",
 						"between families. Those that remained",
 						"resolved to endure times of struggle,",
-						"if it meant we could keep our ways.\\\""
+						"if it meant we could keep our ways.\""
 					]
 				},
 				{
@@ -1454,10 +1454,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Those that departed sought the way of",
+						"\"Those that departed sought the way of",
 						"cities and roads. Theirs would be a path",
 						"fraught with danger and hardship, as they",
-						"set out to find and build a new home.\\\""
+						"set out to find and build a new home.\""
 					]
 				},
 				{
@@ -1482,10 +1482,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"When they set out to find and build",
+						"\"When they set out to find and build",
 						"Ezomyr, they encountered creatures of",
 						"deadly variety and intent. Many died,",
-						"for none yet knew how to fight back.\\\""
+						"for none yet knew how to fight back.\""
 					]
 				},
 				{
@@ -1510,10 +1510,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Lysanda of Myr was but a girl on that exodus.",
+						"\"Lysanda of Myr was but a girl on that exodus.",
 						"Ezomyr almost met its end before it began...",
 						"but she could not hear that deadly lure. She",
-						"took the Siren's head with her bare hands.\\\""
+						"took the Siren's head with her bare hands.\""
 					]
 				},
 				{
@@ -1538,10 +1538,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"It turned out, Lysanda made for an excellent",
+						"\"It turned out, Lysanda made for an excellent",
 						"vanguard - a light, evasive girl who could scout",
 						"and lead the way. The people came to see her",
-						"as their guide, their hope, and then... their leader.\\\""
+						"as their guide, their hope, and then... their leader.\""
 					]
 				},
 				{
@@ -1566,10 +1566,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Those that swore loyalty to Lysanda, that",
+						"\"Those that swore loyalty to Lysanda, that",
 						"forged ahead with her to clear the way.",
 						"became known as the first Knights...",
-						"armoured, battered, and courageous.\\\""
+						"armoured, battered, and courageous.\""
 					]
 				},
 				{
@@ -1594,10 +1594,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Lysanda and her Knights brought the",
+						"\"Lysanda and her Knights brought the",
 						"settling clans to what would become",
 						"Ezomyr... but there was one beast against",
-						"which even they could not stand.\\\""
+						"which even they could not stand.\""
 					]
 				},
 				{
@@ -1622,10 +1622,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"A great headless monstrosity with arms like",
+						"\"A great headless monstrosity with arms like",
 						"teeth stalked the lands they hoped to settle.",
 						"No other weapon would find purchase. They",
-						"surrounded it with fire, burning it for days.\\\""
+						"surrounded it with fire, burning it for days.\""
 					]
 				},
 				{
@@ -1650,10 +1650,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"With the headless beast incinerated, the",
+						"\"With the headless beast incinerated, the",
 						"settlers rejoiced, and began building homes.",
 						"They would soon find that this hostile land",
-						"had more insidious ways of rejecting them.\\\""
+						"had more insidious ways of rejecting them.\""
 					]
 				},
 				{
@@ -1678,10 +1678,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The clans had travelled to their new home",
+						"\"The clans had travelled to their new home",
 						"united, and they did love Lysanda, but some",
 						"men must go their own way. Those that braved",
-						"the inland sea settled the Isles of Skothe.\\\""
+						"the inland sea settled the Isles of Skothe.\""
 					]
 				},
 				{
@@ -1706,10 +1706,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The journey was over, the land was being",
+						"\"The journey was over, the land was being",
 						"secured, and the foundations for the first city",
 						"had been laid. Winter hit them with horrible",
-						"fury, sent not by nature, but by a curse.\\\""
+						"fury, sent not by nature, but by a curse.\""
 					]
 				},
 				{
@@ -1734,10 +1734,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Against the Winter Curse, only the forges of",
+						"\"Against the Winter Curse, only the forges of",
 						"runesmiths could stand. The people huddled,",
 						"shoulder to shoulder, while those within were",
-						"pressed against the fires, screaming in agony.\\\""
+						"pressed against the fires, screaming in agony.\""
 					]
 				},
 				{
@@ -1762,10 +1762,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"And still the Winter Curse raged in through",
+						"\"And still the Winter Curse raged in through",
 						"every window and every door. The fathers",
 						"and mothers of those within let themselves",
-						"freeze solid, sealing the gaps with their lives.\\\""
+						"freeze solid, sealing the gaps with their lives.\""
 					]
 				},
 				{
@@ -1790,10 +1790,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The night refused to end, and the Winter Curse",
+						"\"The night refused to end, and the Winter Curse",
 						"howled. The people wailed, and Lysanda raged.",
 						"It was then that the sky tore open, unleashing",
-						"a saviour fury... at the behest of the Druids.\\\""
+						"a saviour fury... at the behest of the Druids.\""
 					]
 				},
 				{
@@ -1818,10 +1818,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				},
 				{
@@ -1846,10 +1846,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"With the Winter Curse held at bay, Lysanda",
+						"\"With the Winter Curse held at bay, Lysanda",
 						"and her Knights pursued the fell power that",
 						"had sent it... a Hag who made her lair in a",
-						"Tower that was ancient beyond ancient.\\\""
+						"Tower that was ancient beyond ancient.\""
 					]
 				},
 				{
@@ -1874,10 +1874,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"They bound the Hag of the Winter Curse",
+						"\"They bound the Hag of the Winter Curse",
 						"and set her alight, to no avail. Her cackle",
 						"was gleeful and wicked. Even if they slew",
-						"her, she boasted, she had many daughters...\\\""
+						"her, she boasted, she had many daughters...\""
 					]
 				},
 				{
@@ -1902,10 +1902,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Lysanda roared, and hacked the Hag apart",
+						"\"Lysanda roared, and hacked the Hag apart",
 						"limb by limb, not stopping until the deed",
 						"was done. Her daughters, however, were",
-						"spared... and tasked with service and duty.\\\""
+						"spared... and tasked with service and duty.\""
 					]
 				},
 				{
@@ -1930,10 +1930,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"With the Hag's daughters easing the climate,",
+						"\"With the Hag's daughters easing the climate,",
 						"an age of plenty and bounty began. Lysanda",
 						"revived the Phaaryl tradition of the hunt,",
-						"so the people never forgot their roots.\\\""
+						"so the people never forgot their roots.\""
 					]
 				},
 				{
@@ -1958,10 +1958,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The first city was completed, and others sprouted.",
+						"\"The first city was completed, and others sprouted.",
 						"The clans came together to declare Lysanda of Myr",
 						"the Queen. Henceforth, they became known as the",
-						"Ezomytes of Myr, and their numbers swelled.\\\""
+						"Ezomytes of Myr, and their numbers swelled.\""
 					]
 				},
 				{
@@ -1986,10 +1986,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"As the Ezomytes of Myr prospered, they",
+						"\"As the Ezomytes of Myr prospered, they",
 						"needed more and spreading lands. Queen",
 						"Lysanda led the ongoing campaign to",
-						"slaughter every last creature of darkness.\\\""
+						"slaughter every last creature of darkness.\""
 					]
 				},
 				{
@@ -2014,10 +2014,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Each new valley, each new grove, held new",
+						"\"Each new valley, each new grove, held new",
 						"dangers. Many Knights paid the price. Lysanda",
 						"had never been known for her beauty, but she",
-						"bore a new scar each season, earned gladly.\\\""
+						"bore a new scar each season, earned gladly.\""
 					]
 				},
 				{
@@ -2042,10 +2042,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Romance never interested Queen Lysanda,",
+						"\"Romance never interested Queen Lysanda,",
 						"but her advisors insisted heirs were needed.",
 						"To spite them, she took the Hag's only son as",
-						"her Consort - a quiet, pale, and strange man.\\\""
+						"her Consort - a quiet, pale, and strange man.\""
 					]
 				},
 				{
@@ -2070,10 +2070,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Queen Lysanda's spiteful choice of Consort",
+						"\"Queen Lysanda's spiteful choice of Consort",
 						"spited only herself. Alasdair was unlike any",
 						"man she had ever met. It was not long before",
-						"the trumpets sounded for the Royal Wedding.\\\""
+						"the trumpets sounded for the Royal Wedding.\""
 					]
 				},
 				{
@@ -2098,10 +2098,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The Royal Wedding of Lysanda of Myr",
+						"\"The Royal Wedding of Lysanda of Myr",
 						"lasted for a full month. The hunts were",
 						"vigorous, and the meat and drink flowed",
-						"freely for all. There was much rejoicing.\\\""
+						"freely for all. There was much rejoicing.\""
 					]
 				},
 				{
@@ -2126,10 +2126,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"But there were some who could not forget",
+						"\"But there were some who could not forget",
 						"the horrors of the Winter Curse, and of the",
 						"Hag that had sent it. Alasdair dropped his",
-						"wine goblet, and fell to the ground, choking.\\\""
+						"wine goblet, and fell to the ground, choking.\""
 					]
 				},
 				{
@@ -2154,10 +2154,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"There followed a time of fear and fire.",
+						"\"There followed a time of fear and fire.",
 						"None would speak against their fellows.",
 						"None would say who had poisoned him.",
-						"Lysanda's justice was swift and brutal.\\\""
+						"Lysanda's justice was swift and brutal.\""
 					]
 				},
 				{
@@ -2182,10 +2182,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				},
 				{
@@ -2210,10 +2210,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"There began an eternal summer, as the",
+						"\"There began an eternal summer, as the",
 						"daughters of the Hag perfected their mastery",
 						"of the Tower. The forests became as gardens.",
-						"The hungry had only to pick a fruit and eat.\\\""
+						"The hungry had only to pick a fruit and eat.\""
 					]
 				},
 				{
@@ -2238,10 +2238,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Twenty-two years into Lysanda's reign, the",
+						"\"Twenty-two years into Lysanda's reign, the",
 						"Spiders swarmed from out of the dark. Her",
 						"Knights were ill-equipped for this foe, and",
-						"the people fled in droves, seeking safety.\\\""
+						"the people fled in droves, seeking safety.\""
 					]
 				},
 				{
@@ -2266,10 +2266,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The Blue Knight stood against the swarm,",
+						"\"The Blue Knight stood against the swarm,",
 						"icy and unassailable. His identity was not",
 						"known, and he never removed his helmet.",
-						"Glimpses were caught of piercing blue eyes.\\\""
+						"Glimpses were caught of piercing blue eyes.\""
 					]
 				},
 				{
@@ -2294,10 +2294,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"As deadly and dangerous creatures were",
+						"\"As deadly and dangerous creatures were",
 						"culled, the Queen chose to leave those",
 						"that were docile or beauteous. Tide pools",
-						"became known as places of wonder.\\\""
+						"became known as places of wonder.\""
 					]
 				},
 				{
@@ -2322,10 +2322,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Decades into Lysanda's reign, the",
+						"\"Decades into Lysanda's reign, the",
 						"lands of the Ezomytes of Myr slowly",
 						"became known as Ezo De Myr, and",
-						"then simply Ezomyr. And so it was.\\\""
+						"then simply Ezomyr. And so it was.\""
 					]
 				},
 				{
@@ -2350,10 +2350,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Ezomyr grew on a foundation of",
+						"\"Ezomyr grew on a foundation of",
 						"choice. Its climate was chosen. Its",
 						"animals were chosen. For once,",
-						"Wraeclast was not harsh, but kind.\\\""
+						"Wraeclast was not harsh, but kind.\""
 					]
 				},
 				{
@@ -2378,10 +2378,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The sea calmed, and contact was",
+						"\"The sea calmed, and contact was",
 						"renewed with the Isles of Skothe.",
 						"It was said that Craiceann had",
-						"given a blessing to the people.\\\""
+						"given a blessing to the people.\""
 					]
 				},
 				{
@@ -2406,10 +2406,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The Spiders that had been driven",
+						"\"The Spiders that had been driven",
 						"back by the Blue Knight now sought",
 						"peace and cooperation. It was said",
-						"that Fenumus had commanded it.\\\""
+						"that Fenumus had commanded it.\""
 					]
 				},
 				{
@@ -2434,10 +2434,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"The skies were clear and blue, yet",
+						"\"The skies were clear and blue, yet",
 						"brought rains when needed. It was",
 						"said that the people had proven",
-						"themselves to Saqawal and his flocks.\\\""
+						"themselves to Saqawal and his flocks.\""
 					]
 				},
 				{
@@ -2462,11 +2462,11 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"Forty-six years into her reign, Lysanda",
+						"\"Forty-six years into her reign, Lysanda",
 						"slew the last deadly creature. She smiled,",
 						"took a wineskin, and rode off into the forest.",
 						"One last hunt, it was said. Farrul would stalk",
-						"by her side, in this life... and the next.\\\""
+						"by her side, in this life... and the next.\""
 					]
 				},
 				{
@@ -2519,10 +2519,10 @@
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
-						"\\\"There are some stories that may never",
+						"\"There are some stories that may never",
 						"be known, never be heard. But to history,",
 						"I say, let it be known the the Ezomytes",
-						"of Myr persevered... and built a home.\\\""
+						"of Myr persevered... and built a home.\""
 					]
 				}
 			],
@@ -2547,10 +2547,10 @@
 						"TalismanFireTakenAsCold"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				}
 			],
@@ -2575,10 +2575,10 @@
 						"TalismanFireTakenAsLightning"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				}
 			],
@@ -2603,10 +2603,10 @@
 						"TalismanColdTakenAsFire"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				}
 			],
@@ -2631,10 +2631,10 @@
 						"TalismanColdTakenAsLightning"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				}
 			],
@@ -2659,10 +2659,10 @@
 						"TalismanLightningTakenAsCold"
 					],
 					"flavourText": [
-						"\\\"The Druids emerged from the forests to greet",
+						"\"The Druids emerged from the forests to greet",
 						"and warn the new settlers. This was an ancient",
 						"land full of mysteries and dangers. Lysanda sent",
-						"her best men to study and learn with them.\\\""
+						"her best men to study and learn with them.\""
 					]
 				}
 			],
@@ -2687,10 +2687,10 @@
 						"TalismanPowerChargeOnKill"
 					],
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				}
 			],
@@ -2715,10 +2715,10 @@
 						"TalismanFrenzyChargeOnKill"
 					],
 					"flavourText": [
-						"\\\"In the years that followed, Queen Lysanda",
+						"\"In the years that followed, Queen Lysanda",
 						"poured herself into the long and brutal task",
 						"of securing the lands of the Ezomytes of Myr.",
-						"Every fell beast, every creature, had to die.\\\""
+						"Every fell beast, every creature, had to die.\""
 					]
 				}
 			]

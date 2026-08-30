@@ -1,13 +1,13 @@
 {
 	"directives": [
-		"#type Flask",
-		"#subType Life",
-		"#baseMatch Metadata/Items/Flasks/FlaskLife",
-		"#subType Mana",
-		"#baseMatch Metadata/Items/Flasks/FlaskMana",
-		"#subType Hybrid",
-		"#baseMatch Metadata/Items/Flasks/FlaskHybrid",
-		"#subType Utility",
-		"#baseMatch Metadata/Items/Flasks/FlaskUtility"
+		{"directive":"type","name":"Flask"},
+		{"directive":"subType","name":"Life"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Flasks/FlaskLife"},
+		{"directive":"subType","name":"Mana"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Flasks/FlaskMana"},
+		{"directive":"subType","name":"Hybrid"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Flasks/FlaskHybrid"},
+		{"directive":"subType","name":"Utility"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Flasks/FlaskUtility"}
 	]
 }

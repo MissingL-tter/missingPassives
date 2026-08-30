@@ -4,8 +4,10 @@
 package calc
 
 import (
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
@@ -65,7 +67,7 @@ func (ct conversionTable) to(from, to string) float64 {
 
 // calcDamage ports the local calcDamage: the min/max damage for one type,
 // recursing into the types that precede it in the conversion sequence.
-func (env *Env) calcDamage(activeSkill *ActiveSkill, output map[string]any, cfg *modstore.Cfg,
+func (env *Env) calcDamage(activeSkill *ActiveSkill, output modstore.Output, cfg *modstore.Cfg,
 	damageType string, typeFlags int64, ct conversionTable) (float64, float64) {
 	skillModList := activeSkill.SkillModList
 	typeFlags |= dmgTypeFlagBits[damageType]
@@ -87,12 +89,12 @@ func (env *Env) calcDamage(activeSkill *ActiveSkill, output map[string]any, cfg 
 		}
 	}
 	if addMin != 0 && addMax != 0 {
-		addMin = roundDec(addMin, 0)
-		addMax = roundDec(addMax, 0)
+		addMin = util.RoundHalfUp(addMin, 0)
+		addMax = util.RoundHalfUp(addMax, 0)
 	}
 
-	baseMin := outNum(output, damageType+"MinBase")
-	baseMax := outNum(output, damageType+"MaxBase")
+	baseMin := output.N(damageType + "MinBase")
+	baseMax := output.N(damageType + "MaxBase")
 	if baseMin == 0 && baseMax == 0 {
 		// No base damage for this type, don't need to calculate modifiers
 		return addMin, addMax
@@ -100,22 +102,22 @@ func (env *Env) calcDamage(activeSkill *ActiveSkill, output map[string]any, cfg 
 
 	// Combine modifiers
 	modNames := damageStatsFor(typeFlags)
-	inc := 1 + skillModList.Sum("INC", cfg, modNames...)/100
+	inc := 1 + skillModList.Sum(modparser.Inc, cfg, modNames...)/100
 	more := skillModList.More(cfg, modNames...)
 	genericMoreMinDamage := skillModList.More(cfg, "MinDamage")
 	genericMoreMaxDamage := skillModList.More(cfg, "MaxDamage")
 	moreMinDamage := skillModList.More(cfg, "Min"+damageType+"Damage")
 	moreMaxDamage := skillModList.More(cfg, "Max"+damageType+"Damage")
-	incMinDamage := 1 + skillModList.Sum("INC", cfg, "Min"+damageType+"Damage")/100
-	incMaxDamage := 1 + skillModList.Sum("INC", cfg, "Max"+damageType+"Damage")/100
+	incMinDamage := 1 + skillModList.Sum(modparser.Inc, cfg, "Min"+damageType+"Damage")/100
+	incMaxDamage := 1 + skillModList.Sum(modparser.Inc, cfg, "Max"+damageType+"Damage")/100
 
-	return roundDec(((baseMin*inc*more)*genericMoreMinDamage+addMin)*moreMinDamage*incMinDamage, 0),
-		roundDec(((baseMax*inc*more)*genericMoreMaxDamage+addMax)*moreMaxDamage*incMaxDamage, 0)
+	return util.RoundHalfUp(((baseMin*inc*more)*genericMoreMinDamage+addMin)*moreMinDamage*incMinDamage, 0),
+		util.RoundHalfUp(((baseMax*inc*more)*genericMoreMaxDamage+addMax)*moreMaxDamage*incMaxDamage, 0)
 }
 
 // calcAilmentSourceDamage ports the local of the same name: the damage left
 // on this type after conversion away from it.
-func (env *Env) calcAilmentSourceDamage(activeSkill *ActiveSkill, output map[string]any, cfg *modstore.Cfg,
+func (env *Env) calcAilmentSourceDamage(activeSkill *ActiveSkill, output modstore.Output, cfg *modstore.Cfg,
 	damageType string, typeFlags int64, ct conversionTable) (float64, float64) {
 	min, max := env.calcDamage(activeSkill, output, cfg, damageType, typeFlags, ct)
 	convMult := 1.0
@@ -163,11 +165,11 @@ func (env *Env) buildConversionTable(activeSkill *ActiveSkill, cfg *modstore.Cfg
 				convNames = append(convNames, "NonChaosDamageConvertTo"+otherType)
 				gainNames = append(gainNames, "NonChaosDamageGainAs"+otherType)
 			}
-			globalConv[otherType] = math.Max(skillModList.Sum("BASE", cfg, convNames...), 0)
+			globalConv[otherType] = math.Max(skillModList.Sum(modparser.Base, cfg, convNames...), 0)
 			globalTotal += globalConv[otherType]
-			skillConv[otherType] = math.Max(skillModList.Sum("BASE", cfg, "Skill"+damageType+"DamageConvertTo"+otherType), 0)
+			skillConv[otherType] = math.Max(skillModList.Sum(modparser.Base, cfg, "Skill"+damageType+"DamageConvertTo"+otherType), 0)
 			skillTotal += skillConv[otherType]
-			add[otherType] = math.Max(skillModList.Sum("BASE", cfg, gainNames...), 0)
+			add[otherType] = math.Max(skillModList.Sum(modparser.Base, cfg, gainNames...), 0)
 		}
 		if skillTotal > 100 {
 			// Skill conversion exceeds 100%, scale it down and remove

@@ -21,7 +21,7 @@ var foulbornIdFixer = strings.NewReplacer(
 	"HelmetInt2", "IntHelmet2",
 )
 
-func buildMapUniqueToFoulborn(x *Ctx) (any, error) {
+func buildMapUniqueToFoulborn(x *Ctx) (schema.Document, error) {
 	if err := x.EnsureMods(); err != nil {
 		return nil, err
 	}

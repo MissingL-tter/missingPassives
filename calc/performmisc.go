@@ -14,8 +14,8 @@ import (
 // luaOr returns a when the Lua `a or b` keeps a (a non-nil): here the
 // Override result when truthy, else the fallback.
 func overrideOr(db *modstore.DB, name string, fallback float64) float64 {
-	if ov := db.Override(nil, name); truthy(ov) {
-		return anyNum(ov)
+	if ov, ok := db.Override(nil, name); ok {
+		return valueNum(ov)
 	}
 	return fallback
 }
@@ -33,28 +33,28 @@ func (env *Env) doActorMisc(actor *performActor) {
 			modDB.Multipliers["Cruelty"] = overrideOr(modDB, "Cruelty", 40)
 		}
 		// Minimum Rage
-		if modDB.Sum("BASE", nil, "MinimumRage") > modDB.Multipliers["Rage"] {
-			modDB.Multipliers["Rage"] = modDB.Sum("BASE", nil, "MinimumRage")
+		if modDB.Sum(modparser.Base, nil, "MinimumRage") > modDB.Multipliers["Rage"] {
+			modDB.Multipliers["Rage"] = modDB.Sum(modparser.Base, nil, "MinimumRage")
 		}
 		// allied fortify: parent link or party members (party is nil for
 		// the replay's corpus; the parent link covers minions)
 		alliedFortify := 0.0
 		if modDB.Flag(nil, "YourFortifyEqualToParent") && actor.parent != nil {
-			alliedFortify = outNum(actor.parent.output, "FortificationStacks")
+			alliedFortify = actor.parent.output.N("FortificationStacks")
 		}
-		if modDB.Sum("BASE", nil, "MinimumFortification") > 0 || alliedFortify > 0 {
-			condList["Fortified"] = true
+		if modDB.Sum(modparser.Base, nil, "MinimumFortification") > 0 || alliedFortify > 0 {
+			condList.Set("Fortified", true)
 		}
 		// Fortify
-		if modDB.Flag(nil, "Fortified") || modDB.Sum("BASE", nil, "Multiplier:Fortification") > 0 {
+		if modDB.Flag(nil, "Fortified") || modDB.Sum(modparser.Base, nil, "Multiplier:Fortification") > 0 {
 			var skillModList modstore.Store = modDB
 			var skillCfg *modstore.Cfg
 			if actor.mainSkill != nil {
 				skillModList = actor.mainSkill.SkillModList
 				skillCfg = actor.mainSkill.SkillCfg
 			}
-			maxStacks := math.Max(overrideOr(modDB, "MaximumFortification", modDB.Sum("BASE", skillCfg, "MaximumFortification")), alliedFortify)
-			minStacks := modDB.Sum("BASE", nil, "MinimumFortification")
+			maxStacks := math.Max(overrideOr(modDB, "MaximumFortification", modDB.Sum(modparser.Base, skillCfg, "MaximumFortification")), alliedFortify)
+			minStacks := modDB.Sum(modparser.Base, nil, "MinimumFortification")
 			if modDB.Flag(nil, "Condition:HaveMaxFortification") {
 				minStacks = maxStacks
 			}
@@ -64,24 +64,24 @@ func (env *Env) doActorMisc(actor *performActor) {
 				stacksBase = minStacks
 			}
 			stacks := math.Min(overrideOr(modDB, "FortificationStacks", stacksBase), maxStacks)
-			increasedDuration := skillModList.Sum("INC", nil, "FortifyDuration")
-			output["MaximumFortification"] = maxStacks
-			output["MinimumFortification"] = minStacks
-			output["RemovableFortification"] = math.Min(maxStacks-minStacks, overrideOr(modDB, "FortificationStacks", maxStacks)-minStacks)
-			output["FortificationStacks"] = stacks
-			output["FortificationStacksOver20"] = math.Min(math.Max(0, stacks-20), maxStacks-20)
+			increasedDuration := skillModList.Sum(modparser.Inc, nil, "FortifyDuration")
+			output.SetN("MaximumFortification", maxStacks)
+			output.SetN("MinimumFortification", minStacks)
+			output.SetN("RemovableFortification", math.Min(maxStacks-minStacks, overrideOr(modDB, "FortificationStacks", maxStacks)-minStacks))
+			output.SetN("FortificationStacks", stacks)
+			output.SetN("FortificationStacksOver20", math.Min(math.Max(0, stacks-20), maxStacks-20))
 			fortifyDurBase := data.Misc.FortifyBaseDuration
-			if ov := skillModList.Override(nil, "FortifyDuration"); truthy(ov) {
-				fortifyDurBase = anyNum(ov)
+			if ov, ok := skillModList.Override(nil, "FortifyDuration"); ok {
+				fortifyDurBase = valueNum(ov)
 			}
-			output["FortifyDuration"] = fortifyDurBase * (1 + increasedDuration/100)
-			output["FortificationEffect"] = "0" // string, shown for Willowgift
+			output.SetN("FortifyDuration", fortifyDurBase*(1+increasedDuration/100))
+			output.SetStr("FortificationEffect", "0") // string, shown for Willowgift
 			if !modDB.Flag(nil, "Condition:NoFortificationMitigation") {
-				output["FortificationEffect"] = stacks
-				modDB.AddMod(newMod("DamageTakenWhenHit", "MORE", -stacks, "Fortification"))
+				output.SetN("FortificationEffect", stacks)
+				modDB.AddMod(newModS("DamageTakenWhenHit", modparser.More, modparser.Num(-stacks), "Fortification"))
 			}
 			if stacks >= maxStacks {
-				modDB.AddMod(newMod("Condition:HaveMaximumFortification", "FLAG", true, ""))
+				modDB.AddMod(newModS("Condition:HaveMaximumFortification", modparser.Flag, modparser.Bool(true), ""))
 			}
 			modDB.Multipliers["BuffOnSelf"] = modDB.Multipliers["BuffOnSelf"] + 1
 		}
@@ -92,126 +92,126 @@ func (env *Env) doActorMisc(actor *performActor) {
 			for item := range env.Flasks {
 				if strings.Contains(deref(item.In.BaseName), "Silver Flask") {
 					onslaughtFromFlask = true
-					curFlaskEffectInc := anyNum(item.In.FlaskData["effectInc"]) + modDB.Sum("INC", &modstore.Cfg{Actor: "player"}, "FlaskEffect")
+					curFlaskEffectInc := item.In.FlaskData.EffectInc + modDB.Sum(modparser.Inc, &modstore.Cfg{Actor: "player"}, "FlaskEffect")
 					if item.In.Rarity == "MAGIC" {
-						curFlaskEffectInc += modDB.Sum("INC", &modstore.Cfg{Actor: "player"}, "MagicUtilityFlaskEffect")
+						curFlaskEffectInc += modDB.Sum(modparser.Inc, &modstore.Cfg{Actor: "player"}, "MagicUtilityFlaskEffect")
 					}
 					if flaskEffectInc < curFlaskEffectInc/100 {
 						flaskEffectInc = curFlaskEffectInc / 100
 					}
 				}
 			}
-			onslaughtEffectInc := modDB.Sum("INC", nil, "OnslaughtEffect", "BuffEffectOnSelf") / 100
+			onslaughtEffectInc := modDB.Sum(modparser.Inc, nil, "OnslaughtEffect", "BuffEffectOnSelf") / 100
 			var effect float64
 			if onslaughtFromFlask {
 				effect = flr(20 * (1 + flaskEffectInc + onslaughtEffectInc))
 			} else {
 				effect = flr(20 * (1 + onslaughtEffectInc))
 			}
-			modDB.AddMod(newMod("Speed", "INC", effect, "Onslaught", modparser.ModFlag.Attack))
-			modDB.AddMod(newMod("Speed", "INC", effect, "Onslaught", modparser.ModFlag.Cast))
-			modDB.AddMod(newMod("MovementSpeed", "INC", effect, "Onslaught"))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(effect), "Onslaught", modparser.FlagAttack, modparser.KeywordNone))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(effect), "Onslaught", modparser.FlagCast, modparser.KeywordNone))
+			modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(effect), "Onslaught"))
 		}
-		if truthy(condList["AffectedByArcaneSurge"]) || modDB.Flag(nil, "Condition:ArcaneSurge") {
-			condList["AffectedByArcaneSurge"] = true
-			effect := 1 + modDB.Sum("INC", nil, "ArcaneSurgeEffect", "BuffEffectOnSelf")/100
-			effect = effect + modDB.Sum("INC", &modstore.Cfg{Actor: "player"}, "FlaskEffect")/100*modDB.Sum("BASE", nil, "FlaskEffectToArcaneSurgeEffect")/100
+		if condList.Get("AffectedByArcaneSurge") || modDB.Flag(nil, "Condition:ArcaneSurge") {
+			condList.Set("AffectedByArcaneSurge", true)
+			effect := 1 + modDB.Sum(modparser.Inc, nil, "ArcaneSurgeEffect", "BuffEffectOnSelf")/100
+			effect = effect + modDB.Sum(modparser.Inc, &modstore.Cfg{Actor: "player"}, "FlaskEffect")/100*modDB.Sum(modparser.Base, nil, "FlaskEffectToArcaneSurgeEffect")/100
 			manaRegen := 30.0
 			if v, ok := modDB.Max(nil, "ArcaneSurgeManaRegen"); ok {
 				manaRegen = v
 			}
-			modDB.AddMod(newMod("ManaRegen", "INC", manaRegen*effect, "Arcane Surge"))
+			modDB.AddMod(newModS("ManaRegen", modparser.Inc, modparser.Num(manaRegen*effect), "Arcane Surge"))
 			castSpeedBase := 20.0
 			if v, ok := modDB.Max(nil, "ArcaneSurgeCastSpeed"); ok {
 				castSpeedBase = v
 			}
 			arcaneSurgeCastSpeed := castSpeedBase * effect
-			modDB.AddMod(newMod("Speed", "INC", arcaneSurgeCastSpeed, "Arcane Surge", modparser.ModFlag.Cast))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(arcaneSurgeCastSpeed), "Arcane Surge", modparser.FlagCast, modparser.KeywordNone))
 			if modDB.Flag(nil, "ArcaneSurgeCastSpeedToMovementSpeed") {
-				modDB.AddMod(newMod("MovementSpeed", "INC", arcaneSurgeCastSpeed, "Arcane Surge"))
+				modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(arcaneSurgeCastSpeed), "Arcane Surge"))
 			}
 			arcaneSurgeDamage := 0.0
 			if v, ok := modDB.Max(nil, "ArcaneSurgeDamage"); ok {
 				arcaneSurgeDamage = v
 			}
 			if arcaneSurgeDamage != 0 {
-				modDB.AddMod(newMod("Damage", "MORE", arcaneSurgeDamage*effect, "Arcane Surge", modparser.ModFlag.Spell))
+				modDB.AddMod(newModSF("Damage", modparser.More, modparser.Num(arcaneSurgeDamage*effect), "Arcane Surge", modparser.FlagSpell, modparser.KeywordNone))
 			}
-			arcaneSurgeLifeRegen := modDB.Sum("BASE", nil, "ArcaneSurgeAlsoLifeRegen")
+			arcaneSurgeLifeRegen := modDB.Sum(modparser.Base, nil, "ArcaneSurgeAlsoLifeRegen")
 			if arcaneSurgeLifeRegen > 0 {
-				modDB.AddMod(newMod("LifeRegen", "INC", arcaneSurgeLifeRegen*effect, "Arcane Surge"))
+				modDB.AddMod(newModS("LifeRegen", modparser.Inc, modparser.Num(arcaneSurgeLifeRegen*effect), "Arcane Surge"))
 			}
 		}
 		if modDB.Flag(nil, "Fanaticism") && actor.mainSkill != nil && actor.mainSkill.SkillFlags["selfCast"] {
-			effect := flr(75 * (1 + modDB.Sum("INC", nil, "BuffEffectOnSelf")/100))
-			modDB.AddMod(newMod("Speed", "MORE", effect, "Fanaticism", modparser.ModFlag.Cast))
-			modDB.AddMod(newMod("Cost", "MORE", -effect, "Fanaticism", modparser.ModFlag.Cast))
-			modDB.AddMod(newMod("AreaOfEffect", "INC", effect, "Fanaticism", modparser.ModFlag.Cast))
+			effect := flr(75 * (1 + modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf")/100))
+			modDB.AddMod(newModSF("Speed", modparser.More, modparser.Num(effect), "Fanaticism", modparser.FlagCast, modparser.KeywordNone))
+			modDB.AddMod(newModSF("Cost", modparser.More, modparser.Num(-effect), "Fanaticism", modparser.FlagCast, modparser.KeywordNone))
+			modDB.AddMod(newModSF("AreaOfEffect", modparser.Inc, modparser.Num(effect), "Fanaticism", modparser.FlagCast, modparser.KeywordNone))
 		}
 		if modDB.Flag(nil, "Condition:CanGainSpiritInfusion") {
-			globalEffectTag := modparser.Tag{"type": "GlobalEffect", "effectType": "Buff", "effectName": "Spirit Infusion", "unscalable": true}
-			multiplierTag := modparser.Tag{"type": "Multiplier", "var": "SpiritInfusion"}
-			modDB.AddMod(newMod("EnergyShieldRechargeFaster", "INC", 15.0, "Spirit Infusion", multiplierTag, globalEffectTag))
-			modDB.AddMod(newMod("Damage", "MORE", 5.0, "Spirit Infusion", nil, modparser.KeywordFlag.Spell, modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Channel}, multiplierTag, globalEffectTag))
-			modDB.AddMod(newMod("Cost", "MORE", 10.0, "Spirit Infusion", nil, modparser.KeywordFlag.Spell, modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Channel}, multiplierTag, globalEffectTag))
+			globalEffectTag := &modparser.GlobalEffectTag{EffectType: "Buff", EffectName: "Spirit Infusion", Unscalable: true}
+			multiplierTag := &modparser.MultiplierTag{Var: "SpiritInfusion"}
+			modDB.AddMod(newModS("EnergyShieldRechargeFaster", modparser.Inc, modparser.Num(15.0), "Spirit Infusion", multiplierTag, globalEffectTag))
+			modDB.AddMod(newModSF("Damage", modparser.More, modparser.Num(5.0), "Spirit Infusion", modparser.FlagNone, modparser.KeywordSpell, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeChannel}, multiplierTag, globalEffectTag))
+			modDB.AddMod(newModSF("Cost", modparser.More, modparser.Num(10.0), "Spirit Infusion", modparser.FlagNone, modparser.KeywordSpell, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeChannel}, multiplierTag, globalEffectTag))
 		}
 		if modDB.Flag(nil, "UnholyMight") {
-			effect := 1 + modDB.Sum("INC", nil, "BuffEffectOnSelf")/100
-			modDB.AddMod(newMod("PhysicalDamageConvertToChaos", "BASE", flr(100*effect), "Unholy Might"))
-			modDB.AddMod(newMod("Condition:CanWither", "FLAG", true, "Unholy Might"))
+			effect := 1 + modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf")/100
+			modDB.AddMod(newModS("PhysicalDamageConvertToChaos", modparser.Base, modparser.Num(flr(100*effect)), "Unholy Might"))
+			modDB.AddMod(newModS("Condition:CanWither", modparser.Flag, modparser.Bool(true), "Unholy Might"))
 		}
 		if modDB.Flag(nil, "ShepherdOfSouls") {
-			modDB.AddMod(newMod("SoulCost", "MORE", -80.0, "Shepherd of Souls", modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Vaal}, modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Aura, "neg": true}))
-			modDB.AddMod(newMod("SoulCost", "INC", 100.0, "Shepherd of Souls", modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Vaal}, modparser.Tag{"type": "SkillType", "skillType": modparser.SkillType.Aura, "neg": true}, modparser.Tag{"type": "Multiplier", "var": "VaalSkillsUsedInPast8Seconds"}))
+			modDB.AddMod(newModS("SoulCost", modparser.More, modparser.Num(-80.0), "Shepherd of Souls", &modparser.SkillTypeTag{SkillType: modparser.SkillTypeVaal}, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAura, Neg: true}))
+			modDB.AddMod(newModS("SoulCost", modparser.Inc, modparser.Num(100.0), "Shepherd of Souls", &modparser.SkillTypeTag{SkillType: modparser.SkillTypeVaal}, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAura, Neg: true}, &modparser.MultiplierTag{Var: "VaalSkillsUsedInPast8Seconds"}))
 		}
 		if modDB.Flag(nil, "ChaoticMight") {
-			effect := flr(30 * (1 + modDB.Sum("INC", nil, "BuffEffectOnSelf")/100))
-			modDB.AddMod(newMod("PhysicalDamageGainAsChaos", "BASE", effect, "Chaotic Might"))
+			effect := flr(30 * (1 + modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf")/100))
+			modDB.AddMod(newModS("PhysicalDamageGainAsChaos", modparser.Base, modparser.Num(effect), "Chaotic Might"))
 		}
 		if modDB.Flag(nil, "Tailwind") {
-			effect := flr(8 * (1 + modDB.Sum("INC", nil, "TailwindEffectOnSelf", "BuffEffectOnSelf")/100))
-			modDB.AddMod(newMod("ActionSpeed", "INC", effect, "Tailwind"))
+			effect := flr(8 * (1 + modDB.Sum(modparser.Inc, nil, "TailwindEffectOnSelf", "BuffEffectOnSelf")/100))
+			modDB.AddMod(newModS("ActionSpeed", modparser.Inc, modparser.Num(effect), "Tailwind"))
 		}
 		if modDB.Flag(nil, "Condition:TotemTailwind") {
-			modDB.AddMod(newMod("TotemActionSpeed", "INC", 8.0, "Tailwind"))
+			modDB.AddMod(newModS("TotemActionSpeed", modparser.Inc, modparser.Num(8.0), "Tailwind"))
 		}
 		if modDB.Flag(nil, "Adrenaline") {
-			effectMod := 1 + modDB.Sum("INC", nil, "BuffEffectOnSelf")/100
-			modDB.AddMod(newMod("Damage", "INC", flr(100*effectMod), "Adrenaline"))
-			modDB.AddMod(newMod("Speed", "INC", flr(25*effectMod), "Adrenaline", modparser.ModFlag.Attack))
-			modDB.AddMod(newMod("Speed", "INC", flr(25*effectMod), "Adrenaline", modparser.ModFlag.Cast))
-			modDB.AddMod(newMod("MovementSpeed", "INC", flr(25*effectMod), "Adrenaline"))
-			modDB.AddMod(newMod("PhysicalDamageReduction", "BASE", flr(10*effectMod), "Adrenaline"))
+			effectMod := 1 + modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf")/100
+			modDB.AddMod(newModS("Damage", modparser.Inc, modparser.Num(flr(100*effectMod)), "Adrenaline"))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(flr(25*effectMod)), "Adrenaline", modparser.FlagAttack, modparser.KeywordNone))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(flr(25*effectMod)), "Adrenaline", modparser.FlagCast, modparser.KeywordNone))
+			modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(flr(25*effectMod)), "Adrenaline"))
+			modDB.AddMod(newModS("PhysicalDamageReduction", modparser.Base, modparser.Num(flr(10*effectMod)), "Adrenaline"))
 		}
 		if modDB.Flag(nil, "Condition:WildSavagery") && modDB.Flag(nil, "WildSavagery") {
-			modDB.AddMod(newMod("PhysicalDamage", "INC", 100.0, "Wild Savagery"))
-			modDB.AddMod(newMod("ActionSpeed", "INC", 10.0, "Wild Savagery"))
-			modDB.AddMod(newMod("IgnoreEnemyPhysicalDamageReduction", "FLAG", true, "Wild Savagery"))
-			modDB.AddMod(newMod("StunImmune", "FLAG", true, "Wild Savagery"))
+			modDB.AddMod(newModS("PhysicalDamage", modparser.Inc, modparser.Num(100.0), "Wild Savagery"))
+			modDB.AddMod(newModS("ActionSpeed", modparser.Inc, modparser.Num(10.0), "Wild Savagery"))
+			modDB.AddMod(newModS("IgnoreEnemyPhysicalDamageReduction", modparser.Flag, modparser.Bool(true), "Wild Savagery"))
+			modDB.AddMod(newModS("StunImmune", modparser.Flag, modparser.Bool(true), "Wild Savagery"))
 		}
 		if modDB.Flag(nil, "Convergence") {
-			effect := flr(30 * (1 + modDB.Sum("INC", nil, "BuffEffectOnSelf")/100))
-			modDB.AddMod(newMod("ElementalDamage", "MORE", effect, "Convergence"))
+			effect := flr(30 * (1 + modDB.Sum(modparser.Inc, nil, "BuffEffectOnSelf")/100))
+			modDB.AddMod(newModS("ElementalDamage", modparser.More, modparser.Num(effect), "Convergence"))
 		}
 		if modDB.Flag(nil, "HerEmbrace") {
-			condList["HerEmbrace"] = true
-			modDB.AddMod(newMod("AvoidStun", "BASE", 100.0, "Her Embrace"))
-			modDB.AddMod(newMod("PhysicalDamageGainAsFire", "BASE", 123.0, "Her Embrace", modparser.ModFlag.Sword))
-			modDB.AddMod(newMod("AvoidFreeze", "BASE", 100.0, "Her Embrace"))
-			modDB.AddMod(newMod("AvoidChill", "BASE", 100.0, "Her Embrace"))
-			modDB.AddMod(newMod("AvoidIgnite", "BASE", 100.0, "Her Embrace"))
-			modDB.AddMod(newMod("Speed", "INC", 20.0, "Her Embrace", modparser.ModFlag.Attack))
-			modDB.AddMod(newMod("Speed", "INC", 20.0, "Her Embrace", modparser.ModFlag.Cast))
-			modDB.AddMod(newMod("MovementSpeed", "INC", 20.0, "Her Embrace"))
+			condList.Set("HerEmbrace", true)
+			modDB.AddMod(newModS("AvoidStun", modparser.Base, modparser.Num(100.0), "Her Embrace"))
+			modDB.AddMod(newModSF("PhysicalDamageGainAsFire", modparser.Base, modparser.Num(123.0), "Her Embrace", modparser.FlagSword, modparser.KeywordNone))
+			modDB.AddMod(newModS("AvoidFreeze", modparser.Base, modparser.Num(100.0), "Her Embrace"))
+			modDB.AddMod(newModS("AvoidChill", modparser.Base, modparser.Num(100.0), "Her Embrace"))
+			modDB.AddMod(newModS("AvoidIgnite", modparser.Base, modparser.Num(100.0), "Her Embrace"))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(20.0), "Her Embrace", modparser.FlagAttack, modparser.KeywordNone))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(20.0), "Her Embrace", modparser.FlagCast, modparser.KeywordNone))
+			modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(20.0), "Her Embrace"))
 		}
 		if modDB.Flag(nil, "Condition:OnConsecratedGround") {
-			effect := 1 + modDB.Sum("INC", nil, "ConsecratedGroundEffect")/100
-			modDB.AddMod(newMod("LifeRegenPercent", "BASE", 5*effect, "Consecrated Ground"))
-			modDB.AddMod(newMod("CurseEffectOnSelf", "INC", -50*effect, "Consecrated Ground"))
-			modDB.AddMod(newMod("Accuracy", "INC", flr(modDB.Sum("INC", nil, "ConsecratedGroundAlsoAccuracy")*effect), "Consecrated Ground"))
+			effect := 1 + modDB.Sum(modparser.Inc, nil, "ConsecratedGroundEffect")/100
+			modDB.AddMod(newModS("LifeRegenPercent", modparser.Base, modparser.Num(5*effect), "Consecrated Ground"))
+			modDB.AddMod(newModS("CurseEffectOnSelf", modparser.Inc, modparser.Num(-50*effect), "Consecrated Ground"))
+			modDB.AddMod(newModS("Accuracy", modparser.Inc, modparser.Num(flr(modDB.Sum(modparser.Inc, nil, "ConsecratedGroundAlsoAccuracy")*effect)), "Consecrated Ground"))
 		}
 		if modDB.Flag(nil, "Condition:PhantasmalMight") {
-			limit := outNum(output, "ActivePhantasmLimit")
+			limit := output.N("ActivePhantasmLimit")
 			if limit == 0 {
 				limit = 1
 			}
@@ -222,55 +222,55 @@ func (env *Env) doActorMisc(actor *performActor) {
 			if v, ok := modDB.Max(&modstore.Cfg{Source: "Skill"}, "ElusiveEffect"); ok {
 				maxSkillInc = v
 			}
-			inc := modDB.Sum("INC", nil, "ElusiveEffect", "BuffEffectOnSelf")
+			inc := modDB.Sum(modparser.Inc, nil, "ElusiveEffect", "BuffEffectOnSelf")
 			if actor.mainSkill.SkillModList.Flag(nil, "SupportedByNightblade") {
-				inc = inc + modDB.Sum("INC", nil, "NightbladeSupportedElusiveEffect")
+				inc = inc + modDB.Sum(modparser.Inc, nil, "NightbladeSupportedElusiveEffect")
 			}
 			inc = inc + maxSkillInc
 			elusiveEffectMod := (1 + inc/100) * modDB.More(nil, "ElusiveEffect", "BuffEffectOnSelf") * 100
 			elusiveEffectMinThreshold := overrideOr(modDB, "ElusiveEffectMinThreshold", 0)
-			elusiveEffectIncreaseDuration := modDB.Sum("BASE", nil, "ElusiveEffectIncreaseDuration")
+			elusiveEffectIncreaseDuration := modDB.Sum(modparser.Base, nil, "ElusiveEffectIncreaseDuration")
 			peakElusiveEffect := elusiveEffectMod
 			if elusiveEffectIncreaseDuration > 0 {
-				elusiveEffectChangeRate := 20 / (1 + modDB.Sum("INC", nil, "ElusiveEffectLossSlower")/100)
+				elusiveEffectChangeRate := 20 / (1 + modDB.Sum(modparser.Inc, nil, "ElusiveEffectLossSlower")/100)
 				peakElusiveEffect = elusiveEffectMod + elusiveEffectChangeRate*elusiveEffectIncreaseDuration
 				elusiveEffectDecreaseDuration := (peakElusiveEffect - elusiveEffectMinThreshold) / elusiveEffectChangeRate
 				totalElusiveEffectDuration := elusiveEffectIncreaseDuration + elusiveEffectDecreaseDuration
 				averageIncreaseEffect := (elusiveEffectMod + peakElusiveEffect) / 2
 				averageDecreaseEffect := (peakElusiveEffect + elusiveEffectMinThreshold) / 2
-				output["ElusiveEffectMod"] = (averageIncreaseEffect*elusiveEffectIncreaseDuration + averageDecreaseEffect*elusiveEffectDecreaseDuration) / totalElusiveEffectDuration
+				output.SetN("ElusiveEffectMod", (averageIncreaseEffect*elusiveEffectIncreaseDuration+averageDecreaseEffect*elusiveEffectDecreaseDuration)/totalElusiveEffectDuration)
 			} else {
-				output["ElusiveEffectMod"] = (elusiveEffectMod + elusiveEffectMinThreshold) / 2
+				output.SetN("ElusiveEffectMod", (elusiveEffectMod+elusiveEffectMinThreshold)/2)
 			}
-			modDB.AddMod(newMod("ElusiveEffect", "INC", maxSkillInc, "Max Skill Effect"))
-			if ov := modDB.Override(nil, "ElusiveEffect"); truthy(ov) {
-				output["ElusiveEffectMod"] = math.Min(anyNum(ov), peakElusiveEffect)
+			modDB.AddMod(newModS("ElusiveEffect", modparser.Inc, modparser.Num(maxSkillInc), "Max Skill Effect"))
+			if ov, ok := modDB.Override(nil, "ElusiveEffect"); ok {
+				output.SetN("ElusiveEffectMod", math.Min(valueNum(ov), peakElusiveEffect))
 			}
-			effect := outNum(output, "ElusiveEffectMod") / 100
-			condList["Elusive"] = true
-			modDB.AddMod(newMod("AvoidAllDamageFromHitsChance", "BASE", flr(15*effect), "Elusive"))
-			modDB.AddMod(newMod("MovementSpeed", "INC", flr(30*effect), "Elusive"))
+			effect := output.N("ElusiveEffectMod") / 100
+			condList.Set("Elusive", true)
+			modDB.AddMod(newModS("AvoidAllDamageFromHitsChance", modparser.Base, modparser.Num(flr(15*effect)), "Elusive"))
+			modDB.AddMod(newModS("MovementSpeed", modparser.Inc, modparser.Num(flr(30*effect)), "Elusive"))
 		}
 		if _, ok := modDB.Max(nil, "WitherEffectStack"); ok {
-			modDB.AddMod(newMod("Condition:CanWither", "FLAG", true, "Config"))
+			modDB.AddMod(newModS("Condition:CanWither", modparser.Flag, modparser.Bool(true), "Config"))
 			effect, _ := modDB.Max(nil, "WitherEffectStack")
-			enemyDB.AddMod(newMod("ChaosDamageTaken", "INC", effect, "Withered", modparser.Tag{"type": "Multiplier", "var": "WitheredStack", "limit": 15.0}))
+			enemyDB.AddMod(newModS("ChaosDamageTaken", modparser.Inc, modparser.Num(effect), "Withered", &modparser.MultiplierTag{Var: "WitheredStack", Limit: opt(15.0)}))
 		}
 		if modDB.Flag(nil, "Condition:CanBeWithered") {
-			effect := 6 * (100 + modDB.Sum("INC", nil, "WitherEffectOnSelf")) / 100 * modDB.More(nil, "WitherEffectOnSelf")
-			modDB.AddMod(newMod("ChaosDamageTaken", "INC", effect, "Withered", modparser.Tag{"type": "Multiplier", "var": "WitheredStack", "limit": 15.0}))
+			effect := 6 * (100 + modDB.Sum(modparser.Inc, nil, "WitherEffectOnSelf")) / 100 * modDB.More(nil, "WitherEffectOnSelf")
+			modDB.AddMod(newModS("ChaosDamageTaken", modparser.Inc, modparser.Num(effect), "Withered", &modparser.MultiplierTag{Var: "WitheredStack", Limit: opt(15.0)}))
 		}
 		if modDB.Flag(nil, "Excommunicated") {
-			modDB.AddMod(newMod("ChaosDamage", "MORE", -100.0, "Excommunicated"))
+			modDB.AddMod(newModS("ChaosDamage", modparser.More, modparser.Num(-100.0), "Excommunicated"))
 		}
 		if modDB.Flag(nil, "Blind") && !modDB.Flag(nil, "CannotBeBlinded") {
 			if !modDB.Flag(nil, "UnaffectedByBlind") {
-				effect := 1 + modDB.Sum("INC", nil, "BlindEffect", "BuffEffectOnSelf")/100
-				if ov := modDB.Override(nil, "BlindEffect"); truthy(ov) {
-					effect = math.Min(anyNum(ov)/100, effect)
+				effect := 1 + modDB.Sum(modparser.Inc, nil, "BlindEffect", "BuffEffectOnSelf")/100
+				if ov, ok := modDB.Override(nil, "BlindEffect"); ok {
+					effect = math.Min(valueNum(ov)/100, effect)
 				}
-				modDB.AddMod(newMod("Accuracy", "MORE", flr(-20*effect), "Blind"))
-				modDB.AddMod(newMod("Evasion", "MORE", flr(-20*effect), "Blind"))
+				modDB.AddMod(newModS("Accuracy", modparser.More, modparser.Num(flr(-20*effect)), "Blind"))
+				modDB.AddMod(newModS("Evasion", modparser.More, modparser.Num(flr(-20*effect)), "Blind"))
 			}
 		}
 		if modDB.Flag(nil, "Chill") {
@@ -280,27 +280,27 @@ func (env *Env) doActorMisc(actor *performActor) {
 			// the end), so that collapses to the one-argument m_max — i.e.
 			// just the Sum — and the `or ailmentData.Chill.default` tail is
 			// dead, because a number (even 0) is truthy. #EVAL
-			chillValue := modDB.Sum("BASE", nil, "SelfChillOverride")
-			if ov := modDB.Override(nil, "ChillVal"); ov != nil {
-				chillValue = math.Max(chillValue, anyNum(ov))
+			chillValue := modDB.Sum(modparser.Base, nil, "SelfChillOverride")
+			if ov, ok := modDB.Override(nil, "ChillVal"); ok {
+				chillValue = math.Max(chillValue, valueNum(ov))
 			}
 			totalChillSelfEffect := Mod(modDB, nil, "SelfChillEffect")
 			avoidChill := 0.0
 			if modDB.Flag(nil, "ChillImmune", "ElementalAilmentImmune") {
 				avoidChill = 100
 			} else {
-				sum := modDB.Sum("BASE", nil, "AvoidChill", "AvoidAilments", "AvoidElementalAilments")
+				sum := modDB.Sum(modparser.Base, nil, "AvoidChill", "AvoidAilments", "AvoidElementalAilments")
 				if modDB.Flag(nil, "ShockAvoidAppliesToElementalAilments") {
-					sum += modDB.Sum("BASE", nil, "AvoidShock")
+					sum += modDB.Sum(modparser.Base, nil, "AvoidShock")
 				}
 				if modDB.Flag(nil, "SpellSuppressionAppliesToAilmentAvoidance") {
-					sum += modDB.Sum("BASE", nil, "SpellSuppressionChance") / 2
+					sum += modDB.Sum(modparser.Base, nil, "SpellSuppressionChance") / 2
 				}
 				avoidChill = flr(math.Min(sum, 100))
 			}
 			chillMax := ail.Max
-			if ov := modDB.Override(nil, "ChillMax"); truthy(ov) {
-				chillMax = anyNum(ov)
+			if ov, ok := modDB.Override(nil, "ChillMax"); ok {
+				chillMax = valueNum(ov)
 			}
 			effect := 0.0
 			if avoidChill != 100 {
@@ -311,149 +311,149 @@ func (env *Env) doActorMisc(actor *performActor) {
 				if !modDB.Flag(nil, "SelfChillEffectIsReversed") {
 					sign = -1
 				}
-				modDB.AddMod(newMod("ColdDamageTaken", "INC", effect*-sign, "Bonechill"))
+				modDB.AddMod(newModS("ColdDamageTaken", modparser.Inc, modparser.Num(effect*-sign), "Bonechill"))
 			}
 			sign := -1.0
 			if modDB.Flag(nil, "SelfChillEffectIsReversed") {
 				sign = 1
 			}
-			modDB.AddMod(newMod("ActionSpeed", "INC", effect*sign, "Chill"))
+			modDB.AddMod(newModS("ActionSpeed", modparser.Inc, modparser.Num(effect*sign), "Chill"))
 		}
 		if modDB.Flag(nil, "Shock") {
 			ail := data.NonDamagingAilment["Shock"]
 			// Same shape as chill above: the Override contributes only when
 			// it exists, and the `or default` tail is dead. #EVAL
-			shockValue := modDB.Sum("BASE", nil, "SelfShockOverride")
-			if ov := modDB.Override(nil, "ShockVal"); ov != nil {
-				shockValue = math.Max(shockValue, anyNum(ov))
+			shockValue := modDB.Sum(modparser.Base, nil, "SelfShockOverride")
+			if ov, ok := modDB.Override(nil, "ShockVal"); ok {
+				shockValue = math.Max(shockValue, valueNum(ov))
 			}
 			totalShockSelfEffect := Mod(modDB, nil, "SelfShockEffect")
 			avoidShock := 0.0
 			if modDB.Flag(nil, "ShockImmune", "ElementalAilmentImmune") {
 				avoidShock = 100
 			} else {
-				sum := modDB.Sum("BASE", nil, "AvoidShock", "AvoidAilments", "AvoidElementalAilments")
+				sum := modDB.Sum(modparser.Base, nil, "AvoidShock", "AvoidAilments", "AvoidElementalAilments")
 				if modDB.Flag(nil, "SpellSuppressionAppliesToAilmentAvoidance") {
-					sum += modDB.Sum("BASE", nil, "SpellSuppressionChance") / 2
+					sum += modDB.Sum(modparser.Base, nil, "SpellSuppressionChance") / 2
 				}
 				avoidShock = flr(math.Min(sum, 100))
 			}
 			shockMax := ail.Max
-			if ov := modDB.Override(nil, "ShockMax"); truthy(ov) {
-				shockMax = anyNum(ov)
+			if ov, ok := modDB.Override(nil, "ShockMax"); ok {
+				shockMax = valueNum(ov)
 			}
 			effect := 0.0
 			if avoidShock != 100 {
 				effect = math.Min(math.Max(flr(shockValue*totalShockSelfEffect), 0), shockMax)
 			}
-			modDB.AddMod(newMod("DamageTaken", "INC", effect, "Shock"))
+			modDB.AddMod(newModS("DamageTaken", modparser.Inc, modparser.Num(effect), "Shock"))
 		}
 		if modDB.Flag(nil, "Scorch") {
 			ail := data.NonDamagingAilment["Scorch"]
-			scorchValue := math.Max(modDB.Sum("BASE", nil, "SelfScorchOverride"), anyNum(modDB.Override(nil, "ScorchVal")))
+			scorchValue := math.Max(modDB.Sum(modparser.Base, nil, "SelfScorchOverride"), overrideNum(modDB, nil, "ScorchVal"))
 			totalScorchSelfEffect := Mod(modDB, nil, "SelfScorchEffect")
 			avoidScorch := 0.0
 			if modDB.Flag(nil, "ScorchImmune", "ElementalAilmentImmune") {
 				avoidScorch = 100
 			} else {
-				sum := modDB.Sum("BASE", nil, "AvoidScorch", "AvoidAilments", "AvoidElementalAilments")
+				sum := modDB.Sum(modparser.Base, nil, "AvoidScorch", "AvoidAilments", "AvoidElementalAilments")
 				if modDB.Flag(nil, "ShockAvoidAppliesToElementalAilments") {
-					sum += modDB.Sum("BASE", nil, "AvoidShock")
+					sum += modDB.Sum(modparser.Base, nil, "AvoidShock")
 				}
 				if modDB.Flag(nil, "SpellSuppressionAppliesToAilmentAvoidance") {
-					sum += modDB.Sum("BASE", nil, "SpellSuppressionChance") / 2
+					sum += modDB.Sum(modparser.Base, nil, "SpellSuppressionChance") / 2
 				}
 				avoidScorch = flr(math.Min(sum, 100))
 			}
 			scorchMax := ail.Max
-			if ov := modDB.Override(nil, "ScorchMax"); truthy(ov) {
-				scorchMax = anyNum(ov)
+			if ov, ok := modDB.Override(nil, "ScorchMax"); ok {
+				scorchMax = valueNum(ov)
 			}
 			effect := 0.0
 			if avoidScorch != 100 {
 				effect = math.Min(math.Max(flr(scorchValue*totalScorchSelfEffect), 0), scorchMax)
 			}
-			modDB.AddMod(newMod("ElementalResist", "BASE", -effect, "Scorch"))
+			modDB.AddMod(newModS("ElementalResist", modparser.Base, modparser.Num(-effect), "Scorch"))
 		}
 		if modDB.Flag(nil, "Freeze") {
 			effect := math.Max(flr(70*Mod(modDB, nil, "SelfChillEffect")), 0)
-			modDB.AddMod(newMod("ActionSpeed", "INC", -effect, "Freeze"))
+			modDB.AddMod(newModS("ActionSpeed", modparser.Inc, modparser.Num(-effect), "Freeze"))
 		}
 		if modDB.Flag(nil, "CanLeechLifeOnFullLife") && !modDB.Flag(nil, "GhostReaver") {
-			condList["Leeching"] = true
-			condList["LeechingLife"] = true
+			condList.Set("Leeching", true)
+			condList.Set("LeechingLife", true)
 		}
 		if modDB.Flag(nil, "CanLeechEnergyShieldOnFullEnergyShield") {
-			condList["Leeching"] = true
-			condList["LeechingEnergyShield"] = true
+			condList.Set("Leeching", true)
+			condList.Set("LeechingEnergyShield", true)
 		}
-		if modDB.Flag(nil, "Condition:CanGainRage") || modDB.Sum("BASE", nil, "RageRegen") > 0 {
+		if modDB.Flag(nil, "Condition:CanGainRage") || modDB.Sum(modparser.Base, nil, "RageRegen") > 0 {
 			// skillCfg is an undefined local in the reference: nil
-			maxStacks := flr(modDB.Sum("BASE", nil, "MaximumRage") * modDB.More(nil, "MaximumRage"))
-			minStacks := math.Min(modDB.Sum("BASE", nil, "MinimumRage"), maxStacks)
-			rageConfig := modDB.Sum("BASE", nil, "Multiplier:RageStack")
+			maxStacks := flr(modDB.Sum(modparser.Base, nil, "MaximumRage") * modDB.More(nil, "MaximumRage"))
+			minStacks := math.Min(modDB.Sum(modparser.Base, nil, "MinimumRage"), maxStacks)
+			rageConfig := modDB.Sum(modparser.Base, nil, "Multiplier:RageStack")
 			stacks := math.Min(rageConfig, maxStacks)
 			if minStacks > 0 && stacks < minStacks {
 				stacks = minStacks
 			}
 			stacks = math.Max(stacks, 0)
-			output["RageEffect"] = flr(stacks * Mod(modDB, nil, "RageEffect"))
-			modDB.AddMod(newMod("Multiplier:RageEffect", "BASE", outNum(output, "RageEffect"), "Base"))
-			output["Rage"] = stacks
-			output["MaximumRage"] = maxStacks
-			modDB.AddMod(newMod("Multiplier:Rage", "BASE", stacks, "Base"))
+			output.SetN("RageEffect", flr(stacks*Mod(modDB, nil, "RageEffect")))
+			modDB.AddMod(newModS("Multiplier:RageEffect", modparser.Base, modparser.Num(output.N("RageEffect")), "Base"))
+			output.SetN("Rage", stacks)
+			output.SetN("MaximumRage", maxStacks)
+			modDB.AddMod(newModS("Multiplier:Rage", modparser.Base, modparser.Num(stacks), "Base"))
 			if modDB.Flag(nil, "Condition:RageSpellDamage") {
-				modDB.AddMod(newMod("Damage", "MORE", outNum(output, "RageEffect"), "Rage", modparser.ModFlag.Spell))
+				modDB.AddMod(newModSF("Damage", modparser.More, modparser.Num(output.N("RageEffect")), "Rage", modparser.FlagSpell, modparser.KeywordNone))
 			} else {
-				modDB.AddMod(newMod("Damage", "MORE", outNum(output, "RageEffect"), "Rage", modparser.ModFlag.Attack))
+				modDB.AddMod(newModSF("Damage", modparser.More, modparser.Num(output.N("RageEffect")), "Rage", modparser.FlagAttack, modparser.KeywordNone))
 			}
 			if stacks == maxStacks {
-				modDB.AddMod(newMod("Condition:HaveMaximumRage", "FLAG", true, ""))
+				modDB.AddMod(newModS("Condition:HaveMaximumRage", modparser.Flag, modparser.Bool(true), ""))
 			}
-			output["InherentRageLossDelay"] = 2 + modDB.Sum("BASE", nil, "InherentRageLossDelay")
+			output.SetN("InherentRageLossDelay", 2+modDB.Sum(modparser.Base, nil, "InherentRageLossDelay"))
 			if !modDB.Flag(nil, "InherentRageLossIsPrevented") {
-				output["InherentRageLoss"] = 10 * (1 + modDB.Sum("INC", nil, "InherentRageLoss")/100)
+				output.SetN("InherentRageLoss", 10*(1+modDB.Sum(modparser.Inc, nil, "InherentRageLoss")/100))
 			} else {
-				output["InherentRageLoss"] = 0.0
+				output.SetN("InherentRageLoss", 0.0)
 			}
 		}
-		if anyNum(env.ConfigInput["multiplierManaBurnStacks"]) > 0 {
-			maxManaBurn := modDB.Sum("BASE", nil, "MaxManaBurnStacks")
+		if env.ConfigInput.MultiplierManaBurnStacks > 0 {
+			maxManaBurn := modDB.Sum(modparser.Base, nil, "MaxManaBurnStacks")
 			if maxManaBurn == 0 {
 				maxManaBurn = 9999
 			}
-			manaBurnStacks := math.Min(anyNum(env.ConfigInput["multiplierManaBurnStacks"]), maxManaBurn)
-			modDB.AddMod(newMod("Multiplier:ManaBurnStacks", "BASE", manaBurnStacks, "Config"))
-			manaBurnStacks = manaBurnStacks + modDB.Sum("BASE", &modstore.Cfg{Actor: "player"}, "EffectiveManaBurnStacks")
+			manaBurnStacks := math.Min(env.ConfigInput.MultiplierManaBurnStacks, maxManaBurn)
+			modDB.AddMod(newModS("Multiplier:ManaBurnStacks", modparser.Base, modparser.Num(manaBurnStacks), "Config"))
+			manaBurnStacks = manaBurnStacks + modDB.Sum(modparser.Base, &modstore.Cfg{Actor: "player"}, "EffectiveManaBurnStacks")
 			if modDB.Flag(nil, "Condition:WeepingWoundsInsteadOfManaBurn") {
-				modDB.AddMod(newMod("Multiplier:WeepingWoundsStacks", "BASE", manaBurnStacks, "Config"))
+				modDB.AddMod(newModS("Multiplier:WeepingWoundsStacks", modparser.Base, modparser.Num(manaBurnStacks), "Config"))
 			} else {
-				modDB.AddMod(newMod("Multiplier:EffectiveManaBurnStacks", "BASE", manaBurnStacks, "Config"))
+				modDB.AddMod(newModS("Multiplier:EffectiveManaBurnStacks", modparser.Base, modparser.Num(manaBurnStacks), "Config"))
 			}
 		}
-		if modDB.Sum("BASE", nil, "CoveredInAshEffect") > 0 {
-			effect := modDB.Sum("BASE", nil, "CoveredInAshEffect")
-			enemyDB.AddMod(newMod("FireDamageTaken", "INC", math.Min(effect, 20), "Covered in Ash"))
+		if modDB.Sum(modparser.Base, nil, "CoveredInAshEffect") > 0 {
+			effect := modDB.Sum(modparser.Base, nil, "CoveredInAshEffect")
+			enemyDB.AddMod(newModS("FireDamageTaken", modparser.Inc, modparser.Num(math.Min(effect, 20)), "Covered in Ash"))
 		}
-		if modDB.Sum("BASE", nil, "CoveredInFrostEffect") > 0 {
-			effect := modDB.Sum("BASE", nil, "CoveredInFrostEffect")
-			enemyDB.AddMod(newMod("ColdDamageTaken", "INC", math.Min(effect, 20), "Covered in Frost"))
+		if modDB.Sum(modparser.Base, nil, "CoveredInFrostEffect") > 0 {
+			effect := modDB.Sum(modparser.Base, nil, "CoveredInFrostEffect")
+			enemyDB.AddMod(newModS("ColdDamageTaken", modparser.Inc, modparser.Num(math.Min(effect, 20)), "Covered in Frost"))
 		}
 		if modDB.Flag(nil, "HasMalediction") {
-			modDB.AddMod(newMod("DamageTaken", "INC", 10.0, "Malediction"))
-			modDB.AddMod(newMod("Damage", "INC", -10.0, "Malediction"))
+			modDB.AddMod(newModS("DamageTaken", modparser.Inc, modparser.Num(10.0), "Malediction"))
+			modDB.AddMod(newModS("Damage", modparser.Inc, modparser.Num(-10.0), "Malediction"))
 		}
 		if modDB.Flag(nil, "HasMaddeningPresence") {
-			modDB.AddMod(newMod("ActionSpeed", "INC", -10.0, "Maddening Presence"))
-			modDB.AddMod(newMod("Damage", "INC", -10.0, "Maddening Presence"))
+			modDB.AddMod(newModS("ActionSpeed", modparser.Inc, modparser.Num(-10.0), "Maddening Presence"))
+			modDB.AddMod(newModS("Damage", modparser.Inc, modparser.Num(-10.0), "Maddening Presence"))
 		}
 		if modDB.Flag(nil, "HasShapersPresence") {
-			modDB.AddMod(newMod("BuffExpireFaster", "MORE", -20.0, "Shapers Presence"))
+			modDB.AddMod(newModS("BuffExpireFaster", modparser.More, modparser.Num(-20.0), "Shapers Presence"))
 		}
 		if modDB.Flag(nil, "Condition:CanHaveSoulEater") {
-			max := overrideOr(modDB, "SoulEaterMax", modDB.Sum("BASE", nil, "SoulEaterMax"))
-			modDB.AddMod(newMod("Speed", "INC", 5.0, "Base", modparser.ModFlag.Attack, modparser.Tag{"type": "Multiplier", "var": "SoulEaterStack", "limit": max}))
-			modDB.AddMod(newMod("Speed", "INC", 5.0, "Base", modparser.ModFlag.Cast, modparser.Tag{"type": "Multiplier", "var": "SoulEaterStack", "limit": max}))
+			max := overrideOr(modDB, "SoulEaterMax", modDB.Sum(modparser.Base, nil, "SoulEaterMax"))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(5.0), "Base", modparser.FlagAttack, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SoulEaterStack", Limit: opt(max)}))
+			modDB.AddMod(newModSF("Speed", modparser.Inc, modparser.Num(5.0), "Base", modparser.FlagCast, modparser.KeywordNone, &modparser.MultiplierTag{Var: "SoulEaterStack", Limit: opt(max)}))
 		}
 	}
 
@@ -465,170 +465,170 @@ func (env *Env) doActorMisc(actor *performActor) {
 func (env *Env) doActorCharges(actor *performActor) {
 	modDB := actor.db
 	output := actor.output
-	setMax := func(k string, v float64) { output[k] = math.Max(v, 0) }
+	setMax := func(k string, v float64) { output.SetN(k, math.Max(v, 0)) }
 
-	setMax("PowerChargesMin", modDB.Sum("BASE", nil, "PowerChargesMin"))
-	output["PowerChargesMax"] = overrideOr(modDB, "PowerChargesMax", math.Max(modDB.Sum("BASE", nil, "PowerChargesMax"), 0))
-	output["PowerChargesDuration"] = math.Floor(modDB.Sum("BASE", nil, "ChargeDuration") * Mod(modDB, nil, "PowerChargesDuration", "ChargeDuration"))
+	setMax("PowerChargesMin", modDB.Sum(modparser.Base, nil, "PowerChargesMin"))
+	output.SetN("PowerChargesMax", overrideOr(modDB, "PowerChargesMax", math.Max(modDB.Sum(modparser.Base, nil, "PowerChargesMax"), 0)))
+	output.SetN("PowerChargesDuration", math.Floor(modDB.Sum(modparser.Base, nil, "ChargeDuration")*Mod(modDB, nil, "PowerChargesDuration", "ChargeDuration")))
 	if modDB.Flag(nil, "MaximumFrenzyChargesIsMaximumPowerCharges") {
 		source := modDB.Mods["MaximumFrenzyChargesIsMaximumPowerCharges"][0].Source
-		modDB.ReplaceMod(newMod("FrenzyChargesMax", "OVERRIDE", outNum(output, "PowerChargesMax"), source))
+		modDB.ReplaceMod(newModS("FrenzyChargesMax", modparser.Override, modparser.Num(output.N("PowerChargesMax")), source))
 	}
-	setMax("FrenzyChargesMin", modDB.Sum("BASE", nil, "FrenzyChargesMin"))
-	fcBase := modDB.Sum("BASE", nil, "FrenzyChargesMax")
+	setMax("FrenzyChargesMin", modDB.Sum(modparser.Base, nil, "FrenzyChargesMin"))
+	fcBase := modDB.Sum(modparser.Base, nil, "FrenzyChargesMax")
 	if modDB.Flag(nil, "MaximumFrenzyChargesIsMaximumPowerCharges") {
-		fcBase = outNum(output, "PowerChargesMax")
+		fcBase = output.N("PowerChargesMax")
 	}
-	output["FrenzyChargesMax"] = overrideOr(modDB, "FrenzyChargesMax", math.Max(fcBase, 0))
-	output["FrenzyChargesDuration"] = math.Floor(modDB.Sum("BASE", nil, "ChargeDuration") * Mod(modDB, nil, "FrenzyChargesDuration", "ChargeDuration"))
+	output.SetN("FrenzyChargesMax", overrideOr(modDB, "FrenzyChargesMax", math.Max(fcBase, 0)))
+	output.SetN("FrenzyChargesDuration", math.Floor(modDB.Sum(modparser.Base, nil, "ChargeDuration")*Mod(modDB, nil, "FrenzyChargesDuration", "ChargeDuration")))
 	if modDB.Flag(nil, "MaximumEnduranceChargesIsMaximumFrenzyCharges") {
 		source := modDB.Mods["MaximumEnduranceChargesIsMaximumFrenzyCharges"][0].Source
-		modDB.ReplaceMod(newMod("EnduranceChargesMax", "OVERRIDE", outNum(output, "FrenzyChargesMax"), source))
+		modDB.ReplaceMod(newModS("EnduranceChargesMax", modparser.Override, modparser.Num(output.N("FrenzyChargesMax")), source))
 	}
-	setMax("EnduranceChargesMin", modDB.Sum("BASE", nil, "EnduranceChargesMin"))
-	ecBase := modDB.Sum("BASE", nil, "EnduranceChargesMax")
+	setMax("EnduranceChargesMin", modDB.Sum(modparser.Base, nil, "EnduranceChargesMin"))
+	ecBase := modDB.Sum(modparser.Base, nil, "EnduranceChargesMax")
 	if modDB.Flag(nil, "MaximumEnduranceChargesIsMaximumFrenzyCharges") {
-		ecBase = outNum(output, "FrenzyChargesMax")
+		ecBase = output.N("FrenzyChargesMax")
 	}
 	// (partyMembers link is nil for the replay corpus)
-	output["EnduranceChargesMax"] = overrideOr(modDB, "EnduranceChargesMax", math.Max(ecBase, 0))
-	output["EnduranceChargesDuration"] = math.Floor(modDB.Sum("BASE", nil, "ChargeDuration") * Mod(modDB, nil, "EnduranceChargesDuration", "ChargeDuration"))
-	setMax("SiphoningChargesMax", modDB.Sum("BASE", nil, "SiphoningChargesMax"))
-	setMax("ChallengerChargesMax", modDB.Sum("BASE", nil, "ChallengerChargesMax"))
-	setMax("BlitzChargesMax", modDB.Sum("BASE", nil, "BlitzChargesMax"))
-	setMax("InspirationChargesMax", modDB.Sum("BASE", nil, "InspirationChargesMax"))
-	setMax("CrabBarriersMax", modDB.Sum("BASE", nil, "CrabBarriersMax"))
+	output.SetN("EnduranceChargesMax", overrideOr(modDB, "EnduranceChargesMax", math.Max(ecBase, 0)))
+	output.SetN("EnduranceChargesDuration", math.Floor(modDB.Sum(modparser.Base, nil, "ChargeDuration")*Mod(modDB, nil, "EnduranceChargesDuration", "ChargeDuration")))
+	setMax("SiphoningChargesMax", modDB.Sum(modparser.Base, nil, "SiphoningChargesMax"))
+	setMax("ChallengerChargesMax", modDB.Sum(modparser.Base, nil, "ChallengerChargesMax"))
+	setMax("BlitzChargesMax", modDB.Sum(modparser.Base, nil, "BlitzChargesMax"))
+	setMax("InspirationChargesMax", modDB.Sum(modparser.Base, nil, "InspirationChargesMax"))
+	setMax("CrabBarriersMax", modDB.Sum(modparser.Base, nil, "CrabBarriersMax"))
 	brutalMin := 0.0
 	if modDB.Flag(nil, "MinimumEnduranceChargesEqualsMinimumBrutalCharges") {
 		if modDB.Flag(nil, "MinimumEnduranceChargesIsMaximumEnduranceCharges") {
-			brutalMin = outNum(output, "EnduranceChargesMax")
+			brutalMin = output.N("EnduranceChargesMax")
 		} else {
-			brutalMin = outNum(output, "EnduranceChargesMin")
+			brutalMin = output.N("EnduranceChargesMin")
 		}
 	}
 	setMax("BrutalChargesMin", brutalMin)
 	brutalMax := 0.0
 	if modDB.Flag(nil, "MaximumEnduranceChargesEqualsMaximumBrutalCharges") {
-		brutalMax = outNum(output, "EnduranceChargesMax")
+		brutalMax = output.N("EnduranceChargesMax")
 	}
 	setMax("BrutalChargesMax", brutalMax)
-	setMax("BrineChargesMax", outNum(output, "EnduranceChargesMax"))
+	setMax("BrineChargesMax", output.N("EnduranceChargesMax"))
 	absMin := 0.0
 	if modDB.Flag(nil, "MinimumPowerChargesEqualsMinimumAbsorptionCharges") {
 		if modDB.Flag(nil, "MinimumPowerChargesIsMaximumPowerCharges") {
-			absMin = outNum(output, "PowerChargesMax")
+			absMin = output.N("PowerChargesMax")
 		} else {
-			absMin = outNum(output, "PowerChargesMin")
+			absMin = output.N("PowerChargesMin")
 		}
 	}
 	setMax("AbsorptionChargesMin", absMin)
 	absMax := 0.0
 	if modDB.Flag(nil, "MaximumPowerChargesEqualsMaximumAbsorptionCharges") {
-		absMax = outNum(output, "PowerChargesMax")
+		absMax = output.N("PowerChargesMax")
 	}
 	setMax("AbsorptionChargesMax", absMax)
 	afflMin := 0.0
 	if modDB.Flag(nil, "MinimumFrenzyChargesEqualsMinimumAfflictionCharges") {
 		if modDB.Flag(nil, "MinimumFrenzyChargesIsMaximumFrenzyCharges") {
-			afflMin = outNum(output, "FrenzyChargesMax")
+			afflMin = output.N("FrenzyChargesMax")
 		} else {
-			afflMin = outNum(output, "FrenzyChargesMin")
+			afflMin = output.N("FrenzyChargesMin")
 		}
 	}
 	setMax("AfflictionChargesMin", afflMin)
 	afflMax := 0.0
 	if modDB.Flag(nil, "MaximumFrenzyChargesEqualsMaximumAfflictionCharges") {
-		afflMax = outNum(output, "FrenzyChargesMax")
+		afflMax = output.N("FrenzyChargesMax")
 	}
 	setMax("AfflictionChargesMax", afflMax)
-	setMax("BloodChargesMax", modDB.Sum("BASE", nil, "BloodChargesMax"))
-	setMax("SpiritChargesMax", modDB.Sum("BASE", nil, "SpiritChargesMax"))
-	sim := modDB.Sum("BASE", nil, "SpiritInfusionsMax")
+	setMax("BloodChargesMax", modDB.Sum(modparser.Base, nil, "BloodChargesMax"))
+	setMax("SpiritChargesMax", modDB.Sum(modparser.Base, nil, "SpiritChargesMax"))
+	sim := modDB.Sum(modparser.Base, nil, "SpiritInfusionsMax")
 	if modDB.Flag(nil, "Condition:CanGainSpiritInfusion") {
 		sim += 10
 	}
-	output["SpiritInfusionsMax"] = sim
+	output.SetN("SpiritInfusionsMax", sim)
 
 	// Initialize charges
 	for _, k := range []string{"PowerCharges", "FrenzyCharges", "EnduranceCharges", "SiphoningCharges",
 		"ChallengerCharges", "BlitzCharges", "InspirationCharges", "GhostShrouds", "BrutalCharges",
 		"BrineCharges", "AbsorptionCharges", "AfflictionCharges", "BloodCharges", "SpiritCharges", "SpiritInfusions"} {
-		output[k] = 0.0
+		output.SetN(k, 0.0)
 	}
 
 	if modDB.Flag(nil, "MinimumFrenzyChargesIsMaximumFrenzyCharges") {
-		output["FrenzyChargesMin"] = output["FrenzyChargesMax"]
+		output.Set("FrenzyChargesMin", output.Get("FrenzyChargesMax"))
 	}
 	if modDB.Flag(nil, "MinimumEnduranceChargesIsMaximumEnduranceCharges") {
-		output["EnduranceChargesMin"] = output["EnduranceChargesMax"]
+		output.Set("EnduranceChargesMin", output.Get("EnduranceChargesMax"))
 	}
 	if modDB.Flag(nil, "MinimumPowerChargesIsMaximumPowerCharges") {
-		output["PowerChargesMin"] = output["PowerChargesMax"]
+		output.Set("PowerChargesMin", output.Get("PowerChargesMax"))
 	}
 	if modDB.Flag(nil, "UsePowerCharges") {
-		output["PowerCharges"] = overrideOr(modDB, "PowerCharges", outNum(output, "PowerChargesMax"))
+		output.SetN("PowerCharges", overrideOr(modDB, "PowerCharges", output.N("PowerChargesMax")))
 	}
 	if modDB.Flag(nil, "PowerChargesConvertToAbsorptionCharges") {
-		output["AbsorptionCharges"] = math.Max(outNum(output, "PowerCharges"), math.Min(outNum(output, "AbsorptionChargesMax"), outNum(output, "AbsorptionChargesMin")))
-		output["PowerCharges"] = 0.0
+		output.SetN("AbsorptionCharges", math.Max(output.N("PowerCharges"), math.Min(output.N("AbsorptionChargesMax"), output.N("AbsorptionChargesMin"))))
+		output.SetN("PowerCharges", 0.0)
 	} else {
-		output["PowerCharges"] = math.Max(outNum(output, "PowerCharges"), math.Min(outNum(output, "PowerChargesMax"), outNum(output, "PowerChargesMin")))
+		output.SetN("PowerCharges", math.Max(output.N("PowerCharges"), math.Min(output.N("PowerChargesMax"), output.N("PowerChargesMin"))))
 	}
-	output["RemovablePowerCharges"] = math.Max(outNum(output, "PowerCharges")-outNum(output, "PowerChargesMin"), 0)
+	output.SetN("RemovablePowerCharges", math.Max(output.N("PowerCharges")-output.N("PowerChargesMin"), 0))
 	if modDB.Flag(nil, "UseFrenzyCharges") {
-		output["FrenzyCharges"] = overrideOr(modDB, "FrenzyCharges", outNum(output, "FrenzyChargesMax"))
+		output.SetN("FrenzyCharges", overrideOr(modDB, "FrenzyCharges", output.N("FrenzyChargesMax")))
 	}
 	if modDB.Flag(nil, "FrenzyChargesConvertToAfflictionCharges") {
-		output["AfflictionCharges"] = math.Max(outNum(output, "FrenzyCharges"), math.Min(outNum(output, "AfflictionChargesMax"), outNum(output, "AfflictionChargesMin")))
-		output["FrenzyCharges"] = 0.0
+		output.SetN("AfflictionCharges", math.Max(output.N("FrenzyCharges"), math.Min(output.N("AfflictionChargesMax"), output.N("AfflictionChargesMin"))))
+		output.SetN("FrenzyCharges", 0.0)
 	} else {
-		output["FrenzyCharges"] = math.Max(outNum(output, "FrenzyCharges"), math.Min(outNum(output, "FrenzyChargesMax"), outNum(output, "FrenzyChargesMin")))
+		output.SetN("FrenzyCharges", math.Max(output.N("FrenzyCharges"), math.Min(output.N("FrenzyChargesMax"), output.N("FrenzyChargesMin"))))
 	}
-	output["RemovableFrenzyCharges"] = math.Max(outNum(output, "FrenzyCharges")-outNum(output, "FrenzyChargesMin"), 0)
+	output.SetN("RemovableFrenzyCharges", math.Max(output.N("FrenzyCharges")-output.N("FrenzyChargesMin"), 0))
 	if modDB.Flag(nil, "UseEnduranceCharges") {
-		output["EnduranceCharges"] = overrideOr(modDB, "EnduranceCharges", outNum(output, "EnduranceChargesMax"))
+		output.SetN("EnduranceCharges", overrideOr(modDB, "EnduranceCharges", output.N("EnduranceChargesMax")))
 		if modDB.Flag(nil, "CanGainBrineCharges") {
-			output["BrineCharges"] = output["BrineChargesMax"]
+			output.Set("BrineCharges", output.Get("BrineChargesMax"))
 		}
 	}
 	if modDB.Flag(nil, "EnduranceChargesConvertToBrutalCharges") {
-		output["BrutalCharges"] = math.Max(outNum(output, "EnduranceCharges"), math.Min(outNum(output, "BrutalChargesMax"), outNum(output, "BrutalChargesMin")))
-		output["EnduranceCharges"] = 0.0
+		output.SetN("BrutalCharges", math.Max(output.N("EnduranceCharges"), math.Min(output.N("BrutalChargesMax"), output.N("BrutalChargesMin"))))
+		output.SetN("EnduranceCharges", 0.0)
 	} else {
-		output["EnduranceCharges"] = math.Max(outNum(output, "EnduranceCharges"), math.Min(outNum(output, "EnduranceChargesMax"), outNum(output, "EnduranceChargesMin")))
+		output.SetN("EnduranceCharges", math.Max(output.N("EnduranceCharges"), math.Min(output.N("EnduranceChargesMax"), output.N("EnduranceChargesMin"))))
 	}
-	output["RemovableEnduranceCharges"] = math.Max(outNum(output, "EnduranceCharges")-outNum(output, "EnduranceChargesMin"), 0)
+	output.SetN("RemovableEnduranceCharges", math.Max(output.N("EnduranceCharges")-output.N("EnduranceChargesMin"), 0))
 	if modDB.Flag(nil, "UseSiphoningCharges") {
-		output["SiphoningCharges"] = overrideOr(modDB, "SiphoningCharges", outNum(output, "SiphoningChargesMax"))
+		output.SetN("SiphoningCharges", overrideOr(modDB, "SiphoningCharges", output.N("SiphoningChargesMax")))
 	}
 	if modDB.Flag(nil, "UseChallengerCharges") {
-		output["ChallengerCharges"] = overrideOr(modDB, "ChallengerCharges", outNum(output, "ChallengerChargesMax"))
+		output.SetN("ChallengerCharges", overrideOr(modDB, "ChallengerCharges", output.N("ChallengerChargesMax")))
 	}
 	if modDB.Flag(nil, "UseBlitzCharges") {
-		output["BlitzCharges"] = overrideOr(modDB, "BlitzCharges", outNum(output, "BlitzChargesMax"))
+		output.SetN("BlitzCharges", overrideOr(modDB, "BlitzCharges", output.N("BlitzChargesMax")))
 	}
 	if actor == env.playerPA {
-		output["InspirationCharges"] = overrideOr(modDB, "InspirationCharges", outNum(output, "InspirationChargesMax"))
+		output.SetN("InspirationCharges", overrideOr(modDB, "InspirationCharges", output.N("InspirationChargesMax")))
 	}
 	if modDB.Flag(nil, "UseGhostShrouds") {
-		output["GhostShrouds"] = overrideOr(modDB, "GhostShrouds", 3)
+		output.SetN("GhostShrouds", overrideOr(modDB, "GhostShrouds", 3))
 	}
-	output["BloodCharges"] = math.Min(overrideOr(modDB, "BloodCharges", outNum(output, "BloodChargesMax")), outNum(output, "BloodChargesMax"))
-	output["SpiritCharges"] = math.Min(overrideOr(modDB, "SpiritCharges", 0), outNum(output, "SpiritChargesMax"))
-	output["SpiritInfusions"] = math.Min(overrideOr(modDB, "SpiritInfusion", 0), outNum(output, "SpiritInfusionsMax"))
+	output.SetN("BloodCharges", math.Min(overrideOr(modDB, "BloodCharges", output.N("BloodChargesMax")), output.N("BloodChargesMax")))
+	output.SetN("SpiritCharges", math.Min(overrideOr(modDB, "SpiritCharges", 0), output.N("SpiritChargesMax")))
+	output.SetN("SpiritInfusions", math.Min(overrideOr(modDB, "SpiritInfusion", 0), output.N("SpiritInfusionsMax")))
 
-	output["CrabBarriers"] = math.Min(overrideOr(modDB, "CrabBarriers", outNum(output, "CrabBarriersMax")), outNum(output, "CrabBarriersMax"))
+	output.SetN("CrabBarriers", math.Min(overrideOr(modDB, "CrabBarriers", output.N("CrabBarriersMax")), output.N("CrabBarriersMax")))
 	if modDB.Flag(nil, "HaveMaximumPowerCharges") {
-		output["PowerCharges"] = output["PowerChargesMax"]
+		output.Set("PowerCharges", output.Get("PowerChargesMax"))
 	}
 	if modDB.Flag(nil, "HaveMaximumFrenzyCharges") {
-		output["FrenzyCharges"] = output["FrenzyChargesMax"]
+		output.Set("FrenzyCharges", output.Get("FrenzyChargesMax"))
 	}
 	if modDB.Flag(nil, "HaveMaximumEnduranceCharges") {
-		output["EnduranceCharges"] = output["EnduranceChargesMax"]
+		output.Set("EnduranceCharges", output.Get("EnduranceChargesMax"))
 	}
-	output["TotalCharges"] = outNum(output, "PowerCharges") + outNum(output, "FrenzyCharges") + outNum(output, "EnduranceCharges")
-	output["RemovableTotalCharges"] = outNum(output, "RemovableEnduranceCharges") + outNum(output, "RemovableFrenzyCharges") + outNum(output, "RemovablePowerCharges")
+	output.SetN("TotalCharges", output.N("PowerCharges")+output.N("FrenzyCharges")+output.N("EnduranceCharges"))
+	output.SetN("RemovableTotalCharges", output.N("RemovableEnduranceCharges")+output.N("RemovableFrenzyCharges")+output.N("RemovablePowerCharges"))
 	for mult, key := range map[string]string{
 		"PowerCharge": "PowerCharges", "PowerChargeMax": "PowerChargesMax",
 		"RemovablePowerCharge": "RemovablePowerCharges", "FrenzyCharge": "FrenzyCharges",
@@ -642,7 +642,7 @@ func (env *Env) doActorCharges(actor *performActor) {
 		"AfflictionCharge": "AfflictionCharges", "BloodCharge": "BloodCharges",
 		"SpiritCharge": "SpiritCharges", "SpiritInfusion": "SpiritInfusions",
 	} {
-		modDB.Multipliers[mult] = outNum(output, key)
+		modDB.Multipliers[mult] = output.N(key)
 	}
 }
 
@@ -654,7 +654,7 @@ func (env *Env) actionSpeedMod(actor *performActor) float64 {
 		minimumActionSpeed = v
 	}
 	maximumActionSpeedReduction, hasMaxRed := modDB.Max(nil, "MaximumActionSpeedReduction")
-	actionSpeedMod := 1 + (math.Max(-data.Misc.TemporalChainsEffectCap, modDB.Sum("INC", nil, "TemporalChainsActionSpeed"))+modDB.Sum("INC", nil, "ActionSpeed"))/100
+	actionSpeedMod := 1 + (math.Max(-data.Misc.TemporalChainsEffectCap, modDB.Sum(modparser.Inc, nil, "TemporalChainsActionSpeed"))+modDB.Sum(modparser.Inc, nil, "ActionSpeed"))/100
 	actionSpeedMod = math.Max(minimumActionSpeed/100, actionSpeedMod)
 	if hasMaxRed {
 		actionSpeedMod = math.Min((100-maximumActionSpeedReduction)/100, actionSpeedMod)

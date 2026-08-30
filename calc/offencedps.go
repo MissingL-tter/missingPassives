@@ -31,36 +31,36 @@ func (env *Env) offencePassDPS(c *offenceCtx, pass *damagePass) {
 	globalOutput := c.output
 
 	// Enemy Regeneration Rate
-	output["EnemyLifeRegen"] = enemyDB.Sum("INC", cfg, "LifeRegen")
-	output["EnemyManaRegen"] = enemyDB.Sum("INC", cfg, "ManaRegen")
-	output["EnemyEnergyShieldRegen"] = enemyDB.Sum("INC", cfg, "EnergyShieldRegen")
+	output.SetN("EnemyLifeRegen", enemyDB.Sum(modparser.Inc, cfg, "LifeRegen"))
+	output.SetN("EnemyManaRegen", enemyDB.Sum(modparser.Inc, cfg, "ManaRegen"))
+	output.SetN("EnemyEnergyShieldRegen", enemyDB.Sum(modparser.Inc, cfg, "EnergyShieldRegen"))
 
 	// Calculate average damage and final DPS
-	critChance := outNum(output, "CritChance")
-	output["AverageHit"] = c.totalHitAvg*(1-critChance/100) + c.totalCritAvg*critChance/100
+	critChance := output.N("CritChance")
+	output.SetN("AverageHit", c.totalHitAvg*(1-critChance/100)+c.totalCritAvg*critChance/100)
 	if skillFlags["monsterExplode"] {
-		output["AverageHitToMonsterLifePercentage"] = outNum(output, "AverageHit") / c.monsterLife * 100
-		if truthy(skillData["hitChanceIsExplodeChance"]) {
-			output["HitChance"] = output["ExplodeChance"]
+		output.SetN("AverageHitToMonsterLifePercentage", output.N("AverageHit")/c.monsterLife*100)
+		if skillData.Flag("hitChanceIsExplodeChance") {
+			output.Set("HitChance", output.Get("ExplodeChance"))
 		}
 	}
-	output["AverageDamage"] = outNum(output, "AverageHit") * outNum(output, "HitChance") / 100
+	output.SetN("AverageDamage", output.N("AverageHit")*output.N("HitChance")/100)
 	burstHits := 1.0
-	if truthy(output["AverageBurstHits"]) {
-		burstHits = anyNum(output["AverageBurstHits"])
+	if output.Flag("AverageBurstHits") {
+		burstHits = output.N("AverageBurstHits")
 	}
-	globalOutput["AverageBurstHits"] = burstHits
+	globalOutput.SetN("AverageBurstHits", burstHits)
 	repeatPenalty := 1.0
-	if skillModList.Flag(nil, "HasSeals") && activeSkill.SkillTypes[modparser.SkillType.CanRapidFire] && !skillModList.Flag(nil, "NoRepeatBonuses") {
+	if skillModList.Flag(nil, "HasSeals") && activeSkill.SkillTypes[modparser.SkillTypeCanRapidFire] && !skillModList.Flag(nil, "NoRepeatBonuses") {
 		repeatPenalty = Mod(skillModList, skillCfg, "SealRepeatPenalty")
 	}
-	globalOutput["AverageBurstDamage"] = outNum(output, "AverageDamage") + outNum(output, "AverageDamage")*(burstHits-1)*repeatPenalty
-	globalOutput["ShowBurst"] = burstHits > 1
-	speed := outNum(globalOutput, "Speed")
-	if truthy(globalOutput["HitSpeed"]) {
-		speed = outNum(globalOutput, "HitSpeed")
+	globalOutput.SetN("AverageBurstDamage", output.N("AverageDamage")+output.N("AverageDamage")*(burstHits-1)*repeatPenalty)
+	globalOutput.SetFlag("ShowBurst", burstHits > 1)
+	speed := globalOutput.N("Speed")
+	if globalOutput.Has("HitSpeed") {
+		speed = globalOutput.N("HitSpeed")
 	}
-	output["TotalDPS"] = outNum(output, "AverageDamage") * speed * anyNum(skillData["dpsMultiplier"]) * c.quantityMultiplier
+	output.SetN("TotalDPS", output.N("AverageDamage")*speed*skillData.N("dpsMultiplier")*c.quantityMultiplier)
 
 	// Calculate PvP values — setup flags
 	skillFlags["isPvP"] = false
@@ -70,7 +70,7 @@ func (env *Env) offencePassDPS(c *offenceCtx, pass *damagePass) {
 	skillFlags["weapon2AttackPvP"] = false
 	skillFlags["notAveragePvP"] = false
 
-	if truthy(env.ConfigInput["PvpScaling"]) {
+	if env.ConfigInput.PvpScaling {
 		skillFlags["isPvP"] = true
 		skillFlags["attackPvP"] = skillFlags["attack"]
 		skillFlags["notAttackPvP"] = !skillFlags["attack"]
@@ -78,22 +78,22 @@ func (env *Env) offencePassDPS(c *offenceCtx, pass *damagePass) {
 		skillFlags["weapon2AttackPvP"] = skillFlags["weapon2Attack"]
 		skillFlags["notAveragePvP"] = skillFlags["notAverage"]
 		var pvpTvalue float64
-		if truthy(env.ConfigInput["multiplierPvpTvalueOverride"]) {
-			pvpTvalue = anyNum(env.ConfigInput["multiplierPvpTvalueOverride"]) / 1000
+		if v := env.ConfigInput.MultiplierPvpTvalueOverride; v.Set {
+			pvpTvalue = v.V / 1000
 		} else {
 			switch {
-			case truthy(skillData["cooldown"]):
-				pvpTvalue = anyNum(skillData["cooldown"])
+			case skillData.Has("cooldown"):
+				pvpTvalue = skillData.N("cooldown")
 			case skillFlags["mine"]:
-				pvpTvalue = orOne(outNum(output, "MineLayingTime")) / outNum(globalOutput, "ActionSpeedMod")
+				pvpTvalue = orOne(output.N("MineLayingTime")) / globalOutput.N("ActionSpeedMod")
 			case skillFlags["trap"]:
-				pvpTvalue = orOne(outNum(output, "TrapThrowingTime")) / outNum(globalOutput, "ActionSpeedMod")
+				pvpTvalue = orOne(output.N("TrapThrowingTime")) / globalOutput.N("ActionSpeedMod")
 			default:
-				speed := outNum(globalOutput, "Speed")
-				if truthy(globalOutput["HitSpeed"]) {
-					speed = outNum(globalOutput, "HitSpeed")
+				speed := globalOutput.N("Speed")
+				if globalOutput.Has("HitSpeed") {
+					speed = globalOutput.N("HitSpeed")
 				}
-				pvpTvalue = 1 / (speed / outNum(globalOutput, "ActionSpeedMod")) * skillModList.More(cfg, "PvpTvalueMultiplier")
+				pvpTvalue = 1 / (speed / globalOutput.N("ActionSpeedMod")) * skillModList.More(cfg, "PvpTvalueMultiplier")
 			}
 			if pvpTvalue > 2147483647 {
 				pvpTvalue = 1
@@ -106,25 +106,25 @@ func (env *Env) offencePassDPS(c *offenceCtx, pass *damagePass) {
 		pvpElemental1 := data.Misc.PvpElemental1
 		pvpElemental2 := data.Misc.PvpElemental2
 
-		percentageNonElemental := (outNum(output, "PhysicalHitAverage") + outNum(output, "ChaosHitAverage")) /
-			(outNum(output, "TotalMin") + outNum(output, "TotalMax")) * 2
+		percentageNonElemental := (output.N("PhysicalHitAverage") + output.N("ChaosHitAverage")) /
+			(output.N("TotalMin") + output.N("TotalMax")) * 2
 		percentageElemental := 1 - percentageNonElemental
-		portionNonElemental := math.Pow(outNum(output, "AverageHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
+		portionNonElemental := math.Pow(output.N("AverageHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
 			pvpTvalue * pvpNonElemental2 * percentageNonElemental
-		portionElemental := math.Pow(outNum(output, "AverageHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
+		portionElemental := math.Pow(output.N("AverageHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
 			pvpTvalue * pvpElemental2 * percentageElemental
-		output["PvpAverageHit"] = (portionNonElemental + portionElemental) * pvpMultiplier
-		output["PvpAverageDamage"] = outNum(output, "PvpAverageHit") * outNum(output, "HitChance") / 100
-		speed := outNum(globalOutput, "Speed")
-		if truthy(globalOutput["HitSpeed"]) {
-			speed = outNum(globalOutput, "HitSpeed")
+		output.SetN("PvpAverageHit", (portionNonElemental+portionElemental)*pvpMultiplier)
+		output.SetN("PvpAverageDamage", output.N("PvpAverageHit")*output.N("HitChance")/100)
+		speed := globalOutput.N("Speed")
+		if globalOutput.Has("HitSpeed") {
+			speed = globalOutput.N("HitSpeed")
 		}
-		output["PvpTotalDPS"] = outNum(output, "PvpAverageDamage") * speed * anyNum(skillData["dpsMultiplier"])
+		output.SetN("PvpTotalDPS", output.N("PvpAverageDamage")*speed*skillData.N("dpsMultiplier"))
 
 		// fix for these being nan
 		for _, k := range []string{"PvpAverageHit", "PvpAverageDamage", "PvpTotalDPS"} {
-			if math.IsNaN(outNum(output, k)) {
-				output[k] = 0.0
+			if math.IsNaN(output.N(k)) {
+				output.SetN(k, 0.0)
 			}
 		}
 	}
@@ -166,59 +166,59 @@ func (env *Env) offenceLeechRates(c *offenceCtx) {
 	skillFlags, output, activeSkill := c.skillFlags, c.output, c.activeSkill
 
 	if activeSkill.Minion != nil {
-		speed := outNum(output, "Speed")
-		if truthy(output["HitSpeed"]) {
-			speed = outNum(output, "HitSpeed")
+		speed := output.N("Speed")
+		if output.Has("HitSpeed") {
+			speed = output.N("HitSpeed")
 		}
-		skillData["summonSpeed"] = outNum(output, "SummonedMinionsPerCast") * speed * anyNum(skillData["dpsMultiplier"])
+		skillData.SetN("summonSpeed", output.N("SummonedMinionsPerCast")*speed*skillData.N("dpsMultiplier"))
 	}
 
 	// Calculate leech rates
-	output["LifeLeechInstanceRate"] = outNum(output, "Life") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "LifeLeechRate")
-	output["LifeLeechRate"] = outNum(output, "LifeLeechInstances") * outNum(output, "LifeLeechInstanceRate")
-	output["LifeLeechPerHit"] = output["LifeLeechInstanceRate"]
-	output["EnergyShieldLeechInstanceRate"] = outNum(output, "EnergyShield") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "EnergyShieldLeechRate")
-	output["EnergyShieldLeechRate"] = outNum(output, "EnergyShieldLeechInstances") * outNum(output, "EnergyShieldLeechInstanceRate")
-	output["EnergyShieldLeechPerHit"] = output["EnergyShieldLeechInstanceRate"]
-	output["ManaLeechInstanceRate"] = outNum(output, "Mana") * data.Misc.LeechRateBase * Mod(skillModList, skillCfg, "ManaLeechRate")
-	output["ManaLeechRate"] = outNum(output, "ManaLeechInstances") * outNum(output, "ManaLeechInstanceRate")
-	output["ManaLeechPerHit"] = output["ManaLeechInstanceRate"]
+	output.SetN("LifeLeechInstanceRate", output.N("Life")*data.Misc.LeechRateBase*Mod(skillModList, skillCfg, "LifeLeechRate"))
+	output.SetN("LifeLeechRate", output.N("LifeLeechInstances")*output.N("LifeLeechInstanceRate"))
+	output.Set("LifeLeechPerHit", output.Get("LifeLeechInstanceRate"))
+	output.SetN("EnergyShieldLeechInstanceRate", output.N("EnergyShield")*data.Misc.LeechRateBase*Mod(skillModList, skillCfg, "EnergyShieldLeechRate"))
+	output.SetN("EnergyShieldLeechRate", output.N("EnergyShieldLeechInstances")*output.N("EnergyShieldLeechInstanceRate"))
+	output.Set("EnergyShieldLeechPerHit", output.Get("EnergyShieldLeechInstanceRate"))
+	output.SetN("ManaLeechInstanceRate", output.N("Mana")*data.Misc.LeechRateBase*Mod(skillModList, skillCfg, "ManaLeechRate"))
+	output.SetN("ManaLeechRate", output.N("ManaLeechInstances")*output.N("ManaLeechInstanceRate"))
+	output.Set("ManaLeechPerHit", output.Get("ManaLeechInstanceRate"))
 	// On full life, Immortal Ambition treats life leech as energy shield leech
 	if skillModList.Flag(nil, "ImmortalAmbition") {
-		output["EnergyShieldLeechRate"] = outNum(output, "EnergyShieldLeechRate") + outNum(output, "LifeLeechRate")
-		output["EnergyShieldLeechPerHit"] = outNum(output, "EnergyShieldLeechPerHit") + outNum(output, "LifeLeechPerHit")
+		output.SetN("EnergyShieldLeechRate", output.N("EnergyShieldLeechRate")+output.N("LifeLeechRate"))
+		output.SetN("EnergyShieldLeechPerHit", output.N("EnergyShieldLeechPerHit")+output.N("LifeLeechPerHit"))
 		// Clears output.LifeLeechRate to disable leechLife flag
-		output["LifeLeechRate"] = 0.0
-		output["LifeLeechPerHit"] = 0.0
+		output.SetN("LifeLeechRate", 0.0)
+		output.SetN("LifeLeechPerHit", 0.0)
 	}
 	// Disable non-instant life leech
 	if skillModList.Flag(nil, "UnaffectedByNonInstantLifeLeech") {
-		output["LifeLeechRate"] = 0.0
-		output["LifeLeechPerHit"] = 0.0
-		output["LifeLeechInstances"] = 0.0
+		output.SetN("LifeLeechRate", 0.0)
+		output.SetN("LifeLeechPerHit", 0.0)
+		output.SetN("LifeLeechInstances", 0.0)
 	}
-	output["LifeLeechRate"] = outNum(output, "LifeLeechInstantRate") +
-		math.Min(outNum(output, "LifeLeechRate"), outNum(output, "MaxLifeLeechRate"))*outNum(output, "LifeRecoveryRateMod")
-	output["LifeLeechPerHit"] = outNum(output, "LifeLeechInstant") +
-		math.Min(outNum(output, "LifeLeechPerHit"), outNum(output, "MaxLifeLeechRate"))*outNum(output, "LifeLeechDuration")*outNum(output, "LifeRecoveryRateMod")
-	output["EnergyShieldLeechRate"] = outNum(output, "EnergyShieldLeechInstantRate") +
-		math.Min(outNum(output, "EnergyShieldLeechRate"), outNum(output, "MaxEnergyShieldLeechRate"))*outNum(output, "EnergyShieldRecoveryRateMod")
-	output["EnergyShieldLeechPerHit"] = outNum(output, "EnergyShieldLeechInstant") +
-		math.Min(outNum(output, "EnergyShieldLeechPerHit"), outNum(output, "MaxEnergyShieldLeechRate"))*outNum(output, "EnergyShieldLeechDuration")*outNum(output, "EnergyShieldRecoveryRateMod")
-	output["ManaLeechRate"] = outNum(output, "ManaLeechInstantRate") +
-		math.Min(outNum(output, "ManaLeechRate"), outNum(output, "MaxManaLeechRate"))*outNum(output, "ManaRecoveryRateMod")
-	output["ManaLeechPerHit"] = outNum(output, "ManaLeechInstant") +
-		math.Min(outNum(output, "ManaLeechPerHit"), outNum(output, "MaxManaLeechRate"))*outNum(output, "ManaLeechDuration")*outNum(output, "ManaRecoveryRateMod")
-	skillFlags["leechLife"] = outNum(output, "LifeLeechRate") > 0
-	skillFlags["leechES"] = outNum(output, "EnergyShieldLeechRate") > 0
-	skillFlags["leechMana"] = outNum(output, "ManaLeechRate") > 0
-	if truthy(skillData["showAverage"]) {
-		output["LifeLeechGainPerHit"] = outNum(output, "LifeLeechPerHit") + outNum(output, "LifeOnHit")
-		output["EnergyShieldLeechGainPerHit"] = outNum(output, "EnergyShieldLeechPerHit") + outNum(output, "EnergyShieldOnHit")
-		output["ManaLeechGainPerHit"] = outNum(output, "ManaLeechPerHit") + outNum(output, "ManaOnHit")
+	output.SetN("LifeLeechRate", output.N("LifeLeechInstantRate")+
+		math.Min(output.N("LifeLeechRate"), output.N("MaxLifeLeechRate"))*output.N("LifeRecoveryRateMod"))
+	output.SetN("LifeLeechPerHit", output.N("LifeLeechInstant")+
+		math.Min(output.N("LifeLeechPerHit"), output.N("MaxLifeLeechRate"))*output.N("LifeLeechDuration")*output.N("LifeRecoveryRateMod"))
+	output.SetN("EnergyShieldLeechRate", output.N("EnergyShieldLeechInstantRate")+
+		math.Min(output.N("EnergyShieldLeechRate"), output.N("MaxEnergyShieldLeechRate"))*output.N("EnergyShieldRecoveryRateMod"))
+	output.SetN("EnergyShieldLeechPerHit", output.N("EnergyShieldLeechInstant")+
+		math.Min(output.N("EnergyShieldLeechPerHit"), output.N("MaxEnergyShieldLeechRate"))*output.N("EnergyShieldLeechDuration")*output.N("EnergyShieldRecoveryRateMod"))
+	output.SetN("ManaLeechRate", output.N("ManaLeechInstantRate")+
+		math.Min(output.N("ManaLeechRate"), output.N("MaxManaLeechRate"))*output.N("ManaRecoveryRateMod"))
+	output.SetN("ManaLeechPerHit", output.N("ManaLeechInstant")+
+		math.Min(output.N("ManaLeechPerHit"), output.N("MaxManaLeechRate"))*output.N("ManaLeechDuration")*output.N("ManaRecoveryRateMod"))
+	skillFlags["leechLife"] = output.N("LifeLeechRate") > 0
+	skillFlags["leechES"] = output.N("EnergyShieldLeechRate") > 0
+	skillFlags["leechMana"] = output.N("ManaLeechRate") > 0
+	if skillData.Flag("showAverage") {
+		output.SetN("LifeLeechGainPerHit", output.N("LifeLeechPerHit")+output.N("LifeOnHit"))
+		output.SetN("EnergyShieldLeechGainPerHit", output.N("EnergyShieldLeechPerHit")+output.N("EnergyShieldOnHit"))
+		output.SetN("ManaLeechGainPerHit", output.N("ManaLeechPerHit")+output.N("ManaOnHit"))
 	} else {
-		output["LifeLeechGainRate"] = outNum(output, "LifeLeechRate") + outNum(output, "LifeOnHitRate")
-		output["EnergyShieldLeechGainRate"] = outNum(output, "EnergyShieldLeechRate") + outNum(output, "EnergyShieldOnHitRate")
-		output["ManaLeechGainRate"] = outNum(output, "ManaLeechRate") + outNum(output, "ManaOnHitRate")
+		output.SetN("LifeLeechGainRate", output.N("LifeLeechRate")+output.N("LifeOnHitRate"))
+		output.SetN("EnergyShieldLeechGainRate", output.N("EnergyShieldLeechRate")+output.N("EnergyShieldOnHitRate"))
+		output.SetN("ManaLeechGainRate", output.N("ManaLeechRate")+output.N("ManaOnHitRate"))
 	}
 }

@@ -1,20 +1,20 @@
 {
 	"directives": [
-		"#type Wand",
-		"#influenceBaseTag wand",
-		"#socketLimit 3",
-		"#baseMatch Metadata/Items/Weapons/OneHandWeapons/Wands/Wand[MEK]?[0-9]+",
-		"#type Wand",
-		"#influenceBaseTag wand",
-		"#socketLimit 3",
-		"#base Metadata/Items/Weapons/OneHandWeapons/Wands/WandAtlas1",
-		"#type Wand",
-		"#influenceBaseTag wand",
-		"#socketLimit 3",
-		"#base Metadata/Items/Weapons/OneHandWeapons/Wands/WandMinion1",
-		"#type Wand",
-		"#influenceBaseTag wand",
-		"#socketLimit 3",
-		"#base Metadata/Items/Weapons/OneHandWeapons/Wands/WandMinion2"
+		{"directive":"type","name":"Wand"},
+		{"directive":"influenceBaseTag","tag":"wand"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Weapons/OneHandWeapons/Wands/Wand[MEK]?[0-9]+"},
+		{"directive":"type","name":"Wand"},
+		{"directive":"influenceBaseTag","tag":"wand"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"base","id":"Metadata/Items/Weapons/OneHandWeapons/Wands/WandAtlas1"},
+		{"directive":"type","name":"Wand"},
+		{"directive":"influenceBaseTag","tag":"wand"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"base","id":"Metadata/Items/Weapons/OneHandWeapons/Wands/WandMinion1"},
+		{"directive":"type","name":"Wand"},
+		{"directive":"influenceBaseTag","tag":"wand"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"base","id":"Metadata/Items/Weapons/OneHandWeapons/Wands/WandMinion2"}
 	]
 }

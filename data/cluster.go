@@ -60,13 +60,13 @@ func loadClusterJewels(src schema.ClusterJewels) clusterJewels {
 		for _, s := range j.Skills {
 			// The "stats = { "" }" join artifact would apply to stat-less
 			// skills, mirrored here for parity with the loaded file.
-			stats := unescapeAll(s.Stats)
+			stats := s.Stats
 			if len(stats) == 0 {
 				stats = []string{""}
 			}
 			enchant := make([]string, 0, len(s.Stats))
 			for _, line := range s.Stats {
-				enchant = append(enchant, luaUnescape("Added Small Passive Skills grant: "+line))
+				enchant = append(enchant, "Added Small Passive Skills grant: "+line)
 			}
 			size.Skills[s.Id] = ClusterSkillData{
 				Name:        s.Name,

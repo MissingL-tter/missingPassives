@@ -29,9 +29,16 @@ var (
 func loadTree329(t *testing.T) *tree.Tree {
 	t.Helper()
 	loadData(t)
+	var err error
 	treeOnce.Do(func() {
-		treeCached = tree.Load("3_29")
+		treeCached, err = tree.Load("3_29")
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if treeCached == nil {
+		t.Skip("tree failed to load in an earlier test")
+	}
 	return treeCached
 }
 
@@ -72,7 +79,7 @@ func truePtr(b bool) *bool {
 
 func nodeStateOf(n *tree.Node, legion bool) *treeNodeState {
 	st := &treeNodeState{
-		Type:        n.Type,
+		Type:        n.Type.String(),
 		Dn:          strPtr(n.Name),
 		ModKey:      strPtr(n.ModKey),
 		ModList:     n.ModList,
@@ -139,10 +146,11 @@ type conqueredNodeState struct {
 	Sd      []string         `lua:"sd"`
 }
 
-// funcAddrRe masks function addresses inside modKey strings: they are
-// run-dependent in the reference itself (tostring(function)), so no two
-// dumps agree on them either.
-var funcAddrRe = regexp.MustCompile(`func=(function: )?0x[0-9a-fA-F]+`)
+// funcAddrRe normalises the func= param of a modKey. The reference prints
+// tostring(function), a run-dependent address no two dumps agree on; the
+// port prints the function's stable id instead (modparser.JewelFn.ID), so
+// neither spelling is comparable to the other and both mask to one token.
+var funcAddrRe = regexp.MustCompile(`func=[^/}]*`)
 
 func maskFuncAddrs(s string) string {
 	return funcAddrRe.ReplaceAllString(s, "func=#")
@@ -227,7 +235,7 @@ func TestTreeAgainstReference(t *testing.T) {
 				t.Fatalf("%s: legion node missing", k)
 			}
 			if got := luacanon.Encode(&conqueredNodeState{
-				ID: node.IDStr, Type: node.Type, Dn: strPtr(node.Name),
+				ID: node.IDStr, Type: node.Type.String(), Dn: strPtr(node.Name),
 				ModKey: strPtr(node.ModKey), ModList: node.ModList,
 				Unknown: truePtr(node.Stats.Unknown), Extra: truePtr(node.Stats.Extra), Sd: node.Sd,
 			}); maskFuncAddrs(got) != maskFuncAddrs(want) {

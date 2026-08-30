@@ -1,23 +1,37 @@
 // Port of ModStore.lua's EvalMod/GetStat and the surrounding actor/config
-// model. Tag tables are modparser.Tag maps; field reads follow Lua
-// truthiness, and in-place tag mutations (tag.div from divVar) are preserved.
+// model. Tags are modparser's typed tags; in-place tag mutations (tag.div
+// from divVar) are preserved on the shared tag objects.
 
 package modstore
 
 import (
 	"math"
 	"regexp"
-	"strconv"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
-// Externals are the calcLib functions EvalMod reaches into; the game-data /
-// calc modules provide them, tests inject fixtures.
-var Externals struct {
-	GemIsType            func(gem any, keyword string) bool
-	GetGameIdFromGemName func(name string, includeTransfigured bool) (string, bool)
+// Resolver is the game-data lookup mod evaluation reaches into
+// (calcLib.getGameIdFromGemName); calc installs it on every actor, tests
+// inject fixtures.
+type Resolver interface {
+	GetGameIdFromGemName(name string, includeTransfigured bool) (string, bool)
+}
+
+// GemRef is what the SocketedIn keyword check asks of cfg.skillGem.
+type GemRef interface {
+	IsType(keyword string) bool
+}
+
+// WeaponData is what the weapon-type condition tags read off
+// actor.weaponData1/2; calc's live weapon-data table implements it.
+type WeaponData interface {
+	CountsAsAll1H() bool
+	// AddedCond reads the "Added"+condition entry Varunastra handling writes:
+	// present reports the key, added its truthiness.
+	AddedCond(cond string) (added, present bool)
 }
 
 // Item is what ItemCondition reads off an item.
@@ -54,28 +68,22 @@ type Actor struct {
 	Level           float64
 	Others          map[string]*Actor // any other actor types
 	DB              Store             // actor.modDB
-	Output          map[string]any    // numeric stats plus perform-owned tables/flags (Lua actor.output)
+	Output          Output            // Lua actor.output
 	ItemList        map[string]Item
-	WeaponData1     map[string]any
-	WeaponData2     map[string]any
+	WeaponData1     WeaponData
+	WeaponData2     WeaponData
 	ActiveSkillList []*ActiveSkill
 	MinionData      *MinionData
 	ManaEfficiency  float64
 	HasReservation  float64 // the SkillType.HasReservation id the fixtures key on
+	Resolver        Resolver
 }
 
-// outNum reads a numeric output entry (non-numbers act as 0, as Lua
-// arithmetic on them would error before reaching here in practice).
-func outNum(v any) float64 {
-	switch n := v.(type) {
-	case float64:
-		return n
-	case int64:
-		return float64(n)
-	case int:
-		return float64(n)
+func (a *Actor) resolver() Resolver {
+	if a.Resolver == nil {
+		panic("modstore: no Resolver on the store's actor")
 	}
-	return 0
+	return a.Resolver
 }
 
 func (a *Actor) byType(actorType string) *Actor {
@@ -100,8 +108,8 @@ type GrantedEffectRef struct {
 // Cfg is the query configuration. Pointer fields distinguish absent from
 // zero where the Lua nil-checks (`not cfg.keywordFlags`, `cfg.skillDist`).
 type Cfg struct {
-	Flags        *int64
-	KeywordFlags *int64
+	Flags        *modparser.ModFlag
+	KeywordFlags *modparser.KeywordFlag
 	Source       string
 
 	SkillName          string
@@ -109,58 +117,23 @@ type Cfg struct {
 	SkillDist          *float64
 	SkillCond          map[string]bool
 	SkillTypes         map[float64]bool
-	SkillPart          any
+	SkillPart          util.Opt[float64]
 	SlotName           string
 	SocketColor        string
 	SocketNum          *float64
 	StrengthGems       *float64
 	DexterityGems      *float64
 	IntelligenceGems   *float64
-	SkillGem           any
+	SkillGem           GemRef
 	SkillGrantedEffect *GrantedEffectRef
 	BaseFlags          map[string]bool
 	Item               Item
 	Actor              string
-	SkillStats         map[string]any // aliases the pass output table (MainHand/OffHand)
+	SkillStats         Output // aliases the pass output table (MainHand/OffHand)
 }
 
 func pow10(n int) float64      { return math.Pow(10, float64(n)) }
 func floorf(v float64) float64 { return math.Floor(v) }
-
-func tstr(tag modparser.Tag, k string) string {
-	if s, ok := tag[k].(string); ok {
-		return s
-	}
-	return ""
-}
-
-func tnum(tag modparser.Tag, k string) (float64, bool) {
-	return numValue(tag[k])
-}
-
-// tlist returns a list-shaped tag value: parser tables store them as *D
-// (array part), hand closures as []any.
-func tlist(tag modparser.Tag, k string) []any {
-	return asList(tag[k])
-}
-
-func asList(v any) []any {
-	switch l := v.(type) {
-	case []any:
-		return l
-	case *modparser.D:
-		if l.Arr == nil {
-			return []any{}
-		}
-		return l.Arr
-	case modparser.Tag:
-		// an empty table in a list position is a truthy empty list
-		if len(l) == 0 {
-			return []any{}
-		}
-	}
-	return nil
-}
 
 // getStat ports ModStore:GetStat over an explicit target store.
 func getStat(s Store, stat string, cfg *Cfg) float64 {
@@ -177,7 +150,7 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 	}
 	reservedPercent := func(totalStat, baseKey string) float64 {
 		reserved := 0.0
-		total := outNum(actor.Output[totalStat])
+		total := actor.Output.Get(totalStat).Num()
 		if total == 0 {
 			return 0
 		}
@@ -196,24 +169,25 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 	case "LifeReservedPercent":
 		return reservedPercent("Life", "LifeReservedBase")
 	}
-	if raw, present := actor.Output[stat]; stat == "ManaUnreserved" && present {
-		v := outNum(raw)
-		if math.IsNaN(v) {
-			return outNum(actor.Output["Mana"])
+	out := func(key string) OutValue { return actor.Output.Get(key) }
+	if v := out(stat); stat == "ManaUnreserved" && v.Kind != OutAbsent {
+		n := v.Num()
+		if math.IsNaN(n) {
+			return out("Mana").Num()
 		}
-		if v < 0 {
-			reservedPercentBeforeEfficiency := (math.Abs(outNum(actor.Output["ManaUnreservedPercent"])) + 100) * ((100 + actor.ManaEfficiency) / 100)
-			return outNum(actor.Output["Mana"]) * (math.Ceil(reservedPercentBeforeEfficiency) / 100)
+		if n < 0 {
+			reservedPercentBeforeEfficiency := (math.Abs(out("ManaUnreservedPercent").Num()) + 100) * ((100 + actor.ManaEfficiency) / 100)
+			return out("Mana").Num() * (math.Ceil(reservedPercentBeforeEfficiency) / 100)
 		}
 	}
 	// `actor.output[stat] or (cfg and cfg.skillStats[stat]) or 0`: a stored
 	// false falls through to the skill stats, a stored 0 does not.
-	if v, present := actor.Output[stat]; present && truthy(v) {
-		return outNum(v)
+	if v := out(stat); v.Truthy() {
+		return v.Num()
 	}
-	if cfg != nil && cfg.SkillStats != nil {
-		if v, present := cfg.SkillStats[stat]; present && truthy(v) {
-			return outNum(v)
+	if cfg != nil {
+		if v := cfg.SkillStats.Get(stat); v.Truthy() {
+			return v.Num()
 		}
 	}
 	return 0
@@ -221,291 +195,256 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 
 var reCapWords = regexp.MustCompile(`([a-z])([0-9A-Za-z]*)`)
 
+// valueNum is Lua arithmetic over a mod value: numbers or numeric strings;
+// anything else is the Lua arithmetic error.
+func valueNum(v modparser.Value) float64 {
+	n, ok := modparser.NumOf(v)
+	if !ok {
+		panic("modstore: arithmetic on non-numeric value (the Lua errors)")
+	}
+	return n
+}
+
 // evalMod ports ModStore:EvalMod. Returns nil when a tag rejects the mod.
-func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]float64) any {
+func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]float64) modparser.Value {
 	base := ctx.base()
 	value := mod.Value
 	tags := modparser.ModTags(mod)
 	for _, tag := range tags {
-		switch tstr(tag, "type") {
-		case "Multiplier":
+		switch tag := tag.(type) {
+		case *modparser.MultiplierTag:
+			if tag.IsThreshold {
+				if !evalMultiplierThreshold(ctx, tag, cfg) {
+					return nil
+				}
+				continue
+			}
 			target := ctx
 			limitTarget := ctx
-			if la := tstr(tag, "limitActor"); la != "" {
-				limitActor := base.getActor(la)
+			if tag.LimitActor != "" {
+				limitActor := base.getActor(tag.LimitActor)
 				if limitActor == nil {
 					return nil
 				}
 				limitTarget = limitActor.DB
 			}
-			if act := tstr(tag, "actor"); act != "" {
-				actor := base.getActor(act)
+			if tag.Actor != "" {
+				actor := base.getActor(tag.Actor)
 				if actor == nil {
 					return nil
 				}
 				target = actor.DB
 			}
 			b := 0.0
-			if varList := tlist(tag, "varList"); varList != nil {
-				for _, v := range varList {
-					b += getMultiplier(target, v.(string), cfg, false)
+			if tag.VarList != nil {
+				for _, v := range tag.VarList {
+					b += getMultiplier(target, v, cfg, false)
 				}
 			} else {
-				b = getMultiplier(target, tstr(tag, "var"), cfg, false)
+				b = getMultiplier(target, tag.Var, cfg, false)
 			}
-			if dv := tstr(tag, "divVar"); dv != "" {
+			if tag.DivVar != "" {
 				// #EVAL: archive parity — writes the computed div back into the
-				// SHARED tag table, visible to every later evaluation of this mod.
-				tag["div"] = getMultiplier(ctx, dv, cfg, false)
+				// SHARED tag, visible to every later evaluation of this mod.
+				tag.Div = optOf(getMultiplier(ctx, tag.DivVar, cfg, false))
 			}
-			div := tArith(tag, "div", 1)
+			div := tag.Div.Or(1)
 			mult := math.Floor(b/div + 0.0001)
-			if truthy(tag["noFloor"]) {
+			if tag.NoFloor {
 				mult = b / div
 			}
 			var limitTotal, limitNegTotal *float64
-			if truthy(tag["limit"]) || truthy(tag["limitVar"]) || truthy(tag["limitStat"]) {
+			if tag.Limit.Set || tag.LimitVar != "" || tag.LimitStat != "" {
 				var limit float64
-				if l, ok := luaArith(tag["limit"]); ok && truthy(tag["limit"]) {
-					limit = l
-				} else if lv := tstr(tag, "limitVar"); lv != "" {
-					limit = getMultiplier(limitTarget, lv, cfg, false)
+				if tag.Limit.Set {
+					limit = tag.Limit.V
+				} else if tag.LimitVar != "" {
+					limit = getMultiplier(limitTarget, tag.LimitVar, cfg, false)
 				} else {
-					limit = getStat(limitTarget, tstr(tag, "limitStat"), cfg)
+					limit = getStat(limitTarget, tag.LimitStat, cfg)
 				}
-				if truthy(tag["limitTotal"]) {
+				if tag.LimitTotal {
 					limitTotal = &limit
-				} else if truthy(tag["limitNegTotal"]) {
+				} else if tag.LimitNegTotal {
 					limitNegTotal = &limit
 				} else {
 					mult = math.Min(mult, limit)
 				}
 			}
-			if truthy(tag["invert"]) && mult != 0 {
+			if tag.Invert && mult != 0 {
 				mult = 1 / mult
 			}
-			tagBase := tArith(tag, "base", 0)
-			value = scaleValue(value, mult, tagBase, limitTotal, limitNegTotal, false)
-		case "MultiplierThreshold":
-			target := ctx
-			thresholdTarget := ctx
-			hasThresholdActor := tstr(tag, "thresholdActor") != ""
-			if hasThresholdActor {
-				thresholdActor := base.getActor(tstr(tag, "thresholdActor"))
-				if thresholdActor == nil {
+			value = scaleValue(value, mult, tag.Base.Or(0), limitTotal, limitNegTotal, false)
+		case *modparser.StatTag:
+			switch tag.StatKind {
+			case modparser.TagPerStat:
+				target := ctx
+				if actor := base.getActor(tag.Actor); actor != nil {
+					target = actor.DB
+				}
+				b := 0.0
+				if tag.StatList != nil {
+					for _, st := range tag.StatList {
+						b += getStat(target, st, cfg)
+					}
+				} else {
+					b = getStat(target, tag.Stat, cfg)
+				}
+				if tag.DivVar != "" {
+					// #EVAL: archive parity — writes the computed div back into the
+					// SHARED tag, visible to every later evaluation of this mod.
+					tag.Div = optOf(getMultiplier(ctx, tag.DivVar, cfg, false))
+				}
+				div := tag.Div.Or(1)
+				mult := math.Floor(b/div + 0.0001)
+				var limitTotal *float64
+				if tag.Limit.Set || tag.LimitVar != "" {
+					var limit float64
+					if tag.Limit.Set {
+						limit = tag.Limit.V
+					} else {
+						limit = getMultiplier(ctx, tag.LimitVar, cfg, false)
+					}
+					if tag.LimitTotal {
+						limitTotal = &limit
+					} else {
+						mult = math.Min(mult, limit)
+					}
+				}
+				value = scaleValue(value, mult, tag.Base.Or(0), limitTotal, nil, false)
+			case modparser.TagPercentStat:
+				target := ctx
+				if actor := base.getActor(tag.Actor); actor != nil {
+					target = actor.DB
+				}
+				b := 0.0
+				if tag.StatList != nil {
+					for _, st := range tag.StatList {
+						b += getStat(target, st, cfg)
+					}
+				} else {
+					b = getStat(target, tag.Stat, cfg)
+				}
+				var percent float64
+				hasPercent := false
+				if tag.Percent.Set {
+					percent, hasPercent = tag.Percent.V, true
+				} else if tag.PercentVar != "" {
+					percent, hasPercent = getMultiplier(ctx, tag.PercentVar, cfg, false), true
+				}
+				mult := b
+				if hasPercent {
+					mult = b * percent / 100
+				}
+				if tag.Floor {
+					mult = math.Floor(mult)
+				}
+				var limitTotal *float64
+				if tag.Limit.Set || tag.LimitVar != "" {
+					var limit float64
+					if tag.Limit.Set {
+						limit = tag.Limit.V
+					} else {
+						limit = getMultiplier(ctx, tag.LimitVar, cfg, false)
+					}
+					if tag.LimitTotal {
+						limitTotal = &limit
+					} else {
+						mult = math.Min(mult, limit)
+					}
+				}
+				value = scaleValue(value, mult, tag.Base.Or(0), limitTotal, nil, true)
+			case modparser.TagStatThreshold:
+				var stat float64
+				if tag.StatList != nil {
+					// #EVAL: archive parity — the reference shadows its accumulator
+					// with the loop variable and adds a stat NAME to a number, which
+					// errors.
+					panic("modstore: StatThreshold statList arithmetic on stat name (the Lua errors)")
+				} else {
+					stat = getStat(ctx, tag.Stat, cfg)
+				}
+				var threshold float64
+				if tag.Threshold.Set {
+					threshold = tag.Threshold.V
+				} else {
+					threshold = getStat(ctx, tag.ThresholdStat, cfg)
+				}
+				if tag.ThresholdPercent.Set {
+					threshold = threshold * tag.ThresholdPercent.V / 100
+				} else if tag.ThresholdPercentVar != "" {
+					threshold = threshold * getMultiplier(ctx, tag.ThresholdPercentVar, cfg, false) / 100
+				}
+				if (tag.Upper && stat > threshold) || (!tag.Upper && stat < threshold) {
 					return nil
 				}
-				thresholdTarget = thresholdActor.DB
 			}
-			if act := tstr(tag, "actor"); act != "" {
-				actor := base.getActor(act)
-				if actor == nil {
-					return nil
-				}
-				target = actor.DB
-			}
-			mult := 0.0
-			if varList := tlist(tag, "varList"); varList != nil {
-				for _, v := range varList {
-					mult += getMultiplier(target, v.(string), cfg, false)
-				}
-			} else {
-				mult = getMultiplier(target, tstr(tag, "var"), cfg, false)
-			}
-			var threshold float64
-			if truthy(tag["threshold"]) {
-				t, ok := tnum(tag, "threshold")
-				if !ok {
-					panic("modstore: non-numeric threshold (the Lua errors)")
-				}
-				threshold = t
-			} else {
-				thTarget := target
-				if hasThresholdActor {
-					thTarget = thresholdTarget
-				}
-				threshold = getMultiplier(thTarget, tstr(tag, "thresholdVar"), cfg, false)
-			}
-			if (truthy(tag["upper"]) && mult > threshold) ||
-				(truthy(tag["equals"]) && mult != threshold) ||
-				(!truthy(tag["upper"]) && mult < threshold) {
-				return nil
-			}
-		case "PerStat":
-			target := ctx
-			if actor := base.getActor(tstr(tag, "actor")); actor != nil {
-				target = actor.DB
-			}
-			b := 0.0
-			if statList := tlist(tag, "statList"); statList != nil {
-				for _, st := range statList {
-					b += getStat(target, st.(string), cfg)
-				}
-			} else {
-				b = getStat(target, tstr(tag, "stat"), cfg)
-			}
-			if dv := tstr(tag, "divVar"); dv != "" {
-				// #EVAL: archive parity — writes the computed div back into the
-				// SHARED tag table, visible to every later evaluation of this mod.
-				tag["div"] = getMultiplier(ctx, dv, cfg, false)
-			}
-			div := tArith(tag, "div", 1)
-			mult := math.Floor(b/div + 0.0001)
-			var limitTotal *float64
-			if truthy(tag["limit"]) || truthy(tag["limitVar"]) {
-				var limit float64
-				if l, ok := luaArith(tag["limit"]); ok && truthy(tag["limit"]) {
-					limit = l
-				} else {
-					limit = getMultiplier(ctx, tstr(tag, "limitVar"), cfg, false)
-				}
-				if truthy(tag["limitTotal"]) {
-					limitTotal = &limit
-				} else {
-					mult = math.Min(mult, limit)
-				}
-			}
-			tagBase := tArith(tag, "base", 0)
-			value = scaleValue(value, mult, tagBase, limitTotal, nil, false)
-		case "PercentStat":
-			target := ctx
-			if actor := base.getActor(tstr(tag, "actor")); actor != nil {
-				target = actor.DB
-			}
-			b := 0.0
-			if statList := tlist(tag, "statList"); statList != nil {
-				for _, st := range statList {
-					b += getStat(target, st.(string), cfg)
-				}
-			} else {
-				b = getStat(target, tstr(tag, "stat"), cfg)
-			}
-			var percent float64
-			hasPercent := false
-			if truthy(tag["percent"]) {
-				percent, hasPercent = tArith(tag, "percent", 0), true
-			} else if pv := tstr(tag, "percentVar"); pv != "" {
-				percent, hasPercent = getMultiplier(ctx, pv, cfg, false), true
-			}
-			mult := b
-			if hasPercent {
-				mult = b * percent / 100
-			}
-			if truthy(tag["floor"]) {
-				mult = math.Floor(mult)
-			}
-			var limitTotal *float64
-			if truthy(tag["limit"]) || truthy(tag["limitVar"]) {
-				var limit float64
-				if l, ok := luaArith(tag["limit"]); ok && truthy(tag["limit"]) {
-					limit = l
-				} else {
-					limit = getMultiplier(ctx, tstr(tag, "limitVar"), cfg, false)
-				}
-				if truthy(tag["limitTotal"]) {
-					limitTotal = &limit
-				} else {
-					mult = math.Min(mult, limit)
-				}
-			}
-			tagBase := tArith(tag, "base", 0)
-			value = scaleValue(value, mult, tagBase, limitTotal, nil, true)
-		case "StatThreshold":
-			var stat float64
-			if tlist(tag, "statList") != nil {
-				// #EVAL: archive parity — the reference shadows its accumulator
-				// with the loop variable and adds a stat NAME to a number, which
-				// errors.
-				panic("modstore: StatThreshold statList arithmetic on stat name (the Lua errors)")
-			} else {
-				stat = getStat(ctx, tstr(tag, "stat"), cfg)
-			}
-			var threshold float64
-			if truthy(tag["threshold"]) {
-				t, ok := tnum(tag, "threshold")
-				if !ok {
-					panic("modstore: non-numeric threshold (the Lua errors)")
-				}
-				threshold = t
-			} else {
-				threshold = getStat(ctx, tstr(tag, "thresholdStat"), cfg)
-			}
-			if truthy(tag["thresholdPercent"]) || truthy(tag["thresholdPercentVar"]) {
-				var tp float64
-				hasTP := false
-				if truthy(tag["thresholdPercent"]) {
-					tp, hasTP = tArith(tag, "thresholdPercent", 0), true
-				} else if pv := tstr(tag, "thresholdPercentVar"); pv != "" {
-					tp, hasTP = getMultiplier(ctx, pv, cfg, false), true
-				}
-				if hasTP {
-					threshold = threshold * tp / 100
-				}
-			}
-			if (truthy(tag["upper"]) && stat > threshold) || (!truthy(tag["upper"]) && stat < threshold) {
-				return nil
-			}
-		case "DistanceRamp":
+		case *modparser.DistanceRampTag:
 			if cfg == nil || cfg.SkillDist == nil {
 				return nil
 			}
-			ramp := tlist(tag, "ramp")
+			ramp := tag.Ramp
 			dist := *cfg.SkillDist
-			first := asList(ramp[0])
-			last := asList(ramp[len(ramp)-1])
-			if dist <= toNum(first[0]) {
-				value = arithNum(value) * arithNum(first[1])
-			} else if dist >= toNum(last[0]) {
-				value = arithNum(value) * arithNum(last[1])
+			first := ramp[0]
+			last := ramp[len(ramp)-1]
+			if dist <= first[0] {
+				value = modparser.Num(valueNum(value) * first[1])
+			} else if dist >= last[0] {
+				value = modparser.Num(valueNum(value) * last[1])
 			} else {
 				for i := 0; i < len(ramp)-1; i++ {
-					dat := asList(ramp[i])
-					next := asList(ramp[i+1])
-					if dist <= toNum(next[0]) {
-						d0, v0 := arithNum(dat[0]), arithNum(dat[1])
-						d1, v1 := arithNum(next[0]), arithNum(next[1])
-						value = arithNum(value) * (v0 + (v1-v0)*(dist-d0)/(d1-d0))
+					dat := ramp[i]
+					next := ramp[i+1]
+					if dist <= next[0] {
+						d0, v0 := dat[0], dat[1]
+						d1, v1 := next[0], next[1]
+						value = modparser.Num(valueNum(value) * (v0 + (v1-v0)*(dist-d0)/(d1-d0)))
 						break
 					}
 				}
 			}
-		case "MeleeProximity":
+		case *modparser.MeleeProximityTag:
 			if cfg == nil || cfg.SkillDist == nil {
 				return nil
 			}
-			ramp := tlist(tag, "ramp")
+			ramp := tag.Ramp
 			dist := *cfg.SkillDist
 			if dist <= 15 {
-				value = arithNum(value) * arithNum(ramp[0])
+				value = modparser.Num(valueNum(value) * ramp[0])
 			} else if dist >= 16 && dist <= 39 {
-				r := arithNum(ramp[0])
-				value = arithNum(value) * (r - (r/25)*(dist-15))
+				r := ramp[0]
+				value = modparser.Num(valueNum(value) * (r - (r/25)*(dist-15)))
 			} else if dist >= 40 {
-				value = 0.0
+				value = modparser.Num(0)
 			}
-		case "Limit":
+		case *modparser.LimitTag:
 			var limit float64
-			if truthy(tag["limit"]) {
-				limit = tArith(tag, "limit", 0)
+			if tag.Limit.Set {
+				limit = tag.Limit.V
 			} else {
-				limit = getMultiplier(ctx, tstr(tag, "limitVar"), cfg, false)
+				limit = getMultiplier(ctx, tag.LimitVar, cfg, false)
 			}
-			value = math.Min(arithNum(value), limit)
-		case "Condition":
+			value = modparser.Num(math.Min(valueNum(value), limit))
+		case *modparser.CondTag:
+			if tag.IsActor {
+				if !evalActorCondition(ctx, tag, cfg) {
+					return nil
+				}
+				continue
+			}
 			match := false
-			var allOneH map[string]any
-			if wd := base.Actor.WeaponData1; wd != nil && truthy(wd["countsAsAll1H"]) {
+			var allOneH WeaponData
+			if wd := base.Actor.WeaponData1; wd != nil && wd.CountsAsAll1H() {
 				allOneH = wd
-			} else if wd := base.Actor.WeaponData2; wd != nil && truthy(wd["countsAsAll1H"]) {
+			} else if wd := base.Actor.WeaponData2; wd != nil && wd.CountsAsAll1H() {
 				allOneH = wd
 			}
-			neg := truthy(tag["neg"])
 			checkVar := func(v string) (matched, rejected bool) {
-				if neg && allOneH != nil {
-					if added, present := allOneH["Added"+v]; present {
+				if tag.Neg && allOneH != nil {
+					if added, present := allOneH.AddedCond(v); present {
 						// Varunastra adds all weapon-type conditions; ignore
 						// unless the condition was not added by it.
-						if !truthy(added) {
+						if !added {
 							return false, true
 						}
 						return false, false
@@ -516,9 +455,9 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 				}
 				return false, false
 			}
-			if varList := tlist(tag, "varList"); varList != nil {
-				for _, v := range varList {
-					m, rejected := checkVar(v.(string))
+			if tag.VarList != nil {
+				for _, v := range tag.VarList {
+					m, rejected := checkVar(v)
 					if rejected {
 						return nil
 					}
@@ -528,89 +467,81 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 					}
 				}
 			} else {
-				m, rejected := checkVar(tstr(tag, "var"))
+				m, rejected := checkVar(tag.Var)
 				if rejected {
 					return nil
 				}
 				match = m
 			}
-			if neg {
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
 				return nil
 			}
-		case "ActorCondition":
-			match := false
-			target := ctx
-			hasTarget := true
-			if act := tstr(tag, "actor"); act != "" {
-				actor := base.getActor(act)
-				if actor != nil {
-					target = actor.DB
-				} else {
-					hasTarget = false
-				}
+		case *modparser.ItemCondTag:
+			if !evalItemCondition(ctx, tag, cfg) {
+				return nil
 			}
-			if hasTarget && (truthy(tag["var"]) || tlist(tag, "varList") != nil) {
-				if varList := tlist(tag, "varList"); varList != nil {
-					for _, v := range varList {
-						if getCondition(target, v.(string), cfg, false) {
+		case *modparser.SlotTag:
+			switch tag.SlotKind {
+			case modparser.TagSocketedIn:
+				if !evalSocketedIn(tag, cfg) {
+					return nil
+				}
+			case modparser.TagSlotName:
+				if cfg == nil {
+					return nil
+				}
+				match := false
+				if tag.SlotNameList != nil {
+					for _, slot := range tag.SlotNameList {
+						if slot == cfg.SlotName {
 							match = true
 							break
 						}
 					}
 				} else {
-					match = getCondition(target, tstr(tag, "var"), cfg, false)
+					match = tag.SlotName == cfg.SlotName
 				}
-			} else if act := tstr(tag, "actor"); act != "" && cfg != nil && act == cfg.Actor {
-				match = true
+				if tag.Neg {
+					match = !match
+				}
+				if !match {
+					return nil
+				}
 			}
-			if truthy(tag["neg"]) {
-				match = !match
-			}
-			if !match {
-				return nil
-			}
-		case "ItemCondition":
-			if !evalItemCondition(ctx, tag, cfg) {
-				return nil
-			}
-		case "SocketedIn":
-			if !evalSocketedIn(tag, cfg) {
-				return nil
-			}
-		case "SkillName":
+		case *modparser.SkillNameTag:
 			match := false
-			if truthy(tag["includeTransfigured"]) {
+			if tag.IncludeTransfigured {
 				// The cfg-side lookup falls back to "" (a string); the tag-side
+				gameIds := base.Actor.resolver()
 				matchGameId := ""
-				if truthy(tag["summonSkill"]) {
+				if tag.SummonSkill {
 					if cfg != nil {
-						matchGameId, _ = Externals.GetGameIdFromGemName(cfg.SummonSkillName, true)
+						matchGameId, _ = gameIds.GetGameIdFromGemName(cfg.SummonSkillName, true)
 					}
 				} else if cfg != nil && cfg.SkillName != "" {
-					matchGameId, _ = Externals.GetGameIdFromGemName(cfg.SkillName, true)
+					matchGameId, _ = gameIds.GetGameIdFromGemName(cfg.SkillName, true)
 				}
 				// lookup yields nil for unknown names, which never equals it.
-				if nameList := tlist(tag, "skillNameList"); nameList != nil {
-					for _, n := range nameList {
-						name, ok := n.(string)
-						if ok && name != "" {
-							if id, found := Externals.GetGameIdFromGemName(name, true); found && id == matchGameId {
+				if tag.SkillNameList != nil {
+					for _, name := range tag.SkillNameList {
+						if name != "" {
+							if id, found := gameIds.GetGameIdFromGemName(name, true); found && id == matchGameId {
 								match = true
 								break
 							}
 						}
 					}
-				} else if sn := tstr(tag, "skillName"); sn != "" {
-					if id, found := Externals.GetGameIdFromGemName(sn, true); found && id == matchGameId {
+				} else if tag.SkillName != "" {
+					if id, found := gameIds.GetGameIdFromGemName(tag.SkillName, true); found && id == matchGameId {
 						match = true
 					}
 				}
 			} else {
 				matchName := ""
-				if truthy(tag["summonSkill"]) {
+				if tag.SummonSkill {
 					if cfg != nil {
 						matchName = cfg.SummonSkillName
 					}
@@ -618,67 +549,67 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 					matchName = cfg.SkillName
 				}
 				matchName = strings.ToLower(matchName)
-				if nameList := tlist(tag, "skillNameList"); nameList != nil {
-					for _, n := range nameList {
-						if strings.ToLower(n.(string)) == matchName {
+				if tag.SkillNameList != nil {
+					for _, n := range tag.SkillNameList {
+						if strings.ToLower(n) == matchName {
 							match = true
 							break
 						}
 					}
 				} else {
-					match = tstr(tag, "skillName") != "" && strings.ToLower(tstr(tag, "skillName")) == matchName
+					match = tag.SkillName != "" && strings.ToLower(tag.SkillName) == matchName
 				}
 			}
-			if truthy(tag["neg"]) {
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
 				return nil
 			}
-		case "SkillId":
-			if cfg == nil || cfg.SkillGrantedEffect == nil || cfg.SkillGrantedEffect.Id != tstr(tag, "skillId") {
+		case *modparser.SkillIDTag:
+			if cfg == nil || cfg.SkillGrantedEffect == nil || cfg.SkillGrantedEffect.Id != tag.SkillID {
 				return nil
 			}
-		case "SkillPart":
+		case *modparser.SkillPartTag:
 			if cfg == nil {
 				return nil
 			}
 			match := false
-			if partList := tlist(tag, "skillPartList"); partList != nil {
-				for _, part := range partList {
-					if luaEq(part, cfg.SkillPart) {
+			if tag.PartList != nil {
+				for _, part := range tag.PartList {
+					if partEq(part, true, cfg.SkillPart) {
 						match = true
 						break
 					}
 				}
 			} else {
-				match = luaEq(tag["skillPart"], cfg.SkillPart)
+				match = partEq(tag.Part.V, tag.Part.Set, cfg.SkillPart)
 			}
-			if truthy(tag["neg"]) {
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
 				return nil
 			}
-		case "SkillType":
+		case *modparser.SkillTypeTag:
 			match := false
-			if typeList := tlist(tag, "skillTypeList"); typeList != nil {
-				for _, t := range typeList {
-					if cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[toNum(t)] {
+			if tag.SkillTypeList != nil {
+				for _, t := range tag.SkillTypeList {
+					if cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[float64(t)] {
 						match = true
 						break
 					}
 				}
-			} else if st, ok := tnum(tag, "skillType"); ok {
-				match = cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[st]
+			} else if tag.SkillType != 0 {
+				match = cfg != nil && cfg.SkillTypes != nil && cfg.SkillTypes[float64(tag.SkillType)]
 			}
-			if truthy(tag["neg"]) {
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
 				return nil
 			}
-		case "BaseFlag":
+		case *modparser.BaseFlagTag:
 			var baseFlags map[string]bool
 			if cfg != nil {
 				if cfg.SkillGrantedEffect != nil && cfg.SkillGrantedEffect.BaseFlags != nil {
@@ -687,72 +618,49 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 					baseFlags = cfg.BaseFlags
 				}
 			}
-			match := baseFlags != nil && baseFlags[tstr(tag, "baseFlag")]
-			if truthy(tag["neg"]) {
+			match := baseFlags != nil && baseFlags[tag.BaseFlag]
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
 				return nil
 			}
-		case "SlotName":
-			if cfg == nil {
-				return nil
-			}
-			match := false
-			if slotList := tlist(tag, "slotNameList"); slotList != nil {
-				for _, slot := range slotList {
-					if slot.(string) == cfg.SlotName {
-						match = true
-						break
-					}
-				}
-			} else {
-				match = tstr(tag, "slotName") == cfg.SlotName
-			}
-			if truthy(tag["neg"]) {
-				match = !match
-			}
-			if !match {
-				return nil
-			}
-		case "ModFlagOr":
+		case *modparser.ModFlagOrTag:
 			if cfg == nil || cfg.Flags == nil {
 				return nil
 			}
-			mf := tArith(tag, "modFlags", 0)
-			if *cfg.Flags&int64(mf) == 0 {
+			if *cfg.Flags&tag.ModFlags == 0 {
 				return nil
 			}
-		case "KeywordFlagAnd":
+		case *modparser.KeywordAndTag:
 			if cfg == nil || cfg.KeywordFlags == nil {
 				return nil
 			}
-			kf := tArith(tag, "keywordFlags", 0)
-			if *cfg.KeywordFlags&int64(kf) != int64(kf) {
+			if *cfg.KeywordFlags&tag.KeywordFlags != tag.KeywordFlags {
 				return nil
 			}
-		case "MonsterTag":
+		case *modparser.MonsterTag:
 			if base.Actor == nil || base.Actor.MinionData == nil || base.Actor.MinionData.MonsterTags == nil {
 				return nil
 			}
 			match := false
 			for _, tagName := range base.Actor.MinionData.MonsterTags {
 				matchName := strings.ToLower(tagName)
-				if tagList := tlist(tag, "monsterTagList"); tagList != nil {
-					for _, n := range tagList {
-						if strings.ToLower(n.(string)) == matchName {
+				if tag.NameList != nil {
+					for _, n := range tag.NameList {
+						if strings.ToLower(n) == matchName {
 							match = true
 							break
 						}
 					}
 				} else {
-					match = tstr(tag, "monsterTag") != "" && strings.ToLower(tstr(tag, "monsterTag")) == matchName
+					match = tag.Name != "" && strings.ToLower(tag.Name) == matchName
 				}
 				if match {
 					break
 				}
 			}
-			if truthy(tag["neg"]) {
+			if tag.Neg {
 				match = !match
 			}
 			if !match {
@@ -763,37 +671,124 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 
 	// Apply global limits
 	for _, tag := range tags {
-		gl, hasGL := tnum(tag, "globalLimit")
-		key := tstr(tag, "globalLimitKey")
-		if globalLimits != nil && hasGL && key != "" {
+		var gl modparser.Value
+		key := ""
+		switch t := tag.(type) {
+		case *modparser.MultiplierTag:
+			if t.GlobalLimit.Set {
+				gl, key = modparser.Num(t.GlobalLimit.V), t.GlobalLimitKey
+			}
+		case *modparser.StatTag:
+			if t.GlobalLimit.Set {
+				gl, key = modparser.Num(t.GlobalLimit.V), t.GlobalLimitKey
+			}
+		}
+		if globalLimits != nil && gl != nil && key != "" {
+			limit := float64(gl.(modparser.Num))
 			v := 0.0
 			if value != nil {
-				v = arithNum(value)
+				v = valueNum(value)
 			}
-			if globalLimits[key]+v > gl {
-				v = gl - globalLimits[key]
+			if globalLimits[key]+v > limit {
+				v = limit - globalLimits[key]
 			}
 			globalLimits[key] += v
-			value = v
+			value = modparser.Num(v)
 		}
 	}
 	return value
 }
 
-// luaEq is Lua == over the value kinds SkillPart carries.
-func luaEq(a, b any) bool {
-	if an, ok := numValue(a); ok {
-		if bn, ok2 := numValue(b); ok2 {
-			return an == bn
+func evalMultiplierThreshold(ctx Store, tag *modparser.MultiplierTag, cfg *Cfg) bool {
+	base := ctx.base()
+	target := ctx
+	thresholdTarget := ctx
+	hasThresholdActor := tag.ThresholdActor != ""
+	if hasThresholdActor {
+		thresholdActor := base.getActor(tag.ThresholdActor)
+		if thresholdActor == nil {
+			return false
 		}
+		thresholdTarget = thresholdActor.DB
+	}
+	if tag.Actor != "" {
+		actor := base.getActor(tag.Actor)
+		if actor == nil {
+			return false
+		}
+		target = actor.DB
+	}
+	mult := 0.0
+	if tag.VarList != nil {
+		for _, v := range tag.VarList {
+			mult += getMultiplier(target, v, cfg, false)
+		}
+	} else {
+		mult = getMultiplier(target, tag.Var, cfg, false)
+	}
+	var threshold float64
+	if tag.Threshold.Set {
+		threshold = tag.Threshold.V
+	} else {
+		thTarget := target
+		if hasThresholdActor {
+			thTarget = thresholdTarget
+		}
+		threshold = getMultiplier(thTarget, tag.ThresholdVar, cfg, false)
+	}
+	if (tag.Upper && mult > threshold) ||
+		(tag.Equals && mult != threshold) ||
+		(!tag.Upper && mult < threshold) {
 		return false
 	}
-	return a == b
+	return true
+}
+
+func evalActorCondition(ctx Store, tag *modparser.CondTag, cfg *Cfg) bool {
+	base := ctx.base()
+	match := false
+	target := ctx
+	hasTarget := true
+	if tag.Actor != "" {
+		actor := base.getActor(tag.Actor)
+		if actor != nil {
+			target = actor.DB
+		} else {
+			hasTarget = false
+		}
+	}
+	if hasTarget && (tag.Var != "" || tag.VarList != nil) {
+		if tag.VarList != nil {
+			for _, v := range tag.VarList {
+				if getCondition(target, v, cfg, false) {
+					match = true
+					break
+				}
+			}
+		} else {
+			match = getCondition(target, tag.Var, cfg, false)
+		}
+	} else if tag.Actor != "" && cfg != nil && tag.Actor == cfg.Actor {
+		match = true
+	}
+	if tag.Neg {
+		match = !match
+	}
+	return match
+}
+
+// partEq is Lua == between a tag's skill part (absent = nil) and the
+// query's (a number or nil).
+func partEq(part float64, set bool, cfgPart util.Opt[float64]) bool {
+	if !set {
+		return !cfgPart.Set
+	}
+	return cfgPart.Set && part == cfgPart.V
 }
 
 // scaleValue applies `value * mult + base` with the limit clamps, copying
-// table values like the Lua does. ceil selects PercentStat's m_ceil form.
-func scaleValue(value any, mult, tagBase float64, limitTotal, limitNegTotal *float64, ceil bool) any {
+// record values like the Lua does. ceil selects PercentStat's m_ceil form.
+func scaleValue(value modparser.Value, mult, tagBase float64, limitTotal, limitNegTotal *float64, ceil bool) modparser.Value {
 	apply := func(v float64) float64 {
 		v = v*mult + tagBase
 		if ceil {
@@ -807,31 +802,36 @@ func scaleValue(value any, mult, tagBase float64, limitTotal, limitNegTotal *flo
 		}
 		return v
 	}
-	if vt, ok := value.(modparser.Tag); ok {
-		cp := modparser.CopyValue(vt).(modparser.Tag)
-		if vm, ok := cp["mod"].(*modparser.Mod); ok {
-			vm.Value = apply(arithNum(vm.Value))
-		} else {
-			cp["value"] = apply(arithNum(cp["value"]))
-		}
+	switch t := value.(type) {
+	case modparser.ModRef:
+		cp := modparser.CloneValue(t).(modparser.ModRef)
+		cp.Mod.Value = modparser.Num(apply(valueNum(cp.Mod.Value)))
+		return cp
+	case modparser.DataRef:
+		cp := modparser.CloneValue(t).(modparser.DataRef)
+		cp.Value = modparser.Num(apply(valueNum(cp.Value)))
+		return cp
+	case modparser.GemPropertyRef:
+		cp := modparser.CloneValue(t).(modparser.GemPropertyRef)
+		cp.Value = optOf(apply(cp.Value.Or(0)))
 		return cp
 	}
-	return apply(arithNum(value))
+	return modparser.Num(apply(valueNum(value)))
 }
 
 // evalItemCondition ports the ItemCondition tag.
-func evalItemCondition(ctx Store, tag modparser.Tag, cfg *Cfg) bool {
+func evalItemCondition(ctx Store, tag *modparser.ItemCondTag, cfg *Cfg) bool {
 	base := ctx.base()
-	itemSlot := strings.ToLower(tstr(tag, "itemSlot"))
+	itemSlot := strings.ToLower(tag.ItemSlot)
 	itemSlot = reCapWords.ReplaceAllStringFunc(itemSlot, func(m string) string {
 		return strings.ToUpper(m[:1]) + m[1:]
 	})
-	itemSlot = luaTrim(itemSlot)
+	itemSlot = strings.TrimSpace(itemSlot)
 	items := map[string]Item{}
-	if truthy(tag["allSlots"]) {
+	if tag.AllSlots {
 		items = base.Actor.ItemList
 	} else if base.Actor.ItemList != nil {
-		if truthy(tag["bothSlots"]) {
+		if tag.BothSlots {
 			itemSlot1 := base.Actor.ItemList[itemSlot+" 1"]
 			itemSlot2 := base.Actor.ItemList[itemSlot+" 2"]
 			if itemSlot1 != nil && strings.Contains(itemSlot1.Name(), "Kalandra's Touch") {
@@ -865,40 +865,39 @@ func evalItemCondition(ctx Store, tag modparser.Tag, cfg *Cfg) bool {
 			}
 		}
 	}
-	neg := truthy(tag["neg"])
+	neg := tag.Neg
 	var matches []bool
-	if sc := tstr(tag, "searchCond"); sc != "" {
-		allSlots := truthy(tag["allSlots"])
+	if tag.SearchCond != "" {
 		for slot, item := range items {
-			include := (!allSlots || (item.ItemType() != "Jewel" && item.ItemType() != "Graft")) && slot != itemSlot
-			if include || !truthy(tag["excludeSelf"]) {
-				matches = append(matches, item.FindModifierSubstring(strings.ToLower(sc), strings.ToLower(slot)))
+			include := (!tag.AllSlots || (item.ItemType() != "Jewel" && item.ItemType() != "Graft")) && slot != itemSlot
+			if include || !tag.ExcludeSelf {
+				matches = append(matches, item.FindModifierSubstring(strings.ToLower(tag.SearchCond), strings.ToLower(slot)))
 			}
 		}
 	}
-	if rc := tstr(tag, "rarityCond"); rc != "" {
+	if tag.RarityCond != "" {
 		for _, item := range items {
-			matches = append(matches, item.Rarity() == rc)
+			matches = append(matches, item.Rarity() == tag.RarityCond)
 		}
 	}
-	if cc, present := tag["corruptedCond"]; present {
+	if tag.CorruptedCond.Set {
 		for _, item := range items {
-			matches = append(matches, item.Corrupted() == truthy(cc))
+			matches = append(matches, item.Corrupted() == tag.CorruptedCond.V)
 		}
 	}
-	if sc, present := tag["shaperCond"]; present {
+	if tag.ShaperCond.Set {
 		for _, item := range items {
-			matches = append(matches, item.Shaper() == truthy(sc))
+			matches = append(matches, item.Shaper() == tag.ShaperCond.V)
 		}
 	}
-	if ec, present := tag["elderCond"]; present {
+	if tag.ElderCond.Set {
 		for _, item := range items {
-			matches = append(matches, item.Elder() == truthy(ec))
+			matches = append(matches, item.Elder() == tag.ElderCond.V)
 		}
 	}
-	if nc := tstr(tag, "nameCond"); nc != "" {
+	if tag.NameCond != "" {
 		for _, item := range items {
-			matches = append(matches, strings.EqualFold(strings.ToLower(item.Name()), strings.ToLower(nc)))
+			matches = append(matches, strings.EqualFold(strings.ToLower(item.Name()), strings.ToLower(tag.NameCond)))
 		}
 	}
 	hasItems := len(items) > 0
@@ -916,26 +915,23 @@ func evalItemCondition(ctx Store, tag modparser.Tag, cfg *Cfg) bool {
 }
 
 // evalSocketedIn ports the SocketedIn tag; returns false to reject the mod.
-func evalSocketedIn(tag modparser.Tag, cfg *Cfg) bool {
-	if cfg == nil || (!truthy(tag["slotName"]) && !truthy(tag["keyword"]) && !truthy(tag["socketColor"])) {
+func evalSocketedIn(tag *modparser.SlotTag, cfg *Cfg) bool {
+	if cfg == nil || (tag.SlotName == "" && tag.Keyword == "" && tag.SocketColor == "") {
 		return false
 	}
-	socketsIsAll := false
-	if s, ok := tag["sockets"].(string); ok && s == "all" {
-		socketsIsAll = true
-	}
+	socketsIsAll := tag.SocketsAll
 	match := map[string]bool{}
-	if sn := tstr(tag, "slotName"); sn != "" {
-		match["slotName"] = sn == cfg.SlotName
+	if tag.SlotName != "" {
+		match["slotName"] = tag.SlotName == cfg.SlotName
 	}
-	if kw := tstr(tag, "keyword"); kw != "" {
-		match["keyword"] = cfg.SkillGem != nil && Externals.GemIsType(cfg.SkillGem, kw)
-	} else if sc := tstr(tag, "socketColor"); sc != "" && !socketsIsAll {
-		match["socketColor"] = sc == cfg.SocketColor
+	if tag.Keyword != "" {
+		match["keyword"] = cfg.SkillGem != nil && cfg.SkillGem.IsType(tag.Keyword)
+	} else if tag.SocketColor != "" && !socketsIsAll {
+		match["socketColor"] = tag.SocketColor == cfg.SocketColor
 	}
-	if truthy(tag["sockets"]) {
+	if socketsIsAll || tag.Sockets != nil || tag.SocketCount.Set {
 		var count float64
-		switch tstr(tag, "socketColor") {
+		switch tag.SocketColor {
 		case "R":
 			if cfg.StrengthGems != nil {
 				count = *cfg.StrengthGems
@@ -957,72 +953,26 @@ func evalSocketedIn(tag modparser.Tag, cfg *Cfg) bool {
 				}
 			}
 			match["sockets"] = total == count && total > 0
-		} else if socketList := asList(tag["sockets"]); socketList != nil {
+		} else if tag.Sockets != nil {
 			if cfg.SocketNum == nil {
 				return false
 			}
 			found := false
-			for _, s := range socketList {
-				if toNum(s) == *cfg.SocketNum {
+			for _, s := range tag.Sockets {
+				if s == *cfg.SocketNum {
 					found = true
 					break
 				}
 			}
 			match["sockets"] = found
-		} else if n, ok := tnum(tag, "sockets"); ok {
-			match["sockets"] = count < n
 		} else {
-			return false
+			match["sockets"] = count < tag.SocketCount.V
 		}
 	}
-	neg := truthy(tag["neg"])
 	for _, v := range match {
-		if (!neg && !v) || (neg && v) {
+		if (!tag.Neg && !v) || (tag.Neg && v) {
 			return false
 		}
 	}
 	return true
-}
-
-// luaTrim trims the whitespace class Lua's %s covers.
-func luaTrim(s string) string {
-	return strings.Trim(s, " \t\n\v\f\r")
-}
-
-// luaArith coerces like Lua arithmetic: numbers pass through, numeric
-// strings convert (tonumber), anything else fails.
-func luaArith(v any) (float64, bool) {
-	if n, ok := numValue(v); ok {
-		return n, true
-	}
-	if s, ok := v.(string); ok {
-		s = strings.TrimSpace(s)
-		if n, err := strconv.ParseFloat(s, 64); err == nil {
-			return n, true
-		}
-	}
-	return 0, false
-}
-
-// tArith reads a tag field for an arithmetic context: absent/false gives the
-// default; non-coercible truthy values panic (Lua's arithmetic error).
-func tArith(tag modparser.Tag, k string, def float64) float64 {
-	v := tag[k]
-	if !truthy(v) {
-		return def
-	}
-	n, ok := luaArith(v)
-	if !ok {
-		panic("modstore: arithmetic on non-numeric tag field " + k + " (the Lua errors)")
-	}
-	return n
-}
-
-// arithNum is Lua arithmetic over a mod value: numbers or numeric strings;
-// anything else is the Lua arithmetic error.
-func arithNum(v any) float64 {
-	if n, ok := luaArith(v); ok {
-		return n
-	}
-	panic("modstore: arithmetic on non-numeric value (the Lua errors)")
 }

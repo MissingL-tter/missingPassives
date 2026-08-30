@@ -9,6 +9,8 @@ package data
 import (
 	"sort"
 	"strings"
+
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 // generatedBaseLen is where the load-time half of Uniques["generated"]
@@ -16,22 +18,24 @@ import (
 // loads cannot duplicate the tree-dependent items.
 var generatedBaseLen int
 
+// skipTreeDependentUniques is Sources.SkipTreeDependentUniques as of the
+// last Load.
+var skipTreeDependentUniques bool
+
 // skinExcludedKeystones is excludedPassiveKeystones (infinite-loop guards).
 var skinExcludedKeystones = map[string]bool{
 	"Chaos Inoculation": true,
 	"Necromantic Aegis": true,
 }
 
-// TrimTreeDependentUniques restores Uniques["generated"] to its load-time
-// (pre-tree) state — the state the archive game-data dump captured.
-func TrimTreeDependentUniques() {
-	Uniques["generated"] = Uniques["generated"][:generatedBaseLen]
-}
-
 // BuildTreeDependentUniques appends the tree-dependent generated uniques.
 // classNotables is tree.ClassNotables; nativeKeystones the deduplicated
 // names of keystones that are on the tree proper (not blighted, positioned).
+// A no-op when the loaded Sources set SkipTreeDependentUniques.
 func BuildTreeDependentUniques(classNotables map[string][]string, nativeKeystones []string) {
+	if skipTreeDependentUniques {
+		return
+	}
 	Uniques["generated"] = Uniques["generated"][:generatedBaseLen]
 	add := func(lines []string) {
 		Uniques["generated"] = append(Uniques["generated"], strings.Join(lines, "\n"))
@@ -75,7 +79,7 @@ func BuildTreeDependentUniques(classNotables map[string][]string, nativeKeystone
 		}
 		for _, className := range classList {
 			for _, notableName := range classNotables[className] {
-				v := "{variant:" + luaNumString(float64(index)) + "}"
+				v := "{variant:" + util.FormatIntOrG14(float64(index)) + "}"
 				forbidden = append(forbidden, v+"Requires Class "+className)
 				forbidden = append(forbidden, v+"Allocates "+notableName+" if you have the matching modifier on Forbidden "+other)
 				index++
@@ -108,7 +112,7 @@ func BuildTreeDependentUniques(classNotables map[string][]string, nativeKeystone
 	skin = append(skin, "100% increased Global Defences")
 	skin = append(skin, "You can only Socket Corrupted Gems in this item")
 	for index, name := range skinKeystones {
-		skin = append(skin, "{variant:"+luaNumString(float64(index+1))+"}"+name)
+		skin = append(skin, "{variant:"+util.FormatIntOrG14(float64(index+1))+"}"+name)
 	}
 	skin = append(skin, "Corrupted")
 	add(skin)
@@ -130,7 +134,7 @@ func BuildTreeDependentUniques(classNotables map[string][]string, nativeKeystone
 	impossible = append(impossible, "Variant: Everything (QoL Test Variant)")
 	variantCount := len(impossibleKeystones) + 1
 	for index, name := range impossibleKeystones {
-		impossible = append(impossible, "{variant:"+luaNumString(float64(index+1))+","+luaNumString(float64(variantCount))+"}Passive Skills in radius of "+name+" can be allocated without being connected to your tree")
+		impossible = append(impossible, "{variant:"+util.FormatIntOrG14(float64(index+1))+","+util.FormatIntOrG14(float64(variantCount))+"}Passive Skills in radius of "+name+" can be allocated without being connected to your tree")
 	}
 	impossible = append(impossible, "Corrupted")
 	add(impossible)

@@ -5,6 +5,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -21,41 +22,41 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 	{
 		in := newDamageIn()
 		for _, damageType := range dmgTypeList {
-			in.dmg[damageType] = outNum(output, damageType+"TakenHit")
+			in.dmg[damageType] = output.N(damageType + "TakenHit")
 		}
-		in.LimitEHPSpeedup = outNum(output, "preventedLifeLossTotal") > 0
-		output["NumberOfDamagingHits"] = env.numberOfHitsToDie(in, actor)
+		in.LimitEHPSpeedup = output.N("preventedLifeLossTotal") > 0
+		output.SetN("NumberOfDamagingHits", env.numberOfHitsToDie(in, actor))
 	}
 
 	{
 		in := newDamageIn()
-		blockChance := outNum(output, "EffectiveBlockChance") / 100
+		blockChance := output.N("EffectiveBlockChance") / 100
 		if damageCategoryConfig != "Melee" && damageCategoryConfig != "Untyped" {
-			blockChance = outNum(output, "Effective"+damageCategoryConfig+"BlockChance") / 100
+			blockChance = output.N("Effective"+damageCategoryConfig+"BlockChance") / 100
 		}
 		if enemyDB.Flag(nil, "CannotBeBlocked") {
 			blockChance = 0
 		}
-		blockEffect := 1 - blockChance*outNum(output, "BlockEffect")/100
+		blockEffect := 1 - blockChance*output.N("BlockEffect")/100
 		suppressChance := 0.0
 		suppressionEffect := 1.0
 		extraAvoidChance := 0.0
 		averageAvoidChance := 0.0
-		gainOnBlockEnabled := !truthy(env.ConfigInput["DisableEHPGainOnBlock"]) && outNum(output, "NumberOfDamagingHits") > 1
+		gainOnBlockEnabled := !env.ConfigInput.DisableEHPGainOnBlock && output.N("NumberOfDamagingHits") > 1
 		if gainOnBlockEnabled {
-			in.LifeWhenHit = outNum(output, "LifeOnBlock") * blockChance
-			in.ManaWhenHit = outNum(output, "ManaOnBlock") * blockChance
-			in.EnergyShieldWhenHit = outNum(output, "EnergyShieldOnBlock") * blockChance
+			in.LifeWhenHit = output.N("LifeOnBlock") * blockChance
+			in.ManaWhenHit = output.N("ManaOnBlock") * blockChance
+			in.EnergyShieldWhenHit = output.N("EnergyShieldOnBlock") * blockChance
 			switch damageCategoryConfig {
 			case "Spell", "SpellProjectile":
-				in.EnergyShieldWhenHit += outNum(output, "EnergyShieldOnSpellBlock") * blockChance
+				in.EnergyShieldWhenHit += output.N("EnergyShieldOnSpellBlock") * blockChance
 			case "Average":
-				in.EnergyShieldWhenHit += outNum(output, "EnergyShieldOnSpellBlock") / 2 * blockChance
+				in.EnergyShieldWhenHit += output.N("EnergyShieldOnSpellBlock") / 2 * blockChance
 			}
 		}
 		// suppression
 		if damageCategoryConfig == "Spell" || damageCategoryConfig == "SpellProjectile" || damageCategoryConfig == "Average" {
-			suppressChance = outNum(output, "EffectiveSpellSuppressionChance") / 100
+			suppressChance = output.N("EffectiveSpellSuppressionChance") / 100
 		}
 		// We include suppression in damage reduction if it is 100%,
 		// otherwise we handle it here.
@@ -63,29 +64,29 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 			if damageCategoryConfig == "Average" {
 				suppressChance = suppressChance / 2
 			}
-			in.EnergyShieldWhenHit += outNum(output, "EnergyShieldOnSuppress") * suppressChance
-			in.LifeWhenHit += outNum(output, "LifeOnSuppress") * suppressChance
-			suppressionEffect = 1 - suppressChance*outNum(output, "SpellSuppressionEffect")/100
+			in.EnergyShieldWhenHit += output.N("EnergyShieldOnSuppress") * suppressChance
+			in.LifeWhenHit += output.N("LifeOnSuppress") * suppressChance
+			suppressionEffect = 1 - suppressChance*output.N("SpellSuppressionEffect")/100
 		} else {
 			half := 1.0
 			if damageCategoryConfig == "Average" {
 				half = 0.5
 			}
-			in.EnergyShieldWhenHit += outNum(output, "EnergyShieldOnSuppress") * half
-			in.LifeWhenHit += outNum(output, "LifeOnSuppress") * half
+			in.EnergyShieldWhenHit += output.N("EnergyShieldOnSuppress") * half
+			in.LifeWhenHit += output.N("LifeOnSuppress") * half
 		}
 		// extra avoid chance
 		switch damageCategoryConfig {
 		case "Projectile", "SpellProjectile":
-			extraAvoidChance += outNum(output, "AvoidProjectilesChance")
+			extraAvoidChance += output.N("AvoidProjectilesChance")
 		case "Average":
-			extraAvoidChance += outNum(output, "AvoidProjectilesChance") / 2
+			extraAvoidChance += output.N("AvoidProjectilesChance") / 2
 		}
 		// gain when hit (currently just gain on block/suppress, and
 		// Defiance of Destiny)
 		if gainOnBlockEnabled {
-			missingLife := modDB.Sum("BASE", nil, "MissingLifeBeforeEnemyHit")
-			missingMana := modDB.Sum("BASE", nil, "MissingManaBeforeEnemyHit")
+			missingLife := modDB.Sum(modparser.Base, nil, "MissingLifeBeforeEnemyHit")
+			missingMana := modDB.Sum(modparser.Base, nil, "MissingManaBeforeEnemyHit")
 			in.MissingLifeBeforeEnemyHit = &missingLife
 			in.MissingManaBeforeEnemyHit = &missingMana
 			if in.LifeWhenHit != 0 || in.ManaWhenHit != 0 || in.EnergyShieldWhenHit != 0 ||
@@ -103,12 +104,12 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 			// per-type bypass written here is never read back by the
 			// solver, matching the reference.
 			avoidChance := 0.0
-			if truthy(output["specificTypeAvoidance"]) {
-				avoidChance = math.Min(outNum(output, "Avoid"+damageType+"DamageChance")+extraAvoidChance, data.Misc.AvoidChanceCap)
+			if output.Flag("specificTypeAvoidance") {
+				avoidChance = math.Min(output.N("Avoid"+damageType+"DamageChance")+extraAvoidChance, data.Misc.AvoidChanceCap)
 				// unlucky config to lower the value of block, dodge, evade etc for ehp
 				worstOf := 1.0
-				if v := env.ConfigInput["EHPUnluckyWorstOf"]; truthy(v) {
-					worstOf = anyNum(v)
+				if v := env.ConfigInput.EHPUnluckyWorstOf; v.Set {
+					worstOf = v.V
 				}
 				if worstOf > 1 {
 					avoidChance = avoidChance / 100 * avoidChance
@@ -118,47 +119,47 @@ func (env *Env) ehpHitCounts(actor *performActor, damageCategoryConfig string) {
 				}
 				averageAvoidChance += avoidChance
 			}
-			in.dmg[damageType] = outNum(output, damageType+"TakenHit") * (blockEffect * suppressionEffect * (1 - avoidChance/100))
+			in.dmg[damageType] = output.N(damageType+"TakenHit") * (blockEffect * suppressionEffect * (1 - avoidChance/100))
 		}
 		// recoup initialisation
-		if outNum(output, "anyRecoup") > 0 {
+		if output.N("anyRecoup") > 0 {
 			in.TrackRecoupable = true
 			for _, damageType := range dmgTypeList {
-				output[damageType+"RecoupableDamageTaken"] = 0.0
+				output.SetN(damageType+"RecoupableDamageTaken", 0.0)
 			}
 		}
 		// taken over time degen initialisation
-		if outNum(output, "preventedLifeLossTotal") > 0 {
+		if output.N("preventedLifeLossTotal") > 0 {
 			in.TrackLifeLossOverTime = true
-			output["LifeLossLostOverTime"] = 0.0
-			output["LifeBelowHalfLossLostOverTime"] = 0.0
+			output.SetN("LifeLossLostOverTime", 0.0)
+			output.SetN("LifeBelowHalfLossLostOverTime", 0.0)
 		}
 		in.LimitEHPSpeedup = in.TrackRecoupable || in.TrackLifeLossOverTime || in.GainWhenHit
 		averageAvoidChance = averageAvoidChance / 5
-		output["ConfiguredDamageChance"] = 100 * (blockEffect * suppressionEffect * (1 - averageAvoidChance/100))
-		if outNum(output, "ConfiguredDamageChance") != 100 || in.TrackRecoupable || in.TrackLifeLossOverTime || in.GainWhenHit {
-			output["NumberOfMitigatedDamagingHits"] = env.numberOfHitsToDie(in, actor)
+		output.SetN("ConfiguredDamageChance", 100*(blockEffect*suppressionEffect*(1-averageAvoidChance/100)))
+		if output.N("ConfiguredDamageChance") != 100 || in.TrackRecoupable || in.TrackLifeLossOverTime || in.GainWhenHit {
+			output.SetN("NumberOfMitigatedDamagingHits", env.numberOfHitsToDie(in, actor))
 		} else {
-			output["NumberOfMitigatedDamagingHits"] = outNum(output, "NumberOfDamagingHits")
+			output.SetN("NumberOfMitigatedDamagingHits", output.N("NumberOfDamagingHits"))
 		}
 	}
 
 	// chance to not be hit
-	output["TotalNumberOfHits"] = outNum(output, "NumberOfMitigatedDamagingHits") / (1 - outNum(output, "ConfiguredNotHitChance")/100)
+	output.SetN("TotalNumberOfHits", output.N("NumberOfMitigatedDamagingHits")/(1-output.N("ConfiguredNotHitChance")/100))
 
 	// effective hit pool
-	output["TotalEHP"] = outNum(output, "TotalNumberOfHits") * outNum(output, "totalEnemyDamageIn")
+	output.SetN("TotalEHP", output.N("TotalNumberOfHits")*output.N("totalEnemyDamageIn"))
 
 	// survival time
 	enemySpeed := 700.0
-	if v := env.ConfigInput["enemySpeed"]; truthy(v) {
-		enemySpeed = anyNum(v)
-	} else if v := env.Build.ConfigPlaceholder["enemySpeed"]; truthy(v) {
-		enemySpeed = anyNum(v)
+	if v := env.ConfigInput.EnemySpeed; v.Set {
+		enemySpeed = v.V
+	} else if v := env.Build.ConfigPlaceholder.EnemySpeed; v.Set {
+		enemySpeed = v.V
 	}
-	enemySkillTime := enemySpeed / (1 + enemyDB.Sum("INC", nil, "Speed")/100)
+	enemySkillTime := enemySpeed / (1 + enemyDB.Sum(modparser.Inc, nil, "Speed")/100)
 	enemyActionSpeed := env.actionSpeedMod(actor.enemy)
 	enemySkillTime = enemySkillTime / 1000 / enemyActionSpeed
-	output["enemySkillTime"] = enemySkillTime
-	output["EHPSurvivalTime"] = outNum(output, "TotalNumberOfHits") * enemySkillTime
+	output.SetN("enemySkillTime", enemySkillTime)
+	output.SetN("EHPSurvivalTime", output.N("TotalNumberOfHits")*enemySkillTime)
 }

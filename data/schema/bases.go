@@ -14,6 +14,8 @@ type BasesData struct {
 	RareBlobs [][]string `json:"rareBlobs"`
 }
 
+func (BasesData) isDocument() {}
+
 // RareItem is one generated crafted-item template ([[...]] block).
 type RareItem struct {
 	Lines []string `json:"lines"`

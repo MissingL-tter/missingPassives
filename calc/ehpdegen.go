@@ -2,7 +2,10 @@
 // self-applied ailments), and the net / comprehensive-net regen totals.
 package calc
 
-import "github.com/MissingL-tter/missingPassives/data"
+import (
+	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
+)
 
 // ailmentDegen is one entry of the reference's ailmentList.
 type ailmentDegen struct {
@@ -18,9 +21,9 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 
 	// splitDegen divides one degen amount over life / mana / energy shield.
 	splitDegen := func(damageType string, amount float64) (lifeDegen, manaDegen, energyShieldDegen float64) {
-		takenFromMana := outNum(output, damageType+"MindOverMatter") + outNum(output, "sharedMindOverMatter")
-		bypass := outNum(output, damageType+"EnergyShieldBypass")
-		if outNum(output, "EnergyShieldRegenRecovery") > 0 {
+		takenFromMana := output.N(damageType+"MindOverMatter") + output.N("sharedMindOverMatter")
+		bypass := output.N(damageType + "EnergyShieldBypass")
+		if output.N("EnergyShieldRegenRecovery") > 0 {
 			if modDB.Flag(nil, "EnergyShieldProtectsMana") {
 				lifeDegen = amount * (1 - takenFromMana/100)
 				energyShieldDegen = amount * (1 - bypass/100) * (takenFromMana / 100)
@@ -39,77 +42,72 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 	// build degens
 	totalBuildDegen := 0.0
 	for _, damageType := range dmgTypeList {
-		baseVal := modDB.Sum("BASE", nil, damageType+"Degen")
+		baseVal := modDB.Sum(modparser.Base, nil, damageType+"Degen")
 		if baseVal > 0 {
 			for _, damageConvertedType := range dmgTypeList {
 				convertPercent := actor.damageOverTimeShiftTable[damageType][damageConvertedType]
 				if convertPercent > 0 {
-					total := baseVal * (convertPercent / 100) * outNum(output, damageConvertedType+"TakenDotMult")
-					output[damageConvertedType+"BuildDegen"] = outNum(output, damageConvertedType+"BuildDegen") + total
+					total := baseVal * (convertPercent / 100) * output.N(damageConvertedType+"TakenDotMult")
+					output.SetN(damageConvertedType+"BuildDegen", output.N(damageConvertedType+"BuildDegen")+total)
 					totalBuildDegen += total
 				}
 			}
 		}
 	}
 	if totalBuildDegen != 0 {
-		output["TotalBuildDegen"] = totalBuildDegen
-		output["NetLifeRegen"] = outNum(output, "LifeRegenRecovery")
-		output["NetManaRegen"] = outNum(output, "ManaRegenRecovery")
-		output["NetEnergyShieldRegen"] = outNum(output, "EnergyShieldRegenRecovery")
+		output.SetN("TotalBuildDegen", totalBuildDegen)
+		output.SetN("NetLifeRegen", output.N("LifeRegenRecovery"))
+		output.SetN("NetManaRegen", output.N("ManaRegenRecovery"))
+		output.SetN("NetEnergyShieldRegen", output.N("EnergyShieldRegenRecovery"))
 		totalLifeDegen, totalManaDegen, totalEnergyShieldDegen := 0.0, 0.0, 0.0
 		for _, damageType := range dmgTypeList {
 			if v, ok := output[damageType+"BuildDegen"]; ok {
-				l, m, e := splitDegen(damageType, anyNum(v))
+				l, m, e := splitDegen(damageType, v.Num())
 				totalLifeDegen += l
 				totalManaDegen += m
 				totalEnergyShieldDegen += e
 			}
 		}
-		output["NetLifeRegen"] = outNum(output, "NetLifeRegen") - totalLifeDegen
-		output["NetManaRegen"] = outNum(output, "NetManaRegen") - totalManaDegen
-		output["NetEnergyShieldRegen"] = outNum(output, "NetEnergyShieldRegen") - totalEnergyShieldDegen
-		output["TotalNetRegen"] = outNum(output, "NetLifeRegen") + outNum(output, "NetManaRegen") + outNum(output, "NetEnergyShieldRegen")
+		output.SetN("NetLifeRegen", output.N("NetLifeRegen")-totalLifeDegen)
+		output.SetN("NetManaRegen", output.N("NetManaRegen")-totalManaDegen)
+		output.SetN("NetEnergyShieldRegen", output.N("NetEnergyShieldRegen")-totalEnergyShieldDegen)
+		output.SetN("TotalNetRegen", output.N("NetLifeRegen")+output.N("NetManaRegen")+output.N("NetEnergyShieldRegen"))
 	}
 
-	enemyCritAilmentEffect := 1 + outNum(output, "EnemyCritChance")/100*0.5*(1-outNum(output, "CritExtraDamageReduction")/100)
+	enemyCritAilmentEffect := 1 + output.N("EnemyCritChance")/100*0.5*(1-output.N("CritExtraDamageReduction")/100)
 	// this is just used so that ailments don't always show up if the enemy
 	// has no other way of applying the ailment and they have a low crit chance
 	const enemyCritThreshold = 10.1
 	enemyBleedChance := 0.0
 	enemyIgniteChance := 0.0
-	if outNum(output, "SelfIgniteEffect") != 0 && outNum(output, "IgniteAvoidChance") < 100 &&
-		outNum(output, "SelfIgniteDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
-		enemyIgniteChance = enemyDB.Sum("BASE", nil, "IgniteChance", "ElementalAilmentChance")
+	if output.N("SelfIgniteEffect") != 0 && output.N("IgniteAvoidChance") < 100 &&
+		output.N("SelfIgniteDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
+		enemyIgniteChance = enemyDB.Sum(modparser.Base, nil, "IgniteChance", "ElementalAilmentChance")
 		enemyCritAilmentChance := 0.0
 		if !modDB.Flag(nil, "CritsOnYouDontAlwaysApplyElementalAilments") &&
-			(outNum(output, "EnemyCritChance") > enemyCritThreshold || enemyIgniteChance > 0) {
-			enemyCritAilmentChance = outNum(output, "EnemyCritChance")
+			(output.N("EnemyCritChance") > enemyCritThreshold || enemyIgniteChance > 0) {
+			enemyCritAilmentChance = output.N("EnemyCritChance")
 		}
 		enemyIgniteChance = (enemyCritAilmentChance + (1-enemyCritAilmentChance/100)*enemyIgniteChance) *
-			(1 - outNum(output, "IgniteAvoidChance")/100)
+			(1 - output.N("IgniteAvoidChance")/100)
 	}
 	enemyPoisonChance := 0.0
-	if outNum(output, "SelfPoisonEffect") != 0 && outNum(output, "PoisonAvoidChance") < 100 &&
-		outNum(output, "SelfPoisonDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
-		enemyPoisonChance = enemyDB.Sum("BASE", nil, "PoisonChance") * (1 - outNum(output, "PoisonAvoidChance")/100)
+	if output.N("SelfPoisonEffect") != 0 && output.N("PoisonAvoidChance") < 100 &&
+		output.N("SelfPoisonDuration") != 0 && damageCategoryConfig != "DamageOverTime" {
+		enemyPoisonChance = enemyDB.Sum(modparser.Base, nil, "PoisonChance") * (1 - output.N("PoisonAvoidChance")/100)
 	}
 
 	if damageCategoryConfig == "DamageOverTime" || (enemyIgniteChance+enemyPoisonChance+enemyBleedChance) > 0 {
 		totalDegen := totalBuildDegen
 		if damageCategoryConfig == "DamageOverTime" {
 			for _, damageType := range dmgTypeList {
-				baseVal := 0.0
-				if p := tonum(env.ConfigInput["enemy"+damageType+"Damage"]); p != nil {
-					baseVal = *p
-				} else if p := tonum(env.Build.ConfigPlaceholder["enemy"+damageType+"Damage"]); p != nil {
-					baseVal = *p
-				}
+				baseVal := env.configOrPlaceholder(damageType, func(c *ConfigInput) map[string]float64 { return c.EnemyDamage })
 				if baseVal > 0 {
 					for _, damageConvertedType := range dmgTypeList {
 						convertPercent := actor.damageOverTimeShiftTable[damageType][damageConvertedType]
 						if convertPercent > 0 {
-							total := baseVal * (convertPercent / 100) * outNum(output, damageConvertedType+"TakenDotMult")
-							output[damageConvertedType+"EnemyDegen"] = outNum(output, damageConvertedType+"EnemyDegen") + total
+							total := baseVal * (convertPercent / 100) * output.N(damageConvertedType+"TakenDotMult")
+							output.SetN(damageConvertedType+"EnemyDegen", output.N(damageConvertedType+"EnemyDegen")+total)
 							totalDegen += total
 						}
 					}
@@ -136,17 +134,17 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 			for _, ailment := range ailmentList {
 				baseVal := 0.0
 				for _, damageType := range ailment.sourceTypes {
-					baseVal += outNum(output, damageType+"TakenDamage")
+					baseVal += output.N(damageType + "TakenDamage")
 				}
 				baseVal = baseVal * ailmentPercentBase(ailment.source) *
-					(enemyCritAilmentEffect / outNum(output, "EnemyCritEffect")) *
-					outNum(output, "Self"+ailment.source+"Effect") / 100
+					(enemyCritAilmentEffect / output.N("EnemyCritEffect")) *
+					output.N("Self"+ailment.source+"Effect") / 100
 				if baseVal > 0 {
 					for _, damageConvertedType := range dmgTypeList {
 						convertPercent := actor.damageOverTimeShiftTable[ailment.damageType][damageConvertedType]
 						if convertPercent > 0 {
-							total := baseVal * (convertPercent / 100) * outNum(output, damageConvertedType+"TakenDotMult")
-							output[damageConvertedType+"EnemyDegen"] = outNum(output, damageConvertedType+"EnemyDegen") + total
+							total := baseVal * (convertPercent / 100) * output.N(damageConvertedType+"TakenDotMult")
+							output.SetN(damageConvertedType+"EnemyDegen", output.N(damageConvertedType+"EnemyDegen")+total)
 							totalDegen += total
 						}
 					}
@@ -154,13 +152,13 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 			}
 		}
 		if totalDegen != totalBuildDegen {
-			output["TotalDegen"] = totalDegen
-			output["ComprehensiveNetLifeRegen"] = outNum(output, "LifeRegenRecovery")
-			output["ComprehensiveNetManaRegen"] = outNum(output, "ManaRegenRecovery")
-			output["ComprehensiveNetEnergyShieldRegen"] = outNum(output, "EnergyShieldRegenRecovery")
+			output.SetN("TotalDegen", totalDegen)
+			output.SetN("ComprehensiveNetLifeRegen", output.N("LifeRegenRecovery"))
+			output.SetN("ComprehensiveNetManaRegen", output.N("ManaRegenRecovery"))
+			output.SetN("ComprehensiveNetEnergyShieldRegen", output.N("EnergyShieldRegenRecovery"))
 			totalLifeDegen, totalManaDegen, totalEnergyShieldDegen := 0.0, 0.0, 0.0
 			for _, damageType := range dmgTypeList {
-				typeDegen := outNum(output, damageType+"BuildDegen") + outNum(output, damageType+"EnemyDegen")
+				typeDegen := output.N(damageType+"BuildDegen") + output.N(damageType+"EnemyDegen")
 				if typeDegen != 0 {
 					l, m, e := splitDegen(damageType, typeDegen)
 					totalLifeDegen += l
@@ -168,14 +166,14 @@ func (env *Env) ehpDegens(actor *performActor, damageCategoryConfig string) {
 					totalEnergyShieldDegen += e
 				}
 			}
-			output["ComprehensiveNetLifeRegen"] = outNum(output, "ComprehensiveNetLifeRegen") +
-				outNum(output, "LifeRecoupRecoveryAvg") - totalLifeDegen - outNum(output, "LifeLossLostAvg")
-			output["ComprehensiveNetManaRegen"] = outNum(output, "ComprehensiveNetManaRegen") +
-				outNum(output, "ManaRecoupRecoveryAvg") - totalManaDegen
-			output["ComprehensiveNetEnergyShieldRegen"] = outNum(output, "ComprehensiveNetEnergyShieldRegen") +
-				outNum(output, "EnergyShieldRecoupRecoveryAvg") - totalEnergyShieldDegen
-			output["ComprehensiveTotalNetRegen"] = outNum(output, "ComprehensiveNetLifeRegen") +
-				outNum(output, "ComprehensiveNetManaRegen") + outNum(output, "ComprehensiveNetEnergyShieldRegen")
+			output.SetN("ComprehensiveNetLifeRegen", output.N("ComprehensiveNetLifeRegen")+
+				output.N("LifeRecoupRecoveryAvg")-totalLifeDegen-output.N("LifeLossLostAvg"))
+			output.SetN("ComprehensiveNetManaRegen", output.N("ComprehensiveNetManaRegen")+
+				output.N("ManaRecoupRecoveryAvg")-totalManaDegen)
+			output.SetN("ComprehensiveNetEnergyShieldRegen", output.N("ComprehensiveNetEnergyShieldRegen")+
+				output.N("EnergyShieldRecoupRecoveryAvg")-totalEnergyShieldDegen)
+			output.SetN("ComprehensiveTotalNetRegen", output.N("ComprehensiveNetLifeRegen")+
+				output.N("ComprehensiveNetManaRegen")+output.N("ComprehensiveNetEnergyShieldRegen"))
 		}
 	}
 }

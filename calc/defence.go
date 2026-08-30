@@ -29,25 +29,25 @@ func (env *Env) Resistances(actor *performActor) {
 	modDB := actor.db
 	output := actor.output
 
-	output["PhysicalResist"] = 0.0
+	output.SetN("PhysicalResist", 0.0)
 
 	// Process Resistance conversion mods
 	for _, resFrom := range resistTypeList {
 		maxRes := 0.0
 		haveMaxRes := false
 		for _, resTo := range resistTypeList {
-			conversionRate := modDB.Sum("BASE", nil, resFrom+"MaxResConvertTo"+resTo) / 100
+			conversionRate := modDB.Sum(modparser.Base, nil, resFrom+"MaxResConvertTo"+resTo) / 100
 			if conversionRate != 0 {
 				if !haveMaxRes {
 					haveMaxRes = true
-					for _, mod := range modDB.Tabulate("BASE", nil, resFrom+"ResistMax") {
+					for _, mod := range modDB.Tabulate(modparser.Base, nil, resFrom+"ResistMax") {
 						if mod.Mod.Source != "Base" {
-							maxRes += anyNum(mod.Value)
+							maxRes += valueNum(mod.Value)
 						}
 					}
 				}
 				if maxRes != 0 {
-					modDB.AddMod(newMod(resTo+"ResistMax", "BASE", maxRes*conversionRate, resFrom+" To "+resTo+" Max Resistance Conversion"))
+					modDB.AddMod(newModS(resTo+"ResistMax", modparser.Base, modparser.Num(maxRes*conversionRate), resFrom+" To "+resTo+" Max Resistance Conversion"))
 				}
 			}
 		}
@@ -57,24 +57,24 @@ func (env *Env) Resistances(actor *performActor) {
 		res := 0.0
 		haveRes := false
 		for _, resTo := range resistTypeList {
-			conversionRate := modDB.Sum("BASE", nil, resFrom+"ResConvertTo"+resTo) / 100
+			conversionRate := modDB.Sum(modparser.Base, nil, resFrom+"ResConvertTo"+resTo) / 100
 			if conversionRate != 0 {
 				if !haveRes {
 					haveRes = true
-					for _, mod := range modDB.Tabulate("BASE", nil, resFrom+"Resist") {
+					for _, mod := range modDB.Tabulate(modparser.Base, nil, resFrom+"Resist") {
 						if mod.Mod.Source != "Base" {
-							res += anyNum(mod.Value)
+							res += valueNum(mod.Value)
 						}
 					}
 				}
 				if res != 0 {
-					modDB.AddMod(newMod(resTo+"Resist", "BASE", res*conversionRate, resFrom+" To "+resTo+" Resistance Conversion"))
+					modDB.AddMod(newModS(resTo+"Resist", modparser.Base, modparser.Num(res*conversionRate), resFrom+" To "+resTo+" Resistance Conversion"))
 				}
-				for _, mod := range modDB.Tabulate("INC", nil, resFrom+"Resist") {
-					modDB.AddMod(newMod(resTo+"Resist", "INC", anyNum(mod.Value)*conversionRate, mod.Mod.Source))
+				for _, mod := range modDB.Tabulate(modparser.Inc, nil, resFrom+"Resist") {
+					modDB.AddMod(newModS(resTo+"Resist", modparser.Inc, modparser.Num(valueNum(mod.Value)*conversionRate), mod.Mod.Source))
 				}
-				for _, mod := range modDB.Tabulate("MORE", nil, resFrom+"Resist") {
-					modDB.AddMod(newMod(resTo+"Resist", "MORE", anyNum(mod.Value)*conversionRate, mod.Mod.Source))
+				for _, mod := range modDB.Tabulate(modparser.More, nil, resFrom+"Resist") {
+					modDB.AddMod(newModS(resTo+"Resist", modparser.More, modparser.Num(valueNum(mod.Value)*conversionRate), mod.Mod.Source))
 				}
 			}
 		}
@@ -82,10 +82,10 @@ func (env *Env) Resistances(actor *performActor) {
 
 	// resistMaxOf is the shared `Override or min(cap, Sum(...))` shape.
 	resistMaxOf := func(prefix, elem, sharedName string) float64 {
-		if ov := modDB.Override(nil, prefix+elem+"ResistMax"); truthy(ov) {
-			return anyNum(ov)
+		if ov, ok := modDB.Override(nil, prefix+elem+"ResistMax"); ok {
+			return valueNum(ov)
 		}
-		return math.Min(data.Misc.MaxResistCap, modDB.Sum("BASE", nil, elemNames(elem, prefix+elem+"ResistMax", sharedName)...))
+		return math.Min(data.Misc.MaxResistCap, modDB.Sum(modparser.Base, nil, elemNames(elem, prefix+elem+"ResistMax", sharedName)...))
 	}
 
 	// Highest Maximum Elemental Resistance for Melding of the Flesh
@@ -101,7 +101,7 @@ func (env *Env) Resistances(actor *performActor) {
 		}
 		for _, elem := range resistTypeList {
 			if isElementalRes[elem] {
-				modDB.AddMod(newMod(elem+"ResistMax", "OVERRIDE", highestResistMax, highestResistMaxType+" Melding of the Flesh"))
+				modDB.AddMod(newModS(elem+"ResistMax", modparser.Override, modparser.Num(highestResistMax), highestResistMaxType+" Melding of the Flesh"))
 			}
 		}
 	}
@@ -113,22 +113,22 @@ func (env *Env) Resistances(actor *performActor) {
 
 		var total, dotTotal float64
 		haveDot := false
-		if ov := modDB.Override(nil, elem+"Resist"); truthy(ov) {
-			total = anyNum(ov)
+		if ov, ok := modDB.Override(nil, elem+"Resist"); ok {
+			total = valueNum(ov)
 		} else {
-			base := modDB.Sum("BASE", nil, elemNames(elem, elem+"Resist", "ElementalResist")...)
+			base := modDB.Sum(modparser.Base, nil, elemNames(elem, elem+"Resist", "ElementalResist")...)
 			inc := math.Max(Mod(modDB, nil, elemNames(elem, elem+"Resist", "ElementalResist")...), 0)
 			total = base * inc
-			dotCfg := &modstore.Cfg{Flags: i64p(modparser.ModFlag.Dot), KeywordFlags: i64p(0)}
-			dotBase := modDB.Sum("BASE", dotCfg, elemNames(elem, elem+"Resist", "ElementalResist")...)
+			dotCfg := &modstore.Cfg{Flags: flagp(modparser.FlagDot), KeywordFlags: keywordp(0)}
+			dotBase := modDB.Sum(modparser.Base, dotCfg, elemNames(elem, elem+"Resist", "ElementalResist")...)
 			dotTotal = dotBase * inc
 			haveDot = true
 		}
 		var totemTotal float64
-		if ov := modDB.Override(nil, "Totem"+elem+"Resist"); truthy(ov) {
-			totemTotal = anyNum(ov)
+		if ov, ok := modDB.Override(nil, "Totem"+elem+"Resist"); ok {
+			totemTotal = valueNum(ov)
 		} else {
-			base := modDB.Sum("BASE", nil, elemNames(elem, "Totem"+elem+"Resist", "TotemElementalResist")...)
+			base := modDB.Sum(modparser.Base, nil, elemNames(elem, "Totem"+elem+"Resist", "TotemElementalResist")...)
 			totemTotal = base * math.Max(Mod(modDB, nil, elemNames(elem, "Totem"+elem+"Resist", "TotemElementalResist")...), 0)
 		}
 
@@ -148,17 +148,18 @@ func (env *Env) Resistances(actor *performActor) {
 		dotFinal := math.Max(math.Min(dotTotal, max), min)
 		totemFinal := math.Max(math.Min(totemTotal, totemMax), min)
 
-		output[elem+"Resist"] = final
-		output[elem+"ResistTotal"] = total
-		output[elem+"ResistOverCap"] = math.Max(0, total-max)
-		output[elem+"ResistOver75"] = math.Max(0, final-75)
-		output["Missing"+elem+"Resist"] = math.Max(0, max-final)
-		output[elem+"ResistOverTime"] = dotFinal
-		output["Totem"+elem+"Resist"] = totemFinal
-		output["Totem"+elem+"ResistTotal"] = totemTotal
-		output["Totem"+elem+"ResistOverCap"] = math.Max(0, totemTotal-totemMax)
-		output["MissingTotem"+elem+"Resist"] = math.Max(0, totemMax-totemFinal)
+		output.SetN(elem+"Resist", final)
+		output.SetN(elem+"ResistTotal", total)
+		output.SetN(elem+"ResistOverCap", math.Max(0, total-max))
+		output.SetN(elem+"ResistOver75", math.Max(0, final-75))
+		output.SetN("Missing"+elem+"Resist", math.Max(0, max-final))
+		output.SetN(elem+"ResistOverTime", dotFinal)
+		output.SetN("Totem"+elem+"Resist", totemFinal)
+		output.SetN("Totem"+elem+"ResistTotal", totemTotal)
+		output.SetN("Totem"+elem+"ResistOverCap", math.Max(0, totemTotal-totemMax))
+		output.SetN("MissingTotem"+elem+"Resist", math.Max(0, totemMax-totemFinal))
 	}
 }
 
-func i64p(v int64) *int64 { return &v }
+func flagp(v modparser.ModFlag) *modparser.ModFlag            { return &v }
+func keywordp(v modparser.KeywordFlag) *modparser.KeywordFlag { return &v }

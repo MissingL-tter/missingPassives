@@ -7,14 +7,16 @@
 package calc
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
+	"github.com/MissingL-tter/missingPassives/skills"
 )
 
 // groupCfg is the per-group config table: a modstore Cfg (slot name plus
@@ -52,14 +54,17 @@ func snapshotCfg(cfg *modstore.Cfg) *modstore.Cfg {
 	return &cp
 }
 
-func (env *Env) unarmedWeaponData() map[string]any {
-	uw := data.UnarmedWeaponData[int(env.ClassID)]
-	return map[string]any{
-		"type":        uw.Type,
-		"AttackRate":  uw.AttackRate,
-		"CritChance":  uw.CritChance,
-		"PhysicalMin": uw.PhysicalMin,
-		"PhysicalMax": uw.PhysicalMax,
+func (env *Env) unarmedWeaponData() *item.WeaponData {
+	return unarmedWeapon(data.UnarmedWeaponData[int(env.ClassID)])
+}
+
+// unarmedWeapon is the data.unarmedWeaponData[classId] table as weapon data.
+func unarmedWeapon(uw data.UnarmedWeapon) *item.WeaponData {
+	return &item.WeaponData{
+		Type:       uw.Type,
+		AttackRate: uw.AttackRate,
+		CritChance: util.Some(uw.CritChance),
+		Physical:   item.DamageRange{Min: uw.PhysicalMin, Max: uw.PhysicalMax},
 	}
 }
 
@@ -68,30 +73,28 @@ func (env *Env) unarmedWeaponData() map[string]any {
 // messages) are skipped.
 func (env *Env) processSocketGroup(group *SocketGroupInput) {
 	for _, gem := range group.GemList {
-		if _, ok := gem.KV["nameSpec"]; !ok {
-			gem.KV["nameSpec"] = ""
-		}
 		var prevDefaultLevel *float64
 		if gem.GemData != nil {
 			v := gem.GemData.NaturalMaxLevel
 			prevDefaultLevel = &v
 		}
 		gem.GemData, gem.GrantedEffect = nil, nil
-		if id := str(gem.KV["gemId"]); id != "" {
+		switch {
+		case gem.GemID != "":
 			// Specified by gem ID (skills granted by skill gems)
-			gem.GemData = data.Gems[id]
+			gem.GemData = data.Gems[gem.GemID]
 			if gem.GemData != nil {
-				gem.KV["nameSpec"] = gem.GemData.Name
-				gem.KV["skillId"] = gem.GemData.GrantedEffectId
+				gem.NameSpec = gem.GemData.Name
+				gem.SkillID = gem.GemData.GrantedEffectId
 			}
-		} else if skillId := str(gem.KV["skillId"]); skillId != "" {
+		case gem.SkillID != "":
 			// Specified by skill ID (skills granted by items).
 			// #EVAL: archive parity — the reference indexes gemForSkill
 			// (keyed by granted-effect TABLE) with the skillId STRING, which
 			// never matches, so item-granted skills never resolve a gem.
-			gem.GrantedEffect = data.Skills[skillId]
-			if truthy(gem.KV["triggered"]) {
-				if lvl := gem.GrantedEffect.Levels[anyNum(gem.KV["level"])]; lvl != nil {
+			gem.GrantedEffect = data.Skills[gem.SkillID]
+			if gem.Triggered {
+				if lvl := gem.GrantedEffect.LevelData(gem.Level); lvl != nil {
 					// the reference wipes the shared level's cost table;
 					// kept per-env so the game-data canon stays pristine
 					if env.TriggeredCostWipes == nil {
@@ -100,44 +103,43 @@ func (env *Env) processSocketGroup(group *SocketGroupInput) {
 					env.TriggeredCostWipes[lvl] = true
 				}
 			}
-		} else if strings.TrimSpace(str(gem.KV["nameSpec"])) != "" {
+		case strings.TrimSpace(gem.NameSpec) != "":
 			// Specified by gem/skill name: the pre-1.4.20 migration path
 			// (SkillsTab L1166). OnFrame migrates resolvable names before any
 			// dump is taken, so the replay only re-runs this for names
 			// FindSkillGem cannot resolve -- but the resolution is ported
 			// whole regardless.
-			if gemData := findSkillGem(str(gem.KV["nameSpec"])); gemData != nil {
+			if gemData := skills.FindSkillGem(gem.NameSpec); gemData != nil {
 				gem.GemData = gemData
-				gem.KV["gemId"] = gemData.Id
-				gem.KV["skillId"] = gemData.GrantedEffectId
-				gem.KV["nameSpec"] = gemData.Name
+				gem.GemID = gemData.Id
+				gem.SkillID = gemData.GrantedEffectId
+				gem.NameSpec = gemData.Name
 			} else {
 				gem.GemData = nil
-				delete(gem.KV, "skillId")
+				gem.SkillID = ""
 			}
 		}
-		if gem.GemData != nil && geUnsupported(gem.GemData.GrantedEffect) {
-			gem.GemData = nil
-		}
+		// The reference nils gemData for `grantedEffect.unsupported`; no
+		// template sets that key, so nothing to do.
 		if gem.GemData != nil || gem.GrantedEffect != nil {
-			delete(gem.KV, "new")
+			gem.New = false
 			grantedEffect := gem.GrantedEffect
 			if grantedEffect == nil {
 				grantedEffect = gem.GemData.GrantedEffect
 			}
 			if prevDefaultLevel != nil && gem.GemData != nil && gem.GemData.NaturalMaxLevel != *prevDefaultLevel {
-				gem.KV["level"] = gem.GemData.NaturalMaxLevel
-				gem.KV["naturalMaxLevel"] = gem.GemData.NaturalMaxLevel
+				gem.Level = gem.GemData.NaturalMaxLevel
+				gem.NaturalMaxLevel = gem.GemData.NaturalMaxLevel
 			}
-			validate := &ActiveEffect{GrantedEffect: gem.GrantedEffect, GemData: gem.GemData, Level: anyNum(gem.KV["level"])}
+			validate := &ActiveEffect{GrantedEffect: gem.GrantedEffect, GemData: gem.GemData, Level: gem.Level}
 			ValidateGemLevel(validate)
-			gem.KV["level"] = validate.Level
+			gem.Level = validate.Level
 			if gem.GemData != nil {
-				reqLevel, _ := lvlExtra(grantedEffect.Levels[validate.Level], "levelRequirement")
-				gem.KV["reqLevel"] = reqLevel
-				gem.KV["reqStr"] = GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqStr)
-				gem.KV["reqDex"] = GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqDex)
-				gem.KV["reqInt"] = GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqInt)
+				reqLevel, _ := lvlExtra(grantedEffect.LevelData(validate.Level), "levelRequirement")
+				gem.ReqLevel = util.Some(reqLevel)
+				gem.ReqStr = util.Some(skills.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqStr))
+				gem.ReqDex = util.Some(skills.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqDex))
+				gem.ReqInt = util.Some(skills.GetGemStatRequirement(reqLevel, grantedEffect.Support, gem.GemData.ReqInt))
 			}
 		}
 	}
@@ -166,11 +168,11 @@ func (env *Env) buildSkillsStage() bool {
 			gs := &env.GrantedSkills[i]
 			var group *SocketGroupInput
 			for _, sg := range in.SkillsTab.SocketGroups {
-				if str(sg.KV["source"]) == gs.Source && gs.Source != "" && str(sg.KV["slot"]) == gs.SlotName {
+				if sg.Source == gs.Source && gs.Source != "" && sg.Slot == gs.SlotName {
 					if len(sg.GemList) > 0 {
 						g1 := sg.GemList[0]
-						if str(g1.KV["skillId"]) == gs.SkillID &&
-							(anyNum(g1.KV["level"]) == gs.Level || anyNum(g1.KV["level"]) == getNormalizedSkillLevel(gs)) {
+						if g1.SkillID == gs.SkillID &&
+							(g1.Level == gs.Level || g1.Level == getNormalizedSkillLevel(gs)) {
 							group = sg
 							markList[sg] = true
 							break
@@ -181,11 +183,8 @@ func (env *Env) buildSkillsStage() bool {
 			if group == nil {
 				// Create a new group for this skill
 				group = &SocketGroupInput{
-					KV:      map[string]any{"label": "", "enabled": true, "source": gs.Source},
-					GemList: []*SocketGemInput{},
-				}
-				if gs.SlotName != "" {
-					group.KV["slot"] = gs.SlotName
+					SocketGroup: &skills.SocketGroup{Enabled: true, Source: gs.Source, Slot: gs.SlotName},
+					GemList:     []*SocketGemInput{},
 				}
 				in.SkillsTab.SocketGroups = append(in.SkillsTab.SocketGroups, group)
 				markList[group] = true
@@ -198,24 +197,19 @@ func (env *Env) buildSkillsStage() bool {
 			if len(group.GemList) > 0 {
 				activeGem = group.GemList[0]
 			} else {
-				activeGem = &SocketGemInput{KV: map[string]any{
-					"skillId": gs.SkillID,
-					"quality": 0.0,
-					"enabled": true,
-				}}
-				if gs.NameSpec != "" {
-					activeGem.KV["nameSpec"] = gs.NameSpec
-				}
+				activeGem = &SocketGemInput{Gem: &skills.Gem{SkillID: gs.SkillID, NameSpec: gs.NameSpec, Enabled: true}}
 			}
-			activeGem.KV["fromItem"] = gs.SourceItem != nil
-			delete(activeGem.KV, "gemId")
+			activeGem.FromItem = util.Some(gs.SourceItem != nil)
+			activeGem.GemID = ""
 			activeGem.GemDataID = nil
-			activeGem.KV["level"] = gs.Level
-			activeGem.KV["enableGlobal1"] = true
-			setKV(activeGem.KV, "noSupports", gs.NoSupports)
-			group.KV["noSupports"] = gs.NoSupports
-			setKV(activeGem.KV, "triggered", gs.Raw["triggered"])
-			setKV(activeGem.KV, "triggerChance", gs.Raw["triggerChance"])
+			activeGem.Level = gs.Level
+			activeGem.EnableGlobal1 = util.Some(true)
+			activeGem.NoSupports = gs.NoSupports
+			group.NoSupports = gs.NoSupports
+			if gs.Triggered {
+				activeGem.Triggered = true
+			}
+			activeGem.TriggerChance = gs.TriggerChance
 			group.GemList = []*SocketGemInput{activeGem}
 			env.processSocketGroup(group)
 		}
@@ -224,36 +218,21 @@ func (env *Env) buildSkillsStage() bool {
 			// Check if a matching group already exists
 			var group *SocketGroupInput
 			for _, sg := range in.SkillsTab.SocketGroups {
-				if str(sg.KV["source"]) == "Explode" {
+				if sg.Source == "Explode" {
 					group = sg
 					break
 				}
 			}
 			if group == nil {
 				group = &SocketGroupInput{
-					KV: map[string]any{
-						"label": "On Kill Monster Explosion", "enabled": true,
-						"source": "Explode", "noSupports": true,
-					},
-					GemList: []*SocketGemInput{},
+					SocketGroup: &skills.SocketGroup{Label: "On Kill Monster Explosion", Enabled: true, Source: "Explode", NoSupports: true},
+					GemList:     []*SocketGemInput{},
 				}
 				in.SkillsTab.SocketGroups = append(in.SkillsTab.SocketGroups, group)
 			}
 			// Update the group
 			group.ExplodeSources = env.ExplodeSources
 			// gemsBySource keys on explodeSource.modSource or .id
-			explodeKey := func(src any) string {
-				switch t := src.(type) {
-				case *Item:
-					if t.In.ModSource == nil {
-						panic("calc: explode-source item without modSource")
-					}
-					return *t.In.ModSource
-				case *NodeInput:
-					return fmt.Sprintf("#%d", int64(t.ID))
-				}
-				panic("calc: unknown explode source type")
-			}
 			gemsBySource := map[string]*SocketGemInput{}
 			for _, gem := range group.GemList {
 				// resolve the fixture's explode source references
@@ -268,17 +247,14 @@ func (env *Env) buildSkillsStage() bool {
 					gem.ExplodeSource = node
 				}
 				if gem.ExplodeSource != nil {
-					gemsBySource[explodeKey(gem.ExplodeSource)] = gem
+					gemsBySource[gem.ExplodeSource.ExplodeKey()] = gem
 				}
 			}
 			newList := []*SocketGemInput{}
 			for _, src := range env.ExplodeSources {
-				gem := gemsBySource[explodeKey(src)]
+				gem := gemsBySource[src.ExplodeKey()]
 				if gem == nil {
-					gem = &SocketGemInput{KV: map[string]any{
-						"skillId": "EnemyExplode", "quality": 0.0, "enabled": true,
-						"level": 1.0, "triggered": true,
-					}}
+					gem = &SocketGemInput{Gem: &skills.Gem{SkillID: "EnemyExplode", Enabled: true, Level: 1, Triggered: true}}
 					gem.ExplodeSource = src
 				}
 				newList = append(newList, gem)
@@ -290,7 +266,7 @@ func (env *Env) buildSkillsStage() bool {
 		// Remove any socket groups that no longer have a matching item
 		kept := in.SkillsTab.SocketGroups[:0]
 		for _, group := range in.SkillsTab.SocketGroups {
-			if group.KV["source"] == nil || markList[group] {
+			if !group.Granted() || markList[group] {
 				kept = append(kept, group)
 			}
 		}
@@ -301,31 +277,31 @@ func (env *Env) buildSkillsStage() bool {
 	// Get the weapon data tables for the equipped weapons
 	w1Item, _ := env.Player.ItemList["Weapon 1"].(*Item)
 	if w1Item != nil && w1Item.In.WeaponData != nil && w1Item.In.WeaponData[1] != nil {
-		env.Player.WeaponData1 = w1Item.In.WeaponData[1]
+		env.Player.WeaponData1 = weaponRef(w1Item.In.WeaponData[1])
 	} else {
-		env.Player.WeaponData1 = env.unarmedWeaponData()
+		env.Player.WeaponData1 = weaponRef(env.unarmedWeaponData())
 	}
-	if truthy(env.Player.WeaponData1["countsAsDualWielding"]) {
-		env.Player.WeaponData2 = w1Item.In.WeaponData[2]
+	if weaponOf(env.Player.WeaponData1).CountsAsDualWielding {
+		env.Player.WeaponData2 = weaponRef(w1Item.In.WeaponData[2])
 	} else if env.Player.ItemList["Weapon 2"] == nil {
 		// Hollow Palm Technique
 		if w1Item == nil && env.Player.ItemList["Gloves"] == nil && env.ModDB.Mods["Keystone"] != nil {
 			for _, keystone := range env.ModDB.Mods["Keystone"] {
-				if keystone.Value == "Hollow Palm Technique" {
-					env.Player.WeaponData2 = env.unarmedWeaponData()
+				if keystone.Value == modparser.Str("Hollow Palm Technique") {
+					env.Player.WeaponData2 = weaponRef(env.unarmedWeaponData())
 					break
 				}
 			}
 		}
-		if env.Player.WeaponData2 == nil {
-			env.Player.WeaponData2 = map[string]any{}
+		if weaponOf(env.Player.WeaponData2) == nil {
+			env.Player.WeaponData2 = weaponRef(&item.WeaponData{})
 		}
 	} else {
 		w2Item := env.Player.ItemList["Weapon 2"].(*Item)
 		if w2Item.In.WeaponData != nil && w2Item.In.WeaponData[2] != nil {
-			env.Player.WeaponData2 = w2Item.In.WeaponData[2]
+			env.Player.WeaponData2 = weaponRef(w2Item.In.WeaponData[2])
 		} else {
-			env.Player.WeaponData2 = map[string]any{}
+			env.Player.WeaponData2 = weaponRef(&item.WeaponData{})
 		}
 	}
 
@@ -340,10 +316,10 @@ func (env *Env) buildSkillsStage() bool {
 
 	// Process supports and put them into the correct buckets
 	env.CrossLinkedSupportGroups = map[string][]string{}
-	for _, entry := range env.ModDB.Tabulate("LIST", nil, "LinkedSupport") {
-		v, _ := entry.Value.(modparser.Tag)
+	for _, entry := range env.ModDB.Tabulate(modparser.List, nil, "LinkedSupport") {
+		v, _ := entry.Value.(modparser.LinkedSupportRef)
 		slot := entry.Mod.SourceSlot
-		env.CrossLinkedSupportGroups[slot] = append(env.CrossLinkedSupportGroups[slot], str(v["targetSlotName"]))
+		env.CrossLinkedSupportGroups[slot] = append(env.CrossLinkedSupportGroups[slot], v.TargetSlotName)
 	}
 
 	supportsBySlot := map[string]map[*SocketGroupInput]*[]*ActiveEffect{}
@@ -352,10 +328,7 @@ func (env *Env) buildSkillsStage() bool {
 	processedSockets := map[*SocketGemInput]bool{}
 
 	groupSlotName := func(group *SocketGroupInput) string {
-		if s, ok := group.KV["slot"].(string); ok {
-			return strings.ReplaceAll(s, " Swap", "")
-		}
-		return ""
+		return strings.ReplaceAll(group.Slot, " Swap", "")
 	}
 	getGroupCfg := func(group *SocketGroupInput) *groupCfg {
 		if gc := groupCfgs[group]; gc != nil {
@@ -364,7 +337,7 @@ func (env *Env) buildSkillsStage() bool {
 		slotName := groupSlotName(group)
 		gc := &groupCfg{SlotName: slotName}
 		gc.Cfg.SlotName = slotName
-		gc.PropertyModList = env.ModDB.Tabulate("LIST", &modstore.Cfg{SlotName: slotName}, "GemProperty")
+		gc.PropertyModList = env.ModDB.Tabulate(modparser.List, &modstore.Cfg{SlotName: slotName}, "GemProperty")
 		groupCfgs[group] = gc
 		return gc
 	}
@@ -372,16 +345,16 @@ func (env *Env) buildSkillsStage() bool {
 	// Process support gems adding them to applicable support lists
 	for index, group := range groups {
 		var slot *SlotInput
-		if s, ok := group.KV["slot"].(string); ok {
-			slot = env.slotsByName[s]
+		if group.Slot != "" {
+			slot = env.slotsByName[group.Slot]
 		}
 		activeSet := 1.0
 		if in.ItemsTab.UseSecondWeaponSet != nil && *in.ItemsTab.UseSecondWeaponSet {
 			activeSet = 2
 		}
 		slotEnabled := slot == nil || slot.WeaponSet == nil || *slot.WeaponSet == activeSet
-		group.KV["slotEnabled"] = slotEnabled
-		if !(index+1 == env.MainSocketGroup || (truthy(group.KV["enabled"]) && slotEnabled)) {
+		group.SlotEnabled = util.Some(slotEnabled)
+		if !(index+1 == env.MainSocketGroup || (group.Enabled && slotEnabled)) {
 			continue
 		}
 		gc := getGroupCfg(group)
@@ -401,9 +374,9 @@ func (env *Env) buildSkillsStage() bool {
 			targetListList = append(targetListList, supportsByGroup[group])
 		}
 
-		addExtraSupports := func(value modparser.Tag, grantedEffect *data.GrantedEffect, level *float64) {
+		addExtraSupports := func(value *modparser.SkillRef, grantedEffect *data.GrantedEffect, level *float64) {
 			if grantedEffect == nil && value != nil {
-				grantedEffect = data.Skills[str(value["skillId"])]
+				grantedEffect = data.Skills[value.SkillID]
 			}
 			if value != nil && grantedEffect != nil {
 				// Only item ExtraSupport gems are flagged as fromItem
@@ -411,19 +384,19 @@ func (env *Env) buildSkillsStage() bool {
 			}
 			if value != nil && grantedEffect != nil && !grantedEffect.Support {
 				// Skill gems sharing a support gem's name (e.g. Barrage)
-				grantedEffect = data.Skills["Support"+str(value["skillId"])]
+				grantedEffect = data.Skills["Support"+value.SkillID]
 				env.geFromItemMark[grantedEffect] = true
 			}
 			if grantedEffect != nil {
-				gemId := data.GemForBaseName[luaLower(grantedEffect.Name)]
+				gemId := data.GemForBaseName[strings.ToLower(grantedEffect.Name)]
 				if gemId == "" {
-					gemId = data.GemForBaseName[luaLower(grantedEffect.Name+" Support")]
+					gemId = data.GemForBaseName[strings.ToLower(grantedEffect.Name+" Support")]
 				}
 				lvl := 0.0
 				if level != nil {
 					lvl = *level
 				} else if value != nil {
-					lvl = anyNum(value["level"])
+					lvl = value.Level.Or(0)
 				}
 				for _, targetList := range targetListList {
 					*targetList = append(*targetList, &ActiveEffect{
@@ -437,15 +410,16 @@ func (env *Env) buildSkillsStage() bool {
 		}
 
 		// if not unique item that provides skills
-		if group.KV["source"] == nil {
+		if !group.Granted() {
 			// Add extra supports from the item this group is socketed in
 			for _, v := range env.ModDB.List(&gc.Cfg, "ExtraSupport") {
-				tag, _ := v.(modparser.Tag)
-				addExtraSupports(tag, nil, nil)
+				if ref, ok := v.(modparser.SkillRef); ok {
+					addExtraSupports(&ref, nil, nil)
+				}
 			}
 		}
 		// if the slot has an imbued support, add it as an ExtraSupport
-		if geId := in.SkillsTab.ImbuedSupportBySlot[gc.SlotName]; geId != "" && truthy(group.KV["imbuedSupport"]) {
+		if geId := in.SkillsTab.ImbuedSupportBySlot[gc.SlotName]; geId != "" && group.ImbuedSupport != "" {
 			imbued := data.Skills[geId]
 			one := 1.0
 			addExtraSupports(nil, imbued, &one)
@@ -455,7 +429,7 @@ func (env *Env) buildSkillsStage() bool {
 		}
 
 		for gemIndex, gem := range group.GemList {
-			if !truthy(gem.KV["enabled"]) {
+			if !gem.Enabled {
 				continue
 			}
 			processGrantedEffect := func(grantedEffect *data.GrantedEffect) {
@@ -463,13 +437,13 @@ func (env *Env) buildSkillsStage() bool {
 					return
 				}
 				socketBonus := 0.0
-				if truthy(gem.KV["matchesSocket"]) {
+				if gem.MatchesSocket.V {
 					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				supportEffect := &ActiveEffect{
 					GrantedEffect: grantedEffect,
-					Level:         anyNum(gem.KV["level"]),
-					Quality:       anyNum(gem.KV["quality"]) + socketBonus,
+					Level:         gem.Level,
+					Quality:       gem.Quality + socketBonus,
 					SocketQuality: socketBonus,
 					SrcInstance:   gem,
 					GemData:       gem.GemData,
@@ -488,7 +462,7 @@ func (env *Env) buildSkillsStage() bool {
 					sn := float64(gemIndex + 1)
 					supportEffect.GemCfg.SocketNum = &sn
 					if socketedIn != nil {
-						env.applyGemMods(supportEffect, env.ModDB.Tabulate("LIST", supportEffect.GemCfg, "GemProperty"))
+						env.applyGemMods(supportEffect, env.ModDB.Tabulate(modparser.List, supportEffect.GemCfg, "GemProperty"))
 					} else {
 						env.applyGemMods(supportEffect, gc.PropertyModList)
 					}
@@ -537,7 +511,7 @@ func (env *Env) buildSkillsStage() bool {
 	// Process active skills adding the applicable supports
 	skillListsByGroup := map[*SocketGroupInput][]*ActiveSkill{}
 	for index, group := range groups {
-		if !(index+1 == env.MainSocketGroup || (truthy(group.KV["enabled"]) && truthy(group.KV["slotEnabled"]))) {
+		if !(index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled.V)) {
 			continue
 		}
 		gc := getGroupCfg(group)
@@ -545,7 +519,7 @@ func (env *Env) buildSkillsStage() bool {
 
 		// Create active skills
 		for gemIndex, gem := range group.GemList {
-			if !truthy(gem.KV["enabled"]) || (gem.GemData == nil && gem.GrantedEffect == nil) {
+			if !gem.Enabled || (gem.GemData == nil && gem.GrantedEffect == nil) {
 				continue
 			}
 			var grantedEffectList []*data.GrantedEffect
@@ -555,21 +529,22 @@ func (env *Env) buildSkillsStage() bool {
 				grantedEffectList = []*data.GrantedEffect{gem.GrantedEffect}
 			}
 			for geIndex, grantedEffect := range grantedEffectList {
-				enableGlobal := truthy(gem.KV["enableGlobal1"])
+				enableGlobal := gem.EnableGlobal1.V
 				if geIndex == 1 {
-					enableGlobal = truthy(gem.KV["enableGlobal2"])
+					enableGlobal = gem.EnableGlobal2.V
 				}
-				if grantedEffect.Support || geUnsupported(grantedEffect) || (env.geHasGlobalEffect(grantedEffect) && !enableGlobal) {
+				// (`grantedEffect.unsupported` is vestigial: no template sets it)
+				if grantedEffect.Support || (env.geHasGlobalEffect(grantedEffect) && !enableGlobal) {
 					continue
 				}
 				socketBonus := 0.0
-				if truthy(gem.KV["matchesSocket"]) {
+				if gem.MatchesSocket.V {
 					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				activeEffect := &ActiveEffect{
 					GrantedEffect: grantedEffect,
-					Level:         anyNum(gem.KV["level"]),
-					Quality:       anyNum(gem.KV["quality"]) + socketBonus,
+					Level:         gem.Level,
+					Quality:       gem.Quality + socketBonus,
 					SocketQuality: socketBonus,
 					SrcInstance:   gem,
 					GemData:       gem.GemData,
@@ -587,7 +562,7 @@ func (env *Env) buildSkillsStage() bool {
 					sn := float64(gemIndex + 1)
 					activeEffect.GemCfg.SocketNum = &sn
 					if socketedIn != nil {
-						env.applyGemMods(activeEffect, env.ModDB.Tabulate("LIST", activeEffect.GemCfg, "GemProperty"))
+						env.applyGemMods(activeEffect, env.ModDB.Tabulate(modparser.List, activeEffect.GemCfg, "GemProperty"))
 					} else {
 						env.applyGemMods(activeEffect, gc.PropertyModList)
 					}
@@ -617,7 +592,7 @@ func (env *Env) buildSkillsStage() bool {
 					}
 				}
 				var appliedSupportList []*ActiveEffect
-				if !truthy(group.KV["noSupports"]) {
+				if !group.NoSupports {
 					var src *[]*ActiveEffect
 					if supportsByGroup[group] != nil {
 						src = supportsByGroup[group]
@@ -632,7 +607,7 @@ func (env *Env) buildSkillsStage() bool {
 					// iterates pairs(supportLists[slotName]) in hash order;
 					// group-list order here — matters only when competing
 					// supports share the slot)
-					if group.KV["source"] != nil && slotName != "" && supportsBySlot[slotName] != nil {
+					if group.Granted() && slotName != "" && supportsBySlot[slotName] != nil {
 						// (displayGemList tooltip bookkeeping skipped)
 						for _, otherGroup := range groups {
 							if sl := supportsBySlot[slotName][otherGroup]; sl != nil {
@@ -673,17 +648,17 @@ func (env *Env) buildSkillsStage() bool {
 				env.PlayerActiveSkills = append(env.PlayerActiveSkills, activeSkill)
 			}
 			if gem.GemData != nil {
-				req := func(key string) float64 {
+				req := func(v util.Opt[float64]) float64 {
 					if gem.ReqOverride != nil {
 						return *gem.ReqOverride
 					}
-					return anyNum(gem.KV[key])
+					return v.V
 				}
 				env.RequirementsTableGems = append(env.RequirementsTableGems, GemRequirement{
 					SourceGem: gem,
-					Str:       req("reqStr"),
-					Dex:       req("reqDex"),
-					Int:       req("reqInt"),
+					Str:       req(gem.ReqStr),
+					Dex:       req(gem.ReqDex),
+					Int:       req(gem.ReqInt),
 				})
 			}
 		}
@@ -692,24 +667,23 @@ func (env *Env) buildSkillsStage() bool {
 	// Process calculated active skill lists
 	for index, group := range groups {
 		socketGroupSkillList := skillListsByGroup[group]
-		if index+1 == env.MainSocketGroup || (truthy(group.KV["enabled"]) && truthy(group.KV["slotEnabled"])) {
+		if index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled.V) {
 			gc := getGroupCfg(group)
 			for _, v := range env.ModDB.List(&gc.Cfg, "GroupProperty") {
-				tag, _ := v.(modparser.Tag)
-				if mod, ok := tag["value"].(*modparser.Mod); ok {
-					env.ModDB.AddMod(modparser.SetSource(mod, gc.SlotName))
+				if ref, ok := v.(modparser.PropertyModRef); ok && ref.Mod != nil {
+					env.ModDB.AddMod(modparser.SetSource(ref.Mod, gc.SlotName))
 				}
 			}
 
 			if index+1 == env.MainSocketGroup && len(socketGroupSkillList) > 0 {
 				// Select the main skill from this socket group
-				cur := anyNum(group.KV["mainActiveSkill"])
+				cur := group.MainActiveSkill.V
 				if cur == 0 {
 					cur = 1
 				}
 				activeSkillIndex := int(math.Min(float64(len(socketGroupSkillList)), cur))
 				if env.Mode == "MAIN" {
-					group.KV["mainActiveSkill"] = float64(activeSkillIndex)
+					group.MainActiveSkill = util.Some(float64(activeSkillIndex))
 				}
 				env.PlayerMainSkill = socketGroupSkillList[activeSkillIndex-1]
 			}
@@ -718,13 +692,13 @@ func (env *Env) buildSkillsStage() bool {
 		// (displayLabel / displaySkillList are UI-only and skipped)
 
 		// Check for enabled energy blade to see if we need to regenerate
-		if !truthy(env.ModDB.Conditions["AffectedByEnergyBlade"]) && truthy(group.KV["enabled"]) && truthy(group.KV["slotEnabled"]) {
+		if !env.ModDB.Conditions.Get("AffectedByEnergyBlade") && group.Enabled && group.SlotEnabled.V {
 			for _, gem := range group.GemList {
 				ge := gem.GrantedEffect
 				if gem.GemData != nil {
 					ge = gem.GemData.GrantedEffect
 				}
-				if ge != nil && !ge.Support && truthy(gem.KV["enabled"]) && ge.Name == "Energy Blade" {
+				if ge != nil && !ge.Support && gem.Enabled && ge.Name == "Energy Blade" {
 					return true
 				}
 			}
@@ -747,147 +721,4 @@ func (env *Env) buildSkillsStage() bool {
 		env.buildActiveSkillModList(activeSkill)
 	}
 	return false
-}
-
-// findSkillGem ports SkillsTab:FindSkillGem (L1076): match a gem by name
-// through increasingly broad abbreviation patterns. Returns nil when the
-// name is unrecognised or ambiguous (the reference reports an error message
-// either way; nothing compared carries it). The reference iterates
-// pairs(data.gems) -- hash order -- which only affects which two names an
-// ambiguity error cites; the match result is order-independent, and this
-// port scans in sorted id order.
-// FindSkillGem exposes the lookup for the skills-tab load (its
-// pre-1.4.20 nameSpec migration path resolves gems the same way).
-func FindSkillGem(nameSpec string) *data.Gem { return findSkillGem(nameSpec) }
-
-func findSkillGem(nameSpec string) *data.Gem {
-	type matcher func(name string) bool
-	isAlpha := func(c byte) bool { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' }
-	lowerRun := func(s string, i int) int { // len of [a-z]+ run at i
-		n := 0
-		for i+n < len(s) && s[i+n] >= 'a' && s[i+n] <= 'z' {
-			n++
-		}
-		return n
-	}
-	noSpaces := strings.ReplaceAll(nameSpec, " ", "")
-
-	// 1. Exact match, case-insensitive.
-	exact := func(name string) bool { return strings.EqualFold(name, nameSpec) }
-
-	// 2. Simple abbreviation ("CtF" -> "Cold to Fire"): each spec letter
-	// starts a word and is followed by one or more lowercase letters;
-	// non-letters in the spec match literally. Subject is " "+name, anchored
-	// both ends.
-	simpleAbbrev := func(name string) bool {
-		s := " " + name
-		i := 0
-		for k := 0; k < len(nameSpec); k++ {
-			c := nameSpec[k]
-			if isAlpha(c) {
-				if i >= len(s) || s[i] != ' ' {
-					return false
-				}
-				i++
-				if i >= len(s) || s[i] != c {
-					return false
-				}
-				i++
-				run := lowerRun(s, i)
-				if run == 0 {
-					return false
-				}
-				i += run
-			} else {
-				if i >= len(s) || s[i] != c {
-					return false
-				}
-				i++
-			}
-		}
-		return i == len(s)
-	}
-
-	// 3. Abbreviated words ("CldFr" -> "Cold to Fire"): lowercase spec
-	// letters may be preceded by lowercase runs; anchored, must end in a
-	// lowercase run. Greedy with backtracking over the optional runs is
-	// needed for faithfulness; implement recursively.
-	var wordAbbrevAt func(s string, i, k int) bool
-	wordAbbrevAt = func(s string, i, k int) bool {
-		if k == len(noSpaces) {
-			run := lowerRun(s, i)
-			return run > 0 && i+run == len(s)
-		}
-		c := noSpaces[k]
-		if c >= 'a' && c <= 'z' {
-			// "%l*c": try every split of a lowercase run before c.
-			for skip := 0; ; skip++ {
-				j := i + skip
-				if j < len(s) && s[j] == c && wordAbbrevAt(s, j+1, k+1) {
-					return true
-				}
-				if j >= len(s) || !(s[j] >= 'a' && s[j] <= 'z') {
-					return false
-				}
-			}
-		}
-		if i < len(s) && s[i] == c {
-			return wordAbbrevAt(s, i+1, k+1)
-		}
-		return false
-	}
-	wordAbbrev := func(name string) bool { return wordAbbrevAt(" "+name, 1, 0) }
-
-	// 4. Global abbreviation ("CtoF" -> "Cold to Fire"): spec letters appear
-	// in order anywhere (case-sensitive); unanchored tail.
-	globalAbbrev := func(name string) bool {
-		s := " " + name
-		i := 0
-		for k := 0; k < len(noSpaces); k++ {
-			c := noSpaces[k]
-			j := strings.IndexByte(s[i:], c)
-			if j < 0 {
-				return false
-			}
-			i += j + 1
-		}
-		return true
-	}
-
-	// 5. The same, case-insensitive.
-	globalAbbrevFold := func(name string) bool {
-		s := strings.ToLower(" " + name)
-		spec := strings.ToLower(noSpaces)
-		i := 0
-		for k := 0; k < len(spec); k++ {
-			j := strings.IndexByte(s[i:], spec[k])
-			if j < 0 {
-				return false
-			}
-			i += j + 1
-		}
-		return true
-	}
-
-	gemIds := make([]string, 0, len(data.Gems))
-	for id := range data.Gems {
-		gemIds = append(gemIds, id)
-	}
-	sort.Strings(gemIds)
-	for _, match := range []matcher{exact, simpleAbbrev, wordAbbrev, globalAbbrev, globalAbbrevFold} {
-		var found *data.Gem
-		for _, id := range gemIds {
-			g := data.Gems[id]
-			if match(g.Name) {
-				if found != nil {
-					return nil // ambiguous
-				}
-				found = g
-			}
-		}
-		if found != nil {
-			return found
-		}
-	}
-	return nil
 }

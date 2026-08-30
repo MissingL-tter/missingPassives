@@ -4,6 +4,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 )
 
@@ -20,80 +21,80 @@ func (env *Env) ehpPools(actor *performActor) {
 	output := actor.output
 
 	// Life Recoverable
-	output["LifeRecoverable"] = outNum(output, "LifeUnreserved")
-	if truthy(env.ConfigInput["conditionLowLife"]) {
+	output.SetN("LifeRecoverable", output.N("LifeUnreserved"))
+	if env.ConfigInput.ConditionLowLife {
 		lowPerc := data.Misc.LowPoolThreshold
-		if v, ok := output["LowLifePercentage"]; ok && truthy(v) {
-			lowPerc = anyNum(v)
+		if v, ok := output["LowLifePercentage"]; ok && v.Truthy() {
+			lowPerc = v.Num()
 		}
-		output["LifeRecoverable"] = math.Min(outNum(output, "Life")*lowPerc/100, outNum(output, "LifeUnreserved"))
-		if outNum(output, "LifeRecoverable") < outNum(output, "LifeUnreserved") {
-			output["CappingLife"] = true
+		output.SetN("LifeRecoverable", math.Min(output.N("Life")*lowPerc/100, output.N("LifeUnreserved")))
+		if output.N("LifeRecoverable") < output.N("LifeUnreserved") {
+			output.SetFlag("CappingLife", true)
 		}
 	}
 
 	// Dissolution of the flesh life pool change
 	if modDB.Flag(nil, "DamageInsteadReservesLife") {
-		output["LifeRecoverable"] = (outNum(output, "LifeCancellableReservation") / 100) * outNum(output, "Life")
+		output.SetN("LifeRecoverable", (output.N("LifeCancellableReservation")/100)*output.N("Life"))
 	}
 
-	output["LifeRecoverable"] = math.Max(outNum(output, "LifeRecoverable"), 1)
+	output.SetN("LifeRecoverable", math.Max(output.N("LifeRecoverable"), 1))
 
 	// Prevented life loss taken over 4 seconds (and Petrified Blood)
 	{
-		recoverable := outNum(output, "LifeRecoverable")
-		preventedLifeLoss := math.Min(modDB.Sum("BASE", nil, "LifeLossPrevented"), 100)
-		output["preventedLifeLoss"] = preventedLifeLoss
-		initialLifeLossBelowHalfPrevented := modDB.Sum("BASE", nil, "LifeLossBelowHalfPrevented")
-		output["preventedLifeLossBelowHalf"] = (1 - preventedLifeLoss/100) * initialLifeLossBelowHalfPrevented
-		if !truthy(env.ConfigInput["conditionLowLife"]) {
+		recoverable := output.N("LifeRecoverable")
+		preventedLifeLoss := math.Min(modDB.Sum(modparser.Base, nil, "LifeLossPrevented"), 100)
+		output.SetN("preventedLifeLoss", preventedLifeLoss)
+		initialLifeLossBelowHalfPrevented := modDB.Sum(modparser.Base, nil, "LifeLossBelowHalfPrevented")
+		output.SetN("preventedLifeLossBelowHalf", (1-preventedLifeLoss/100)*initialLifeLossBelowHalfPrevented)
+		if !env.ConfigInput.ConditionLowLife {
 			// portion of life that is lowlife
-			portionLife := math.Min(outNum(output, "Life")*0.5/recoverable, 1)
-			output["preventedLifeLossTotal"] = preventedLifeLoss + outNum(output, "preventedLifeLossBelowHalf")*portionLife
+			portionLife := math.Min(output.N("Life")*0.5/recoverable, 1)
+			output.SetN("preventedLifeLossTotal", preventedLifeLoss+output.N("preventedLifeLossBelowHalf")*portionLife)
 		} else {
-			output["preventedLifeLossTotal"] = preventedLifeLoss + outNum(output, "preventedLifeLossBelowHalf")
+			output.SetN("preventedLifeLossTotal", preventedLifeLoss+output.N("preventedLifeLossBelowHalf"))
 		}
-		output["LifeHitPool"] = calcLifeHitPoolWithLossPrevention(recoverable, outNum(output, "Life"),
-			preventedLifeLoss, initialLifeLossBelowHalfPrevented)
+		output.SetN("LifeHitPool", calcLifeHitPoolWithLossPrevention(recoverable, output.N("Life"),
+			preventedLifeLoss, initialLifeLossBelowHalfPrevented))
 	}
 
 	// Energy Shield bypass
-	output["AnyBypass"] = false
-	output["MinimumBypass"] = 100.0
+	output.SetFlag("AnyBypass", false)
+	output.SetN("MinimumBypass", 100.0)
 	for _, damageType := range dmgTypeList {
 		if modDB.Flag(nil, "UnblockedDamageDoesBypassES") {
-			output[damageType+"EnergyShieldBypass"] = 100.0
-			output["AnyBypass"] = true
+			output.SetN(damageType+"EnergyShieldBypass", 100.0)
+			output.SetFlag("AnyBypass", true)
 		} else {
-			if ov := modDB.Override(nil, damageType+"EnergyShieldBypass"); truthy(ov) {
-				output[damageType+"EnergyShieldBypass"] = anyNum(ov)
+			if ov, ok := modDB.Override(nil, damageType+"EnergyShieldBypass"); ok {
+				output.SetN(damageType+"EnergyShieldBypass", valueNum(ov))
 			} else {
-				output[damageType+"EnergyShieldBypass"] = modDB.Sum("BASE", nil, damageType+"EnergyShieldBypass")
+				output.SetN(damageType+"EnergyShieldBypass", modDB.Sum(modparser.Base, nil, damageType+"EnergyShieldBypass"))
 			}
-			if outNum(output, damageType+"EnergyShieldBypass") != 0 {
-				output["AnyBypass"] = true
+			if output.N(damageType+"EnergyShieldBypass") != 0 {
+				output.SetFlag("AnyBypass", true)
 			}
 			if damageType == "Chaos" {
 				if !modDB.Flag(nil, "ChaosNotBypassEnergyShield") {
-					output[damageType+"EnergyShieldBypass"] = outNum(output, damageType+"EnergyShieldBypass") + 100
+					output.SetN(damageType+"EnergyShieldBypass", output.N(damageType+"EnergyShieldBypass")+100)
 				} else {
-					output["AnyBypass"] = true
+					output.SetFlag("AnyBypass", true)
 				}
 			}
 		}
-		output[damageType+"EnergyShieldBypass"] = math.Max(math.Min(outNum(output, damageType+"EnergyShieldBypass"), 100), 0)
-		output["MinimumBypass"] = math.Min(outNum(output, "MinimumBypass"), outNum(output, damageType+"EnergyShieldBypass"))
+		output.SetN(damageType+"EnergyShieldBypass", math.Max(math.Min(output.N(damageType+"EnergyShieldBypass"), 100), 0))
+		output.SetN("MinimumBypass", math.Min(output.N("MinimumBypass"), output.N(damageType+"EnergyShieldBypass")))
 	}
 
-	output["ehpSectionAnySpecificTypes"] = false
+	output.SetFlag("ehpSectionAnySpecificTypes", false)
 	// Mind over Matter
-	output["OnlySharedMindOverMatter"] = false
-	output["AnySpecificMindOverMatter"] = false
-	output["sharedMindOverMatter"] = math.Min(modDB.Sum("BASE", nil, "DamageTakenFromManaBeforeLife"), 100)
+	output.SetFlag("OnlySharedMindOverMatter", false)
+	output.SetFlag("AnySpecificMindOverMatter", false)
+	output.SetN("sharedMindOverMatter", math.Min(modDB.Sum(modparser.Base, nil, "DamageTakenFromManaBeforeLife"), 100))
 
 	// calcMoMEBPool returns the combined pool plus the mana/ES breakdown.
 	calcMoMEBPool := func(lifePool, momEffect, esBypass float64) (pool, maxManaUsable, manaUsed, maxESUsable float64) {
-		mana := math.Max(outNum(output, "ManaUnreserved"), 0)
+		mana := math.Max(output.N("ManaUnreserved"), 0)
 		maxMoMPool := math.Inf(1)
 		if momEffect < 1 {
 			maxMoMPool = lifePool/(1-momEffect) - lifePool
@@ -102,7 +103,7 @@ func (env *Env) ehpPools(actor *performActor) {
 		maxESUsable = 0
 		if modDB.Flag(nil, "EnergyShieldProtectsMana") && esBypass < 1 {
 			maxESUsable = math.Floor(math.Min(math.Min(
-				outNum(output, "EnergyShieldRecoveryCap"),
+				output.N("EnergyShieldRecoveryCap"),
 				maxMoMPool*(1-esBypass)),
 				(lifePool+maxManaUsable)/(1-(1-esBypass)*momEffect)-(lifePool+maxManaUsable)))
 		}
@@ -110,34 +111,34 @@ func (env *Env) ehpPools(actor *performActor) {
 		return lifePool + manaUsed + maxESUsable, maxManaUsable, manaUsed, maxESUsable
 	}
 
-	if outNum(output, "sharedMindOverMatter") > 0 {
-		mindOverMatter := outNum(output, "sharedMindOverMatter") / 100
-		esBypass := outNum(output, "MinimumBypass") / 100
-		sharedMoMPool, _, _, _ := calcMoMEBPool(outNum(output, "LifeRecoverable"), mindOverMatter, esBypass)
-		output["sharedManaEffectiveLife"] = sharedMoMPool
-		hitPool, _, _, _ := calcMoMEBPool(outNum(output, "LifeHitPool"), mindOverMatter, esBypass)
-		output["sharedMoMHitPool"] = hitPool
+	if output.N("sharedMindOverMatter") > 0 {
+		mindOverMatter := output.N("sharedMindOverMatter") / 100
+		esBypass := output.N("MinimumBypass") / 100
+		sharedMoMPool, _, _, _ := calcMoMEBPool(output.N("LifeRecoverable"), mindOverMatter, esBypass)
+		output.SetN("sharedManaEffectiveLife", sharedMoMPool)
+		hitPool, _, _, _ := calcMoMEBPool(output.N("LifeHitPool"), mindOverMatter, esBypass)
+		output.SetN("sharedMoMHitPool", hitPool)
 	} else {
-		output["sharedManaEffectiveLife"] = outNum(output, "LifeRecoverable")
-		output["sharedMoMHitPool"] = outNum(output, "LifeHitPool")
+		output.SetN("sharedManaEffectiveLife", output.N("LifeRecoverable"))
+		output.SetN("sharedMoMHitPool", output.N("LifeHitPool"))
 	}
 	for _, damageType := range dmgTypeList {
-		output[damageType+"MindOverMatter"] = math.Min(modDB.Sum("BASE", nil, damageType+"DamageTakenFromManaBeforeLife"),
-			100-outNum(output, "sharedMindOverMatter"))
-		if outNum(output, damageType+"MindOverMatter") > 0 ||
-			(outNum(output, damageType+"EnergyShieldBypass") > outNum(output, "MinimumBypass") && outNum(output, "sharedMindOverMatter") > 0) {
-			output["ehpSectionAnySpecificTypes"] = true
-			output["AnySpecificMindOverMatter"] = true
-			output["OnlySharedMindOverMatter"] = false
-			mindOverMatter := (outNum(output, damageType+"MindOverMatter") + outNum(output, "sharedMindOverMatter")) / 100
-			esBypass := outNum(output, damageType+"EnergyShieldBypass") / 100
-			typedMoMPool, _, _, _ := calcMoMEBPool(outNum(output, "LifeRecoverable"), mindOverMatter, esBypass)
-			output[damageType+"ManaEffectiveLife"] = typedMoMPool
-			hitPool, _, _, _ := calcMoMEBPool(outNum(output, "LifeHitPool"), mindOverMatter, esBypass)
-			output[damageType+"MoMHitPool"] = hitPool
+		output.SetN(damageType+"MindOverMatter", math.Min(modDB.Sum(modparser.Base, nil, damageType+"DamageTakenFromManaBeforeLife"),
+			100-output.N("sharedMindOverMatter")))
+		if output.N(damageType+"MindOverMatter") > 0 ||
+			(output.N(damageType+"EnergyShieldBypass") > output.N("MinimumBypass") && output.N("sharedMindOverMatter") > 0) {
+			output.SetFlag("ehpSectionAnySpecificTypes", true)
+			output.SetFlag("AnySpecificMindOverMatter", true)
+			output.SetFlag("OnlySharedMindOverMatter", false)
+			mindOverMatter := (output.N(damageType+"MindOverMatter") + output.N("sharedMindOverMatter")) / 100
+			esBypass := output.N(damageType+"EnergyShieldBypass") / 100
+			typedMoMPool, _, _, _ := calcMoMEBPool(output.N("LifeRecoverable"), mindOverMatter, esBypass)
+			output.SetN(damageType+"ManaEffectiveLife", typedMoMPool)
+			hitPool, _, _, _ := calcMoMEBPool(output.N("LifeHitPool"), mindOverMatter, esBypass)
+			output.SetN(damageType+"MoMHitPool", hitPool)
 		} else {
-			output[damageType+"ManaEffectiveLife"] = outNum(output, "sharedManaEffectiveLife")
-			output[damageType+"MoMHitPool"] = outNum(output, "sharedMoMHitPool")
+			output.SetN(damageType+"ManaEffectiveLife", output.N("sharedManaEffectiveLife"))
+			output.SetN(damageType+"MoMHitPool", output.N("sharedMoMHitPool"))
 		}
 	}
 }

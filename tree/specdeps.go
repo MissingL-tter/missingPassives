@@ -6,34 +6,28 @@ package tree
 import (
 	"sort"
 	"strconv"
+	"strings"
+
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 // collectAbyssConquests ports the abyss pre-pass: read each socketed
 // abyss-conquering jewel's affected nodes before the nodes are reset
 // (Zorath needs the currently allocated path from its socket).
-func (s *Spec) collectAbyssConquests(jewelIDs []int64) map[int64]map[string]any {
-	conquests := map[int64]map[string]any{}
+func (s *Spec) collectAbyssConquests(jewelIDs []int64) map[int64]*Conquest {
+	conquests := map[int64]*Conquest{}
 	for _, socketID := range jewelIDs {
 		it := s.jewel(s.Jewels[socketID])
-		cq := jd(it, "conqueredBy")
-		if cq == nil || s.AllocNodes[socketID] == nil || jdTrue(it, "limitDisabled") {
-			continue
-		}
-		jewelType, ok := jewelTypeByConqueror[conquerorType(cq)]
-		if !ok || jewelType < 7 {
+		cq := jewelConquest(it)
+		if cq == nil || s.AllocNodes[socketID] == nil || jewelData(it).LimitDisabled || !isAbyss(cq.Conqueror) {
 			continue
 		}
 		var path map[int64]bool
-		if jewelType == 11 {
+		if cq.Conqueror == modparser.ConquerorAbyssSpecial {
 			path = s.getShortestPathToClassStart(socketID)
 		}
-		seed := conqueredSeed(cq)
-		for nodeID, modification := range AbyssPassive(int64(seed), socketID, jewelType, path) {
-			conquests[nodeID] = map[string]any{
-				"id":           seed,
-				"conqueror":    conquerorOf(cq),
-				"modification": modification,
-			}
+		for nodeID, modification := range s.Tree.AbyssPassive(int64(cq.Seed), socketID, int(cq.Conqueror), path) {
+			conquests[nodeID] = &Conquest{Seed: cq.Seed, Conqueror: cq.Conqueror, ConqID: cq.ConqID, Abyss: modification}
 		}
 	}
 	return conquests
@@ -60,36 +54,34 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		if cq := abyssConquests[id]; cq != nil {
 			node.ConqueredBy = cq
 		}
-		if node.Type() != "ClassStart" && node.Type() != "Socket" && node.AscendancyName() == "" {
+		if node.Type() != NodeClassStart && node.Type() != NodeSocket && node.AscendancyName() == "" {
 			for _, socketID := range jewelIDs {
 				itemID := s.Jewels[socketID]
 				it := s.jewel(itemID)
 				if it == nil || it.JewelRadiusIndex == nil || s.AllocNodes[socketID] == nil ||
-					it.JewelData == nil || jdTrue(it, "limitDisabled") {
+					it.JewelData == nil || it.JewelData.LimitDisabled {
 					continue
 				}
+				jd := it.JewelData
 				radiusIndex := *it.JewelRadiusIndex
 				socketNode := s.Nodes[socketID]
 				if socketNode != nil && socketNode.T.NodesInRadius != nil &&
 					socketNode.T.NodesInRadius[radiusIndex-1][node.ID()] != nil {
 					if itemID != 0 {
-						if jdTrue(it, "intuitiveLeapLike") &&
-							!(jdTrue(it, "intuitiveLeapKeystoneOnly") && node.Type() != "Keystone") {
+						if jd.IntuitiveLeapLike &&
+							!(jd.IntuitiveLeapKeystoneOnly && node.Type() != NodeKeystone) {
 							node.IntuitiveLeapLikesAffecting = append(node.IntuitiveLeapLikesAffecting, s.Nodes[socketID])
 						}
-						if cq := jd(it, "conqueredBy"); cq != nil {
-							radiusJewelType, known := jewelTypeByConqueror[conquerorType(cq)]
-							if !known || radiusJewelType < 7 {
-								node.ConqueredBy = cq
-							}
+						if cq := jewelConquest(it); cq != nil && !isAbyss(cq.Conqueror) {
+							node.ConqueredBy = cq
 						}
 					}
 				}
-				if jdTrue(it, "impossibleEscapeKeystone") {
-					keystones, _ := jd(it, "impossibleEscapeKeystones").(map[string]any)
+				if jd.ImpossibleEscapeKeystone != "" {
+					keystones := jd.ImpossibleEscapeKeystones
 					for _, keyName := range sortedStringKeys(s.Tree.KeystoneMap) {
 						keyNode := s.Tree.KeystoneMap[keyName]
-						if truthyVal(keystones[keyName]) && keyNode.NodesInRadius != nil &&
+						if keystones[keyName] && keyNode.NodesInRadius != nil &&
 							keyNode.NodesInRadius[radiusIndex-1][node.ID()] != nil {
 							node.IntuitiveLeapLikesAffecting = append(node.IntuitiveLeapLikesAffecting, s.Nodes[socketID])
 						}
@@ -117,17 +109,18 @@ func (s *Spec) BuildAllDependsAndPaths() {
 	s.AllocatedKeystoneCount = 0
 	s.AllocatedMasteryTypes = map[string]float64{}
 	s.AllocatedMasteryTypeCount = 0
-	s.AllocatedTattooTypes = map[string]float64{}
+	s.AllocatedTattooTypes = map[OverrideKind]float64{}
 	for _, id := range nodeIDs {
 		node := s.Nodes[id]
-		if node.Type() == "Mastery" && s.MasterySelections[id] != 0 {
+		if node.Type() == NodeMastery && s.MasterySelections[id] != 0 {
 			effect := s.Tree.MasteryEffects[s.MasterySelections[id]]
 			if effect != nil && s.AllocNodes[id] != nil {
 				if ov := s.HashOverrides[id]; ov != nil {
 					s.replaceNode(node, ov)
 				} else {
 					node.Stats.Sd = effect.Sd
-					node.sdIdentity = effect
+					node.Stats.cloneSd()
+					node.src, node.srcME = nil, effect
 				}
 				node.AllMasteryOptions = false
 				node.ReminderText = []string{"Tip: Right click to select a different effect"}
@@ -135,22 +128,19 @@ func (s *Spec) BuildAllDependsAndPaths() {
 				s.AllocatedMasteryCount++
 				name := node.nameForCounts()
 				if s.AllocatedMasteryTypes[name] == 0 {
-					prev := s.AllocatedMasteryTypes[name]
-					s.AllocatedMasteryTypes[name] = prev + 1
 					s.AllocatedMasteryTypeCount++
-				} else {
-					s.AllocatedMasteryTypes[name]++
 				}
+				s.AllocatedMasteryTypes[name]++
 			} else {
 				node.Alloc = false
 				delete(s.AllocNodes, id)
 				delete(s.MasterySelections, id)
 			}
-		} else if node.Type() == "Mastery" {
+		} else if node.Type() == NodeMastery {
 			s.addMasteryEffectOptionsToNode(node)
-		} else if node.Type() == "Notable" && node.Alloc {
+		} else if node.Type() == NodeNotable && node.Alloc {
 			s.AllocatedNotableCount++
-		} else if node.Type() == "Keystone" && node.Alloc {
+		} else if node.Type() == NodeKeystone && node.Alloc {
 			s.AllocatedKeystoneCount++
 		}
 		if node.IsTattoo && node.Alloc && node.OverrideType != "" {
@@ -170,12 +160,12 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		}
 		node.Visited = true
 		node.ConnectedToStart = false
-		anyStartFound := node.Type() == "ClassStart" || node.Type() == "AscendClassStart"
+		anyStartFound := node.Type().IsStart()
 		for _, other := range node.Linked {
 			if !other.Alloc || dependsContains(node.Depends, other) {
 				continue
 			}
-			if other.Type() == "ClassStart" || other.Type() == "AscendClassStart" {
+			if other.Type().IsStart() {
 				anyStartFound = true
 				node.ConnectedToStart = true
 			} else if s.findStartFromNode(other, &visited, false) {
@@ -193,7 +183,7 @@ func (s *Spec) BuildAllDependsAndPaths() {
 					}
 				}
 				for _, n := range visited {
-					if n.Type() == "Mastery" {
+					if n.Type() == NodeMastery {
 						otherPath := false
 						allocatedLinkCount := 0
 						for _, linkedNode := range n.Linked {
@@ -245,11 +235,11 @@ func (s *Spec) BuildAllDependsAndPaths() {
 					if it == nil {
 						continue
 					}
-					leapCovers := jdTrue(it, "intuitiveLeapLike") && it.JewelRadiusIndex != nil &&
+					leapCovers := jewelData(it).IntuitiveLeapLike && it.JewelRadiusIndex != nil &&
 						s.Nodes[socketID] != nil && s.Nodes[socketID].T.NodesInRadius != nil &&
 						s.Nodes[socketID].T.NodesInRadius[*it.JewelRadiusIndex-1][depNode.ID()] != nil
 					escapeCovers := false
-					if keystones, ok := jd(it, "impossibleEscapeKeystones").(map[string]any); ok && it.JewelRadiusIndex != nil {
+					if keystones := jewelData(it).ImpossibleEscapeKeystones; keystones != nil && it.JewelRadiusIndex != nil {
 						escapeCovers = s.nodeInKeystoneRadius(keystones, depNode.ID(), *it.JewelRadiusIndex)
 					}
 					if leapCovers || escapeCovers {
@@ -319,7 +309,7 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		}
 		node.Path = nil
 		node.HasPath = false
-		if node.T.JewelSocket || node.T.Raw["expansionJewel"] != nil {
+		if node.T.JewelSocket || node.T.ExpansionJewel != nil {
 			zero := 0.0
 			node.DistanceToClassStart = &zero
 		}
@@ -328,7 +318,7 @@ func (s *Spec) BuildAllDependsAndPaths() {
 		node := s.AllocNodes[id]
 		if len(node.IntuitiveLeapLikesAffecting) == 0 || node.ConnectedToStart {
 			s.buildPathFromNode(node)
-			if node.T.JewelSocket || node.T.Raw["expansionJewel"] != nil {
+			if node.T.JewelSocket || node.T.ExpansionJewel != nil {
 				s.setNodeDistanceToClassStart(node)
 			}
 		}
@@ -347,7 +337,7 @@ func (n *SpecNode) nameForCounts() string {
 func (s *Spec) deallocSingleNode(node *SpecNode) {
 	node.Alloc = false
 	delete(s.AllocNodes, node.ID())
-	if node.Type() == "Mastery" {
+	if node.Type() == NodeMastery {
 		s.addMasteryEffectOptionsToNode(node)
 		delete(s.MasterySelections, node.ID())
 	}
@@ -357,7 +347,7 @@ func (s *Spec) deallocSingleNode(node *SpecNode) {
 // masteries show every effect option.
 func (s *Spec) addMasteryEffectOptionsToNode(node *SpecNode) {
 	node.Stats.Sd = []string{}
-	node.sdIdentity = nil
+	node.src, node.srcME = nil, nil
 	if len(node.T.MasteryEffects) > 0 {
 		for _, effectRef := range node.T.MasteryEffects {
 			effect := s.Tree.MasteryEffects[effectRef.Effect]
@@ -378,15 +368,15 @@ func (s *Spec) findStartFromNode(node *SpecNode, visited *[]*SpecNode, noAscend 
 	for _, other := range node.Linked {
 		startIndex := len(*visited)
 		if other.Alloc &&
-			(other.Type() == "ClassStart" || other.Type() == "AscendClassStart" ||
-				(!other.Visited && node.Type() != "Mastery" && s.findStartFromNode(other, visited, noAscend))) {
+			(other.Type().IsStart() ||
+				(!other.Visited && node.Type() != NodeMastery && s.findStartFromNode(other, visited, noAscend))) {
 			if node.AscendancyName() != "" && other.AscendancyName() == "" {
 				// Pathing out of Ascendant: un-visit the outside nodes.
 				for i := startIndex; i < len(*visited); i++ {
 					(*visited)[i].Visited = false
 				}
 				*visited = (*visited)[:startIndex]
-			} else if !noAscend || other.Type() != "AscendClassStart" {
+			} else if !noAscend || other.Type() != NodeAscendClassStart {
 				return true
 			}
 		}
@@ -416,7 +406,7 @@ func (s *Spec) buildPathFromNode(root *SpecNode) {
 				other = canonical
 			}
 			otherPathDist := other.PathDist
-			if node.Type() != "Mastery" && other.Type() != "ClassStart" && other.Type() != "AscendClassStart" &&
+			if node.Type() != NodeMastery && !other.Type().IsStart() &&
 				otherPathDist > curDist &&
 				(node.AscendancyName() == other.AscendancyName() || (curDist == 0 && other.AscendancyName() == "")) {
 				other.PathDist = curDist
@@ -451,8 +441,7 @@ func (s *Spec) setNodeDistanceToClassStart(root *SpecNode) {
 				root.DistanceToClassStart = &d
 				return
 			}
-			if other.Alloc && node.Type() != "Mastery" && other.Type() != "ClassStart" &&
-				other.Type() != "AscendClassStart" {
+			if other.Alloc && node.Type() != NodeMastery && !other.Type().IsStart() {
 				if _, seen := dist[other.ID()]; !seen {
 					dist[other.ID()] = curDist
 					queue = append(queue, other)
@@ -485,8 +474,8 @@ func (s *Spec) getShortestPathToClassStart(rootID int64) map[int64]bool {
 				}
 				return path
 			}
-			if other.Alloc && node.Type() != "Mastery" && other.Type() != "ClassStart" &&
-				other.Type() != "AscendClassStart" && parent[other.ID()] == nil && other.ID() != root.ID() {
+			if other.Alloc && node.Type() != NodeMastery && !other.Type().IsStart() &&
+				parent[other.ID()] == nil && other.ID() != root.ID() {
 				parent[other.ID()] = node
 				queue = append(queue, other)
 			}
@@ -510,7 +499,7 @@ func (s *Spec) nodesInIntuitiveLeapLikeRadius(node *SpecNode) []*SpecNode {
 		return result
 	}
 	radiusIndex := *it.JewelRadiusIndex
-	if jdTrue(it, "intuitiveLeapLike") {
+	if jewelData(it).IntuitiveLeapLike {
 		socketNode := s.Nodes[node.ID()]
 		if socketNode != nil && socketNode.T.NodesInRadius != nil {
 			for _, affectedID := range sortedNodeIDs(socketNode.T.NodesInRadius[radiusIndex-1]) {
@@ -520,9 +509,9 @@ func (s *Spec) nodesInIntuitiveLeapLikeRadius(node *SpecNode) []*SpecNode {
 			}
 		}
 	}
-	if jdTrue(it, "impossibleEscapeKeystone") {
-		keystones, _ := jd(it, "impossibleEscapeKeystones").(map[string]any)
-		for _, keyName := range sortedStringKeys2(keystones) {
+	if jewelData(it).ImpossibleEscapeKeystone != "" {
+		keystones := jewelData(it).ImpossibleEscapeKeystones
+		for _, keyName := range sortedStringKeys(keystones) {
 			keyNode := s.Tree.KeystoneMap[keyName]
 			if keyNode != nil && keyNode.NodesInRadius != nil {
 				for _, affectedID := range sortedNodeIDs(keyNode.NodesInRadius[radiusIndex-1]) {
@@ -537,12 +526,12 @@ func (s *Spec) nodesInIntuitiveLeapLikeRadius(node *SpecNode) []*SpecNode {
 }
 
 // nodeInKeystoneRadius ports NodeInKeystoneRadius (lowercased names).
-func (s *Spec) nodeInKeystoneRadius(keystoneNames map[string]any, nodeID int64, radiusIndex int) bool {
+func (s *Spec) nodeInKeystoneRadius(keystoneNames map[string]bool, nodeID int64, radiusIndex int) bool {
 	for _, node := range s.Nodes {
 		// node.name through the metatable: a conquered keystone's shadow name
 		// is nil (alternate nodes have only dn) and falls through to the tree's.
 		name := node.EffectiveName()
-		if node.Type() == "Keystone" && name != nil && truthyVal(keystoneNames[luaLower(*name)]) {
+		if node.Type() == NodeKeystone && name != nil && keystoneNames[strings.ToLower(*name)] {
 			if node.T.NodesInRadius != nil && node.T.NodesInRadius[radiusIndex-1][nodeID] != nil {
 				return true
 			}
@@ -555,7 +544,7 @@ func (s *Spec) buildSplitPersonalityPath() {
 	splitPersonalityPath := map[int64]bool{}
 	for _, socketID := range sortedNodeIDs(s.Jewels) {
 		it := s.jewel(s.Jewels[socketID])
-		if it != nil && jdTrue(it, "jewelIncEffectFromClassStart") {
+		if it != nil && jewelData(it).JewelIncEffectFromClassStart != 0 {
 			if path := s.getShortestPathToClassStart(socketID); path != nil {
 				for id := range path {
 					splitPersonalityPath[id] = true
@@ -567,15 +556,6 @@ func (s *Spec) buildSplitPersonalityPath() {
 }
 
 func sortedStringKeys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func sortedStringKeys2(m map[string]any) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

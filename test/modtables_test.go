@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/MissingL-tter/missingPassives/test/luapat"
 	"github.com/MissingL-tter/missingPassives/modparser"
+	"github.com/MissingL-tter/missingPassives/test/luacanon"
+	"github.com/MissingL-tter/missingPassives/test/luapat"
 )
 
 // The table-level differential test: every entry of every pattern table,
@@ -77,7 +78,7 @@ func TestTablesAgainstReference(t *testing.T) {
 		if accepted, ok := referenceNondeterminism[rec.Table+"|"+goKey]; ok && accepted[rec.Value] {
 			continue
 		}
-		if got := modparser.Canon(goVal); got != rec.Value {
+		if got := luacanon.CanonMods(goVal); got != luacanon.NormalizeArchiveMods(rec.Value) {
 			mismatched++
 			if shown < 20 {
 				shown++

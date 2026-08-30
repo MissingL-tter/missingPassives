@@ -5,6 +5,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/modparser"
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -21,13 +22,13 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 	totalCritMin, totalCritMax, totalCritAvg := 0.0, 0.0, 0.0
 	ghostReaver := skillModList.Flag(nil, "GhostReaver")
 	ghostReaverLifeLeech := 0.0
-	output["LifeLeech"] = 0.0
-	output["LifeLeechInstant"] = 0.0
-	output["EnergyShieldLeech"] = 0.0
-	output["EnergyShieldLeechInstant"] = 0.0
-	output["ManaLeech"] = 0.0
-	output["ManaLeechInstant"] = 0.0
-	output["impaleStoredHitAvg"] = 0.0
+	output.SetN("LifeLeech", 0.0)
+	output.SetN("LifeLeechInstant", 0.0)
+	output.SetN("EnergyShieldLeech", 0.0)
+	output.SetN("EnergyShieldLeechInstant", 0.0)
+	output.SetN("ManaLeech", 0.0)
+	output.SetN("ManaLeechInstant", 0.0)
+	output.SetN("impaleStoredHitAvg", 0.0)
 
 	if cfg.SkillCond == nil {
 		cfg.SkillCond = map[string]bool{}
@@ -49,16 +50,16 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 				}
 				var allMult float64
 				if activeSkill.SkillModList.Flag(nil, "Condition:WarcryMaxHit") {
-					allMult = convMult * outNum(output, "ScaledDamageEffect") * outNum(output, "RuthlessBlowHitEffect") *
-						outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "MaxOffensiveWarcryEffect")
+					allMult = convMult * output.N("ScaledDamageEffect") * output.N("RuthlessBlowHitEffect") *
+						output.N("FistOfWarDamageEffect") * globalOutput.N("MaxOffensiveWarcryEffect")
 				} else {
-					allMult = convMult * outNum(output, "ScaledDamageEffect") * outNum(output, "RuthlessBlowHitEffect") *
-						outNum(output, "FistOfWarDamageEffect") * outNum(globalOutput, "OffensiveWarcryEffect")
+					allMult = convMult * output.N("ScaledDamageEffect") * output.N("RuthlessBlowHitEffect") *
+						output.N("FistOfWarDamageEffect") * globalOutput.N("OffensiveWarcryEffect")
 				}
-				output["allMult"] = allMult
+				output.SetN("allMult", allMult)
 				if p == 1 {
 					// Apply crit multiplier
-					allMult = allMult * outNum(output, "CritMultiplier")
+					allMult = allMult * output.N("CritMultiplier")
 				}
 				damageTypeHitMin *= allMult
 				damageTypeHitMax *= allMult
@@ -74,7 +75,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 					((damageType == "Lightning" || damageType == "Cold" || damageType == "Fire") && skillModList.Flag(skillCfg, "ElementalLuckHits")) {
 					damageTypeLuckyChance = 1
 				} else {
-					damageTypeLuckyChance = math.Min(skillModList.Sum("BASE", skillCfg, "LuckyHitsChance"), 100) / 100
+					damageTypeLuckyChance = math.Min(skillModList.Sum(modparser.Base, skillCfg, "LuckyHitsChance"), 100) / 100
 				}
 				if skillModList.Flag(skillCfg, "UnluckyHits") {
 					damageTypeLuckyChance = damageTypeLuckyChance - 1
@@ -86,9 +87,9 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 				if skillModList.Flag(skillCfg, "Unexciting") {
 					rolls = 0
 				}
-				output["DamageRolls"] = rolls
+				output.SetN("DamageRolls", rolls)
 				if p == 1 {
-					output["CritDamageRolls"] = rolls
+					output.SetN("CritDamageRolls", rolls)
 				}
 				rolls = math.Abs(rolls) + 2
 				damageTypeHitAvgNotLucky := damageTypeHitMin/rolls + damageTypeHitMax/rolls
@@ -103,7 +104,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 				if (damageTypeHitMin != 0 || damageTypeHitMax != 0) && env.ModeEffective {
 					// Apply enemy resistances and damage taken modifiers
 					resist, pen := 0.0, 0.0
-					takenInc := enemyDB.Sum("INC", cfg, "DamageTaken", damageType+"DamageTaken")
+					takenInc := enemyDB.Sum(modparser.Inc, cfg, "DamageTaken", damageType+"DamageTaken")
 					takenMore := enemyDB.More(cfg, "DamageTaken", damageType+"DamageTaken")
 					// Check if player is supposed to ignore a damage type, or
 					// if it's ignored on enemy side
@@ -113,7 +114,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 							return 0
 						}
 						chanceNames := optName(isElementalRes[dt], []string{"ChanceToIgnore" + dt + "Resistance"}, "ChanceToIgnoreElementalResistances")
-						chanceToIgnore := skillModList.Sum("BASE", cfg, chanceNames...)
+						chanceToIgnore := skillModList.Sum(modparser.Base, cfg, chanceNames...)
 						chanceToIgnore = math.Min(math.Max(chanceToIgnore, 0), 100)
 						return 1 - chanceToIgnore/100
 					}
@@ -121,15 +122,15 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 						// store pre-armour physical damage from attacks for
 						// impale calculations
 						if p == 1 {
-							output["impaleStoredHitAvg"] = outNum(output, "impaleStoredHitAvg") + damageTypeHitAvg*(outNum(output, "CritChance")/100)
+							output.SetN("impaleStoredHitAvg", output.N("impaleStoredHitAvg")+damageTypeHitAvg*(output.N("CritChance")/100))
 						} else {
-							output["impaleStoredHitAvg"] = outNum(output, "impaleStoredHitAvg") + damageTypeHitAvg*(1-outNum(output, "CritChance")/100)
+							output.SetN("impaleStoredHitAvg", output.N("impaleStoredHitAvg")+damageTypeHitAvg*(1-output.N("CritChance")/100))
 						}
 						enemyArmour := math.Max(Val(enemyDB, "Armour", nil), 0)
 						armourRed := armourReductionF(enemyArmour, damageTypeHitAvg*skillModList.More(cfg, "CalcArmourAsThoughDealing"))
-						chanceToIgnoreDR := math.Min(skillModList.Sum("BASE", cfg, "ChanceToIgnoreEnemyPhysicalDamageReduction"), 100)
+						chanceToIgnoreDR := math.Min(skillModList.Sum(modparser.Base, cfg, "ChanceToIgnoreEnemyPhysicalDamageReduction"), 100)
 						if chanceToIgnoreDR > 0 && chanceToIgnoreDR < 100 {
-							switch str(env.ConfigInput["ChanceToIgnoreEnemyPhysicalDamageReductionMode"]) {
+							switch env.ConfigInput.ChanceToIgnoreEnemyPhysicalDamageReductionMode {
 							case "MAX":
 								chanceToIgnoreDR = 100
 							case "MIN":
@@ -139,10 +140,10 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 						if skillModList.Flag(cfg, "IgnoreEnemyPhysicalDamageReduction") || chanceToIgnoreDR >= 100 {
 							resist = 0
 						} else {
-							resist = math.Min(math.Max(0, enemyDB.Sum("BASE", nil, "PhysicalDamageReduction")+
-								skillModList.Sum("BASE", cfg, "EnemyPhysicalDamageReduction")+armourRed), data.Misc.EnemyPhysicalDamageReductionCap)
+							resist = math.Min(math.Max(0, enemyDB.Sum(modparser.Base, nil, "PhysicalDamageReduction")+
+								skillModList.Sum(modparser.Base, cfg, "EnemyPhysicalDamageReduction")+armourRed), data.Misc.EnemyPhysicalDamageReductionCap)
 							if resist > 0 {
-								resist = resist * (1 - (skillModList.Sum("BASE", nil, "PartialIgnoreEnemyPhysicalDamageReduction")/100 + chanceToIgnoreDR/100))
+								resist = resist * (1 - (skillModList.Sum(modparser.Base, nil, "PartialIgnoreEnemyPhysicalDamageReduction")/100 + chanceToIgnoreDR/100))
 							}
 						}
 					} else {
@@ -154,7 +155,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 						if ((skillModList.Flag(cfg, "ChaosDamageUsesLowestResistance") || skillModList.Flag(cfg, "ChaosDamageUsesHighestResistance")) && damageType == "Chaos") ||
 							(skillModList.Flag(cfg, "ElementalDamageUsesLowestResistance") && isElementalRes[damageType]) {
 							if isElementalRes[damageType] {
-								takenInc += enemyDB.Sum("INC", cfg, "ElementalDamageTaken")
+								takenInc += enemyDB.Sum(modparser.Inc, cfg, "ElementalDamageTaken")
 							}
 							// Find the lowest resist of all the elements and
 							// use that if it's lower
@@ -176,19 +177,19 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 							}
 							// Update the penetration based on the element used
 							if isElementalRes[elementUsed] {
-								pen = skillModList.Sum("BASE", cfg, elementUsed+"Penetration", "ElementalPenetration")
+								pen = skillModList.Sum(modparser.Base, cfg, elementUsed+"Penetration", "ElementalPenetration")
 							} else if elementUsed == "Chaos" {
-								pen = skillModList.Sum("BASE", cfg, "ChaosPenetration")
+								pen = skillModList.Sum(modparser.Base, cfg, "ChaosPenetration")
 							}
 						} else if isElementalRes[damageType] {
-							pen = skillModList.Sum("BASE", cfg, damageType+"Penetration", "ElementalPenetration")
-							takenInc += enemyDB.Sum("INC", cfg, "ElementalDamageTaken")
+							pen = skillModList.Sum(modparser.Base, cfg, damageType+"Penetration", "ElementalPenetration")
+							takenInc += enemyDB.Sum(modparser.Inc, cfg, "ElementalDamageTaken")
 						} else if damageType == "Chaos" {
-							pen = skillModList.Sum("BASE", cfg, "ChaosPenetration")
+							pen = skillModList.Sum(modparser.Base, cfg, "ChaosPenetration")
 						}
 					}
-					invertChanceEle := math.Max(math.Min(skillModList.Sum("CHANCE", cfg, "HitsInvertEleResChance"), 1), 0)
-					invertChanceChaos := math.Max(math.Min(skillModList.Sum("CHANCE", cfg, "HitsInvertChaosResChance"), 1), 0)
+					invertChanceEle := math.Max(math.Min(skillModList.Sum(modparser.Chance, cfg, "HitsInvertEleResChance"), 1), 0)
+					invertChanceChaos := math.Max(math.Min(skillModList.Sum(modparser.Chance, cfg, "HitsInvertChaosResChance"), 1), 0)
 					invertChance := 0.0
 					if isElementalRes[damageType] {
 						invertChance = invertChanceEle
@@ -198,13 +199,13 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 					// (the reference also rewrites sourceRes here; it only
 					// feeds the breakdown text.)
 					if skillFlags["projectile"] {
-						takenInc += enemyDB.Sum("INC", nil, "ProjectileDamageTaken")
+						takenInc += enemyDB.Sum(modparser.Inc, nil, "ProjectileDamageTaken")
 					}
 					if skillFlags["projectile"] && skillFlags["attack"] {
-						takenInc += enemyDB.Sum("INC", nil, "ProjectileAttackDamageTaken")
+						takenInc += enemyDB.Sum(modparser.Inc, nil, "ProjectileAttackDamageTaken")
 					}
 					if skillFlags["trap"] || skillFlags["mine"] {
-						takenInc += enemyDB.Sum("INC", nil, "TrapMineDamageTaken")
+						takenInc += enemyDB.Sum(modparser.Inc, nil, "TrapMineDamageTaken")
 					}
 					effMult := (1 + takenInc/100) * takenMore
 					useResChance := useThisResist(damageType)
@@ -233,22 +234,22 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 				// Beginning of Leech Calculation for this DamageType
 				lifeLeech, energyShieldLeech, manaLeech := 0.0, 0.0, 0.0
 				if skillFlags["mine"] || skillFlags["trap"] || skillFlags["totem"] {
-					lifeLeech = skillModList.Sum("BASE", cfg, "DamageLifeLeechToPlayer")
+					lifeLeech = skillModList.Sum(modparser.Base, cfg, "DamageLifeLeechToPlayer")
 				} else {
 					if skillModList.Flag(nil, "LifeLeechBasedOnChaosDamage") {
 						if damageType == "Chaos" {
-							lifeLeech = skillModList.Sum("BASE", cfg, "DamageLeech", "DamageLifeLeech", "PhysicalDamageLifeLeech",
+							lifeLeech = skillModList.Sum(modparser.Base, cfg, "DamageLeech", "DamageLifeLeech", "PhysicalDamageLifeLeech",
 								"LightningDamageLifeLeech", "ColdDamageLifeLeech", "FireDamageLifeLeech", "ChaosDamageLifeLeech",
-								"ElementalDamageLifeLeech") + enemyDB.Sum("BASE", cfg, "SelfDamageLifeLeech")/100
+								"ElementalDamageLifeLeech") + enemyDB.Sum(modparser.Base, cfg, "SelfDamageLifeLeech")/100
 						}
 					} else {
 						names := optName(isElementalRes[damageType], []string{"DamageLeech", "DamageLifeLeech", damageType + "DamageLifeLeech"}, "ElementalDamageLifeLeech")
-						lifeLeech = skillModList.Sum("BASE", cfg, names...) + enemyDB.Sum("BASE", cfg, "SelfDamageLifeLeech")/100
+						lifeLeech = skillModList.Sum(modparser.Base, cfg, names...) + enemyDB.Sum(modparser.Base, cfg, "SelfDamageLifeLeech")/100
 					}
 					esNames := optName(isElementalRes[damageType], []string{"DamageEnergyShieldLeech", damageType + "DamageEnergyShieldLeech"}, "ElementalDamageEnergyShieldLeech")
-					energyShieldLeech = skillModList.Sum("BASE", cfg, esNames...) + enemyDB.Sum("BASE", cfg, "SelfDamageEnergyShieldLeech")/100
+					energyShieldLeech = skillModList.Sum(modparser.Base, cfg, esNames...) + enemyDB.Sum(modparser.Base, cfg, "SelfDamageEnergyShieldLeech")/100
 					manaNames := optName(isElementalRes[damageType], []string{"DamageLeech", "DamageManaLeech", damageType + "DamageManaLeech"}, "ElementalDamageManaLeech")
-					manaLeech = skillModList.Sum("BASE", cfg, manaNames...) + enemyDB.Sum("BASE", cfg, "SelfDamageManaLeech")/100
+					manaLeech = skillModList.Sum(modparser.Base, cfg, manaNames...) + enemyDB.Sum(modparser.Base, cfg, "SelfDamageManaLeech")/100
 				}
 
 				if lifeLeech > 0 && !noLifeLeech {
@@ -262,62 +263,62 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 				}
 			}
 			if p == 1 {
-				output[damageType+"CritAverage"] = damageTypeHitAvg
+				output.SetN(damageType+"CritAverage", damageTypeHitAvg)
 				totalCritAvg += damageTypeHitAvg
 				totalCritMin += damageTypeHitMin
 				totalCritMax += damageTypeHitMax
 			} else {
-				output[damageType+"HitAverage"] = damageTypeHitAvg
+				output.SetN(damageType+"HitAverage", damageTypeHitAvg)
 				totalHitAvg += damageTypeHitAvg
 				totalHitMin += damageTypeHitMin
 				totalHitMax += damageTypeHitMax
 			}
 		}
-		if truthy(skillData["lifeLeechPerUse"]) && !noLifeLeech {
-			lifeLeechTotal += anyNum(skillData["lifeLeechPerUse"])
+		if skillData.Flag("lifeLeechPerUse") && !noLifeLeech {
+			lifeLeechTotal += skillData.N("lifeLeechPerUse")
 		}
-		if truthy(skillData["manaLeechPerUse"]) {
-			manaLeechTotal += anyNum(skillData["manaLeechPerUse"])
+		if skillData.Flag("manaLeechPerUse") {
+			manaLeechTotal += skillData.N("manaLeechPerUse")
 		}
 
 		// leech caps per instance
 		if ghostReaver {
-			lifeLeechTotal = math.Min(lifeLeechTotal, outNum(globalOutput, "MaxEnergyShieldLeechInstance"))
+			lifeLeechTotal = math.Min(lifeLeechTotal, globalOutput.N("MaxEnergyShieldLeechInstance"))
 		} else {
-			lifeLeechTotal = math.Min(lifeLeechTotal, outNum(globalOutput, "MaxLifeLeechInstance"))
+			lifeLeechTotal = math.Min(lifeLeechTotal, globalOutput.N("MaxLifeLeechInstance"))
 		}
-		energyShieldLeechTotal = math.Min(energyShieldLeechTotal, outNum(globalOutput, "MaxEnergyShieldLeechInstance"))
-		manaLeechTotal = math.Min(manaLeechTotal, outNum(globalOutput, "MaxManaLeechInstance"))
+		energyShieldLeechTotal = math.Min(energyShieldLeechTotal, globalOutput.N("MaxEnergyShieldLeechInstance"))
+		manaLeechTotal = math.Min(manaLeechTotal, globalOutput.N("MaxManaLeechInstance"))
 		if ghostReaver && noEnergyShieldLeech {
 			lifeLeechTotal = 0
 		}
 
-		portion := 1 - outNum(output, "CritChance")/100
+		portion := 1 - output.N("CritChance")/100
 		if p == 1 {
-			portion = outNum(output, "CritChance") / 100
+			portion = output.N("CritChance") / 100
 		}
 		if ghostReaver {
 			ghostReaverLifeLeech += lifeLeechTotal * portion
 		} else {
-			output["LifeLeech"] = outNum(output, "LifeLeech") + lifeLeechTotal*portion
+			output.SetN("LifeLeech", output.N("LifeLeech")+lifeLeechTotal*portion)
 		}
-		output["EnergyShieldLeech"] = outNum(output, "EnergyShieldLeech") + energyShieldLeechTotal*portion
-		output["ManaLeech"] = outNum(output, "ManaLeech") + manaLeechTotal*portion
+		output.SetN("EnergyShieldLeech", output.N("EnergyShieldLeech")+energyShieldLeechTotal*portion)
+		output.SetN("ManaLeech", output.N("ManaLeech")+manaLeechTotal*portion)
 	}
-	output["TotalMin"] = totalHitMin
-	output["TotalMax"] = totalHitMax
+	output.SetN("TotalMin", totalHitMin)
+	output.SetN("TotalMax", totalHitMax)
 	// totalCritMin/Max feed only the reference breakdown; totalCritAvg is
 	// what the average-hit maths needs.
 	_, _ = totalCritMin, totalCritMax
 	c.totalCritAvg = totalCritAvg
 	c.totalHitAvg = totalHitAvg
 
-	if skillModList.Flag(skillCfg, "ElementalEquilibrium") && !truthy(env.ConfigInput["EEIgnoreHitDamage"]) &&
-		(outNum(output, "FireHitAverage")+outNum(output, "ColdHitAverage")+outNum(output, "LightningHitAverage") > 0) {
+	if skillModList.Flag(skillCfg, "ElementalEquilibrium") && !env.ConfigInput.EEIgnoreHitDamage &&
+		(output.N("FireHitAverage")+output.N("ColdHitAverage")+output.N("LightningHitAverage") > 0) {
 		// Update enemy hit-by-damage-type conditions
-		enemyDB.Conditions["HitByFireDamage"] = outNum(output, "FireHitAverage") > 0
-		enemyDB.Conditions["HitByColdDamage"] = outNum(output, "ColdHitAverage") > 0
-		enemyDB.Conditions["HitByLightningDamage"] = outNum(output, "LightningHitAverage") > 0
+		enemyDB.Conditions.Set("HitByFireDamage", output.N("FireHitAverage") > 0)
+		enemyDB.Conditions.Set("HitByColdDamage", output.N("ColdHitAverage") > 0)
+		enemyDB.Conditions.Set("HitByLightningDamage", output.N("LightningHitAverage") > 0)
 	}
 
 	highestType := "Physical"
@@ -326,22 +327,22 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 	// the highest damage type and outputs a Condition:TypeIsHighestDamageType
 	// flag for whichever the highest type is
 	for _, damageType := range dmgTypeList {
-		if outNum(output, damageType+"HitAverage") > 0 {
-			skillModList.AddMod(newMod("Condition:"+damageType+"HasDamage", "FLAG", true, "Config"))
-			if outNum(output, damageType+"HitAverage") > outNum(output, highestType+"HitAverage") {
+		if output.N(damageType+"HitAverage") > 0 {
+			skillModList.AddMod(newModS("Condition:"+damageType+"HasDamage", modparser.Flag, modparser.Bool(true), "Config"))
+			if output.N(damageType+"HitAverage") > output.N(highestType+"HitAverage") {
 				highestType = damageType
 			}
 		}
 	}
 	if !skillModList.Flag(nil, "IsHighestDamageTypeOVERRIDE") {
-		skillModList.AddMod(newMod("Condition:"+highestType+"IsHighestDamageType", "FLAG", true, "Config"))
+		skillModList.AddMod(newModS("Condition:"+highestType+"IsHighestDamageType", modparser.Flag, modparser.Bool(true), "Config"))
 	}
 
-	speed := outNum(globalOutput, "Speed")
-	if truthy(globalOutput["HitSpeed"]) {
-		speed = outNum(globalOutput, "HitSpeed")
+	speed := globalOutput.N("Speed")
+	if globalOutput.Has("HitSpeed") {
+		speed = globalOutput.N("HitSpeed")
 	}
-	hitRate := outNum(output, "HitChance") / 100 * speed * anyNum(skillData["dpsMultiplier"])
+	hitRate := output.N("HitChance") / 100 * speed * skillData.N("dpsMultiplier")
 
 	// Calculate leech
 	getLeechInstances := func(amount, total float64) (float64, float64) {
@@ -353,74 +354,79 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 	}
 
 	// Instant Leech
-	output["LifeLeechInstantProportion"] = math.Max(math.Min(skillModList.Sum("BASE", cfg, "InstantLifeLeech"), 100), 0) / 100
-	if outNum(output, "LifeLeechInstantProportion") > 0 {
-		output["LifeLeechInstant"] = outNum(output, "LifeLeech") * outNum(output, "LifeLeechInstantProportion")
-		output["LifeLeech"] = outNum(output, "LifeLeech") * (1 - outNum(output, "LifeLeechInstantProportion"))
+	output.SetN("LifeLeechInstantProportion", math.Max(math.Min(skillModList.Sum(modparser.Base, cfg, "InstantLifeLeech"), 100), 0)/100)
+	if output.N("LifeLeechInstantProportion") > 0 {
+		output.SetN("LifeLeechInstant", output.N("LifeLeech")*output.N("LifeLeechInstantProportion"))
+		output.SetN("LifeLeech", output.N("LifeLeech")*(1-output.N("LifeLeechInstantProportion")))
 	}
 	if ghostReaver && ghostReaverLifeLeech > 0 {
-		output["EnergyShieldLeech"] = outNum(output, "EnergyShieldLeech") + ghostReaverLifeLeech
-		output["LifeLeech"] = 0.0
-		output["LifeLeechInstant"] = 0.0
+		output.SetN("EnergyShieldLeech", output.N("EnergyShieldLeech")+ghostReaverLifeLeech)
+		output.SetN("LifeLeech", 0.0)
+		output.SetN("LifeLeechInstant", 0.0)
 	}
-	output["EnergyShieldLeechInstantProportion"] = math.Max(math.Min(skillModList.Sum("BASE", cfg, "InstantEnergyShieldLeech"), 100), 0) / 100
-	if outNum(output, "EnergyShieldLeechInstantProportion") > 0 {
-		output["EnergyShieldLeechInstant"] = outNum(output, "EnergyShieldLeech") * outNum(output, "EnergyShieldLeechInstantProportion")
-		output["EnergyShieldLeech"] = outNum(output, "EnergyShieldLeech") * (1 - outNum(output, "EnergyShieldLeechInstantProportion"))
+	output.SetN("EnergyShieldLeechInstantProportion", math.Max(math.Min(skillModList.Sum(modparser.Base, cfg, "InstantEnergyShieldLeech"), 100), 0)/100)
+	if output.N("EnergyShieldLeechInstantProportion") > 0 {
+		output.SetN("EnergyShieldLeechInstant", output.N("EnergyShieldLeech")*output.N("EnergyShieldLeechInstantProportion"))
+		output.SetN("EnergyShieldLeech", output.N("EnergyShieldLeech")*(1-output.N("EnergyShieldLeechInstantProportion")))
 	}
-	output["ManaLeechInstantProportion"] = math.Max(math.Min(skillModList.Sum("BASE", cfg, "InstantManaLeech"), 100), 0) / 100
-	if outNum(output, "ManaLeechInstantProportion") > 0 {
-		output["ManaLeechInstant"] = outNum(output, "ManaLeech") * outNum(output, "ManaLeechInstantProportion")
-		output["ManaLeech"] = outNum(output, "ManaLeech") * (1 - outNum(output, "ManaLeechInstantProportion"))
+	output.SetN("ManaLeechInstantProportion", math.Max(math.Min(skillModList.Sum(modparser.Base, cfg, "InstantManaLeech"), 100), 0)/100)
+	if output.N("ManaLeechInstantProportion") > 0 {
+		output.SetN("ManaLeechInstant", output.N("ManaLeech")*output.N("ManaLeechInstantProportion"))
+		output.SetN("ManaLeech", output.N("ManaLeech")*(1-output.N("ManaLeechInstantProportion")))
 	}
 
-	output["LifeLeechDuration"], output["LifeLeechInstances"] = getLeechInstances(outNum(output, "LifeLeech"), outNum(globalOutput, "Life"))
-	output["LifeLeechInstantRate"] = outNum(output, "LifeLeechInstant") * hitRate
-	output["EnergyShieldLeechDuration"], output["EnergyShieldLeechInstances"] = getLeechInstances(outNum(output, "EnergyShieldLeech"), outNum(globalOutput, "EnergyShield"))
-	output["EnergyShieldLeechInstantRate"] = outNum(output, "EnergyShieldLeechInstant") * hitRate
-	output["ManaLeechDuration"], output["ManaLeechInstances"] = getLeechInstances(outNum(output, "ManaLeech"), outNum(globalOutput, "Mana"))
-	output["ManaLeechInstantRate"] = outNum(output, "ManaLeechInstant") * hitRate
+	setLeech := func(resource string, pool float64) {
+		duration, instances := getLeechInstances(output.N(resource+"Leech"), pool)
+		output.SetN(resource+"LeechDuration", duration)
+		output.SetN(resource+"LeechInstances", instances)
+	}
+	setLeech("Life", globalOutput.N("Life"))
+	output.SetN("LifeLeechInstantRate", output.N("LifeLeechInstant")*hitRate)
+	setLeech("EnergyShield", globalOutput.N("EnergyShield"))
+	output.SetN("EnergyShieldLeechInstantRate", output.N("EnergyShieldLeechInstant")*hitRate)
+	setLeech("Mana", globalOutput.N("Mana"))
+	output.SetN("ManaLeechInstantRate", output.N("ManaLeechInstant")*hitRate)
 
 	// Calculate gain on hit
 	if skillFlags["mine"] || skillFlags["trap"] || skillFlags["totem"] {
-		output["LifeOnHit"] = 0.0
-		output["EnergyShieldOnHit"] = 0.0
-		output["ManaOnHit"] = 0.0
+		output.SetN("LifeOnHit", 0.0)
+		output.SetN("EnergyShieldOnHit", 0.0)
+		output.SetN("ManaOnHit", 0.0)
 	} else {
-		output["LifeOnHit"] = 0.0
+		output.SetN("LifeOnHit", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainLife") && !skillModList.Flag(cfg, "CannotRecoverLifeOutsideLeech") {
-			output["LifeOnHit"] = skillModList.Sum("BASE", cfg, "LifeOnHit") + enemyDB.Sum("BASE", cfg, "SelfLifeOnHit")
+			output.SetN("LifeOnHit", skillModList.Sum(modparser.Base, cfg, "LifeOnHit")+enemyDB.Sum(modparser.Base, cfg, "SelfLifeOnHit"))
 		}
-		output["EnergyShieldOnHit"] = 0.0
+		output.SetN("EnergyShieldOnHit", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainEnergyShield") {
-			output["EnergyShieldOnHit"] = skillModList.Sum("BASE", cfg, "EnergyShieldOnHit") + enemyDB.Sum("BASE", cfg, "SelfEnergyShieldOnHit")
+			output.SetN("EnergyShieldOnHit", skillModList.Sum(modparser.Base, cfg, "EnergyShieldOnHit")+enemyDB.Sum(modparser.Base, cfg, "SelfEnergyShieldOnHit"))
 		}
-		output["ManaOnHit"] = 0.0
+		output.SetN("ManaOnHit", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainMana") {
-			output["ManaOnHit"] = skillModList.Sum("BASE", cfg, "ManaOnHit") + enemyDB.Sum("BASE", cfg, "SelfManaOnHit")
+			output.SetN("ManaOnHit", skillModList.Sum(modparser.Base, cfg, "ManaOnHit")+enemyDB.Sum(modparser.Base, cfg, "SelfManaOnHit"))
 		}
 	}
-	output["LifeOnHitRate"] = outNum(output, "LifeOnHit") * hitRate
-	output["EnergyShieldOnHitRate"] = outNum(output, "EnergyShieldOnHit") * hitRate
-	output["ManaOnHitRate"] = outNum(output, "ManaOnHit") * hitRate
+	output.SetN("LifeOnHitRate", output.N("LifeOnHit")*hitRate)
+	output.SetN("EnergyShieldOnHitRate", output.N("EnergyShieldOnHit")*hitRate)
+	output.SetN("ManaOnHitRate", output.N("ManaOnHit")*hitRate)
 
 	// Calculate gain on kill
 	if skillFlags["mine"] || skillFlags["trap"] || skillFlags["totem"] {
-		output["LifeOnKill"] = 0.0
-		output["EnergyShieldOnKill"] = 0.0
-		output["ManaOnKill"] = 0.0
+		output.SetN("LifeOnKill", 0.0)
+		output.SetN("EnergyShieldOnKill", 0.0)
+		output.SetN("ManaOnKill", 0.0)
 	} else {
-		output["LifeOnKill"] = 0.0
+		output.SetN("LifeOnKill", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainLife") && !skillModList.Flag(cfg, "CannotRecoverLifeOutsideLeech") {
-			output["LifeOnKill"] = math.Floor(skillModList.Sum("BASE", cfg, "LifeOnKill"))
+			output.SetN("LifeOnKill", math.Floor(skillModList.Sum(modparser.Base, cfg, "LifeOnKill")))
 		}
-		output["EnergyShieldOnKill"] = 0.0
+		output.SetN("EnergyShieldOnKill", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainEnergyShield") {
-			output["EnergyShieldOnKill"] = math.Floor(skillModList.Sum("BASE", cfg, "EnergyShieldOnKill"))
+			output.SetN("EnergyShieldOnKill", math.Floor(skillModList.Sum(modparser.Base, cfg, "EnergyShieldOnKill")))
 		}
-		output["ManaOnKill"] = 0.0
+		output.SetN("ManaOnKill", 0.0)
 		if !skillModList.Flag(cfg, "CannotGainMana") {
-			output["ManaOnKill"] = math.Floor(skillModList.Sum("BASE", cfg, "ManaOnKill"))
+			output.SetN("ManaOnKill", math.Floor(skillModList.Sum(modparser.Base, cfg, "ManaOnKill")))
 		}
 	}
 }

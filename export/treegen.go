@@ -4,22 +4,22 @@
 // (data/raw/tree_<v>.json), replacing the retired luajit dump of PoB's
 // TreeData/<v>/tree.lua.
 //
-// It reproduces the SEMANTICS of PoB's whole ingestion pipeline:
+// It ports fix_ascendancy_positions.py (upstream repo root, 3.29.1 state):
+// GGG keyword-tag stripping on node stats/reminderText, ascendancy group
+// repositioning to fixed board slots, the extra legacy notables, and
+// dropping extraImages/sprites/imageZoomLevels (sprites are view data; the
+// sprites.json split is not emitted here). The fixed document is then
+// written as conventional JSON.
 //
-//  1. fix_ascendancy_positions.py (upstream repo root, 3.29.1 state):
-//     GGG keyword-tag stripping on node stats/reminderText, ascendancy
-//     group repositioning to fixed board slots, the extra legacy notables,
-//     and dropping extraImages/sprites/imageZoomLevels (sprites are view
-//     data; the sprites.json split is not emitted here).
-//  2. Common.lua jsonToLua + Lua load: a REGEX pipeline over the fixed
-//     JSON text. Structurally that means numeric-looking object keys
-//     become Lua number keys and arrays become 1-based tables; textually
-//     it swaps every '['/']' for '{'/'}' INSIDE string values too, and
-//     its `{(%w+)}` -> `{[0]=%1}` quirk can only fire inside strings
-//     (the python serializer's indent puts real single-element arrays on
-//     multiple lines, so the pattern never matches structure).
-//  3. conventional JSON out; the Lua-table container shape lives only in
-//     the tests that compare against the archive.
+// PoB's next stage, Common.lua jsonToLua, was a regex pipeline over the
+// JSON text: it turned arrays into Lua tables, and as a side effect mangled
+// bracket characters and collapsed numeric-looking keys INSIDE string
+// values. None of that is reproduced here — this port has no Lua load
+// stage, so its output carries GGG's text as published. The mangling never
+// applied to 3.29 data in any case (the keyword-tag strip above removes the
+// only brackets GGG ships, and the numeric keys it would collapse live in
+// the deleted sprite blocks); the Lua-table shape lives only in the tests
+// that compare against the archive.
 //
 // The canon-format equivalence to the retired luajit dump was proven
 // byte-for-byte when this port landed; test/treegen_test.go pins the
@@ -30,9 +30,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
-	"strings"
 )
 
 type point struct{ x, y float64 }
@@ -98,49 +96,113 @@ var extraNodeStats = map[string]struct {
 
 // escapeGGGString comes from statdesc.go (the same Common.lua function the
 // python fix script mirrors).
-var (
-	reZeroQuirk = regexp.MustCompile(`\{([A-Za-z0-9]+)\}`) // Lua %w: letters+digits
-	reNumKey    = regexp.MustCompile(`^\d[\d.]*$`)
-)
 
-func obj(v any) map[string]any { return v.(map[string]any) }
+// The GGG JSON is walked as a generic DOM: unknown keys must round-trip
+// verbatim. These readers check the shape of the keys the fix relies on.
+func obj(where string, v any) (map[string]any, error) {
+	m, ok := v.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("%s: expected object, got %T", where, v)
+	}
+	return m, nil
+}
+
+func num(where string, v any) (float64, error) {
+	f, ok := v.(float64)
+	if !ok {
+		return 0, fmt.Errorf("%s: expected number, got %T", where, v)
+	}
+	return f, nil
+}
+
+// nodeIDs reads a group's "nodes" array of node-id strings.
+func nodeIDs(where string, v any) ([]string, error) {
+	list, ok := v.([]any)
+	if !ok {
+		return nil, fmt.Errorf("%s: expected array, got %T", where, v)
+	}
+	out := make([]string, len(list))
+	for i, e := range list {
+		s, ok := e.(string)
+		if !ok {
+			return nil, fmt.Errorf("%s[%d]: expected string, got %T", where, i, e)
+		}
+		out[i] = s
+	}
+	return out, nil
+}
 
 // fixTree ports fix_ascendancy_positions (minus the sprites.json split;
 // sprites are deleted below either way).
 func fixTree(data map[string]any) error {
-	nodes := obj(data["nodes"])
-	for _, nv := range nodes {
-		node := obj(nv)
+	nodes, err := obj("nodes", data["nodes"])
+	if err != nil {
+		return err
+	}
+	for id, nv := range nodes {
+		node, err := obj("nodes."+id, nv)
+		if err != nil {
+			return err
+		}
 		for _, field := range []string{"stats", "reminderText"} {
 			if lines, ok := node[field].([]any); ok {
 				for i, l := range lines {
-					lines[i] = escapeGGGString(l.(string))
+					s, ok := l.(string)
+					if !ok {
+						return fmt.Errorf("nodes.%s.%s[%d]: expected string, got %T", id, field, i, l)
+					}
+					lines[i] = escapeGGGString(s)
 				}
 			}
 		}
 	}
-	groups := obj(data["groups"])
+	groups, err := obj("groups", data["groups"])
+	if err != nil {
+		return err
+	}
 	type ascGroup struct {
 		name  string
 		group map[string]any
 	}
 	var ascGroups []ascGroup
-	for _, gv := range groups {
-		group := obj(gv)
-		groupNodes := group["nodes"].([]any)
+	for gid, gv := range groups {
+		group, err := obj("groups."+gid, gv)
+		if err != nil {
+			return err
+		}
+		groupNodes, err := nodeIDs("groups."+gid+".nodes", group["nodes"])
+		if err != nil {
+			return err
+		}
 		if len(groupNodes) == 0 {
 			continue
 		}
-		first := obj(nodes[groupNodes[0].(string)])
+		first, err := obj("nodes."+groupNodes[0], nodes[groupNodes[0]])
+		if err != nil {
+			return err
+		}
 		if asc, ok := first["ascendancyName"].(string); ok {
 			ascGroups = append(ascGroups, ascGroup{asc, group})
 		}
 	}
 	start := map[string]point{}
 	for _, ag := range ascGroups {
-		for _, nid := range ag.group["nodes"].([]any) {
-			if _, isStart := obj(nodes[nid.(string)])["isAscendancyStart"]; isStart {
-				start[ag.name] = point{ag.group["x"].(float64), ag.group["y"].(float64)}
+		groupNodes, _ := nodeIDs("", ag.group["nodes"]) // checked above
+		for _, nid := range groupNodes {
+			node, err := obj("nodes."+nid, nodes[nid])
+			if err != nil {
+				return err
+			}
+			if _, isStart := node["isAscendancyStart"]; isStart {
+				x, err := num("group.x", ag.group["x"])
+				if err != nil {
+					return err
+				}
+				y, err := num("group.y", ag.group["y"])
+				if err != nil {
+					return err
+				}
+				start[ag.name] = point{x, y}
 			}
 		}
 	}
@@ -149,12 +211,20 @@ func fixTree(data map[string]any) error {
 		if !ok {
 			return fmt.Errorf("no board slot for ascendancy %q", ag.name)
 		}
+		x, err := num("group.x", ag.group["x"])
+		if err != nil {
+			return err
+		}
+		y, err := num("group.y", ag.group["y"])
+		if err != nil {
+			return err
+		}
 		// offset first, then add — float addition is order-sensitive and
 		// the python computes Point2D(target - start) before +=.
 		offX := target.x - start[ag.name].x
 		offY := target.y - start[ag.name].y
-		ag.group["x"] = ag.group["x"].(float64) + offX
-		ag.group["y"] = ag.group["y"].(float64) + offY
+		ag.group["x"] = x + offX
+		ag.group["y"] = y + offY
 	}
 	for asc, list := range extraNodes {
 		for _, en := range list {
@@ -206,61 +276,27 @@ func fixTree(data map[string]any) error {
 	return nil
 }
 
-// luaString applies jsonToLua's text-level effect on a string value: the
-// global bracket swap, then the {alnum} -> {[0]=alnum} injection (which,
-// inside a string, is just text).
-func luaString(s string) string {
-	s = strings.ReplaceAll(s, "[", "{")
-	s = strings.ReplaceAll(s, "]", "}")
-	return reZeroQuirk.ReplaceAllString(s, "{[0]=$1}")
-}
-
-// toLoaded applies the jsonToLua pipeline's SEMANTIC effects to the fixed
-// JSON value, leaving the container format conventional (arrays stay
-// arrays): numeric-looking object keys collapse the way Lua number keys
-// do (1.0 and 1 are one key, formatted per tostring), and every string
-// undergoes the jsonToLua text mangling. The Lua-table container shape is
-// reproduced only in tests (tree differential via luacanon).
-func toLoaded(v any) any {
+// checkNoNulls rejects a JSON null anywhere in the fixed document. The tree
+// schema has no field that may be absent-as-null, so one means GGG changed
+// the format; erroring here beats a zero value reaching the tree loader.
+func checkNoNulls(v any, where string) error {
 	switch t := v.(type) {
 	case map[string]any:
-		out := make(map[string]any, len(t))
 		for k, val := range t {
-			key := k
-			if reNumKey.MatchString(k) {
-				n, err := strconv.ParseFloat(k, 64)
-				if err != nil {
-					panic("numeric-looking key failed to parse: " + k)
-				}
-				key = numKey(n)
-			} else {
-				key = luaString(k)
+			if err := checkNoNulls(val, k); err != nil {
+				return fmt.Errorf("%s: %w", where, err)
 			}
-			out[key] = toLoaded(val)
 		}
-		return out
 	case []any:
-		out := make([]any, len(t))
 		for i, val := range t {
-			out[i] = toLoaded(val)
+			if err := checkNoNulls(val, fmt.Sprintf("[%d]", i)); err != nil {
+				return fmt.Errorf("%s: %w", where, err)
+			}
 		}
-		return out
-	case string:
-		return luaString(t)
 	case nil:
-		panic("JSON null has no Lua-load equivalent; the tree data never carries one")
-	default:
-		return v
+		return fmt.Errorf("%s: JSON null", where)
 	}
-}
-
-// numKey is Lua tostring() for a number key (canon.lua sorts tostring'd
-// keys; %.14g with an integer fast path).
-func numKey(v float64) string {
-	if v == float64(int64(v)) && v < 1e15 && v > -1e15 {
-		return strconv.FormatInt(int64(v), 10)
-	}
-	return strconv.FormatFloat(v, 'g', 14, 64)
+	return nil
 }
 
 // BuildTreeDoc runs the whole pipeline: GGG data.json bytes in,
@@ -273,10 +309,13 @@ func BuildTreeDoc(gggJSON []byte) ([]byte, error) {
 	if err := fixTree(data); err != nil {
 		return nil, err
 	}
+	if err := checkNoNulls(data, "tree"); err != nil {
+		return nil, err
+	}
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
-	if err := enc.Encode(toLoaded(data)); err != nil {
+	if err := enc.Encode(data); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

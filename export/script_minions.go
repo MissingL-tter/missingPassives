@@ -3,77 +3,47 @@
 package export
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "minions", Build: buildMinions})
 }
 
-// tableToString ports minions.lua's tableToString: sorted keys, nested
-// tables inlined with a dotted prefix.
-// #EVAL: archive parity — the comma logic skips nested-table entries, so a
-// nested table directly abuts its neighbour without a separator.
-func tableToString(tbl luaTable, pre string) string {
-	s := "{ "
-	keys := make([]any, 0, len(tbl))
-	for k := range tbl {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(a, b int) bool {
-		if ka, ok := keys[a].(string); ok {
-			if kb, ok2 := keys[b].(string); ok2 {
-				return ka < kb
-			}
-			panic("tableToString: mixed key types")
-		}
-		return keyNum(keys[a]) < keyNum(keys[b])
-	})
-	for i, k := range keys {
-		var name string
-		if ks, ok := k.(string); ok {
-			name = ks
-		} else {
-			name = luaNum(keyNum(k))
-		}
-		v := tbl[k]
-		if sub, ok := v.(luaTable); ok {
-			s += tableToString(sub, pre+name+".")
-		} else {
-			if i > 0 {
-				s += ", "
-			}
-			quote := ""
-			if _, ok := v.(string); ok {
-				quote = "\""
-			}
-			s += pre + name + " = " + quote + luaStrAny(v) + quote
-		}
-	}
-	return s + " }"
-}
-
-// luaStrAny is tostring() over the value kinds tableToString meets.
-func luaStrAny(v any) string {
-	switch t := v.(type) {
-	case float64:
-		return luaNum(t)
-	default:
-		return luaStr(v)
+// statEntry is one source of minion stats in the emit loop: a Mods row's
+// six Stat<i>/Stat<i>Value slots, or an .ot Stats-block entry occupying
+// slot 1 only (minions.lua's modStatX reads either the same way).
+type statEntry struct {
+	ID    string
+	Stats [6]struct {
+		ID  string
+		Val float64
 	}
 }
 
-// otMod is a stat entry parsed from an .ot file: it stands in for a Mods row
-// in the emit loop (Id, Stat1 = {Id}, Stat1Value = {value}).
-type otMod struct {
-	id    string
-	value float64
+func statEntryFromMod(mod *Row) statEntry {
+	e := statEntry{ID: mod.Str("Id")}
+	for i := range e.Stats {
+		if sr := mod.Ref(fmt.Sprintf("Stat%d", i+1)); sr != nil {
+			e.Stats[i].ID = sr.Str("Id")
+			e.Stats[i].Val = float64(mod.Ivl(fmt.Sprintf("Stat%dValue", i+1))[0])
+		}
+	}
+	return e
+}
+
+func statEntryFromOT(id string, val float64) statEntry {
+	e := statEntry{ID: id}
+	e.Stats[0].ID, e.Stats[0].Val = id, val
+	return e
 }
 
 var (
@@ -83,9 +53,9 @@ var (
 
 var otWs = strings.NewReplacer(" ", "", "\t", "", "\v", "", "\f", "", "\r", "")
 
-// getOTStats ports minions.lua's getOTStats: collects Stats-block entries
-// from an .ot file and its superclasses.
-func (x *Ctx) getOTStats(otFile string, modList []any) []any {
+// getOTStats ports minions.lua's getOTStats: appends the Stats-block entries
+// of an .ot file, superclasses first.
+func (x *Ctx) getOTStats(otFile string, modList []statEntry) ([]statEntry, error) {
 	file := otFile + ".ot"
 	var text string
 	if cached, ok := x.otCache[file]; ok {
@@ -98,12 +68,15 @@ func (x *Ctx) getOTStats(otFile string, modList []any) []any {
 		x.otCache[file] = text
 	} else {
 		// The Lua prints "Invalid OT File location".
-		return modList
+		return modList, nil
 	}
 	inWantedBlock := false
 	for _, line := range reLine.FindAllString(text, -1) {
 		if m := reExtends.FindStringSubmatch(line); m != nil && m[1] != "Metadata/Monsters/Monster" && m[1] != "nothing" {
-			modList = x.getOTStats(m[1], modList)
+			var err error
+			if modList, err = x.getOTStats(m[1], modList); err != nil {
+				return nil, err
+			}
 		}
 		if strings.HasPrefix(line, "Stats") {
 			inWantedBlock = true
@@ -114,34 +87,16 @@ func (x *Ctx) getOTStats(otFile string, modList []any) []any {
 			if m := reKeyVal.FindStringSubmatch(stripped); m != nil {
 				v, err := strconv.ParseFloat(m[2], 64)
 				if err != nil {
-					panic("getOTStats: non-numeric stat value " + m[2])
+					return nil, fmt.Errorf("%s: non-numeric stat value %q", file, m[2])
 				}
-				modList = append(modList, &otMod{id: m[1], value: v})
+				modList = append(modList, statEntryFromOT(m[1], v))
 			}
 		}
 	}
-	return modList
+	return modList, nil
 }
 
-// WalkTemplate reads an in-repo template document (export/templates/) and
-// calls the handler for each #directive line (the build-side half of
-// processTemplateFile).
-func (x *Ctx) WalkTemplate(name, inDir string, directives map[string]func(args string)) error {
-	doc, err := readTemplate(inDir, name)
-	if err != nil {
-		return err
-	}
-	for _, line := range doc.Directives {
-		if m := reDirective.FindStringSubmatch(line); m != nil {
-			if fn := directives[m[1]]; fn != nil {
-				fn(m[2])
-			}
-		}
-	}
-	return nil
-}
-
-func buildMinions(x *Ctx) (any, error) {
+func buildMinions(x *Ctx) (schema.Document, error) {
 	itemClassMap := map[string]string{
 		"Claw":                     "Claw",
 		"Dagger":                   "Dagger",
@@ -163,85 +118,71 @@ func buildMinions(x *Ctx) (any, error) {
 
 	type minionState struct {
 		varietyId, name, limit, hostile string
-		extraModList, extraSkillList    []string
+		extraSkillList                  []string
+		extraModList                    []json.RawMessage
 	}
 	state := &minionState{}
 	var defs *[]schema.MinionDef
 
-	directives := map[string]func(args string){}
-	directives["monster"] = func(args string) {
-		*state = minionState{}
-		for _, arg := range strings.Fields(args) {
-			if state.varietyId == "" {
-				state.varietyId = arg
-			} else if state.name == "" {
-				if arg == "#" {
-					state.name = state.varietyId
-				} else {
-					state.name = arg
-				}
-			} else {
-				state.extraSkillList = append(state.extraSkillList, arg)
-			}
-		}
-		if state.varietyId == "" {
-			state.varietyId = args
-		}
-		if state.name == "" {
-			state.name = args
+	monsterVarieties, err := x.Dat("MonsterVarieties")
+	if err != nil {
+		return nil, err
+	}
+
+	// monster opens a definition; the name defaults to the variety id.
+	monster := func(variety, name string, skills []string) {
+		*state = minionState{varietyId: variety, name: name, extraSkillList: skills}
+		if name == "" {
+			state.name = variety
 		}
 	}
-	directives["limit"] = func(args string) { state.limit = args }
-	directives["hostile"] = func(args string) { state.hostile = args }
-	directives["mod"] = func(args string) { state.extraModList = append(state.extraModList, args) }
-	directives["skill"] = func(args string) { state.extraSkillList = append(state.extraSkillList, args) }
-	directives["emit"] = func(string) {
-		mv := x.Dat("MonsterVarieties").GetRow("Id", state.varietyId)
+	emit := func() error {
+		mv := monsterVarieties.GetRow("Id", state.varietyId)
 		if mv == nil {
 			// The Lua prints "Invalid Variety"; keep the emit sequence aligned.
 			*defs = append(*defs, schema.MinionDef{Skip: true})
-			return
+			return nil
 		}
-		typ := mv.Get("Type").(*Row)
+		typ := mv.Ref("Type")
 		d := schema.MinionDef{
 			Key:  state.name,
-			Name: luaStr(mv.Get("Name")),
+			Name: mv.Str("Name"),
 		}
-		for _, tag := range listRows(mv.Get("Tags")) {
-			d.MonsterTags = append(d.MonsterTags, luaStr(tag.Get("Id")))
+		for _, tag := range mv.Refs("Tags") {
+			d.MonsterTags = append(d.MonsterTags, tag.Str("Id"))
 		}
-		d.BaseDamageIgnoresAttackSpeed = typ.Get("BaseDamageIgnoresAttackSpeed").(bool)
-		d.Life = float64(mv.Get("LifeMultiplier").(int64)) / 100
-		if typ.Get("AltLife1").(bool) {
+		d.BaseDamageIgnoresAttackSpeed = typ.Bool("BaseDamageIgnoresAttackSpeed")
+		d.Life = float64(mv.Int("LifeMultiplier")) / 100
+		if typ.Bool("AltLife1") {
 			d.LifeScaling = append(d.LifeScaling, "AltLife1")
 		}
-		if typ.Get("AltLife2").(bool) {
+		if typ.Bool("AltLife2") {
 			d.LifeScaling = append(d.LifeScaling, "AltLife2")
 		}
-		if es := typ.Get("EnergyShield").(int64); es != 0 {
+		if es := typ.Int("EnergyShield"); es != 0 {
 			v := 0.4 * float64(es) / 100
 			d.EnergyShield = &v
 		}
-		if ar := typ.Get("Armour").(int64); ar != 0 {
+		if ar := typ.Int("Armour"); ar != 0 {
 			v := float64(ar) / 100
 			d.Armour = &v
 		}
-		if ev := typ.Get("Evasion").(int64); ev != 0 {
+		if ev := typ.Int("Evasion"); ev != 0 {
 			v := float64(ev) / 100
 			d.Evasion = &v
 		}
-		res := typ.Get("Resistances").(*Row)
-		d.FireResist = res.Get("FireMerciless").(int64)
-		d.ColdResist = res.Get("ColdMerciless").(int64)
-		d.LightningResist = res.Get("LightningMerciless").(int64)
-		d.ChaosResist = res.Get("ChaosMerciless").(int64)
-		d.Damage = float64(mv.Get("DamageMultiplier").(int64)) / 100
-		d.DamageSpread = float64(typ.Get("DamageSpread").(int64)) / 100
-		d.AttackTime = float64(mv.Get("AttackDuration").(int64)) / 1000
-		d.AttackRange = mv.Get("MaximumAttackRange").(int64)
-		d.Accuracy = float64(typ.Get("Accuracy").(int64)) / 100
-		for _, mod := range listRows(mv.Get("Mods")) {
-			switch luaStr(mod.Get("Id")) {
+		res := typ.Ref("Resistances")
+		d.FireResist = res.Int("FireMerciless")
+		d.ColdResist = res.Int("ColdMerciless")
+		d.LightningResist = res.Int("LightningMerciless")
+		d.ChaosResist = res.Int("ChaosMerciless")
+		d.Damage = float64(mv.Int("DamageMultiplier")) / 100
+		d.DamageSpread = float64(typ.Int("DamageSpread")) / 100
+		d.AttackTime = float64(mv.Int("AttackDuration")) / 1000
+		d.AttackRange = mv.Int("MaximumAttackRange")
+		d.Accuracy = float64(typ.Int("Accuracy")) / 100
+		for _, mod := range mv.Refs("Mods") {
+			switch mod.Str("Id") {
 			case "MonsterSpeedAndDamageFixupSmall":
 				d.DamageFixups = append(d.DamageFixups, 0.11)
 			case "MonsterSpeedAndDamageFixupLarge":
@@ -250,118 +191,70 @@ func buildMinions(x *Ctx) (any, error) {
 				d.DamageFixups = append(d.DamageFixups, 0.33)
 			}
 		}
-		if mh, ok := mv.Get("MainHandItemClass").(*Row); ok {
-			if mapped, found := itemClassMap[luaStr(mh.Get("Id"))]; found {
+		if mh := mv.Ref("MainHandItemClass"); mh != nil {
+			if mapped, found := itemClassMap[mh.Str("Id")]; found {
 				d.WeaponType1 = &mapped
 			}
 		}
-		if oh, ok := mv.Get("OffHandItemClass").(*Row); ok {
-			if mapped, found := itemClassMap[luaStr(oh.Get("Id"))]; found {
+		if oh := mv.Ref("OffHandItemClass"); oh != nil {
+			if mapped, found := itemClassMap[oh.Str("Id")]; found {
 				d.WeaponType2 = &mapped
 			}
 		}
 		d.Limit = state.limit
 		d.Hostile = state.hostile
-		for _, ge := range listRows(mv.Get("GrantedEffects")) {
-			d.SkillList = append(d.SkillList, luaStr(ge.Get("Id")))
+		for _, ge := range mv.Refs("GrantedEffects") {
+			d.SkillList = append(d.SkillList, ge.Str("Id"))
 		}
 		d.SkillList = append(d.SkillList, state.extraSkillList...)
 
-		var modList []any
-		for _, mod := range listRows(mv.Get("Mods")) {
-			modList = append(modList, mod)
+		var modList []statEntry
+		for _, mod := range mv.Refs("Mods") {
+			modList = append(modList, statEntryFromMod(mod))
 		}
-		for _, mod := range listRows(mv.Get("SpecialMods")) {
-			modList = append(modList, mod)
+		for _, mod := range mv.Refs("SpecialMods") {
+			modList = append(modList, statEntryFromMod(mod))
 		}
-		if objType := luaStr(mv.Get("ObjectType")); objType != "" && objType != "Metadata/Monsters/Monster" {
-			modList = x.getOTStats(objType, modList)
+		if objType := mv.Str("ObjectType"); objType != "" && objType != "Metadata/Monsters/Monster" {
+			if modList, err = x.getOTStats(objType, modList); err != nil {
+				return err
+			}
 		}
 		for _, entry := range modList {
-			// modStatX reads Stat<i> / Stat<i>Value off either a Mods row or
-			// an .ot stat entry.
-			var statIds []string
-			var statVals []float64
-			var entryId string
-			switch e := entry.(type) {
-			case *Row:
-				entryId = luaStr(e.Get("Id"))
-				for i := 1; i <= 6; i++ {
-					if sr, ok := e.Get(fmt.Sprintf("Stat%d", i)).(*Row); ok {
-						statIds = append(statIds, luaStr(sr.Get("Id")))
-						statVals = append(statVals, float64(e.Get(fmt.Sprintf("Stat%dValue", i)).(Interval)[0]))
-					} else {
-						statIds = append(statIds, "")
-						statVals = append(statVals, 0)
-					}
-				}
-			case *otMod:
-				entryId = e.id
-				statIds = []string{e.id}
-				statVals = []float64{e.value}
-			}
-			for i, statId := range statIds {
+			for _, stat := range entry.Stats {
+				statId := stat.ID
 				if statId == "" {
 					continue
 				}
-				statVal := statVals[i]
-				modStats := " [" + statId + " = " + luaNum(statVal) + "]"
-				mapping, found := skillStatMap[statId]
+				statVal := stat.Val
+				sv := statVal
+				me := schema.ModEntry{Entry: entry.ID, Stat: statId, StatValue: &sv}
+				mapping, found := data.StatMapTable()[statId]
 				if !found {
-					d.ModList = append(d.ModList, "-- "+entryId+modStats)
+					d.ModList = append(d.ModList, me) // unmapped: a comment in the reference file
 					continue
 				}
-				newMod := mapping[1].(luaTable)
-				var valueStr string
-				nv, hasNV := newMod["value"]
-				if hasNV {
-					if _, isBool := nv.(bool); !isBool {
-						valueStr = tableToString(nv.(luaTable), "")
-					}
-				}
-				if valueStr == "" {
-					if ev, hasEV := mapping["value"]; hasEV {
-						valueStr = luaStrAny(ev)
+				// The reference's generator takes the mapping's FIRST mod and
+				// fills its value: a table value stands; otherwise the
+				// mapping's fixed value, else the stat value scaled by
+				// mult/div (booleans are overwritten too — faithfully).
+				first := mapping.Mods[0].Mod.Clone()
+				if scalarValue(first.Value) {
+					if mapping.Value.Set {
+						first.Value = modparser.Num(mapping.Value.V)
 					} else {
-						mult := 1.0
-						if m, ok := mapping["mult"].(float64); ok {
-							mult = m
-						}
-						div := 1.0
-						if dv, ok := mapping["div"].(float64); ok {
-							div = dv
-						}
-						valueStr = luaNum(statVal * mult / div)
+						first.Value = modparser.Num(statVal * mapping.Mult.Or(1) / mapping.Div.Or(1))
 					}
 				}
-				flags := "0"
-				if f, ok := newMod["flags"].(float64); ok {
-					flags = luaNum(f)
-				}
-				kwFlags := "0"
-				if f, ok := newMod["keywordFlags"].(float64); ok {
-					kwFlags = luaNum(f)
-				}
-				line := "mod(\"" + luaStr(newMod["name"]) + "\", \"" + luaStr(newMod["type"]) + "\", " + valueStr + ", " + flags + ", " + kwFlags
-				for j := 1; ; j++ {
-					extra, ok := newMod[j].(luaTable)
-					if !ok {
-						break
-					}
-					line += ", " + tableToString(extra, "")
-				}
-				line += "), -- " + entryId + modStats
-				d.ModList = append(d.ModList, line)
+				me.Mods = modparser.EncodeMods([]*modparser.Mod{first})
+				d.ModList = append(d.ModList, me)
 			}
 		}
-		for _, mod := range state.extraModList {
-			d.ModList = append(d.ModList, mod+",")
+		for _, mods := range state.extraModList {
+			d.ModList = append(d.ModList, schema.ModEntry{Mods: mods, Extra: true})
 		}
 		*defs = append(*defs, d)
-	}
-	directives["spectre"] = func(args string) {
-		directives["monster"](args)
-		directives["emit"]("")
+		return nil
 	}
 
 	var doc schema.Minions
@@ -370,9 +263,43 @@ func buildMinions(x *Ctx) (any, error) {
 		list *[]schema.MinionDef
 	}{{"Spectres", &doc.Spectres}, {"Minions", &doc.Minions}} {
 		defs = tf.list
-		if err := x.WalkTemplate(tf.name, "Minions/", directives); err != nil {
+		tpl, err := readTemplate("Minions/", tf.name, minionDirectives)
+		if err != nil {
 			return nil, err
+		}
+		for _, d := range tpl.Directives {
+			switch d := d.(type) {
+			case *monsterDirective:
+				monster(d.Variety, d.Name, d.Skills)
+			case *spectreDirective:
+				monster(d.Variety, d.Name, d.Skills)
+				err = emit()
+			case *limitDirective:
+				state.limit = d.Name
+			case *hostileDirective:
+				if d.Value {
+					state.hostile = "true"
+				}
+			case *extraSkillDirective:
+				state.extraSkillList = append(state.extraSkillList, d.Name)
+			case *modDirective:
+				state.extraModList = append(state.extraModList, d.Mods)
+			case *emitDirective:
+				err = emit()
+			}
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return doc, nil
+}
+
+// scalarValue reports a value the generator overwrites (a record stands).
+func scalarValue(v modparser.Value) bool {
+	switch v.(type) {
+	case nil, modparser.Num, modparser.Bool, modparser.Str:
+		return true
+	}
+	return false
 }

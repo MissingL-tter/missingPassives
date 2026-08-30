@@ -54,19 +54,35 @@ var _ = func() bool {
 	luacanon.RegisterAdapter(func(v any) (any, bool) {
 		switch t := v.(type) {
 		case *modparser.Mod:
-			return data.ModCanon(t), true
-		case *modparser.D:
-			return data.DCanon(t), true
+			return luacanon.ModTable(t), true
+		case modparser.Tag:
+			return luacanon.TagTable(t), true
+		case modparser.Value:
+			return luacanon.ValueTable(t), true
 		case *data.GrantedEffect:
-			return data.GrantedEffectCanon(t), true
+			return luacanon.GrantedEffectTable(t), true
 		case *data.StatMapEntry:
-			return data.StatMapEntryCanon(t), true
+			return luacanon.StatMapEntryTable(t), true
+		case data.SkillMod:
+			return luacanon.SkillModTable(t), true
 		case *data.SkillLevel:
-			return data.SkillLevelCanon(t), true
-		case data.UnportedFn:
-			return luacanon.Fn{}, true
+			return luacanon.SkillLevelTable(t), true
 		case *data.Gem:
-			return data.GemCanon(t), true
+			return luacanon.GemTable(t), true
+		case data.PowerStat:
+			return luacanon.PowerStatTable(t), true
+		case data.MapModData:
+			return luacanon.MapModsTable(t), true
+		case *data.MapMod:
+			return luacanon.MapModTable(t), true
+		case data.MapModValue:
+			return luacanon.MapModValueTable(t), true
+		case data.TradeIDs:
+			return luacanon.TradeIDsTable(t), true
+		case data.BossSkillData:
+			return luacanon.BossSkillTable(t), true
+		case data.BossStat:
+			return luacanon.BossStatTable(t), true
 		}
 		return nil, false
 	})
@@ -80,13 +96,26 @@ var _ = func() bool {
 // any disagreement.
 func TestGameDataAgainstReference(t *testing.T) {
 	dumpPath := filepath.Join("testdata", "gamedata_archive.jsonl")
-	// The loaded data set is immutable after Load (calc runs keep their
-	// mutations per-env), so it can be compared regardless of what ran
-	// before this test — except Uniques["generated"], which a tree load
-	// extends with the tree-dependent uniques; the archive dump captured
-	// the load-time (pre-tree) state.
 	loadData(t)
-	data.TrimTreeDependentUniques()
+	// The archive dump captured data before any tree load, so compare a
+	// load without the tree-dependent uniques; restore the shared full
+	// state afterwards for whatever runs next.
+	src, err := data.RawSources()
+	if err != nil {
+		t.Fatal(err)
+	}
+	src.StatMapCopies = readStatMapCopies(dumpPath)
+	src.SkipTreeDependentUniques = true
+	if err := data.Load(src); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		src.SkipTreeDependentUniques = false
+		if err := data.Load(src); err != nil {
+			t.Fatal(err)
+		}
+		modparser.SetModCache(data.LoadedModCache)
+	})
 
 	checks := map[string]func() any{
 		"monsterEvasionTable":             func() any { return data.MonsterEvasionTable },
@@ -145,10 +174,12 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"minionTagCrucibleUniques":       func() any { return data.MinionTagCrucibleUniques },
 		"costs":                          func() any { return data.Costs },
 		"mapMods":                        func() any { return data.MapMods },
-		"nodeIDList":                     func() any { return data.NodeIDList },
+		"nodeIDList":                     func() any { return luacanon.NodeIDListTable() },
 		"abyssNotableNames":              func() any { return data.AbyssNotableNames },
 		"timelessJewelTradeIDs":          func() any { return data.TimelessJewelTradeIDs },
-		"timelessJewelLUTs":              func() any { return data.TimelessJewelLUTs },
+		// the reference's LUT cache, empty at boot; the port computes cells
+		// instead of caching LUTs (tree/historic.go)
+		"timelessJewelLUTs": func() any { return map[string]any{} },
 		// function-valued members: ported by the stat-describer and
 		// timeless-jewel-data modules
 		"describeStats":              func() any { return luacanon.Fn{} },
@@ -191,7 +222,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 		"skills":                     func() any { return data.Skills },
 		"skillStatMap":               func() any { return data.SkillStatMap },
 		"gems":                       func() any { return data.Gems },
-		"gemForSkill":                func() any { return data.GemForSkillCanon() },
+		"gemForSkill":                func() any { return luacanon.GemForSkillTable() },
 		"gemForBaseName":             func() any { return data.GemForBaseName },
 		"gemsByGameId": func() any {
 			out := map[string]map[string]string{}
@@ -240,6 +271,7 @@ func TestGameDataAgainstReference(t *testing.T) {
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
 			t.Fatalf("bad dump line: %v", err)
 		}
+		rec.C = luacanon.NormalizeArchiveMods(rec.C)
 		check, ok := checks[rec.K]
 		if !ok {
 			disagree++

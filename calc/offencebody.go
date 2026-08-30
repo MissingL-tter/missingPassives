@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
@@ -17,10 +18,10 @@ type offenceCtx struct {
 
 	modDB   *modstore.DB
 	enemyDB *modstore.DB
-	output  map[string]any
+	output  modstore.Output
 
 	skillModList *modstore.List
-	skillData    map[string]any
+	skillData    *SkillData
 	skillFlags   map[string]bool
 	skillCfg     *modstore.Cfg
 
@@ -30,8 +31,12 @@ type offenceCtx struct {
 	conversionTbl    conversionTable
 	conversionTables map[*modstore.Cfg]conversionTable
 	passList         []*damagePass
-	mainHandStats    map[string]any
-	offHandStats     map[string]any
+	mainHandStats    modstore.Output
+	offHandStats     modstore.Output
+
+	// output.AreaOfEffectRadiusTertiaryOccurrences: a radius -> count
+	// table, read back by Explosive Trap's preDamageFunc (not diffed)
+	radiusTertiaryOccurrences map[float64]float64
 
 	monsterLife        float64
 	quantityMultiplier float64
@@ -85,7 +90,7 @@ func (env *Env) offence(actor *performActor, activeSkill *ActiveSkill) {
 		skillCfg:     activeSkill.SkillCfg,
 	}
 
-	if truthy(c.skillData["showAverage"]) {
+	if c.skillData.Flag("showAverage") {
 		c.skillFlags["showAverage"] = true
 	} else {
 		c.skillFlags["notAverage"] = true
@@ -93,7 +98,7 @@ func (env *Env) offence(actor *performActor, activeSkill *ActiveSkill) {
 
 	if c.skillFlags["disable"] {
 		// Skill is disabled
-		c.output["CombinedDPS"] = 0.0
+		c.output.SetN("CombinedDPS", 0.0)
 		return
 	}
 
@@ -107,8 +112,8 @@ func (env *Env) calcAreaOfEffect(c *offenceCtx) {
 	output := c.output
 
 	incArea, moreArea := Mods(skillModList, skillCfg, "AreaOfEffect", "AreaOfEffectPrimary")
-	output["AreaOfEffectMod"] = roundDec(roundDec(incArea*moreArea, 10), 2)
-	if truthy(c.skillData["radiusIsWeaponRange"]) {
+	output.SetN("AreaOfEffectMod", util.RoundHalfUp(util.RoundHalfUp(incArea*moreArea, 10), 2))
+	if c.skillData.Flag("radiusIsWeaponRange") {
 		rng := 0.0
 		if c.skillFlags["weapon1Attack"] {
 			rng = math.Max(rng, c.actor.weaponRange1)
@@ -116,39 +121,39 @@ func (env *Env) calcAreaOfEffect(c *offenceCtx) {
 		if c.skillFlags["weapon2Attack"] {
 			rng = math.Max(rng, c.actor.weaponRange2)
 		}
-		c.skillData["radius"] = rng + 2
+		c.skillData.SetN("radius", rng+2)
 	}
-	if truthy(c.skillData["radius"]) {
+	if c.skillData.Has("radius") {
 		c.skillFlags["area"] = true
-		baseRadius := anyNum(c.skillData["radius"]) + anyNum(c.skillData["radiusExtra"]) +
-			skillModList.Sum("BASE", skillCfg, "AreaOfEffect")
-		output["AreaOfEffectRadius"] = calcRadius(baseRadius, outNum(output, "AreaOfEffectMod"))
-		output["AreaOfEffectRadiusMetres"] = outNum(output, "AreaOfEffectRadius") / 10
-		if truthy(c.skillData["radiusSecondary"]) {
+		baseRadius := c.skillData.N("radius") + c.skillData.N("radiusExtra") +
+			skillModList.Sum(modparser.Base, skillCfg, "AreaOfEffect")
+		output.SetN("AreaOfEffectRadius", calcRadius(baseRadius, output.N("AreaOfEffectMod")))
+		output.SetN("AreaOfEffectRadiusMetres", output.N("AreaOfEffectRadius")/10)
+		if c.skillData.Flag("radiusSecondary") {
 			incAreaSecondary, moreAreaSecondary := Mods(skillModList, skillCfg, "AreaOfEffect", "AreaOfEffectSecondary")
-			output["AreaOfEffectModSecondary"] = roundDec(roundDec(incAreaSecondary*moreAreaSecondary, 10), 2)
-			baseRadius = anyNum(c.skillData["radiusSecondary"]) + anyNum(c.skillData["radiusExtra"])
-			output["AreaOfEffectRadiusSecondary"] = calcRadius(baseRadius, outNum(output, "AreaOfEffectModSecondary"))
-			output["AreaOfEffectRadiusSecondaryMetres"] = outNum(output, "AreaOfEffectRadiusSecondary") / 10
+			output.SetN("AreaOfEffectModSecondary", util.RoundHalfUp(util.RoundHalfUp(incAreaSecondary*moreAreaSecondary, 10), 2))
+			baseRadius = c.skillData.N("radiusSecondary") + c.skillData.N("radiusExtra")
+			output.SetN("AreaOfEffectRadiusSecondary", calcRadius(baseRadius, output.N("AreaOfEffectModSecondary")))
+			output.SetN("AreaOfEffectRadiusSecondaryMetres", output.N("AreaOfEffectRadiusSecondary")/10)
 		}
-		if truthy(c.skillData["radiusTertiary"]) {
+		if c.skillData.Flag("radiusTertiary") {
 			incAreaTertiary, moreAreaTertiary := Mods(skillModList, skillCfg, "AreaOfEffect", "AreaOfEffectTertiary")
-			output["AreaOfEffectModTertiary"] = roundDec(roundDec(incAreaTertiary*moreAreaTertiary, 10), 2)
-			baseRadius = anyNum(c.skillData["radiusTertiary"]) + anyNum(c.skillData["radiusExtra"])
-			if truthy(c.skillData["projectileSpeedAppliesToMSAreaOfEffect"]) {
+			output.SetN("AreaOfEffectModTertiary", util.RoundHalfUp(util.RoundHalfUp(incAreaTertiary*moreAreaTertiary, 10), 2))
+			baseRadius = c.skillData.N("radiusTertiary") + c.skillData.N("radiusExtra")
+			if c.skillData.Flag("projectileSpeedAppliesToMSAreaOfEffect") {
 				incSpeedTertiary, moreSpeedTertiary := Mods(skillModList, skillCfg, "ProjectileSpeed")
-				output["SpeedModTertiary"] = roundDec(roundDec(incSpeedTertiary*moreSpeedTertiary, 10), 2)
-				output["AreaOfEffectRadiusTertiary"] = calcMoltenStrikeTertiaryRadius(baseRadius,
-					anyNum(c.skillData["radiusSecondary"]), outNum(output, "AreaOfEffectModTertiary"), outNum(output, "SpeedModTertiary"))
-			} else if truthy(c.skillData["radiusTertiaryBaseMargin"]) {
+				output.SetN("SpeedModTertiary", util.RoundHalfUp(util.RoundHalfUp(incSpeedTertiary*moreSpeedTertiary, 10), 2))
+				output.SetN("AreaOfEffectRadiusTertiary", calcMoltenStrikeTertiaryRadius(baseRadius,
+					c.skillData.N("radiusSecondary"), output.N("AreaOfEffectModTertiary"), output.N("SpeedModTertiary")))
+			} else if c.skillData.Flag("radiusTertiaryBaseMargin") {
 				// "Smaller explosions have between 30% reduced and 30%
 				// increased base radius at random" (Explosive Trap only).
 				// Each 1% step of the deviation is one equally likely
 				// outcome, so the reported radius is their mean -- but note
 				// the loop runs one step past marginWidth outcomes, which
 				// the divisor does not account for.
-				margin := anyNum(c.skillData["radiusTertiaryBaseMargin"]) / 100
-				marginWidth := anyNum(c.skillData["radiusTertiaryBaseMargin"])*2 + 1
+				margin := c.skillData.N("radiusTertiaryBaseMargin") / 100
+				marginWidth := c.skillData.N("radiusTertiaryBaseMargin")*2 + 1
 				baseRadiiOccurrences := map[float64]float64{}
 				// Accumulating the step, as the Lua numeric for does.
 				for deviation := 1 - margin; deviation <= 1+margin+0.01; deviation += 0.01 {
@@ -158,18 +163,18 @@ func (env *Env) calcAreaOfEffect(c *offenceCtx) {
 				radiiOccurrences := map[float64]float64{}
 				for _, adjustedBaseRadius := range sortedNumKeys(baseRadiiOccurrences) {
 					occurrenceCount := baseRadiiOccurrences[adjustedBaseRadius]
-					radiusForDeviation := calcRadius(adjustedBaseRadius, outNum(output, "AreaOfEffectModTertiary"))
+					radiusForDeviation := calcRadius(adjustedBaseRadius, output.N("AreaOfEffectModTertiary"))
 					sumOfRandomRadii += radiusForDeviation * occurrenceCount
 					radiiOccurrences[radiusForDeviation] += occurrenceCount
 				}
-				output["AreaOfEffectRadiusTertiary"] = sumOfRandomRadii / marginWidth
+				output.SetN("AreaOfEffectRadiusTertiary", sumOfRandomRadii/marginWidth)
 				// Read back by Explosive Trap's preDamageFunc; scalarsOnly
 				// keeps it out of the output canon, as in the reference dump.
-				output["AreaOfEffectRadiusTertiaryOccurrences"] = radiiOccurrences
+				c.radiusTertiaryOccurrences = radiiOccurrences
 			} else {
-				output["AreaOfEffectRadiusTertiary"] = calcRadius(baseRadius, outNum(output, "AreaOfEffectModTertiary"))
+				output.SetN("AreaOfEffectRadiusTertiary", calcRadius(baseRadius, output.N("AreaOfEffectModTertiary")))
 			}
-			output["AreaOfEffectRadiusTertiaryMetres"] = outNum(output, "AreaOfEffectRadiusTertiary") / 10
+			output.SetN("AreaOfEffectRadiusTertiaryMetres", output.N("AreaOfEffectRadiusTertiary")/10)
 		}
 	}
 }
@@ -180,24 +185,24 @@ func (env *Env) calcResistForType(c *offenceCtx, damageType string, cfg *modstor
 
 	var resist float64
 	haveResist := false
-	if ov := enemyDB.Override(cfg, damageType+"Resist"); truthy(ov) {
-		resist = anyNum(ov)
+	if ov, ok := enemyDB.Override(cfg, damageType+"Resist"); ok {
+		resist = valueNum(ov)
 		haveResist = true
 	}
 	maxResist := data.Misc.EnemyMaxResist
 	if !enemyDB.Flag(nil, "DoNotChangeMaxResFromConfig") {
 		configured := data.Misc.EnemyMaxResist
-		if v := env.ConfigInput["enemy"+damageType+"Resist"]; truthy(v) {
-			configured = anyNum(v)
+		if v, ok := env.ConfigInput.EnemyResist[damageType]; ok {
+			configured = v
 		}
 		maxResist = math.Min(math.Max(configured, data.Misc.EnemyMaxResist), data.Misc.MaxResistCap)
 	}
 	if !haveResist {
 		if env.ModDB.Flag(nil, "Enemy"+damageType+"ResistEqualToYours") {
-			resist = outNum(env.Player.Output, damageType+"Resist")
+			resist = env.Player.Output.N(damageType + "Resist")
 		} else {
 			names := elemNames(damageType, damageType+"Resist", "ElementalResist")
-			resist = enemyDB.Sum("BASE", cfg, names...) * math.Max(Mod(enemyDB, cfg, names...), 0)
+			resist = enemyDB.Sum(modparser.Base, cfg, names...) * math.Max(Mod(enemyDB, cfg, names...), 0)
 		}
 	}
 	return math.Max(math.Min(resist, maxResist), data.Misc.ResistFloor)
@@ -206,20 +211,16 @@ func (env *Env) calcResistForType(c *offenceCtx, damageType string, cfg *modstor
 // runSkillFunc ports the local of the same name: the granted effect's
 // hand-written Lua callbacks. Any that a corpus build reaches must be
 // ported into Go before it can be exact.
-func (env *Env) runSkillFunc(c *offenceCtx, name string) {
-	fn, ok := c.activeSkill.ActiveEffect.GrantedEffect.Custom[name]
-	if !ok || fn == nil {
+func (env *Env) runSkillFunc(c *offenceCtx, kind data.CallbackKind) {
+	ge := c.activeSkill.ActiveEffect.GrantedEffect
+	if !ge.Custom.Callbacks[kind] {
 		return
 	}
-	id := c.activeSkill.ActiveEffect.GrantedEffect.Id
-	if ported, ok := skillFuncs[id+":"+name]; ok {
+	if ported, ok := skillFuncs[skillFuncKey{ge.Id, kind}]; ok {
 		ported(env, c)
 		return
 	}
-	if _, unported := fn.(data.UnportedFn); unported {
-		panic("offence: granted effect " + id + " has an unported " + name + " callback")
-	}
-	panic("offence: unexpected " + name + " callback shape")
+	panic("offence: granted effect " + ge.Id + " has an unported " + kind.String() + " callback")
 }
 
 // offencePrologue covers L483-560: the initial skill func, the triggered /
@@ -230,60 +231,53 @@ func (env *Env) offencePrologue(c *offenceCtx) {
 	// NOTE: calcAreaOfEffect is defined early in the reference but first
 	// called at L1152, in the skill-type-stats section, after weaponRange
 	// is set. Do not hoist it here.
-	env.runSkillFunc(c, "initialFunc")
+	env.runSkillFunc(c, data.CallbackInitial)
 
 	if skillCfg.SkillCond == nil {
 		skillCfg.SkillCond = map[string]bool{}
 	}
-	skillCfg.SkillCond["SkillIsTriggered"] = truthy(skillData["triggered"])
+	skillCfg.SkillCond["SkillIsTriggered"] = skillData.Flag("triggered")
 	if skillCfg.SkillCond["SkillIsTriggered"] {
 		c.skillFlags["triggered"] = true
 	}
-	skillCfg.SkillCond["SkillIsFocused"] = truthy(skillData["chanceToTriggerOnFocus"])
+	skillCfg.SkillCond["SkillIsFocused"] = skillData.Flag("chanceToTriggerOnFocus")
 	if skillCfg.SkillCond["SkillIsFocused"] {
 		c.skillFlags["focused"] = true
 	}
 
 	// Update skill data
 	for _, v := range skillModList.List(skillCfg, "SkillData") {
-		tag, _ := v.(modparser.Tag)
-		key := str(tag["key"])
-		if str(tag["merge"]) == "MAX" {
-			skillData[key] = math.Max(anyNum(tag["value"]), anyNum(skillData[key]))
+		tag, _ := v.(modparser.DataRef)
+		key := tag.Key
+		if tag.Merge == "MAX" {
+			skillData.SetN(key, math.Max(valueNum(tag.Value), skillData.N(key)))
 		} else {
-			skillData[key] = tag["value"]
+			skillData.Set(key, outValueOf(tag.Value))
 		}
 	}
 
 	// Add addition stat bonuses
 	if skillModList.Flag(nil, "IronGrip") {
-		skillModList.AddMod(newMod("PhysicalDamage", "INC", c.actor.strDmgBonus, "Strength",
-			modparser.ModFlag.Attack|modparser.ModFlag.Projectile))
+		skillModList.AddMod(newModSF("PhysicalDamage", modparser.Inc, modparser.Num(c.actor.strDmgBonus), "Strength", modparser.FlagAttack|modparser.FlagProjectile, modparser.KeywordNone))
 	}
 	if skillModList.Flag(nil, "IronWill") {
-		skillModList.AddMod(newMod("Damage", "INC", c.actor.strDmgBonus, "Strength", modparser.ModFlag.Spell))
+		skillModList.AddMod(newModSF("Damage", modparser.Inc, modparser.Num(c.actor.strDmgBonus), "Strength", modparser.FlagSpell, modparser.KeywordNone))
 	}
 	if skillModList.Flag(nil, "TransfigurationOfBody") {
-		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "Life")*data.Misc.Transfiguration),
-			"Transfiguration of Body", modparser.ModFlag.Attack))
+		skillModList.AddMod(newModSF("Damage", modparser.Inc, modparser.Num(math.Floor(skillModList.Sum(modparser.Inc, nil, "Life")*data.Misc.Transfiguration)), "Transfiguration of Body", modparser.FlagAttack, modparser.KeywordNone))
 	}
 	if skillModList.Flag(nil, "TransfigurationOfMind") {
-		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "Mana")*data.Misc.Transfiguration),
-			"Transfiguration of Mind"))
+		skillModList.AddMod(newModS("Damage", modparser.Inc, modparser.Num(math.Floor(skillModList.Sum(modparser.Inc, nil, "Mana")*data.Misc.Transfiguration)), "Transfiguration of Mind"))
 	}
 	if skillModList.Flag(nil, "TransfigurationOfSoul") {
-		skillModList.AddMod(newMod("Damage", "INC",
-			math.Floor(skillModList.Sum("INC", nil, "EnergyShield")*data.Misc.Transfiguration),
-			"Transfiguration of Soul", modparser.ModFlag.Spell))
+		skillModList.AddMod(newModSF("Damage", modparser.Inc, modparser.Num(math.Floor(skillModList.Sum(modparser.Inc, nil, "EnergyShield")*data.Misc.Transfiguration)), "Transfiguration of Soul", modparser.FlagSpell, modparser.KeywordNone))
 	}
 
 	env.offenceSkillData(c)
 
 	c.isAttack = c.skillFlags["attack"]
 
-	env.runSkillFunc(c, "preSkillTypeFunc")
+	env.runSkillFunc(c, data.CallbackPreSkillType)
 
 	env.offenceSkillTypeStats(c)
 }

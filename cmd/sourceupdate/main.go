@@ -8,8 +8,8 @@
 //     (github.com/grindinggear/skilltree-export, fetched by release tag, or
 //     -treejson for a local copy).
 //  3. modcache.jsonl from the Go parser over the regenerated data
-//     (internal/modcachegen), run as a subprocess so the fresh artifacts
-//     are the ones compiled in (data/raw is embedded).
+//     (internal/modcachegen), loaded from the output directory so the
+//     fresh artifacts are used, not the embedded copies.
 //  4. Reports what it cannot regenerate: the .archive reference itself
 //     (shipped LUT bins etc. — replace manually on a version bump; every
 //     differential compares against it).
@@ -57,20 +57,28 @@ func main() {
 	treeTag := flag.String("treetag", "3.29.1", "grindinggear/skilltree-export release tag to fetch data.json from")
 	treeJSON := flag.String("treejson", "", "local GGG tree data.json (skips the fetch)")
 	skipTests := flag.Bool("skiptests", false, "skip the verification test runs")
-	modcacheOnly := flag.Bool("modcache-only", false, "regenerate modcache.jsonl only (the main run invokes this as a subprocess so the freshly written artifacts are the ones compiled in)")
+	modcacheOnly := flag.Bool("modcache-only", false, "regenerate modcache.jsonl only, from the documents already in -out")
 	flag.Parse()
 
-	if *modcacheOnly {
-		data.Load(data.RawSources())
-		out := filepath.Join(*out, "modcache.jsonl")
-		if err := os.WriteFile(out, modcachegen.Build(treeVersionFromTag(*treeTag)), 0o644); err != nil {
+	treeVersion := treeVersionFromTag(*treeTag)
+
+	// modcache.jsonl from the Go parser over the documents in *out (the
+	// ones just written, or the committed ones under -modcache-only).
+	writeModCache := func() {
+		src, err := data.RawSourcesFromDir(*out)
+		if err != nil {
 			fail(err)
 		}
-		fmt.Println("->", filepath.Base(out))
+		mc := filepath.Join(*out, "modcache.jsonl")
+		if err := os.WriteFile(mc, modcachegen.BuildFrom(src, treeVersion), 0o644); err != nil {
+			fail(err)
+		}
+		fmt.Println("->", filepath.Base(mc))
+	}
+	if *modcacheOnly {
+		writeModCache()
 		return
 	}
-
-	treeVersion := treeVersionFromTag(*treeTag)
 
 	// 1. GGPK export artifacts.
 	if _, err := os.Stat(filepath.Join(*src, "Data", "stats.datc64")); err != nil {
@@ -124,9 +132,9 @@ func main() {
 	}
 	fmt.Println("->", filepath.Base(treeOut))
 
-	// 3. modcache.jsonl, from the Go parser over the regenerated data.
-	// Runs as a subprocess: the data/raw documents are compiled in via
-	// embed, so a fresh build must pick up what steps 1-2 just wrote.
+	// 3. modcache.jsonl over what steps 1-2 just wrote.
+	writeModCache()
+
 	run := func(env []string, args ...string) {
 		fmt.Println("\n$", args)
 		cmd := exec.Command(args[0], args[1:]...)
@@ -136,8 +144,6 @@ func main() {
 			fail("step failed:", err)
 		}
 	}
-	run(nil, "go", "run", "./cmd/sourceupdate", "-modcache-only", "-out", *out, "-treetag", *treeTag)
-
 	// 4. What this cannot regenerate.
 	fmt.Println()
 	fmt.Println("NOT regenerated (manual):")

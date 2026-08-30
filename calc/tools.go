@@ -10,25 +10,28 @@ package calc
 import (
 	"math"
 	"sort"
+	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
+	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
 )
 
 // Mod is calcLib.mod: (1 + Sum(INC)/100) * More.
 func Mod(store modstore.Store, cfg *modstore.Cfg, names ...string) float64 {
-	return (1 + store.Sum("INC", cfg, names...)/100) * store.More(cfg, names...)
+	return (1 + store.Sum(modparser.Inc, cfg, names...)/100) * store.More(cfg, names...)
 }
 
 // Mods is calcLib.mods.
 func Mods(store modstore.Store, cfg *modstore.Cfg, names ...string) (inc, more float64) {
-	return 1 + store.Sum("INC", cfg, names...)/100, store.More(cfg, names...)
+	return 1 + store.Sum(modparser.Inc, cfg, names...)/100, store.More(cfg, names...)
 }
 
 // Val is calcLib.val.
 func Val(store modstore.Store, name string, cfg *modstore.Cfg) float64 {
-	baseVal := store.Sum("BASE", cfg, name)
+	baseVal := store.Sum(modparser.Base, cfg, name)
 	if baseVal != 0 {
 		return baseVal * Mod(store, cfg, name)
 	}
@@ -74,55 +77,43 @@ type ActiveEffect struct {
 	GrantedEffectLevel *data.SkillLevel
 }
 
-// luaLevelsLen is Lua's #levels on the per-gem-level table: the length of
-// the contiguous run from key 1 (spectre-style tables keyed from a high
-// monster level have no array part, so # is 0).
-func luaLevelsLen(levels map[float64]*data.SkillLevel) float64 {
-	n := 0.0
-	for {
-		if _, ok := levels[n+1]; !ok {
-			return n
-		}
-		n++
-	}
-}
-
 // ValidateGemLevel ports calcLib.validateGemLevel (mutates gi.Level).
 func ValidateGemLevel(gi *ActiveEffect) {
 	grantedEffect := gi.GrantedEffect
 	if grantedEffect == nil {
 		grantedEffect = gi.GemData.GrantedEffect
 	}
-	if grantedEffect.Levels[gi.Level] == nil {
-		// Try limiting to the level range of the skill
+	if grantedEffect.LevelData(gi.Level) == nil {
+		// Try limiting to the level range of the skill (#levels)
 		gi.Level = math.Max(1, gi.Level)
-		if n := luaLevelsLen(grantedEffect.Levels); n > 0 {
-			gi.Level = math.Min(n, gi.Level)
+		if n := grantedEffect.LevelCount(); n > 0 {
+			gi.Level = math.Min(float64(n), gi.Level)
 		}
 	}
-	if grantedEffect.Levels[gi.Level] == nil && gi.GemData != nil {
+	if grantedEffect.LevelData(gi.Level) == nil && gi.GemData != nil {
 		gi.Level = gi.GemData.NaturalMaxLevel
 	}
-	if grantedEffect.Levels[gi.Level] == nil {
-		// That failed, so just grab any level. The reference uses next(),
-		// which is hash-order arbitrary; the lowest level keeps this port
-		// deterministic.
-		first, found := 0.0, false
+	if grantedEffect.LevelData(gi.Level) == nil {
+		// That failed, so just grab any level: lowest key (the reference's
+		// next() is hash-order arbitrary).
+		// #EVAL: for a table like {6, 7} this ignores levelRequirement;
+		// shipped data only has single-entry cases.
+		first, found := 0, false
 		for lvl := range grantedEffect.Levels {
 			if !found || lvl < first {
 				first, found = lvl, true
 			}
 		}
 		if found {
-			gi.Level = first
+			gi.Level = float64(first)
 		}
 	}
 }
 
 // DoesTypeExpressionMatch ports calcLib.doesTypeExpressionMatch: a postfix
-// boolean expression over skill type ids. Nil holes in checkTypes are keys
-// pairs() never sees, so they are skipped.
-func DoesTypeExpressionMatch(checkTypes []any, skillTypes, minionTypes map[int64]bool) bool {
+// boolean expression over skill type ids. Unknown types (0) are the nil
+// holes pairs() never sees, so they are skipped.
+func DoesTypeExpressionMatch(checkTypes []modparser.SkillTypeID, skillTypes, minionTypes map[modparser.SkillTypeID]bool) bool {
 	var stack []bool
 	pop := func() bool {
 		if len(stack) == 0 {
@@ -132,23 +123,22 @@ func DoesTypeExpressionMatch(checkTypes []any, skillTypes, minionTypes map[int64
 		stack = stack[:len(stack)-1]
 		return v
 	}
-	for _, st := range checkTypes {
-		id, ok := st.(int64)
-		if !ok {
+	for _, id := range checkTypes {
+		if id == 0 {
 			continue
 		}
 		switch id {
-		case modparser.SkillType.OR:
+		case modparser.SkillTypeOR:
 			other := pop()
 			if len(stack) > 0 {
 				stack[len(stack)-1] = stack[len(stack)-1] || other
 			}
-		case modparser.SkillType.AND:
+		case modparser.SkillTypeAND:
 			other := pop()
 			if len(stack) > 0 {
 				stack[len(stack)-1] = stack[len(stack)-1] && other
 			}
-		case modparser.SkillType.NOT:
+		case modparser.SkillTypeNOT:
 			if len(stack) > 0 {
 				stack[len(stack)-1] = !stack[len(stack)-1]
 			}
@@ -166,7 +156,7 @@ func DoesTypeExpressionMatch(checkTypes []any, skillTypes, minionTypes map[int64
 
 // GemIsType ports calcLib.gemIsType ("all", "strength", "melee", ...).
 func GemIsType(gem *data.Gem, typ string, includeTransfigured bool) bool {
-	lowerName := luaLower(gem.Name)
+	lowerName := strings.ToLower(gem.Name)
 	return typ == "all" ||
 		(typ == "elemental" && (gem.Tags["fire"] || gem.Tags["cold"] || gem.Tags["lightning"])) ||
 		(typ == "aoe" && gem.Tags["area"]) ||
@@ -180,33 +170,16 @@ func GemIsType(gem *data.Gem, typ string, includeTransfigured bool) bool {
 		(typ != "active skill" && typ != "grants_active_skill" && typ != "skill" && gem.Tags[typ])
 }
 
-// GetGemStatRequirement ports calcLib.getGemStatRequirement (the in-game
-// formula).
-func GetGemStatRequirement(level float64, isSupport bool, multi float64) float64 {
-	if multi == 0 {
-		return 0
-	}
-	statType := 0.7
-	if isSupport {
-		statType = 0.5
-	}
-	req := round((20 + (level-3)*3) * math.Pow(multi/100, 0.9) * statType)
-	if req < 14 {
-		return 0
-	}
-	return req
-}
-
 // BuildSkillInstanceStats ports calcLib.buildSkillInstanceStats.
 func BuildSkillInstanceStats(gi *ActiveEffect, grantedEffect *data.GrantedEffect) map[string]float64 {
 	stats := map[string]float64{}
 	if gi.Quality > 0 && grantedEffect.QualityStats != nil {
 		for _, stat := range grantedEffect.QualityStats {
 			// math.modf keeps the integral part (truncates toward zero)
-			stats[stat[0].(string)] += math.Trunc(anyNum(stat[1]) * gi.Quality)
+			stats[stat.Id] += math.Trunc(stat.Value * gi.Quality)
 		}
 	}
-	level := grantedEffect.Levels[gi.Level]
+	level := grantedEffect.LevelData(gi.Level)
 	var availableEffectiveness *float64
 	actorLevel := 1.0
 	if gi.ActorLevel != nil {
@@ -242,17 +215,17 @@ func BuildSkillInstanceStats(gi *ActiveEffect, grantedEffect *data.GrantedEffect
 					base * math.Pow(1+incr, actorLevel-1)
 				availableEffectiveness = &e
 			}
-			statValue = round(*availableEffectiveness * level.Values[index-1])
+			statValue = util.RoundHalfUp(*availableEffectiveness*level.Values[index-1], 0)
 		} else if interp == 2 {
 			// Linear interpolation between the ordered levels
-			orderedLevels := make([]float64, 0, len(grantedEffect.Levels))
+			orderedLevels := make([]int, 0, len(grantedEffect.Levels))
 			for lvl := range grantedEffect.Levels {
 				orderedLevels = append(orderedLevels, lvl)
 			}
-			sort.Float64s(orderedLevels)
+			sort.Ints(orderedLevels)
 			currentLevelIndex := 0
 			for idx, lvl := range orderedLevels {
-				if gi.Level == lvl {
+				if gi.Level == float64(lvl) {
 					currentLevelIndex = idx + 1
 				}
 			}
@@ -267,15 +240,15 @@ func BuildSkillInstanceStats(gi *ActiveEffect, grantedEffect *data.GrantedEffect
 				prevReq := prevLevel.Extra["levelRequirement"]
 				nextStat := nextLevel.Values[index-1]
 				prevStat := prevLevel.Values[index-1]
-				statValue = round(prevStat + (nextStat-prevStat)*(actorLevel-prevReq)/(nextReq-prevReq))
+				statValue = util.RoundHalfUp(prevStat+(nextStat-prevStat)*(actorLevel-prevReq)/(nextReq-prevReq), 0)
 			} else {
-				statValue = round(grantedEffect.Levels[orderedLevels[currentLevelIndex-1]].Values[index-1])
+				statValue = util.RoundHalfUp(grantedEffect.Levels[orderedLevels[currentLevelIndex-1]].Values[index-1], 0)
 			}
 		}
 		stats[stat] += statValue
 	}
 	for _, stat := range grantedEffect.ConstantStats {
-		stats[stat[0].(string)] += anyNum(stat[1])
+		stats[stat.Id] += stat.Value
 	}
 	return stats
 }
@@ -283,24 +256,35 @@ func BuildSkillInstanceStats(gi *ActiveEffect, grantedEffect *data.GrantedEffect
 // GetConvertedModTags ports calcLib.getConvertedModTags: correct the tags
 // on conversion with multipliers so they carry over correctly. ipairs(mod)
 // walks the mod's array part (the tags) and stops at the first hole.
-func GetConvertedModTags(mod *modparser.Mod, multiplier float64, minionMods bool) []any {
-	var modifiers []any
+func GetConvertedModTags(mod *modparser.Mod, multiplier float64, minionMods bool) []modparser.Tag {
+	var modifiers []modparser.Tag
 	for _, v := range mod.Tags {
 		if v == nil {
 			break
 		}
-		tag, isTag := v.(modparser.Tag)
-		switch {
-		case isTag && minionMods && tag["type"] == "ActorCondition" && tag["actor"] == "parent":
-			modifiers = append(modifiers, modparser.Tag{"type": "Condition", "var": tag["var"]})
-		case isTag && truthy(tag["limitTotal"]):
+		switch tag := v.(type) {
+		case *modparser.CondTag:
+			if minionMods && tag.IsActor && tag.Actor == "parent" {
+				modifiers = append(modifiers, &modparser.CondTag{Var: tag.Var})
+				continue
+			}
+			modifiers = append(modifiers, tag.Clone())
+		case *modparser.MultiplierTag:
 			// LimitTotal can apply to 'per stat' or 'multiplier', so just
 			// copy the whole and update the limit
-			cp := copyTagValue(tag).(modparser.Tag)
-			cp["limit"] = anyNum(cp["limit"]) * multiplier
+			cp := tag.Clone().(*modparser.MultiplierTag)
+			if cp.LimitTotal {
+				cp.Limit = opt(cp.Limit.Or(0) * multiplier)
+			}
+			modifiers = append(modifiers, cp)
+		case *modparser.StatTag:
+			cp := tag.Clone().(*modparser.StatTag)
+			if cp.LimitTotal {
+				cp.Limit = opt(cp.Limit.Or(0) * multiplier)
+			}
 			modifiers = append(modifiers, cp)
 		default:
-			modifiers = append(modifiers, copyTagValue(v))
+			modifiers = append(modifiers, v.Clone())
 		}
 	}
 	return modifiers
@@ -308,7 +292,7 @@ func GetConvertedModTags(mod *modparser.Mod, multiplier float64, minionMods bool
 
 // GetGameIdFromGemName ports calcLib.getGameIdFromGemName ("" = Lua nil).
 func GetGameIdFromGemName(gemName string, dropVaal bool) string {
-	gemId, ok := data.GemForBaseName[luaLower(gemName)]
+	gemId, ok := data.GemForBaseName[strings.ToLower(gemName)]
 	if !ok {
 		return ""
 	}
@@ -327,20 +311,6 @@ func IsGemIdSame(gemName, typeName string, dropVaal bool) bool {
 
 // --- shared helpers ---
 
-// round is Common.lua's round without the dec argument.
-func round(v float64) float64 { return math.Floor(v + 0.5) }
-
-// luaLower is Lua 5.1 string.lower under the C locale: ASCII A-Z only.
-func luaLower(s string) string {
-	b := []byte(s)
-	for i := range b {
-		if b[i] >= 'A' && b[i] <= 'Z' {
-			b[i] += 32
-		}
-	}
-	return string(b)
-}
-
 // stripVaalPrefix is name:gsub("^vaal ", "") on an already-lowered name.
 func stripVaalPrefix(s string) string {
 	if len(s) >= 5 && s[:5] == "vaal " {
@@ -349,61 +319,36 @@ func stripVaalPrefix(s string) string {
 	return s
 }
 
-// truthy is Lua truthiness: only nil and false are false.
-func truthy(v any) bool {
-	if v == nil {
-		return false
-	}
-	b, ok := v.(bool)
-	return !ok || b
-}
-
-// anyNum reads a Lua number that Go may hold as float64 or int64.
-func anyNum(v any) float64 {
+// valueNum is Lua arithmetic over a mod value: numbers and numeric text;
+// nil is 0 (`value or 0`). Anything else is the Lua arithmetic error.
+func valueNum(v modparser.Value) float64 {
 	switch n := v.(type) {
-	case float64:
-		return n
-	case int64:
+	case modparser.Num:
 		return float64(n)
-	case int:
-		return float64(n)
+	case modparser.Str:
+		if f, ok := modparser.NumOf(n); ok {
+			return f
+		}
 	case nil:
-		return 0 // `stat[2] or 0`
+		return 0
 	}
 	panic("calc: non-numeric value where the Lua holds a number")
 }
 
-// copyTagValue is Common.lua's copyTable (recursive) over the value shapes
-// mod tags hold: Tag maps, array tables, D tables, and scalars.
-func copyTagValue(v any) any {
-	switch t := v.(type) {
-	case modparser.Tag:
-		out := modparser.Tag{}
-		for k, e := range t {
-			out[k] = copyTagValue(e)
-		}
-		return out
-	case []any:
-		out := make([]any, len(t))
-		for i, e := range t {
-			out[i] = copyTagValue(e)
-		}
-		return out
-	case *modparser.D:
-		out := &modparser.D{}
-		for _, e := range t.Arr {
-			out.Arr = append(out.Arr, copyTagValue(e))
-		}
-		if t.KV != nil {
-			out.KV = map[string]any{}
-			for k, e := range t.KV {
-				out.KV[k] = copyTagValue(e)
-			}
-		}
-		return out
-	default:
-		return v
+// modRefOf reads the mod of a {mod = ...} value (nil when it is none).
+func modRefOf(v modparser.Value) *modparser.Mod {
+	if ref, ok := v.(modparser.ModRef); ok {
+		return ref.Mod
 	}
+	return nil
+}
+
+// firstTag is a mod's first tag as a tag list (empty when it has none).
+func firstTag(m *modparser.Mod) []modparser.Tag {
+	if len(m.Tags) > 0 && m.Tags[0] != nil {
+		return []modparser.Tag{m.Tags[0]}
+	}
+	return nil
 }
 
 // sortedNumKeys is the key order dump_calc's sortedPairs gives a table with
@@ -416,4 +361,97 @@ func sortedNumKeys(m map[float64]float64) []float64 {
 	}
 	sort.Float64s(keys)
 	return keys
+}
+
+// weaponData presents an item's weapon data to the weapon-condition tags;
+// it is the same live record (perform writes AddedUsing into it).
+type weaponData struct{ wd *item.WeaponData }
+
+func (w weaponData) CountsAsAll1H() bool { return w.wd.CountsAsAll1H }
+
+func (w weaponData) AddedCond(cond string) (added, present bool) {
+	added, present = w.wd.AddedUsing[strings.TrimPrefix(cond, "Using")]
+	return added, present
+}
+
+// weaponRef wraps weapon data for an actor; nil stays nil.
+func weaponRef(wd *item.WeaponData) modstore.WeaponData {
+	if wd == nil {
+		return nil
+	}
+	return weaponData{wd}
+}
+
+// weaponOf recovers the weapon data behind an actor's weapon-data view.
+func weaponOf(w modstore.WeaponData) *item.WeaponData {
+	v, _ := w.(weaponData)
+	return v.wd
+}
+
+// weaponType is weaponData.type, "" for no weapon data.
+func weaponType(wd *item.WeaponData) string {
+	if wd == nil {
+		return ""
+	}
+	return wd.Type
+}
+
+// weaponCrit is weaponData.CritChance, 0 when absent.
+func weaponCrit(wd *item.WeaponData) float64 {
+	if wd == nil {
+		return 0
+	}
+	return wd.CritChance.Or(0)
+}
+
+// weaponAdded is the AddedUsing<Type> flag.
+func weaponAdded(wd *item.WeaponData, weaponType string) bool {
+	return wd != nil && wd.AddedUsing[weaponType]
+}
+
+// flaskPoolTotal is flaskData.<pool>Total, 0 when the pool is absent.
+func flaskPoolTotal(fd *item.FlaskData, pool string) float64 {
+	if fd == nil || fd.Pool(pool) == nil {
+		return 0
+	}
+	return fd.Pool(pool).Total
+}
+
+// dmgOf is one damage type's Min/Max/DPS, zero for no weapon data.
+func dmgOf(wd *item.WeaponData, dmgType string) item.DamageRange {
+	if wd == nil {
+		return item.DamageRange{}
+	}
+	return *wd.Damage(dmgType)
+}
+
+// gemRef is cfg.skillGem: the gem the SocketedIn keyword check asks.
+type gemRef struct{ gem *data.Gem }
+
+func (g gemRef) IsType(keyword string) bool { return GemIsType(g.gem, keyword, false) }
+
+// gemIds is the game-data resolver installed on every actor.
+type gemIds struct{}
+
+func (gemIds) GetGameIdFromGemName(name string, dropVaal bool) (string, bool) {
+	id := GetGameIdFromGemName(name, dropVaal)
+	return id, id != ""
+}
+
+// overrideNum is `store:Override(...) or 0` read as a number.
+func overrideNum(s modstore.Store, cfg *modstore.Cfg, names ...string) float64 {
+	v, _ := s.Override(cfg, names...)
+	return valueNum(v)
+}
+
+// hasOverride reports an OVERRIDE match (the value's truthiness).
+func hasOverride(s modstore.Store, cfg *modstore.Cfg, names ...string) bool {
+	_, ok := s.Override(cfg, names...)
+	return ok
+}
+
+// condClass reads a class-name condition ("" when unset or a bool).
+func condClass(c modstore.Conditions, name string) string {
+	class, _ := c[name].Class()
+	return class
 }

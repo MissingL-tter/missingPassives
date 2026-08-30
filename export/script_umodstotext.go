@@ -7,6 +7,7 @@
 package export
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -22,7 +23,7 @@ func init() {
 // splitUniqueFile parses a [[..]]-delimited line stream into sections of
 // item blobs. Passthrough text outside blocks is dropped — the render test
 // reconstructs it from the archive template.
-func splitUniqueFile(lines []string) schema.UniqueFile {
+func splitUniqueFile(lines []string) (schema.UniqueFile, error) {
 	var f schema.UniqueFile
 	var cur []string
 	inItem := false
@@ -46,9 +47,9 @@ func splitUniqueFile(lines []string) schema.UniqueFile {
 		}
 	}
 	if inItem {
-		panic("uModsToText: unterminated item block")
+		return f, fmt.Errorf("unterminated item block")
 	}
-	return f
+	return f, nil
 }
 
 var uniqueItemTypes = []string{
@@ -76,7 +77,7 @@ var (
 	reRangePair    = regexp.MustCompile(`\[([0-9.\-]+),([0-9.\-]+)\]`)
 )
 
-func buildUModsToText(x *Ctx) (any, error) {
+func buildUModsToText(x *Ctx) (schema.Document, error) {
 	if err := x.EnsureMods(); err != nil {
 		return nil, err
 	}
@@ -85,7 +86,10 @@ func buildUModsToText(x *Ctx) (any, error) {
 	// which includes the item stat descriptions), so pin that here instead of
 	// depending on script order.
 	x.LoadStatFile("tincture_stat_descriptions.txt")
-	mods := x.Dat("Mods")
+	mods, err := x.Dat("Mods")
+	if err != nil {
+		return nil, err
+	}
 
 	doc := schema.Uniques{}
 	for _, name := range uniqueItemTypes {
@@ -195,11 +199,15 @@ func buildUModsToText(x *Ctx) (any, error) {
 						if modRow := mods.GetRow("Id", modName); modRow != nil {
 							stats := map[string]*statVal{}
 							for i := 1; i <= 6; i++ {
-								if sr, ok := modRow.Get("Stat" + luaStr(i)).(*Row); ok && i-1 < len(values) {
-									stats[luaStr(sr.Get("Id"))] = &statVal{min: values[i-1].min, max: values[i-1].max}
+								if sr := modRow.Ref("Stat" + strconv.Itoa(i)); sr != nil && i-1 < len(values) {
+									stats[sr.Str("Id")] = &statVal{min: values[i-1].min, max: values[i-1].max}
 								}
 							}
-							legacyMod = x.DescribeStats(stats).Lines
+							lines, err := x.DescribeStats(stats)
+							if err != nil {
+								return nil, err
+							}
+							legacyMod = lines.Lines
 							legacyFound = true
 						}
 					}
@@ -252,7 +260,9 @@ func buildUModsToText(x *Ctx) (any, error) {
 			}
 		}
 		writeStatOrder()
-		doc[name] = splitUniqueFile(outLines)
+		if doc[name], err = splitUniqueFile(outLines); err != nil {
+			return nil, fmt.Errorf("%s: %w", name, err)
+		}
 	}
 	return doc, nil
 }

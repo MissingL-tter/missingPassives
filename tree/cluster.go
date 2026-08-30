@@ -21,50 +21,6 @@ type SubGraph struct {
 	EntranceNode *SpecNode
 }
 
-// expansionJewelOf reads a node's expansionJewel raw field.
-func expansionJewelOf(node *Node) (size, index, proxy int64, ok bool) {
-	ej, isMap := node.Raw["expansionJewel"].(map[string]any)
-	if !isMap {
-		return 0, 0, 0, false
-	}
-	size = int64(num(ej["size"]))
-	index = int64(num(ej["index"]))
-	switch p := ej["proxy"].(type) {
-	case string:
-		n, err := strconv.ParseInt(p, 10, 64)
-		if err != nil {
-			panic("tree: non-numeric expansion proxy " + p)
-		}
-		proxy = n
-	case float64:
-		proxy = int64(p)
-	}
-	return size, index, proxy, true
-}
-
-func anyNum(v any) (float64, bool) {
-	switch n := v.(type) {
-	case float64:
-		return n, true
-	case int64:
-		return float64(n), true
-	case int:
-		return float64(n), true
-	}
-	return 0, false
-}
-
-func anyStrings(v any) []string {
-	list, _ := v.([]any)
-	out := make([]string, 0, len(list))
-	for _, e := range list {
-		if s, ok := e.(string); ok {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
 // getSocketedJewel ports GetSocketedJewel (with the legacy reverse map).
 func (s *Spec) getSocketedJewel(nodeID int64) *item.Item {
 	itemID := s.Jewels[nodeID]
@@ -179,12 +135,11 @@ func (s *Spec) BuildClusterJewelGraphs() {
 		if node == nil {
 			continue
 		}
-		size, _, _, ok := expansionJewelOf(node)
-		if !ok || size != 2 {
+		if node.ExpansionJewel == nil || node.ExpansionJewel.Size != 2 {
 			continue
 		}
 		jewel := s.getSocketedJewel(nodeID)
-		if jewel != nil && jdTrue(jewel, "clusterJewelValid") {
+		if jewel != nil && jewelData(jewel).ClusterJewelValid {
 			s.buildSubgraph(jewel, s.Nodes[nodeID], 0, nil)
 		}
 	}
@@ -225,7 +180,7 @@ func (s *Spec) findClusterSocket(group *Group, index int64) *Node {
 		if node == nil {
 			continue
 		}
-		if _, sIndex, _, ok := expansionJewelOf(node); ok && sIndex == index {
+		if ej := node.ExpansionJewel; ej != nil && ej.Index == index {
 			return node
 		}
 	}
@@ -244,14 +199,12 @@ func (s *Spec) buildLegacyProxyGroup(proxyGroup *Group, expansionJewelSize, clus
 		if socket == nil {
 			break
 		}
-		_, _, proxy, _ := expansionJewelOf(socket)
-		legacyProxyNode := s.Tree.Nodes[proxy]
+		legacyProxyNode := s.Tree.Nodes[socket.ExpansionJewel.Proxy]
 		if legacyProxyNode == nil || legacyProxyNode.Group == nil {
 			break
 		}
 		legacyGroup = legacyProxyNode.Group
-		size, _, _, _ := expansionJewelOf(socket)
-		groupSize = size
+		groupSize = socket.ExpansionJewel.Size
 	}
 	return legacyGroup
 }
@@ -324,14 +277,14 @@ func linkSpecNodes(a, b *SpecNode) {
 // saved-XML path has none, so addToAllocatedSubgraphNodes is always
 // false).
 func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64, upSize *int64) {
-	_, parentIndex, parentProxy, ok := expansionJewelOf(parentSocket.T)
-	if !ok {
-		panic("tree: buildSubgraph on a non-expansion socket")
+	parentEJ := parentSocket.T.ExpansionJewel
+	if parentEJ == nil {
+		panic("tree: buildSubgraph on non-expansion socket " + parentSocket.T.IDStr)
 	}
-	parentSize, _, _, _ := expansionJewelOf(parentSocket.T)
+	parentIndex, parentProxy, parentSize := parentEJ.Index, parentEJ.Proxy, parentEJ.Size
 	clusterJewel := jewel.ClusterJewel
 	if clusterJewel == nil {
-		panic("tree: buildSubgraph without cluster jewel data")
+		panic("tree: buildSubgraph without cluster jewel data at socket " + parentSocket.T.IDStr)
 	}
 
 	subGraph := &SubGraph{
@@ -356,7 +309,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 
 	proxyNode := s.Tree.Nodes[parentProxy]
 	if proxyNode == nil {
-		panic("tree: proxy node not found")
+		panic("tree: proxy node " + strconv.FormatInt(parentProxy, 10) + " not found for socket " + parentSocket.T.IDStr)
 	}
 	proxyGroup := proxyNode.Group
 	subGraph.Group.X = proxyGroup.X
@@ -364,13 +317,13 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 
 	jdata := jewel.JewelData
 
-	if keystone, ok := jdata["clusterJewelKeystone"].(string); ok && keystone != "" {
+	if keystone := jdata.ClusterJewelKeystone; keystone != "" {
 		keystoneNode := s.Tree.ClusterNodeMap[keystone]
 		if keystoneNode == nil {
-			panic("tree: keystone node not found: " + keystone)
+			panic("tree: cluster keystone " + keystone + " not found (socket " + parentSocket.T.IDStr + ")")
 		}
 		raw := &Node{
-			Type:       "Keystone",
+			Type:       NodeKeystone,
 			ID:         nodeID,
 			IDStr:      strconv.FormatInt(nodeID, 10),
 			Name:       keystoneNode.Name,
@@ -378,7 +331,6 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			Group:      subGraph.Group,
 			Orbit:      0,
 			OrbitIndex: 1,
-			Raw:        map[string]any{"expansionSkill": true},
 		}
 		raw.Sd = keystoneNode.Sd
 		s.Tree.ProcessNode(raw)
@@ -400,7 +352,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	// Notables, sorted by the cluster sort order.
 	var notableList []*Node
 	sortOrder := data.ClusterJewels.NotableSortOrder
-	for _, name := range anyStrings(jdata["clusterJewelNotables"]) {
+	for _, name := range jdata.ClusterJewelNotables {
 		baseNode := s.Tree.ClusterNodeMap[name]
 		if baseNode == nil {
 			// Old-tree notables that no longer exist: drop the subgraph.
@@ -408,7 +360,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			return
 		}
 		if _, ok := sortOrder[baseNode.Name]; !ok {
-			panic("tree: cluster notable has no sort order: " + name)
+			panic("tree: cluster notable " + name + " has no sort order (socket " + parentSocket.T.IDStr + ")")
 		}
 		notableList = append(notableList, baseNode)
 	}
@@ -416,37 +368,29 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 		return sortOrder[notableList[i].Name] < sortOrder[notableList[j].Name]
 	})
 
-	skillName, _ := jdata["clusterJewelSkill"].(string)
-	skill, hasSkill := clusterJewel.Skills[skillName]
+	skill, hasSkill := clusterJewel.Skills[jdata.ClusterJewelSkill]
 	if !hasSkill {
 		skill = data.ClusterSkillData{
 			Name: "Nothingness",
 			Icon: "Art/2DArt/SkillIcons/passives/MasteryBlank.png",
 		}
 	}
-	socketCount := 0
-	if n, ok := anyNum(jdata["clusterJewelSocketCountOverride"]); ok {
-		socketCount = int(n)
-	} else if n, ok := anyNum(jdata["clusterJewelSocketCount"]); ok {
-		socketCount = int(n)
+	socketCount := jdata.ClusterJewelSocketCount
+	if jdata.ClusterJewelSocketCountOverride != 0 {
+		socketCount = jdata.ClusterJewelSocketCountOverride
 	}
 	notableCount := len(notableList)
-	nothingness := 0.0
-	if n, ok := anyNum(jdata["clusterJewelNothingnessCount"]); ok {
-		nothingness = n
-	}
-	nodeCount := 0
-	if n, ok := anyNum(jdata["clusterJewelNodeCount"]); ok {
-		nodeCount = int(n)
-	} else {
-		nodeCount = socketCount + notableCount + int(nothingness)
+	nothingness := jdata.ClusterJewelNothingnessCount
+	nodeCount := jdata.ClusterJewelNodeCount
+	if nodeCount == 0 {
+		nodeCount = socketCount + notableCount + nothingness
 	}
 	smallCount := nodeCount - socketCount - notableCount
 
 	if skill.MasteryIcon != nil {
 		subGraph.Group.Orbits[0] = true
 		raw := &Node{
-			Type:       "Mastery",
+			Type:       NodeMastery,
 			ID:         nodeID + 12,
 			IDStr:      strconv.FormatInt(nodeID+12, 10),
 			Name:       "Nothingness",
@@ -454,7 +398,6 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			Group:      subGraph.Group,
 			Orbit:      0,
 			OrbitIndex: 0,
-			Raw:        map[string]any{},
 		}
 		raw.Sd = []string{}
 		s.registerSubgraphNode(subGraph, raw)
@@ -465,18 +408,18 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	makeJewel := func(nodeIndex, jewelIndex int64) {
 		socket := s.findClusterSocket(proxyGroup, jewelIndex)
 		if socket == nil {
-			panic("tree: cluster socket not found")
+			panic("tree: cluster socket index " + strconv.FormatInt(jewelIndex, 10) + " not found in group " + strconv.FormatInt(proxyGroup.ID, 10))
 		}
 		raw := &Node{
-			Type:       "Socket",
-			ID:         socket.ID,
-			IDStr:      socket.IDStr,
-			Name:       socket.Name,
-			Icon:       socket.Icon,
-			Group:      subGraph.Group,
-			Orbit:      nodeOrbit,
-			OrbitIndex: nodeIndex,
-			Raw:        map[string]any{"expansionJewel": socket.Raw["expansionJewel"]},
+			Type:           NodeSocket,
+			ID:             socket.ID,
+			IDStr:          socket.IDStr,
+			Name:           socket.Name,
+			Icon:           socket.Icon,
+			Group:          subGraph.Group,
+			Orbit:          nodeOrbit,
+			OrbitIndex:     nodeIndex,
+			ExpansionJewel: socket.ExpansionJewel,
 		}
 		raw.Sd = []string{}
 		s.registerSubgraphNode(subGraph, raw)
@@ -493,7 +436,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 		makeJewel(6, 1)
 	} else {
 		if socketCount > len(clusterJewel.SocketIndicies) {
-			panic("tree: too many cluster sockets")
+			panic("tree: " + strconv.Itoa(socketCount) + " cluster sockets exceed the " + clusterJewel.Size + " template (socket " + parentSocket.T.IDStr + ")")
 		}
 		getJewels := []int64{0, 2, 1}
 		for i := 0; i < socketCount; i++ {
@@ -535,7 +478,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 		}
 		nodeIndex := notableIndexList[index]
 		raw := &Node{
-			Type:       "Notable",
+			Type:       NodeNotable,
 			ID:         nodeID + nodeIndex,
 			IDStr:      strconv.FormatInt(nodeID+nodeIndex, 10),
 			Name:       baseNode.Name,
@@ -543,7 +486,6 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			Group:      subGraph.Group,
 			Orbit:      nodeOrbit,
 			OrbitIndex: nodeIndex,
-			Raw:        map[string]any{"expansionSkill": true},
 		}
 		raw.Sd = baseNode.Sd
 		s.registerSubgraphNode(subGraph, raw)
@@ -578,7 +520,7 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 		}
 		nodeIndex := smallIndexList[index]
 		raw := &Node{
-			Type:       "Normal",
+			Type:       NodeNormal,
 			ID:         nodeID + nodeIndex,
 			IDStr:      strconv.FormatInt(nodeID+nodeIndex, 10),
 			Name:       skill.Name,
@@ -586,16 +528,15 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 			Group:      subGraph.Group,
 			Orbit:      nodeOrbit,
 			OrbitIndex: nodeIndex,
-			Raw:        map[string]any{"expansionSkill": true},
 		}
 		raw.Sd = append([]string{}, skill.Stats...)
-		raw.Sd = append(raw.Sd, anyStrings(jdata["clusterJewelAddedMods"])...)
+		raw.Sd = append(raw.Sd, jdata.ClusterJewelAddedMods...)
 		s.registerSubgraphNode(subGraph, raw)
 		indicies[nodeIndex] = raw
 	}
 
 	if indicies[0] == nil {
-		panic("tree: no entrance to subgraph")
+		panic("tree: subgraph " + strconv.FormatInt(nodeID, 10) + " has no entrance node")
 	}
 
 	// Convert template index space into tree orbit index space.
@@ -609,12 +550,12 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	s.buildLegacyClusterOrbitMappings(indicies, proxyNode, totalIndicies, skillsPerOrbit)
 
 	// Process: positions, mods, cluster jewel effect.
-	incEffect, hasIncEffect := anyNum(jdata["clusterJewelIncEffect"])
+	incEffect := jdata.ClusterJewelIncEffect
 	for _, node := range subGraph.Nodes {
 		s.Tree.ProcessNode(node.T)
 		node.resetToSource(node.T)
-		if hasIncEffect && node.T.Type == "Normal" {
-			node.Stats.ModList = append(node.Stats.ModList, modparser.NewMod("PassiveSkillEffect", "INC", incEffect))
+		if incEffect != 0 && node.T.Type == NodeNormal {
+			node.Stats.ModList = append(node.Stats.ModList, modparser.NewMod("PassiveSkillEffect", modparser.Inc, modparser.Num(incEffect)))
 		}
 	}
 
@@ -650,8 +591,8 @@ func (s *Spec) buildSubgraph(jewel *item.Item, parentSocket *SpecNode, id int64,
 	// Register the synthetic nodes and recurse into smaller sockets.
 	for _, node := range subGraph.Nodes {
 		s.Nodes[node.ID()] = node
-		if node.T.Type == "Socket" {
-			if socketJewel := s.getSocketedJewel(node.ID()); socketJewel != nil && jdTrue(socketJewel, "clusterJewelValid") {
+		if node.T.Type == NodeSocket {
+			if socketJewel := s.getSocketedJewel(node.ID()); socketJewel != nil && jewelData(socketJewel).ClusterJewelValid {
 				s.buildSubgraph(socketJewel, node, id, upSize)
 			}
 		}

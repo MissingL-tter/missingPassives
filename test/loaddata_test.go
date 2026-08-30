@@ -75,9 +75,16 @@ func loadData(t *testing.T) {
 			gameDataSkip = "archive dump not present: " + err.Error()
 			return
 		}
-		src := data.RawSources()
+		src, err := data.RawSources()
+		if err != nil {
+			gameDataFail = err.Error()
+			return
+		}
 		src.StatMapCopies = readStatMapCopies(dumpPath)
-		data.Load(src)
+		if err := data.Load(src); err != nil {
+			gameDataFail = err.Error()
+			return
+		}
 		gameDataDone = true
 	})
 	// A parser-level differential may have switched the parser to fresh

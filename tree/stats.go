@@ -10,19 +10,7 @@ import (
 )
 
 func parse3(line string) ([]*modparser.Mod, string, bool) {
-	mods, extra := modparser.Parse(line)
-	if mods == nil {
-		return nil, extra, false
-	}
-	out := make([]*modparser.Mod, 0, len(mods))
-	for _, mv := range mods {
-		m, ok := mv.(*modparser.Mod)
-		if !ok {
-			panic("tree: non-Mod entry parsing stat line: " + line)
-		}
-		out = append(out, m)
-	}
-	return out, extra, true
+	return modparser.Parse(line)
 }
 
 // processStats parses s.Sd[startIndex:] and appends to the mod state.
@@ -106,7 +94,7 @@ func processStats(s *Stats, srcID string, startIndex int) {
 // — the reference's own concatenation).
 func (t *Tree) processNodeStats(node *Node) {
 	processStats(&node.Stats, node.IDStr, 0)
-	if node.Type == "Keystone" {
-		node.KeystoneMod = modparser.NewMod("Keystone", "LIST", node.Name, "Tree"+node.IDStr)
+	if node.Type == NodeKeystone {
+		node.KeystoneMod = modparser.NewModFull("Keystone", modparser.List, modparser.Str(node.Name), "Tree"+node.IDStr, true, 0, 0)
 	}
 }

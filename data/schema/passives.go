@@ -19,6 +19,8 @@ type LegionPassives struct {
 	Additions []ConqueredAddition `json:"additions"` // AlternatePassiveAdditions row order
 }
 
+func (LegionPassives) isDocument() {}
+
 type LegionNode struct {
 	Id          string        `json:"id"`
 	Icon        string        `json:"icon"`
@@ -43,6 +45,8 @@ type ConqueredAddition struct {
 type TattooPassives struct {
 	Nodes []TattooNode `json:"nodes"`
 }
+
+func (TattooPassives) isDocument() {}
 
 type TattooNode struct {
 	Name              string        `json:"name"` // display name; the output key

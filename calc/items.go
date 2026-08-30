@@ -7,6 +7,7 @@ package calc
 
 import (
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"math"
 	"sort"
 	"strings"
@@ -16,8 +17,13 @@ import (
 )
 
 func str(v any) string {
-	s, _ := v.(string)
-	return s
+	switch t := v.(type) {
+	case string:
+		return t
+	case modparser.Str:
+		return string(t)
+	}
+	return ""
 }
 
 // titleCaseRarity is rarity:gsub("(%a)(%u*)", first..lower(rest)):
@@ -26,7 +32,7 @@ func titleCaseRarity(r string) string {
 	if r == "" {
 		return r
 	}
-	return r[:1] + luaLower(r[1:])
+	return r[:1] + strings.ToLower(r[1:])
 }
 
 // flaskSlotNum is slotName:match("Flask (%d+)").
@@ -56,13 +62,13 @@ func tagsDisableSlot(mod *modparser.Mod, items map[string]*Item) string {
 		if tv == nil {
 			break
 		}
-		tag, ok := tv.(modparser.Tag)
+		tag, ok := tv.(*modparser.SlotTag)
 		if !ok {
 			continue
 		}
-		if tag["type"] == "DisablesItem" {
-			slotN := str(tag["slotName"])
-			if excl := str(tag["excludeItemType"]); excl != "" && items[slotN] != nil && items[slotN].In.Type == excl {
+		if tag.SlotKind == modparser.TagDisablesItem {
+			slotN := tag.SlotName
+			if excl := tag.ExcludeItemType; excl != "" && items[slotN] != nil && items[slotN].In.Type == excl {
 				return ""
 			}
 			return slotN
@@ -107,13 +113,14 @@ func (env *Env) buildItems() {
 			// Find skills granted by this item
 			for _, skill := range item.In.GrantedSkills {
 				granted := GrantedSkill{
-					SkillID:    str(skill["skillId"]),
-					Level:      anyNum(skill["level"]),
-					NoSupports: truthy(skill["noSupports"]),
-					Source:     str(skill["source"]),
-					SourceItem: item,
-					SlotName:   slotName,
-					Raw:        skill,
+					SkillID:       skill.SkillID,
+					Level:         skill.Level.Or(0),
+					NoSupports:    skill.NoSupports,
+					Source:        skill.Source,
+					SourceItem:    item,
+					SlotName:      slotName,
+					Triggered:     skill.Triggered,
+					TriggerChance: skill.TriggerChance,
 				}
 				if ge := data.Skills[granted.SkillID]; ge != nil {
 					granted.NameSpec = ge.Name
@@ -137,14 +144,14 @@ func (env *Env) buildItems() {
 			} else if item != nil {
 				item.JewelLimitDisabled = false
 				if item.In.Type == "Jewel" && strings.Contains(item.In.Name, "The Adorned, Crimson Jewel") {
-					if v, ok := item.In.JewelData["corruptedMagicJewelIncEffect"]; ok && truthy(v) {
-						env.ModDB.Multipliers["CorruptedMagicJewelEffect"] = anyNum(v) / 100
+					if v := item.In.JewelData.CorruptedMagicJewelIncEffect; v != 0 {
+						env.ModDB.Multipliers["CorruptedMagicJewelEffect"] = v / 100
 					}
-					if v, ok := item.In.JewelData["corruptedRareJewelIncEffect"]; ok && truthy(v) {
-						env.ModDB.Multipliers["CorruptedRareJewelEffect"] = anyNum(v) / 100
+					if v := item.In.JewelData.CorruptedRareJewelIncEffect; v != 0 {
+						env.ModDB.Multipliers["CorruptedRareJewelEffect"] = v / 100
 					}
 				}
-				if item.In.Limit != nil && !truthy(cfg["ignoreJewelLimits"]) {
+				if item.In.Limit != nil && !cfg.IgnoreJewelLimits {
 					limitKey := deref(item.In.Title)
 					if item.In.Base != nil && deref(item.In.Base.SubType) == "Timeless" {
 						limitKey = "Historic"
@@ -164,19 +171,19 @@ func (env *Env) buildItems() {
 		if item != nil && item.In.Type == "Flask" && item.In.Base != nil && deref(item.In.Base.SubType) == "Life" && item.In.FlaskData != nil {
 			// Keep highest life flask recovery even if this slot is later disabled
 			env.ItemModDB.Multipliers["LifeFlaskRecovery"] = math.Max(
-				env.ItemModDB.Multipliers["LifeFlaskRecovery"], anyNum(item.In.FlaskData["lifeTotal"]))
+				env.ItemModDB.Multipliers["LifeFlaskRecovery"], flaskPoolTotal(item.In.FlaskData, "Life"))
 		}
 		if item != nil {
 			items[slotName] = item
 		}
 	}
 
-	if !truthy(cfg["ignoreItemDisablers"]) {
+	if !cfg.IgnoreItemDisablers {
 		itemDisabled := map[string]string{}
 		itemDisablers := map[string]string{}
 		// Tree nodes first. Note the modType is "Flag", not "FLAG" — dead in
 		// the reference too (mod types are upper-case), preserved as-is.
-		for _, entry := range env.InitialNodeModDB.Tabulate("Flag", &modstore.Cfg{Source: "Tree"}, "CanNotUseItem") {
+		for _, entry := range env.InitialNodeModDB.Tabulate(modparser.FlagTypo, &modstore.Cfg{Source: "Tree"}, "CanNotUseItem") {
 			if slotN := tagsDisableSlot(entry.Mod, items); slotN != "" {
 				itemDisablers[entry.Mod.Source] = slotN
 				itemDisabled[slotN] = entry.Mod.Source
@@ -253,7 +260,7 @@ func (env *Env) buildItems() {
 		slotName := slot.SlotName
 		item := items[slotName]
 		if item != nil && item.In.Type == "Flask" {
-			env.ItemModDB.Conditions["Have"+stripSpaces(deref(item.In.BaseName))] = true
+			env.ItemModDB.Conditions.Set("Have"+stripSpaces(deref(item.In.BaseName)), true)
 			if slot.Active != nil && *slot.Active {
 				env.Flasks[item] = true
 			}
@@ -262,8 +269,8 @@ func (env *Env) buildItems() {
 				env.FlaskSlotOccupied[flaskNum] = true
 			}
 			if item.In.Base != nil && deref(item.In.Base.SubType) == "Life" {
-				if anyNum(item.In.FlaskData["chargesMax"]) > env.ItemModDB.Multipliers["LifeFlaskCharges"] {
-					env.ItemModDB.Multipliers["LifeFlaskCharges"] = anyNum(item.In.FlaskData["chargesMax"])
+				if item.In.FlaskData.ChargesMax > env.ItemModDB.Multipliers["LifeFlaskCharges"] {
+					env.ItemModDB.Multipliers["LifeFlaskCharges"] = item.In.FlaskData.ChargesMax
 				}
 			}
 			item = nil
@@ -286,11 +293,11 @@ func (env *Env) buildItems() {
 				scale = *parent.In.SocketedJewelEffectModifier
 			}
 		}
-		if slot.NodeID != nil && item != nil && item.In.Type == "Jewel" && item.In.JewelData != nil && truthy(item.In.JewelData["jewelIncEffectFromClassStart"]) {
+		if slot.NodeID != nil && item != nil && item.In.Type == "Jewel" && item.In.JewelData != nil && item.In.JewelData.JewelIncEffectFromClassStart != 0 {
 			// Split Personality: the socket's effect scales with how far the
 			// socket sits from the class start.
 			if node := env.AllocNodes[int(*slot.NodeID)]; node != nil && node.DistanceToClassStart != nil {
-				scale = scale + *node.DistanceToClassStart*(anyNum(item.In.JewelData["jewelIncEffectFromClassStart"])/100)
+				scale = scale + *node.DistanceToClassStart*(item.In.JewelData.JewelIncEffectFromClassStart/100)
 			}
 		}
 		if item == nil {
@@ -309,21 +316,21 @@ func (env *Env) buildItems() {
 			env.RequirementsTableItems = append(env.RequirementsTableItems, ItemRequirement{
 				SourceItem: item,
 				SourceSlot: slotName,
-				Str:        item.In.Requirements["strMod"],
-				Dex:        item.In.Requirements["dexMod"],
-				Int:        item.In.Requirements["intMod"],
+				Str:        item.In.Requirements.StrMod.Or(0),
+				Dex:        item.In.Requirements.DexMod.Or(0),
+				Int:        item.In.Requirements.IntMod.Or(0),
 			})
 		}
 		if item.In.Type == "Jewel" && item.In.Base != nil && deref(item.In.Base.SubType) == "Abyss" {
 			// Update Abyss Jewel conditions/multipliers
 			cond := "Have" + strings.ReplaceAll(deref(item.In.BaseName), " ", "")
 			mult := strings.ReplaceAll(deref(item.In.BaseName), " ", "")
-			if !truthy(env.ItemModDB.Conditions[cond]) {
-				env.ItemModDB.Conditions[cond] = true
+			if !env.ItemModDB.Conditions.Get(cond) {
+				env.ItemModDB.Conditions.Set(cond, true)
 				env.ItemModDB.Multipliers["AbyssJewelType"]++
 			}
 			if slot.ParentSlotName != nil {
-				env.ItemModDB.Conditions[cond+"In"+*slot.ParentSlotName] = true
+				env.ItemModDB.Conditions.Set(cond+"In"+*slot.ParentSlotName, true)
 				env.ItemModDB.Multipliers[mult+"In"+*slot.ParentSlotName]++
 			}
 			env.ItemModDB.Multipliers["AbyssJewel"]++
@@ -350,7 +357,7 @@ func (env *Env) buildItems() {
 					env.AegisModList.ScaleAddMod(mod, scale, false)
 				}
 			}
-		} else if (slotName == "Weapon 1" || slotName == "Weapon 2") && truthy(env.ModDB.Conditions["AffectedByEnergyBlade"]) {
+		} else if (slotName == "Weapon 1" || slotName == "Weapon 2") && env.ModDB.Conditions.Get("AffectedByEnergyBlade") {
 			// The reference synthesizes an Energy Blade weapon here through
 			// the Item machinery; the dump captured the result. No fixture
 			// entry means the info-nil/Bow fallthrough (mods merge normally).
@@ -369,7 +376,7 @@ func (env *Env) buildItems() {
 				// Add all the stats to player as well
 				env.ItemModDB.ScaleAddMod(mod, scale, false)
 			}
-		} else if slotName == "Weapon 1" && len(item.In.GrantedSkills) > 0 && str(item.In.GrantedSkills[0]["skillId"]) == "UniqueAnimateWeapon" {
+		} else if slotName == "Weapon 1" && len(item.In.GrantedSkills) > 0 && item.In.GrantedSkills[0].SkillID == "UniqueAnimateWeapon" {
 			// Special handling for The Dancing Dervish
 			env.WeaponModList1 = modstore.NewList(nil)
 			for _, mod := range srcList {
@@ -396,7 +403,7 @@ func (env *Env) buildItems() {
 					if modHasSocketedInTag(mod) {
 						continue
 					}
-					modCopy := modparser.CopyMod(mod)
+					modCopy := cloneMod(mod)
 					modparser.SetSource(modCopy, deref(item.In.ModSource))
 					env.ItemModDB.ScaleAddMod(modCopy, scale, false)
 				}
@@ -422,7 +429,7 @@ func (env *Env) buildItems() {
 			}
 		} else if item.In.Type == "Quiver" &&
 			((items["Weapon 1"] != nil && strings.Contains(items["Weapon 1"].In.Name, "Widowhail")) ||
-				env.InitialNodeModDB.Sum("INC", nil, "EffectOfBonusesFromQuiver") > 0) {
+				env.InitialNodeModDB.Sum(modparser.Inc, nil, "EffectOfBonusesFromQuiver") > 0) {
 			// L1127 operator precedence preserved: without a Weapon 1 the
 			// whole (w1 and sums) falls back to 100.
 			inner := 100.0
@@ -431,12 +438,12 @@ func (env *Env) buildItems() {
 				if w1.In.BaseModList == nil {
 					panic("calc: Widowhail weapon without baseModList (the Lua errors)")
 				}
-				inner = listOf(w1.In.BaseModList).Sum("INC", nil, "EffectOfBonusesFromQuiver") +
-					env.InitialNodeModDB.Sum("INC", nil, "EffectOfBonusesFromQuiver")
+				inner = listOf(w1.In.BaseModList).Sum(modparser.Inc, nil, "EffectOfBonusesFromQuiver") +
+					env.InitialNodeModDB.Sum(modparser.Inc, nil, "EffectOfBonusesFromQuiver")
 			}
 			widowHailMod := 1 + inner/100
 			scale = scale * widowHailMod
-			env.ModDB.AddMod(newMod("WidowHailMultiplier", "BASE", widowHailMod, "Widowhail"))
+			env.ModDB.AddMod(newModS("WidowHailMultiplier", modparser.Base, modparser.Num(widowHailMod), "Widowhail"))
 			combined := modstore.NewList(nil)
 			for _, mod := range srcList {
 				combined.MergeMod(mod, false)
@@ -464,7 +471,7 @@ func (env *Env) buildItems() {
 		// set conditions on restricted items (the condition VALUE is the
 		// class-name string, matching Lua truthiness semantics)
 		if item.In.ClassRestriction != nil {
-			env.ItemModDB.Conditions[strings.ReplaceAll(deref(item.In.Title), " ", "")] = *item.In.ClassRestriction
+			env.ItemModDB.Conditions.SetClass(strings.ReplaceAll(deref(item.In.Title), " ", ""), *item.In.ClassRestriction)
 		}
 		if item.In.Type != "Jewel" && item.In.Type != "Flask" && item.In.Type != "Tincture" && item.In.Type != "Graft" {
 			// Update item counts
@@ -482,7 +489,7 @@ func (env *Env) buildItems() {
 				key = "NormalItem"
 			}
 			env.ItemModDB.Multipliers[key]++
-			env.ItemModDB.Conditions[key+"In"+slotName] = true
+			env.ItemModDB.Conditions.Set(key+"In"+slotName, true)
 			for mult, has := range influenceMults {
 				if has(item.In) {
 					env.ItemModDB.Multipliers[mult]++
@@ -507,10 +514,10 @@ func (env *Env) buildItems() {
 			slotGemSocketsCount := 0.0
 			var socketedGems []*SocketGemInput
 			for _, socketGroup := range in.SkillsTab.SocketGroups {
-				if socketGroup.KV["source"] == nil && truthy(socketGroup.KV["enabled"]) &&
-					str(socketGroup.KV["slot"]) != "" && str(socketGroup.KV["slot"]) == slotName {
+				if !socketGroup.Granted() && socketGroup.Enabled &&
+					socketGroup.Slot != "" && socketGroup.Slot == slotName {
 					for _, gem := range socketGroup.GemList {
-						if gem.GemData != nil && truthy(gem.KV["enabled"]) {
+						if gem.GemData != nil && gem.Enabled {
 							socketedGems = append(socketedGems, gem)
 						}
 					}
@@ -551,14 +558,17 @@ func (env *Env) buildItems() {
 		}
 	}
 	// Override empty socket calculation if set in config
-	for cfgKey, multKey := range map[string]string{
-		"overrideEmptyRedSockets":   "EmptyRedSocketsInAnySlot",
-		"overrideEmptyGreenSockets": "EmptyGreenSocketsInAnySlot",
-		"overrideEmptyBlueSockets":  "EmptyBlueSocketsInAnySlot",
-		"overrideEmptyWhiteSockets": "EmptyWhiteSocketsInAnySlot",
+	for _, o := range []struct {
+		v       util.Opt[float64]
+		multKey string
+	}{
+		{cfg.OverrideEmptyRedSockets, "EmptyRedSocketsInAnySlot"},
+		{cfg.OverrideEmptyGreenSockets, "EmptyGreenSocketsInAnySlot"},
+		{cfg.OverrideEmptyBlueSockets, "EmptyBlueSocketsInAnySlot"},
+		{cfg.OverrideEmptyWhiteSockets, "EmptyWhiteSocketsInAnySlot"},
 	} {
-		if v, ok := cfg[cfgKey]; ok && truthy(v) {
-			env.ItemModDB.Multipliers[multKey] = anyNum(v)
+		if o.v.Set {
+			env.ItemModDB.Multipliers[o.multKey] = o.v.V
 		}
 	}
 }
@@ -568,7 +578,7 @@ func modHasSocketedInTag(mod *modparser.Mod) bool {
 		if tv == nil {
 			break
 		}
-		if tag, ok := tv.(modparser.Tag); ok && tag["type"] == "SocketedIn" {
+		if tag, ok := tv.(*modparser.SlotTag); ok && tag.SlotKind == modparser.TagSocketedIn {
 			return true
 		}
 	}

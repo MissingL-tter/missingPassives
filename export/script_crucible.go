@@ -12,64 +12,61 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "crucible", Build: buildCrucible})
 }
 
-// intCells converts a numeric list cell to int64s.
-func intCells(list []any) []int64 {
-	out := make([]int64, len(list))
-	for i, v := range list {
-		out[i] = v.(int64)
+// rowIds collects the Id column of a row list.
+func rowIds(rows []*Row) []string {
+	var out []string // nil for an empty cell: the artifact carries null, not []
+	for _, r := range rows {
+		out = append(out, r.Str("Id"))
 	}
 	return out
 }
 
-// rowIds collects the Id column of a row-list cell.
-func rowIds(list []any) []string {
-	out := make([]string, 0, len(list))
-	for _, v := range list {
-		out = append(out, luaStr(v.(*Row).Get("Id")))
-	}
-	return out
-}
-
-func buildCrucible(x *Ctx) (any, error) {
+func buildCrucible(x *Ctx) (schema.Document, error) {
 	x.LoadStatFile("stat_descriptions.txt")
 
+	weaponPassives, err := x.Dat("WeaponPassiveSkills")
+	if err != nil {
+		return nil, err
+	}
 	var cn schema.CrucibleNodes
-	x.Dat("WeaponPassiveSkills").Rows(func(crucible *Row) bool {
-		mod := crucible.Get("Mod").(*Row)
-		modId := luaStr(mod.Get("Id"))
+	for crucible := range weaponPassives.Rows() {
+		mod := crucible.Ref("Mod")
+		modId := mod.Str("Id")
 		if strings.HasSuffix(modId, "HardMode") {
-			return true
+			continue
 		}
-		stats := x.DescribeMod(mod)
+		stats, err := x.DescribeMod(mod)
+		if err != nil {
+			return nil, err
+		}
 		if len(stats.Orders) == 0 {
 			// The Lua prints "Mod '...' has no stats".
-			return true
+			continue
 		}
 		n := schema.CrucibleNode{ModId: modId}
-		switch mod.Get("GenerationType").(int64) {
+		switch mod.Int("GenerationType") {
 		case 31:
 			n.Type = "Spawn"
 		case 32:
 			n.Type = "MergeOnly"
 		}
-		n.Tier = crucible.Get("ModTier").(int64)
+		n.Tier = crucible.Int("ModTier")
 		n.Lines = stats.Lines
 		n.StatOrders = stats.Orders
-		n.Level = mod.Get("Level").(int64)
-		n.Group = luaStr(mod.Get("Type").(*Row).Get("Id"))
-		n.NodeType = luaStr(crucible.Get("Type").(*Row).Get("Id"))
-		n.NodeLocation = intCells(crucible.Get("NodeSpawnLocation").([]any))
-		n.WeightKey = rowIds(mod.Get("SpawnTags").([]any))
-		n.WeightVal = intCells(mod.Get("SpawnWeights").([]any))
-		genTags := mod.Get("GenerationWeightTags").([]any)
+		n.Level = mod.Int("Level")
+		n.Group = mod.Ref("Type").Str("Id")
+		n.NodeType = crucible.Ref("Type").Str("Id")
+		n.NodeLocation = crucible.Ints("NodeSpawnLocation")
+		n.WeightKey = rowIds(mod.Refs("SpawnTags"))
+		n.WeightVal = mod.Ints("SpawnWeights")
+		genTags := mod.Refs("GenerationWeightTags")
 		if len(genTags) > 0 {
 			n.WeightMultiplierKey = rowIds(genTags)
-			n.WeightMultiplierVal = intCells(mod.Get("GenerationWeightValues").([]any))
-			n.Tags = rowIds(mod.Get("Tags").([]any))
+			n.WeightMultiplierVal = mod.Ints("GenerationWeightValues")
+			n.Tags = rowIds(mod.Refs("Tags"))
 		}
 		n.ModTags = stats.ModTags
 		cn = append(cn, n)
-		return true
-	})
+	}
 	return cn, nil
 }

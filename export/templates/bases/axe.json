@@ -1,12 +1,12 @@
 {
 	"directives": [
-		"#type One Handed Axe",
-		"#influenceBaseTag axe",
-		"#socketLimit 3",
-		"#baseMatch BaseType Metadata/Items/Weapons/OneHandWeapons/OneHandAxes/AbstractOneHandAxe",
-		"#type Two Handed Axe",
-		"#influenceBaseTag 2h_axe",
-		"#socketLimit 6",
-		"#baseMatch BaseType Metadata/Items/Weapons/TwoHandWeapons/TwoHandAxes/AbstractTwoHandAxe"
+		{"directive":"type","name":"One Handed Axe"},
+		{"directive":"influenceBaseTag","tag":"axe"},
+		{"directive":"socketLimit","limit":3},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/OneHandWeapons/OneHandAxes/AbstractOneHandAxe"},
+		{"directive":"type","name":"Two Handed Axe"},
+		{"directive":"influenceBaseTag","tag":"2h_axe"},
+		{"directive":"socketLimit","limit":6},
+		{"directive":"baseMatch","column":"BaseType","pattern":"Metadata/Items/Weapons/TwoHandWeapons/TwoHandAxes/AbstractTwoHandAxe"}
 	]
 }

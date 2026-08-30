@@ -8,7 +8,12 @@
 
 package data
 
-import "github.com/MissingL-tter/missingPassives/data/schema"
+import (
+	"fmt"
+
+	"github.com/MissingL-tter/missingPassives/data/schema"
+	"strings"
+)
 
 type Gem struct {
 	Id                       string
@@ -32,26 +37,23 @@ type Gem struct {
 	GrantedEffectList      []*GrantedEffect
 }
 
-func loadGems(src schema.SkillsData) {
+func loadGems(src schema.SkillsData) error {
 	Gems = map[string]*Gem{}
 	for _, g := range src.Gems {
 		gem := &Gem{
-			Name:            sanitiseText(luaUnescape(g.Name)),
+			Name:            sanitiseText(g.Name),
 			GameId:          g.GameId,
 			VariantId:       g.VariantId,
 			GrantedEffectId: g.GrantedEffectId,
 			VaalGem:         g.VaalGem,
 			Tags:            map[string]bool{},
-			TagString:       luaUnescape(g.TagString),
+			TagString:       g.TagString,
 			ReqStr:          float64(g.ReqStr),
 			ReqDex:          float64(g.ReqDex),
 			ReqInt:          float64(g.ReqInt),
 			NaturalMaxLevel: float64(g.NaturalMaxLevel),
 		}
-		if g.BaseTypeName != nil {
-			s := luaUnescape(*g.BaseTypeName)
-			gem.BaseTypeName = &s
-		}
+		gem.BaseTypeName = g.BaseTypeName
 		gem.SecondaryGrantedEffectId = g.SecondaryGrantedEffectId
 		gem.SecondaryEffectName = g.SecondaryEffectName
 		for _, t := range g.Tags {
@@ -60,7 +62,7 @@ func loadGems(src schema.SkillsData) {
 		Gems["Metadata/Items/Gems/SkillGem"+g.VariantId] = gem
 	}
 
-	setupGem := func(gem *Gem, gemId string) {
+	setupGem := func(gem *Gem, gemId string) error {
 		gem.Id = gemId
 		gem.GrantedEffect = Skills[gem.GrantedEffectId]
 		if gem.SecondaryGrantedEffectId != nil {
@@ -71,11 +73,14 @@ func loadGems(src schema.SkillsData) {
 			gem.GrantedEffectList = append(gem.GrantedEffectList, gem.SecondaryGrantedEffect)
 		}
 		if gem.NaturalMaxLevel == 0 {
-			panic("data: gem without naturalMaxLevel " + gemId)
+			return fmt.Errorf("data: gem %s without naturalMaxLevel", gemId)
 		}
+		return nil
 	}
 	for gemId, gem := range Gems {
-		setupGem(gem, gemId)
+		if err := setupGem(gem, gemId); err != nil {
+			return err
+		}
 	}
 
 	// Vaal AltX/AltY gems: synthesised for vaal gems whose secondary effect
@@ -107,13 +112,15 @@ func loadGems(src schema.SkillsData) {
 			}
 			// Hybrid gems use the display name of the active skill
 			if altSkill.BaseTypeName == nil {
-				panic("data: alt vaal skill without baseTypeName " + secondary)
+				return fmt.Errorf("data: alt vaal skill %s without baseTypeName", secondary)
 			}
 			newGem.Name = "Vaal " + *altSkill.BaseTypeName
 			for t, v := range gem.Tags {
 				newGem.Tags[t] = v
 			}
-			setupGem(newGem, gemId+alt)
+			if err := setupGem(newGem, gemId+alt); err != nil {
+				return err
+			}
 			toAdd[gemId+alt] = newGem
 		}
 	}
@@ -139,9 +146,9 @@ func loadGems(src schema.SkillsData) {
 		if gem.GrantedEffect.Support && gem.GrantedEffectId != "SupportBarrage" {
 			baseName = baseName + " Support"
 		}
-		GemForBaseName[luaLower(baseName)] = gemId
+		GemForBaseName[strings.ToLower(baseName)] = gemId
 		if gem.BaseTypeName != nil && *gem.BaseTypeName != baseName {
-			GemForBaseName[luaLower(*gem.BaseTypeName)] = gemId
+			GemForBaseName[strings.ToLower(*gem.BaseTypeName)] = gemId
 		}
 	}
 	// The Vaal id lookups only ever process the original gems (the alt gems
@@ -173,11 +180,12 @@ func loadGems(src schema.SkillsData) {
 			GemGrantedEffectIdForVaalGemId[sec+alt] = gemId + alt
 			base, ok := GemVaalGemIdForBaseGemId[gemId]
 			if !ok {
-				panic("data: alt vaal gem without base mapping " + gemId)
+				return fmt.Errorf("data: alt vaal gem %s without base mapping", gemId)
 			}
 			GemVaalGemIdForBaseGemId[gemId+alt] = base + alt
 		}
 	}
+	return nil
 }
 
 func sortedGemIds(gems map[string]*Gem) []string {
@@ -187,69 +195,4 @@ func sortedGemIds(gems map[string]*Gem) []string {
 	}
 	sortStrings(ids)
 	return ids
-}
-
-// luaLower is string.lower (ASCII only, as Lua's default locale).
-func luaLower(s string) string {
-	b := []byte(s)
-	for i, c := range b {
-		if c >= 'A' && c <= 'Z' {
-			b[i] = c + 32
-		}
-	}
-	return string(b)
-}
-
-// GemCanon builds a gem's plain-table shadow; granted effects appear as
-// their skill ids (the dump normalises the same way to avoid inlining
-// entire skills).
-func GemCanon(g *Gem) map[string]any {
-	m := map[string]any{
-		"id":              g.Id,
-		"name":            g.Name,
-		"gameId":          g.GameId,
-		"variantId":       g.VariantId,
-		"grantedEffectId": g.GrantedEffectId,
-		"tags":            g.Tags,
-		"tagString":       g.TagString,
-		"reqStr":          g.ReqStr,
-		"reqDex":          g.ReqDex,
-		"reqInt":          g.ReqInt,
-		"naturalMaxLevel": g.NaturalMaxLevel,
-	}
-	if g.BaseTypeName != nil {
-		m["baseTypeName"] = *g.BaseTypeName
-	}
-	if g.SecondaryGrantedEffectId != nil {
-		m["secondaryGrantedEffectId"] = *g.SecondaryGrantedEffectId
-	}
-	if g.SecondaryEffectName != nil {
-		m["secondaryEffectName"] = *g.SecondaryEffectName
-	}
-	if g.VaalGem {
-		m["vaalGem"] = true
-	}
-	if g.GrantedEffect != nil {
-		m["grantedEffect"] = "\x1bskill:" + g.GrantedEffect.Id
-	}
-	if g.SecondaryGrantedEffect != nil {
-		m["secondaryGrantedEffect"] = "\x1bskill:" + g.SecondaryGrantedEffect.Id
-	}
-	list := map[string]any{}
-	for i, ge := range g.GrantedEffectList {
-		if ge != nil {
-			list[itoa(i+1)] = "\x1bskill:" + ge.Id
-		}
-	}
-	m["grantedEffectList"] = list
-	return m
-}
-
-// GemForSkillCanon keys the lookup by skill id.
-func GemForSkillCanon() map[string]string {
-	out := map[string]string{}
-	for ge, gemId := range GemForSkill {
-		out[ge.Id] = gemId
-	}
-	return out
 }

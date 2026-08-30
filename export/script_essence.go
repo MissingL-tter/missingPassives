@@ -8,7 +8,7 @@ func init() {
 	Scripts = append(Scripts, Script{Name: "essence", Build: buildEssence})
 }
 
-func buildEssence(x *Ctx) (any, error) {
+func buildEssence(x *Ctx) (schema.Document, error) {
 	colMap := map[string]string{
 		"Amulet":                     "AmuletMod",
 		"Ring":                       "RingMod",
@@ -34,23 +34,26 @@ func buildEssence(x *Ctx) (any, error) {
 		"Two Handed Sword":           "TwoHandSwordMod",
 	}
 
+	essences, err := x.Dat("Essences")
+	if err != nil {
+		return nil, err
+	}
 	var es schema.Essences
-	x.Dat("Essences").Rows(func(essence *Row) bool {
-		if essence.Get("Tier").(int64) > 0 {
-			base := essence.Get("BaseItemType").(*Row)
+	for essence := range essences.Rows() {
+		if essence.Int("Tier") > 0 {
+			base := essence.Ref("BaseItemType")
 			e := schema.Essence{
-				BaseId: luaStr(base.Get("Id")),
-				Name:   luaStr(base.Get("Name")),
-				Type:   essence.Get("Type").(*Row).Index - 1,
-				Tier:   essence.Get("Tier").(int64),
+				BaseId: base.Str("Id"),
+				Name:   base.Str("Name"),
+				Type:   essence.Ref("Type").ID,
+				Tier:   essence.Int("Tier"),
 				Mods:   map[string]string{},
 			}
 			for typ, col := range colMap {
-				e.Mods[typ] = luaStr(essence.Get(col).(*Row).Get("Id"))
+				e.Mods[typ] = essence.Ref(col).Str("Id")
 			}
 			es = append(es, e)
 		}
-		return true
-	})
+	}
 	return es, nil
 }

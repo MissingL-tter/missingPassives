@@ -1,9 +1,9 @@
 {
 	"directives": [
-		"#type Graft",
-		"#baseMatch Metadata/Items/Chayula/UulNetolGraft[0-9]+",
-		"#baseMatch Metadata/Items/Chayula/XophGraft[0-9]+",
-		"#baseMatch Metadata/Items/Chayula/EshGraft[0-9]+",
-		"#baseMatch Metadata/Items/Chayula/TulGraft[0-9]+"
+		{"directive":"type","name":"Graft"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Chayula/UulNetolGraft[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Chayula/XophGraft[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Chayula/EshGraft[0-9]+"},
+		{"directive":"baseMatch","pattern":"Metadata/Items/Chayula/TulGraft[0-9]+"}
 	]
 }

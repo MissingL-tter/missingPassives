@@ -5,94 +5,19 @@
 package tree
 
 import (
-	"math"
 	"strconv"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
-
-// jewelTypeByConqueror — PassiveSpec.lua L1099.
-var jewelTypeByConqueror = map[string]int{
-	"vaal":            1,
-	"karui":           2,
-	"maraketh":        3,
-	"templar":         4,
-	"eternal":         5,
-	"kalguur":         6,
-	"abyss_murderous": 7,
-	"abyss_searching": 8,
-	"abyss_hypnotic":  9,
-	"abyss_ghastly":   10,
-	"abyss_special":   11,
-}
-
-func conqueredByMap(v any) map[string]any {
-	m, _ := v.(map[string]any)
-	return m
-}
-
-func conquerorOf(cq any) map[string]any {
-	m := conqueredByMap(cq)
-	if m == nil {
-		return nil
-	}
-	return conqueredByMap(m["conqueror"])
-}
-
-func conquerorType(cq any) string {
-	if c := conquerorOf(cq); c != nil {
-		if s, ok := c["type"].(string); ok {
-			return s
-		}
-	}
-	return ""
-}
-
-// conquerorIDStr is the conqueror id as the reference concatenates it
-// (number via tostring, or the "2_v2" string forms).
-func conquerorIDStr(cq any) string {
-	c := conquerorOf(cq)
-	if c == nil {
-		return ""
-	}
-	if s, ok := c["id"].(string); ok {
-		return s
-	}
-	if n, ok := anyNum(c["id"]); ok {
-		return luaNumStr(n)
-	}
-	return ""
-}
-
-func conqueredSeed(cq any) float64 {
-	m := conqueredByMap(cq)
-	if m == nil {
-		return 0
-	}
-	n, _ := anyNum(m["id"])
-	return n
-}
-
-func luaNumStr(v float64) string {
-	if v == math.Trunc(v) && math.Abs(v) < 1e15 {
-		return strconv.FormatInt(int64(v), 10)
-	}
-	return strconv.FormatFloat(v, 'g', 14, 64)
-}
-
-// luaRound is Common.lua round(val, dec).
-func luaRound(val float64, dec int) float64 {
-	p := math.Pow(10, float64(dec))
-	return math.Floor(val*p+0.5) / p
-}
 
 // conquerReplaceStat is BuildAllDependsAndPaths' replaceHelperFunc.
 func conquerReplaceStat(stat string, desc *ConqueredStatDesc, value float64) string {
 	if desc.Fmt == "g" {
 		if strings.Contains(desc.ID, "per_minute") {
-			value = luaRound(value/60, 1)
+			value = util.RoundHalfUp(value/60, 1)
 		} else if strings.Contains(desc.ID, "permyriad") {
 			value = value / 100
 		} else if strings.Contains(desc.ID, "_ms") {
@@ -100,10 +25,10 @@ func conquerReplaceStat(stat string, desc *ConqueredStatDesc, value float64) str
 		}
 	}
 	if desc.Min != desc.Max {
-		return strings.ReplaceAll(stat, "("+luaNumStr(desc.Min)+"-"+luaNumStr(desc.Max)+")", luaNumStr(value))
+		return strings.ReplaceAll(stat, "("+util.FormatIntOrG14(desc.Min)+"-"+util.FormatIntOrG14(desc.Max)+")", util.FormatIntOrG14(value))
 	} else if desc.Min != value {
 		// only true for might/legacy of the vaal, which can combine stats
-		return strings.ReplaceAll(stat, luaNumStr(desc.Min), luaNumStr(value))
+		return strings.ReplaceAll(stat, util.FormatIntOrG14(desc.Min), util.FormatIntOrG14(value))
 	}
 	return stat
 }
@@ -126,7 +51,8 @@ func (s *Spec) nodeAdditionOrReplacementFromString(node *SpecNode, sd string, re
 		node.Stats.ModKey = node.Stats.ModKey + add.ModKey
 		node.Stats.ModList = append(append([]*modparser.Mod{}, add.ModList...), node.Stats.ModList...)
 	}
-	node.sdIdentity = nil
+	// The stats are the node's own now: no source shares them.
+	node.src, node.srcME = nil, nil
 }
 
 // reconnectNodeToClassStart ports ReconnectNodeToClassStart (Pure Talent).
@@ -134,10 +60,10 @@ func (s *Spec) reconnectNodeToClassStart(node *SpecNode) {
 	for _, linkedID := range node.T.LinkedIDs {
 		for _, classID := range sortedNodeIDs(s.Tree.Classes) {
 			class := s.Tree.Classes[classID]
-			if linkedID == class.StartNodeID && node.Type() == "Normal" {
+			if linkedID == class.StartNodeID && node.Type() == NodeNormal {
 				node.Stats.ModList = append(node.Stats.ModList,
-					modparser.NewMod("Condition:ConnectedTo"+class.Name+"Start", "FLAG", true,
-						"Tree:"+strconv.FormatInt(linkedID, 10)))
+					modparser.NewModFull("Condition:ConnectedTo"+class.Name+"Start", modparser.Flag, modparser.Bool(true),
+						"Tree:"+strconv.FormatInt(linkedID, 10), true, 0, 0))
 			}
 		}
 	}
@@ -147,140 +73,38 @@ func (s *Spec) reconnectNodeToClassStart(node *SpecNode) {
 // branch of BuildAllDependsAndPaths' second node loop.
 func (s *Spec) applyConquered(node *SpecNode) {
 	cq := node.ConqueredBy
-	if cq == nil || node.Type() == "Socket" {
+	if cq == nil || node.Type() == NodeSocket {
+		return
+	}
+	if isAbyss(cq.Conqueror) {
+		s.applyAbyssConquest(node, cq)
+		s.reconnectNodeToClassStart(node)
 		return
 	}
 	conqueredNodes := s.Tree.ConqueredPassives.NodesOrdered
 	conqueredAdditions := s.Tree.ConqueredPassives.AdditionsOrdered
-
-	jewelType, ok := jewelTypeByConqueror[conquerorType(cq)]
-	if !ok {
-		jewelType = 5
-	}
-	if jewelType >= 7 {
-		modification, _ := conqueredByMap(cq)["modification"].([]AbyssComponent)
-		for _, comp := range modification {
-			var sd []string
-			var descs []*ConqueredStatDesc
-			replaces := false
-			switch comp.Type {
-			case 1:
-				if conqueredNode := conqueredNode1(s.Tree.ConqueredPassives.NodesOrdered, comp.ID+1-337); conqueredNode != nil {
-					s.replaceNode(node, conqueredNode)
-					sd = conqueredNode.Sd
-					descs = conqueredNode.StatDescs
-					replaces = true
-				}
-			case 2:
-				if comp.ID >= 0 && comp.ID < len(conqueredAdditions) {
-					addition := conqueredAdditions[comp.ID]
-					sd = addition.Sd
-					descs = addition.StatDescs
-				}
-			}
-			if sd == nil && !replaces {
-				continue // "Unhandled Abyss component ID"
-			}
-			for statIndex, statLine := range sd {
-				for _, desc := range descs {
-					if desc.Index-1 < len(comp.Rolls) {
-						statLine = conquerReplaceStat(statLine, desc, float64(comp.Rolls[desc.Index-1]))
-					}
-				}
-				prefix := " \n"
-				if replaces {
-					prefix = ""
-				}
-				s.nodeAdditionOrReplacementFromString(node, prefix+statLine, replaces && statIndex == 0)
-			}
-		}
-		s.reconnectNodeToClassStart(node)
-		return
-	}
-	rawSeed := conqueredSeed(cq)
+	jewelType := lutType(cq.Conqueror)
+	rawSeed := cq.Seed
 	seed := rawSeed
-	if jewelType == 5 {
+	if jewelType == int(modparser.ConquerorEternal) {
 		seed = seed / 20
 	}
 	seedInRange := seed >= data.TimelessJewelSeedMin[jewelType] && seed <= data.TimelessJewelSeedMax[jewelType]
 
-	switch {
-	case node.Type() == "Notable":
+	switch node.Type() {
+	case NodeNotable:
 		var rec []int
 		if seedInRange {
 			rec = TimelessPassive(int64(rawSeed), node.ID(), jewelType)
 		}
 		if len(rec) == 0 {
 			// "Missing LUT" — no node change; reconnect still runs.
-		} else if jewelType == 1 {
-			headerSize := len(rec)
-			switch {
-			case headerSize == 2 || headerSize == 3:
-				conqueredNode := conqueredNode1(conqueredNodes, rec[0]+1-337)
-				s.replaceNode(node, conqueredNode)
-				sd := conqueredNode.Sd // snapshot: the node's sd is rebuilt below
-				for i, repStat := range sd {
-					desc := conqueredStatDescOf(conqueredNode, conqueredNode.SortedStats[i])
-					repStat = conquerReplaceStat(repStat, desc, float64(rec[desc.Index]))
-					s.nodeAdditionOrReplacementFromString(node, repStat, i == 0) // wipe mods on first run
-				}
-			case headerSize == 6 || headerSize == 8:
-				bias := 0
-				for i, val := range rec {
-					if i >= headerSize/2 {
-						break
-					}
-					if val <= 21 {
-						bias++
-					} else {
-						bias--
-					}
-				}
-				if bias >= 0 {
-					s.replaceNode(node, conqueredNode1(conqueredNodes, 77)) // might of the vaal
-				} else {
-					s.replaceNode(node, conqueredNode1(conqueredNodes, 78)) // legacy of the vaal
-				}
-				additions := map[int]float64{}
-				var inserted []int
-				var order []int
-				for i := 0; i < headerSize/2; i++ {
-					val := rec[i]
-					roll := float64(rec[i+headerSize/2])
-					inserted = append(inserted, val)
-					if _, seen := additions[val]; !seen {
-						additions[val] = roll
-						order = append(order, val)
-					} else {
-						additions[val] += roll
-					}
-				}
-				// The reference iterates the additions table with pairs() —
-				// LuaJIT hash-slot order. This port merges in first-seen
-				// order instead and records the merge so the differential
-				// can permute into the reference's order (the difference is
-				// display-only: which rolled line sits where on the node).
-				node.TimelessAdditions = &TimelessAdditionsRecord{Inserted: inserted}
-				for _, addID := range order {
-					val := additions[addID]
-					addition := conqueredAdditions[addID] // conqueredAdditions[add + 1]
-					before := len(node.Stats.ModList)
-					for _, addStat := range addition.Sd {
-						for _, desc := range addition.StatDescs { // should only be 1 big
-							addStat = conquerReplaceStat(addStat, desc, val)
-						}
-						s.nodeAdditionOrReplacementFromString(node, addStat, false)
-					}
-					node.TimelessAdditions.Blocks = append(node.TimelessAdditions.Blocks,
-						TimelessAdditionBlock{ID: addID, ModCount: len(node.Stats.ModList) - before})
-				}
-			default:
-				// "Unhandled Glorious Vanity headerSize" — no change
-			}
+		} else if cq.Conqueror == modparser.ConquerorVaal {
+			s.applyGloriousVanity(node, rec)
 		} else {
 			for _, g := range rec {
-				if g >= 337 { // replace
-					if conqueredNode := conqueredNode1(conqueredNodes, g+1-337); conqueredNode != nil {
+				if g >= poolNodeBase { // replace
+					if conqueredNode := conqueredNode1(conqueredNodes, g+1-poolNodeBase); conqueredNode != nil {
 						s.replaceNode(node, conqueredNode)
 					}
 				} else { // add
@@ -292,8 +116,8 @@ func (s *Spec) applyConquered(node *SpecNode) {
 			}
 		}
 
-	case node.Type() == "Keystone":
-		matchStr := conquerorType(cq) + "_keystone_" + conquerorIDStr(cq)
+	case NodeKeystone:
+		matchStr := cq.Conqueror.String() + "_keystone_" + cq.ConqID
 		for _, conqueredNode := range conqueredNodes {
 			if conqueredNode.IDStr == matchStr {
 				s.replaceNode(node, conqueredNode)
@@ -301,16 +125,17 @@ func (s *Spec) applyConquered(node *SpecNode) {
 			}
 		}
 
-	case node.Type() == "Normal":
+	case NodeNormal:
 		isAttr := node.Dn == "Dexterity" || node.Dn == "Intelligence" || node.Dn == "Strength"
-		switch conquerorType(cq) {
-		case "vaal":
+		small := isAttr || node.IsTattoo // attribute and tattooed smalls take the lesser bonus
+		switch cq.Conqueror {
+		case modparser.ConquerorVaal:
 			var rec []int
 			if seedInRange {
 				rec = TimelessPassive(int64(rawSeed), node.ID(), jewelType)
 			}
 			if len(rec) != 0 {
-				conqueredNode := conqueredNode1(conqueredNodes, rec[0]+1-337)
+				conqueredNode := conqueredNode1(conqueredNodes, rec[0]+1-poolNodeBase)
 				s.replaceNode(node, conqueredNode)
 				sd := node.Stats.Sd // the reference iterates node.sd (now the alt node's sd)
 				for i, repStat := range sd {
@@ -319,35 +144,147 @@ func (s *Spec) applyConquered(node *SpecNode) {
 					s.nodeAdditionOrReplacementFromString(node, repStat, true)
 				}
 			}
-		case "karui":
-			str := "4"
-			if isAttr || node.IsTattoo {
-				str = "2"
-			}
-			s.nodeAdditionOrReplacementFromString(node, " \n+"+str+" to Strength", false)
-		case "maraketh":
-			dex := "4"
-			if isAttr || node.IsTattoo {
-				dex = "2"
-			}
-			s.nodeAdditionOrReplacementFromString(node, " \n+"+dex+" to Dexterity", false)
-		case "kalguur":
-			ward := "2"
-			if isAttr || node.IsTattoo {
-				ward = "1"
-			}
-			s.nodeAdditionOrReplacementFromString(node, " \n"+ward+"% increased Ward", false)
-		case "templar":
-			if isAttr || node.IsTattoo {
-				s.replaceNode(node, conqueredNode1(conqueredNodes, 91)) // templar_devotion_node
+		case modparser.ConquerorKarui:
+			s.nodeAdditionOrReplacementFromString(node, " \n+"+pick(small, "2", "4")+" to Strength", false)
+		case modparser.ConquerorMaraketh:
+			s.nodeAdditionOrReplacementFromString(node, " \n+"+pick(small, "2", "4")+" to Dexterity", false)
+		case modparser.ConquerorKalguur:
+			s.nodeAdditionOrReplacementFromString(node, " \n"+pick(small, "1", "2")+"% increased Ward", false)
+		case modparser.ConquerorTemplar:
+			if small {
+				s.replaceNode(node, conqueredNode1(conqueredNodes, poolTemplarDevotionNode))
 			} else {
 				s.nodeAdditionOrReplacementFromString(node, " \n+5 to Devotion", false)
 			}
-		case "eternal":
-			s.replaceNode(node, conqueredNode1(conqueredNodes, 110)) // eternal_small_blank
+		case modparser.ConquerorEternal:
+			s.replaceNode(node, conqueredNode1(conqueredNodes, poolEternalSmallBlank))
 		}
 	}
 	s.reconnectNodeToClassStart(node)
+}
+
+func pick(cond bool, yes, no string) string {
+	if cond {
+		return yes
+	}
+	return no
+}
+
+// applyAbyssConquest applies the computed abyss components: a replacement
+// (rolled into the pool node's stats) and/or stat additions.
+func (s *Spec) applyAbyssConquest(node *SpecNode, cq *Conquest) {
+	conqueredAdditions := s.Tree.ConqueredPassives.AdditionsOrdered
+	for _, comp := range cq.Abyss {
+		var sd []string
+		var descs []*ConqueredStatDesc
+		replaces := false
+		switch comp.Kind {
+		case ComponentReplace:
+			if conqueredNode := conqueredNode1(s.Tree.ConqueredPassives.NodesOrdered, comp.ID+1-poolNodeBase); conqueredNode != nil {
+				s.replaceNode(node, conqueredNode)
+				sd = conqueredNode.Sd
+				descs = conqueredNode.StatDescs
+				replaces = true
+			}
+		case ComponentAdd:
+			if comp.ID >= 0 && comp.ID < len(conqueredAdditions) {
+				addition := conqueredAdditions[comp.ID]
+				sd = addition.Sd
+				descs = addition.StatDescs
+			}
+		}
+		if sd == nil && !replaces {
+			continue // "Unhandled Abyss component ID"
+		}
+		for statIndex, statLine := range sd {
+			for _, desc := range descs {
+				if desc.Index-1 < len(comp.Rolls) {
+					statLine = conquerReplaceStat(statLine, desc, float64(comp.Rolls[desc.Index-1]))
+				}
+			}
+			prefix := " \n"
+			if replaces {
+				prefix = ""
+			}
+			s.nodeAdditionOrReplacementFromString(node, prefix+statLine, replaces && statIndex == 0)
+		}
+	}
+}
+
+// Glorious Vanity LUT record layouts (TimelessPassive for the vaal family).
+const (
+	vaalReplaceRecord1Roll  = 2 // replacement id + one roll
+	vaalReplaceRecord2Rolls = 3 // replacement id + two rolls
+	vaalAdditionsRecord3    = 6 // three addition ids + three rolls
+	vaalAdditionsRecord4    = 8 // four addition ids + four rolls
+)
+
+// applyGloriousVanity ports the vaal notable branch: a rolled replacement,
+// or the might/legacy-of-the-vaal blank plus merged additions.
+func (s *Spec) applyGloriousVanity(node *SpecNode, rec []int) {
+	conqueredNodes := s.Tree.ConqueredPassives.NodesOrdered
+	conqueredAdditions := s.Tree.ConqueredPassives.AdditionsOrdered
+	headerSize := len(rec)
+	switch headerSize {
+	case vaalReplaceRecord1Roll, vaalReplaceRecord2Rolls:
+		conqueredNode := conqueredNode1(conqueredNodes, rec[0]+1-poolNodeBase)
+		s.replaceNode(node, conqueredNode)
+		sd := conqueredNode.Sd // snapshot: the node's sd is rebuilt below
+		for i, repStat := range sd {
+			desc := conqueredStatDescOf(conqueredNode, conqueredNode.SortedStats[i])
+			repStat = conquerReplaceStat(repStat, desc, float64(rec[desc.Index]))
+			s.nodeAdditionOrReplacementFromString(node, repStat, i == 0) // wipe mods on first run
+		}
+	case vaalAdditionsRecord3, vaalAdditionsRecord4:
+		bias := 0
+		for _, val := range rec[:headerSize/2] {
+			if val <= 21 {
+				bias++
+			} else {
+				bias--
+			}
+		}
+		if bias >= 0 {
+			s.replaceNode(node, conqueredNode1(conqueredNodes, poolMightOfTheVaal))
+		} else {
+			s.replaceNode(node, conqueredNode1(conqueredNodes, poolLegacyOfTheVaal))
+		}
+		additions := map[int]float64{}
+		var inserted []int
+		var order []int
+		for i := 0; i < headerSize/2; i++ {
+			val := rec[i]
+			roll := float64(rec[i+headerSize/2])
+			inserted = append(inserted, val)
+			if _, seen := additions[val]; !seen {
+				additions[val] = roll
+				order = append(order, val)
+			} else {
+				additions[val] += roll
+			}
+		}
+		// The reference iterates the additions table with pairs() —
+		// LuaJIT hash-slot order. This port merges in first-seen
+		// order instead and records the merge so the differential
+		// can permute into the reference's order (the difference is
+		// display-only: which rolled line sits where on the node).
+		node.TimelessAdditions = &TimelessAdditionsRecord{Inserted: inserted}
+		for _, addID := range order {
+			val := additions[addID]
+			addition := conqueredAdditions[addID] // conqueredAdditions[add + 1]
+			before := len(node.Stats.ModList)
+			for _, addStat := range addition.Sd {
+				for _, desc := range addition.StatDescs { // should only be 1 big
+					addStat = conquerReplaceStat(addStat, desc, val)
+				}
+				s.nodeAdditionOrReplacementFromString(node, addStat, false)
+			}
+			node.TimelessAdditions.Blocks = append(node.TimelessAdditions.Blocks,
+				TimelessAdditionBlock{ID: addID, ModCount: len(node.Stats.ModList) - before})
+		}
+	default:
+		// "Unhandled Glorious Vanity headerSize" — no change
+	}
 }
 
 // conqueredNode1 indexes the ordered alternate pool 1-based (the reference's
@@ -359,6 +296,8 @@ func conqueredNode1(nodes []*Node, index1 int) *Node {
 	return nil
 }
 
+// conqueredStatDescOf finds the pool node's roll descriptor for a stat id;
+// a missing one is a pool-document defect (the Lua errors indexing nil).
 func conqueredStatDescOf(node *Node, statKey string) *ConqueredStatDesc {
 	for _, desc := range node.StatDescs {
 		if desc.ID == statKey {

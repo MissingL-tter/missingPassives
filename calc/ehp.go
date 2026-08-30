@@ -6,7 +6,6 @@ package calc
 import (
 	"github.com/MissingL-tter/missingPassives/data"
 	"math"
-	"strconv"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/modstore"
@@ -14,22 +13,14 @@ import (
 
 var hitSourceList = []string{"Attack", "Spell"}
 
-// tonum ports Lua tonumber() over the config bags: strings are parsed,
-// numbers pass through, anything else (including absent) yields nil.
-func tonum(v any) *float64 {
-	switch t := v.(type) {
-	case float64:
-		n := t
-		return &n
-	case int64:
-		n := float64(t)
-		return &n
-	case string:
-		if n, err := strconv.ParseFloat(t, 64); err == nil {
-			return &n
-		}
+// configOrPlaceholder reads a per-damage-type config value, falling back
+// to the placeholder default (`tonumber(configInput[k]) or
+// tonumber(configPlaceholder[k]) or 0`).
+func (env *Env) configOrPlaceholder(damageType string, field func(*ConfigInput) map[string]float64) float64 {
+	if v, ok := field(env.ConfigInput)[damageType]; ok {
+		return v
 	}
-	return nil
+	return field(env.Build.ConfigPlaceholder)[damageType]
 }
 
 // RunEHP runs the EHP stage the way the reference reaches it, and the way
@@ -47,51 +38,51 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	output := actor.output
 
 	damageCategoryConfig := "Average"
-	if v := env.ConfigInput["enemyDamageType"]; truthy(v) {
-		damageCategoryConfig = str(v)
+	if v := env.ConfigInput.EnemyDamageType; v != "" {
+		damageCategoryConfig = v
 	}
 
 	// chance to not be hit calculations
 	if damageCategoryConfig != "DamageOverTime" {
 		worstOf := 1.0
-		if v := env.ConfigInput["EHPUnluckyWorstOf"]; truthy(v) {
-			worstOf = anyNum(v)
+		if v := env.ConfigInput.EHPUnluckyWorstOf; v.Set {
+			worstOf = v.V
 		}
-		avoidAll := outNum(output, "AvoidAllDamageFromHitsChance")
-		avoidProjectiles := outNum(output, "AvoidProjectilesChance")
-		if truthy(output["specificTypeAvoidance"]) {
+		avoidAll := output.N("AvoidAllDamageFromHitsChance")
+		avoidProjectiles := output.N("AvoidProjectilesChance")
+		if output.Flag("specificTypeAvoidance") {
 			avoidProjectiles = 0
 		}
-		output["MeleeNotHitChance"] = 100 - (1-outNum(output, "MeleeEvadeChance")/100)*(1-outNum(output, "EffectiveAttackDodgeChance")/100)*(1-avoidAll/100)*100
-		output["ProjectileNotHitChance"] = 100 - (1-outNum(output, "ProjectileEvadeChance")/100)*(1-outNum(output, "EffectiveAttackDodgeChance")/100)*(1-avoidAll/100)*(1-avoidProjectiles/100)*100
-		output["SpellNotHitChance"] = 100 - (1-outNum(output, "EffectiveSpellDodgeChance")/100)*(1-avoidAll/100)*100
-		output["SpellProjectileNotHitChance"] = 100 - (1-outNum(output, "EffectiveSpellDodgeChance")/100)*(1-avoidAll/100)*(1-avoidProjectiles/100)*100
-		output["UntypedNotHitChance"] = 100 - (1-avoidAll/100)*100
-		output["AverageNotHitChance"] = (outNum(output, "MeleeNotHitChance") + outNum(output, "ProjectileNotHitChance") +
-			outNum(output, "SpellNotHitChance") + outNum(output, "SpellProjectileNotHitChance")) / 4
-		output["AverageEvadeChance"] = (outNum(output, "MeleeEvadeChance") + outNum(output, "ProjectileEvadeChance")) / 4
-		output["ConfiguredNotHitChance"] = outNum(output, damageCategoryConfig+"NotHitChance")
-		output["ConfiguredEvadeChance"] = outNum(output, damageCategoryConfig+"EvadeChance")
+		output.SetN("MeleeNotHitChance", 100-(1-output.N("MeleeEvadeChance")/100)*(1-output.N("EffectiveAttackDodgeChance")/100)*(1-avoidAll/100)*100)
+		output.SetN("ProjectileNotHitChance", 100-(1-output.N("ProjectileEvadeChance")/100)*(1-output.N("EffectiveAttackDodgeChance")/100)*(1-avoidAll/100)*(1-avoidProjectiles/100)*100)
+		output.SetN("SpellNotHitChance", 100-(1-output.N("EffectiveSpellDodgeChance")/100)*(1-avoidAll/100)*100)
+		output.SetN("SpellProjectileNotHitChance", 100-(1-output.N("EffectiveSpellDodgeChance")/100)*(1-avoidAll/100)*(1-avoidProjectiles/100)*100)
+		output.SetN("UntypedNotHitChance", 100-(1-avoidAll/100)*100)
+		output.SetN("AverageNotHitChance", (output.N("MeleeNotHitChance")+output.N("ProjectileNotHitChance")+
+			output.N("SpellNotHitChance")+output.N("SpellProjectileNotHitChance"))/4)
+		output.SetN("AverageEvadeChance", (output.N("MeleeEvadeChance")+output.N("ProjectileEvadeChance"))/4)
+		output.SetN("ConfiguredNotHitChance", output.N(damageCategoryConfig+"NotHitChance"))
+		output.SetN("ConfiguredEvadeChance", output.N(damageCategoryConfig+"EvadeChance"))
 		// unlucky config to lower the value of block, dodge, evade etc for ehp
 		if worstOf > 1 {
-			output["ConfiguredNotHitChance"] = outNum(output, "ConfiguredNotHitChance") / 100 * outNum(output, "ConfiguredNotHitChance")
-			output["ConfiguredEvadeChance"] = outNum(output, "ConfiguredEvadeChance") / 100 * outNum(output, "ConfiguredEvadeChance")
+			output.SetN("ConfiguredNotHitChance", output.N("ConfiguredNotHitChance")/100*output.N("ConfiguredNotHitChance"))
+			output.SetN("ConfiguredEvadeChance", output.N("ConfiguredEvadeChance")/100*output.N("ConfiguredEvadeChance"))
 			if worstOf == 4 {
-				output["ConfiguredNotHitChance"] = outNum(output, "ConfiguredNotHitChance") / 100 * outNum(output, "ConfiguredNotHitChance")
-				output["ConfiguredEvadeChance"] = outNum(output, "ConfiguredEvadeChance") / 100 * outNum(output, "ConfiguredEvadeChance")
+				output.SetN("ConfiguredNotHitChance", output.N("ConfiguredNotHitChance")/100*output.N("ConfiguredNotHitChance"))
+				output.SetN("ConfiguredEvadeChance", output.N("ConfiguredEvadeChance")/100*output.N("ConfiguredEvadeChance"))
 			}
 		}
 	}
 
 	// Enemy damage input and modifications
-	output["totalEnemyDamage"] = 0.0
-	output["totalEnemyDamageIn"] = 0.0
+	output.SetN("totalEnemyDamage", 0.0)
+	output.SetN("totalEnemyDamageIn", 0.0)
 	if damageCategoryConfig == "DamageOverTime" {
 		for _, damageType := range dmgTypeList {
-			output[damageType+"EnemyPen"] = 0.0
-			output[damageType+"EnemyDamageMult"] = Mod(enemyDB, nil, enemyDamageNames(damageType)...)
-			output[damageType+"EnemyOverwhelm"] = 0.0
-			output[damageType+"EnemyDamage"] = 0.0
+			output.SetN(damageType+"EnemyPen", 0.0)
+			output.SetN(damageType+"EnemyDamageMult", Mod(enemyDB, nil, enemyDamageNames(damageType)...))
+			output.SetN(damageType+"EnemyOverwhelm", 0.0)
+			output.SetN(damageType+"EnemyDamage", 0.0)
 		}
 	} else {
 		enemyCritChance := 0.0
@@ -102,56 +93,38 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 			enemyCritChance = 100
 		default:
 			base := 0.0
-			if ov := modDB.Override(nil, "enemyCritChance"); truthy(ov) {
-				base = anyNum(ov)
-			} else if v := env.ConfigInput["enemyCritChance"]; truthy(v) {
-				base = anyNum(v)
-			} else if v := env.Build.ConfigPlaceholder["enemyCritChance"]; truthy(v) {
-				base = anyNum(v)
+			if ov, ok := modDB.Override(nil, "enemyCritChance"); ok {
+				base = valueNum(ov)
+			} else if v := env.ConfigInput.EnemyCritChance; v.Set {
+				base = v.V
+			} else if v := env.Build.ConfigPlaceholder.EnemyCritChance; v.Set {
+				base = v.V
 			}
-			scaled := base * (1 + modDB.Sum("INC", nil, "EnemyCritChance")/100 + enemyDB.Sum("INC", nil, "CritChance")/100) *
-				(1 - outNum(output, "ConfiguredEvadeChance")/100)
+			scaled := base * (1 + modDB.Sum(modparser.Inc, nil, "EnemyCritChance")/100 + enemyDB.Sum(modparser.Inc, nil, "CritChance")/100) *
+				(1 - output.N("ConfiguredEvadeChance")/100)
 			enemyCritChance = math.Max(math.Min(scaled, 100), 0)
 		}
-		output["EnemyCritChance"] = enemyCritChance
+		output.SetN("EnemyCritChance", enemyCritChance)
 		enemyCritDamageBase := 0.0
-		if v := env.ConfigInput["enemyCritDamage"]; truthy(v) {
-			enemyCritDamageBase = anyNum(v)
-		} else if v := env.Build.ConfigPlaceholder["enemyCritDamage"]; truthy(v) {
-			enemyCritDamageBase = anyNum(v)
+		if v := env.ConfigInput.EnemyCritDamage; v.Set {
+			enemyCritDamageBase = v.V
+		} else if v := env.Build.ConfigPlaceholder.EnemyCritDamage; v.Set {
+			enemyCritDamageBase = v.V
 		}
-		enemyCritDamage := math.Max(enemyCritDamageBase+enemyDB.Sum("BASE", nil, "CritMultiplier"), 0)
-		output["EnemyCritEffect"] = 1 + enemyCritChance/100*(enemyCritDamage/100)*(1-outNum(output, "CritExtraDamageReduction")/100)
+		enemyCritDamage := math.Max(enemyCritDamageBase+enemyDB.Sum(modparser.Base, nil, "CritMultiplier"), 0)
+		output.SetN("EnemyCritEffect", 1+enemyCritChance/100*(enemyCritDamage/100)*(1-output.N("CritExtraDamageReduction")/100))
 		// Match all keywordFlags parameter for enemy min-max damage mods
-		enemyCfg := &modstore.Cfg{KeywordFlags: i64p(^modparser.KeywordFlag.MatchAll)}
+		enemyCfg := &modstore.Cfg{KeywordFlags: keywordp(^modparser.KeywordMatchAll)}
 		enemyDamageConversion := map[string]map[string]float64{}
 
 		for _, damageType := range dmgTypeList {
 			enemyDamageMult := Mod(enemyDB, nil, enemyDamageNames(damageType)...)
-			var enemyDamage float64
-			if p := tonum(env.ConfigInput["enemy"+damageType+"Damage"]); p != nil {
-				enemyDamage = *p
-			} else if p := tonum(env.Build.ConfigPlaceholder["enemy"+damageType+"Damage"]); p != nil {
-				enemyDamage = *p
-			}
-			var enemyPen float64
-			if p := tonum(env.ConfigInput["enemy"+damageType+"Pen"]); p != nil {
-				enemyPen = *p
-			} else if p := tonum(env.Build.ConfigPlaceholder["enemy"+damageType+"Pen"]); p != nil {
-				enemyPen = *p
-			}
-			var enemyOverwhelm float64
-			if p := tonum(env.ConfigInput["enemy"+damageType+"Overwhelm"]); p != nil {
-				enemyOverwhelm = *p
-			} else if p := tonum(env.Build.ConfigPlaceholder["enemy"+damageType+"enemyOverwhelm"]); p != nil {
-				// #EVAL the reference's placeholder key really is
-				// "enemy<Type>enemyOverwhelm" (doubled prefix), so it never
-				// matches a real placeholder
-				enemyOverwhelm = *p
-			}
+			enemyDamage := env.configOrPlaceholder(damageType, func(c *ConfigInput) map[string]float64 { return c.EnemyDamage })
+			enemyPen := env.configOrPlaceholder(damageType, func(c *ConfigInput) map[string]float64 { return c.EnemyPen })
+			enemyOverwhelm := env.configOrPlaceholder(damageType, func(c *ConfigInput) map[string]float64 { return c.EnemyOverwhelm })
 
 			// Add min-max enemy damage from mods
-			enemyDamage += (enemyDB.Sum("BASE", enemyCfg, damageType+"Min") + enemyDB.Sum("BASE", enemyCfg, damageType+"Max")) / 2
+			enemyDamage += (enemyDB.Sum(modparser.Base, enemyCfg, damageType+"Min") + enemyDB.Sum(modparser.Base, enemyCfg, damageType+"Max")) / 2
 
 			// Conversion and Gain As Mods
 			conversionTotal := 0.0
@@ -160,8 +133,8 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 				convSkill := map[string]float64{}
 				total, totalSkill := 0.0, 0.0
 				for _, damageTypeTo := range dmgTypeList {
-					convSkill[damageTypeTo] = enemyDB.Sum("BASE", enemyCfg, damageType+"DamageSkillConvertTo"+damageTypeTo)
-					conv[damageTypeTo] = enemyDB.Sum("BASE", enemyCfg, damageType+"DamageConvertTo"+damageTypeTo)
+					convSkill[damageTypeTo] = enemyDB.Sum(modparser.Base, enemyCfg, damageType+"DamageSkillConvertTo"+damageTypeTo)
+					conv[damageTypeTo] = enemyDB.Sum(modparser.Base, enemyCfg, damageType+"DamageConvertTo"+damageTypeTo)
 					totalSkill += convSkill[damageTypeTo]
 					total += conv[damageTypeTo]
 				}
@@ -184,7 +157,7 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 				conversionTotal = total + totalSkill
 				// Calculate the amount converted/gained as
 				for _, damageTypeTo := range dmgTypeList {
-					gainAsPercent := enemyDB.Sum("BASE", enemyCfg, damageType+"DamageGainAs"+damageTypeTo) / 100
+					gainAsPercent := enemyDB.Sum(modparser.Base, enemyCfg, damageType+"DamageGainAs"+damageTypeTo) / 100
 					conversionPercent := conv[damageTypeTo] / 100
 					skillConversionPercent := convSkill[damageTypeTo] / 100
 					if skillConversionPercent > 0 && damageTypeTo != "Chaos" {
@@ -200,13 +173,13 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 				}
 			}
 
-			enemyOverwhelm += enemyDB.Sum("BASE", nil, "PhysicalOverwhelm") + modDB.Sum("BASE", nil, "EnemyPhysicalOverwhelm")
+			enemyOverwhelm += enemyDB.Sum(modparser.Base, nil, "PhysicalOverwhelm") + modDB.Sum(modparser.Base, nil, "EnemyPhysicalOverwhelm")
 
-			output[damageType+"EnemyPen"] = enemyPen
-			output[damageType+"EnemyDamageMult"] = enemyDamageMult
-			output[damageType+"EnemyOverwhelm"] = enemyOverwhelm
-			output["totalEnemyDamageIn"] = outNum(output, "totalEnemyDamageIn") + enemyDamage
-			output[damageType+"EnemyDamage"] = enemyDamage * (1 - conversionTotal/100) * enemyDamageMult * outNum(output, "EnemyCritEffect")
+			output.SetN(damageType+"EnemyPen", enemyPen)
+			output.SetN(damageType+"EnemyDamageMult", enemyDamageMult)
+			output.SetN(damageType+"EnemyOverwhelm", enemyOverwhelm)
+			output.SetN("totalEnemyDamageIn", output.N("totalEnemyDamageIn")+enemyDamage)
+			output.SetN(damageType+"EnemyDamage", enemyDamage*(1-conversionTotal/100)*enemyDamageMult*output.N("EnemyCritEffect"))
 			if conv := enemyDamageConversion[damageType]; conv != nil {
 				// sorted: the reference iterates pairs() over damage-type keys
 				for _, damageTypeFrom := range dmgTypeList {
@@ -215,10 +188,10 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 						continue
 					}
 					mult := Mod(enemyDB, nil, enemyConvertedDamageNames(damageType, damageTypeFrom)...)
-					output[damageType+"EnemyDamage"] = outNum(output, damageType+"EnemyDamage") + dmg*mult*outNum(output, "EnemyCritEffect")
+					output.SetN(damageType+"EnemyDamage", output.N(damageType+"EnemyDamage")+dmg*mult*output.N("EnemyCritEffect"))
 				}
 			}
-			output["totalEnemyDamage"] = outNum(output, "totalEnemyDamage") + outNum(output, damageType+"EnemyDamage")
+			output.SetN("totalEnemyDamage", output.N("totalEnemyDamage")+output.N(damageType+"EnemyDamage"))
 		}
 	}
 
@@ -231,25 +204,25 @@ func (env *Env) buildDefenceEstimations(actor *performActor) {
 	env.ehpRecoup(actor, damageCategoryConfig)
 	env.ehpMaxHit(actor)
 	env.ehpDegens(actor, damageCategoryConfig)
-	if truthy(env.ConfigInput["PvpScaling"]) {
+	if env.ConfigInput.PvpScaling {
 		output := actor.output
-		pvpTvalue := outNum(output, "enemySkillTime")
+		pvpTvalue := output.N("enemySkillTime")
 		pvpMultiplier := 1.0
-		if truthy(env.ConfigInput["enemyMultiplierPvpDamage"]) {
-			pvpMultiplier = anyNum(env.ConfigInput["enemyMultiplierPvpDamage"]) / 100
+		if v := env.ConfigInput.EnemyMultiplierPvpDamage; v.Set {
+			pvpMultiplier = v.V / 100
 		}
 		pvpNonElemental1 := data.Misc.PvpNonElemental1
 		pvpNonElemental2 := data.Misc.PvpNonElemental2
 		pvpElemental1 := data.Misc.PvpElemental1
 		pvpElemental2 := data.Misc.PvpElemental2
 
-		percentageNonElemental := (outNum(output, "PhysicalTakenHit") + outNum(output, "ChaosTakenHit")) / outNum(output, "totalTakenHit")
+		percentageNonElemental := (output.N("PhysicalTakenHit") + output.N("ChaosTakenHit")) / output.N("totalTakenHit")
 		percentageElemental := 1 - percentageNonElemental
-		portionNonElemental := math.Pow(outNum(output, "totalTakenHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
+		portionNonElemental := math.Pow(output.N("totalTakenHit")/pvpTvalue/pvpNonElemental2, pvpNonElemental1) *
 			pvpTvalue * pvpNonElemental2 * percentageNonElemental
-		portionElemental := math.Pow(outNum(output, "totalTakenHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
+		portionElemental := math.Pow(output.N("totalTakenHit")/pvpTvalue/pvpElemental2, pvpElemental1) *
 			pvpTvalue * pvpElemental2 * percentageElemental
-		output["PvPTotalTakenHit"] = (portionNonElemental + portionElemental) * pvpMultiplier
+		output.SetN("PvPTotalTakenHit", (portionNonElemental+portionElemental)*pvpMultiplier)
 	}
 }
 
@@ -296,9 +269,9 @@ func (env *Env) ehpDamageTakenAs(actor *performActor) {
 					dotNames = append(dotNames, "ElementalDamageTakenAs"+destType)
 					hitNames = append(hitNames, "ElementalDamageFromHitsTakenAs"+destType)
 				}
-				dotShiftTable[destType] = modDB.Sum("BASE", nil, dotNames...)
+				dotShiftTable[destType] = modDB.Sum(modparser.Base, nil, dotNames...)
 				dotDestinationTotal += dotShiftTable[destType]
-				shiftTable[destType] = dotShiftTable[destType] + modDB.Sum("BASE", nil, hitNames...)
+				shiftTable[destType] = dotShiftTable[destType] + modDB.Sum(modparser.Base, nil, hitNames...)
 				destTotal += shiftTable[destType]
 			}
 		}
@@ -308,82 +281,82 @@ func (env *Env) ehpDamageTakenAs(actor *performActor) {
 		actor.damageShiftTable[damageType] = shiftTable
 
 		// add same type damage
-		output[damageType+"TakenDamage"] = outNum(output, damageType+"EnemyDamage") * shiftTable[damageType] / 100
+		output.SetN(damageType+"TakenDamage", output.N(damageType+"EnemyDamage")*shiftTable[damageType]/100)
 	}
 	// converted damage types
 	for _, damageType := range dmgTypeList {
 		for _, damageConvertedType := range dmgTypeList {
 			if damageType != damageConvertedType {
-				damage := outNum(output, damageType+"EnemyDamage") * actor.damageShiftTable[damageType][damageConvertedType] / 100
-				output[damageConvertedType+"TakenDamage"] = outNum(output, damageConvertedType+"TakenDamage") + damage
+				damage := output.N(damageType+"EnemyDamage") * actor.damageShiftTable[damageType][damageConvertedType] / 100
+				output.SetN(damageConvertedType+"TakenDamage", output.N(damageConvertedType+"TakenDamage")+damage)
 			}
 		}
 	}
 	// total
-	output["totalTakenDamage"] = 0.0
+	output.SetN("totalTakenDamage", 0.0)
 	for _, damageType := range dmgTypeList {
-		output["totalTakenDamage"] = outNum(output, "totalTakenDamage") + outNum(output, damageType+"TakenDamage")
+		output.SetN("totalTakenDamage", output.N("totalTakenDamage")+output.N(damageType+"TakenDamage"))
 	}
 
 	// Damage taken multipliers/Degen calculations
-	output["AnyTakenReflect"] = false
+	output.SetFlag("AnyTakenReflect", false)
 	for _, damageType := range dmgTypeList {
-		baseTakenInc := modDB.Sum("INC", nil, "DamageTaken", damageType+"DamageTaken")
+		baseTakenInc := modDB.Sum(modparser.Inc, nil, "DamageTaken", damageType+"DamageTaken")
 		baseTakenMore := modDB.More(nil, "DamageTaken", damageType+"DamageTaken")
 		if isElementalRes[damageType] {
-			baseTakenInc += modDB.Sum("INC", nil, "ElementalDamageTaken")
+			baseTakenInc += modDB.Sum(modparser.Inc, nil, "ElementalDamageTaken")
 			baseTakenMore *= modDB.More(nil, "ElementalDamageTaken")
 		}
 		{ // Hit
-			takenInc := baseTakenInc + modDB.Sum("INC", nil, "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
+			takenInc := baseTakenInc + modDB.Sum(modparser.Inc, nil, "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
 			takenMore := baseTakenMore * modDB.More(nil, "DamageTakenWhenHit", damageType+"DamageTakenWhenHit")
 			if isElementalRes[damageType] {
-				takenInc += modDB.Sum("INC", nil, "ElementalDamageTakenWhenHit")
+				takenInc += modDB.Sum(modparser.Inc, nil, "ElementalDamageTakenWhenHit")
 				takenMore *= modDB.More(nil, "ElementalDamageTakenWhenHit")
 			}
-			output[damageType+"TakenHitMult"] = math.Max((1+takenInc/100)*takenMore, 0)
+			output.SetN(damageType+"TakenHitMult", math.Max((1+takenInc/100)*takenMore, 0))
 
 			for _, hitType := range hitSourceList {
-				baseTakenIncType := takenInc + modDB.Sum("INC", nil, hitType+"DamageTaken")
+				baseTakenIncType := takenInc + modDB.Sum(modparser.Inc, nil, hitType+"DamageTaken")
 				baseTakenMoreType := takenMore * modDB.More(nil, hitType+"DamageTaken")
-				output[hitType+"TakenHitMult"] = math.Max((1+baseTakenIncType/100)*baseTakenMoreType, 0)
-				output[damageType+hitType+"TakenHitMult"] = outNum(output, hitType+"TakenHitMult")
+				output.SetN(hitType+"TakenHitMult", math.Max((1+baseTakenIncType/100)*baseTakenMoreType, 0))
+				output.SetN(damageType+hitType+"TakenHitMult", output.N(hitType+"TakenHitMult"))
 			}
 			// Reflect
-			takenInc += modDB.Sum("INC", nil, "ReflectedDamageTaken", damageType+"ReflectedDamageTaken")
+			takenInc += modDB.Sum(modparser.Inc, nil, "ReflectedDamageTaken", damageType+"ReflectedDamageTaken")
 			takenMore *= modDB.More(nil, "ReflectedDamageTaken", damageType+"ReflectedDamageTaken")
 			if isElementalRes[damageType] {
-				takenInc += modDB.Sum("INC", nil, "ElementalReflectedDamageTaken")
+				takenInc += modDB.Sum(modparser.Inc, nil, "ElementalReflectedDamageTaken")
 				takenMore *= modDB.More(nil, "ElementalReflectedDamageTaken")
 			}
-			output[damageType+"TakenReflect"] = math.Max((1+takenInc/100)*takenMore, 0)
+			output.SetN(damageType+"TakenReflect", math.Max((1+takenInc/100)*takenMore, 0))
 			// #EVAL the reference assigns false in both branches here
 			// ("this needs a rework as well"), so AnyTakenReflect never
 			// becomes true
-			if outNum(output, damageType+"TakenReflect") != outNum(output, damageType+"TakenHitMult") {
-				output["AnyTakenReflect"] = false
+			if output.N(damageType+"TakenReflect") != output.N(damageType+"TakenHitMult") {
+				output.SetFlag("AnyTakenReflect", false)
 			}
 		}
 		{ // Dot
-			takenInc := baseTakenInc + modDB.Sum("INC", nil, "DamageTakenOverTime", damageType+"DamageTakenOverTime")
+			takenInc := baseTakenInc + modDB.Sum(modparser.Inc, nil, "DamageTakenOverTime", damageType+"DamageTakenOverTime")
 			takenMore := baseTakenMore * modDB.More(nil, "DamageTakenOverTime", damageType+"DamageTakenOverTime")
 			if isElementalRes[damageType] {
-				takenInc += modDB.Sum("INC", nil, "ElementalDamageTakenOverTime")
+				takenInc += modDB.Sum(modparser.Inc, nil, "ElementalDamageTakenOverTime")
 				takenMore *= modDB.More(nil, "ElementalDamageTakenOverTime")
 			}
 			resist := 0.0
 			if !modDB.Flag(nil, "SelfIgnore"+damageType+"Resistance") {
-				if v, ok := output[damageType+"ResistOverTime"]; ok && truthy(v) {
-					resist = anyNum(v)
+				if v, ok := output[damageType+"ResistOverTime"]; ok && v.Truthy() {
+					resist = v.Num()
 				} else {
-					resist = outNum(output, damageType+"Resist")
+					resist = output.N(damageType + "Resist")
 				}
 			}
 			reduction := 0.0
 			if !modDB.Flag(nil, "SelfIgnoreBase"+damageType+"DamageReduction") {
-				reduction = outNum(output, "Base"+damageType+"DamageReduction")
+				reduction = output.N("Base" + damageType + "DamageReduction")
 			}
-			output[damageType+"TakenDotMult"] = math.Max((1-resist/100)*(1-reduction/100)*(1+takenInc/100)*takenMore, 0)
+			output.SetN(damageType+"TakenDotMult", math.Max((1-resist/100)*(1-reduction/100)*(1+takenInc/100)*takenMore, 0))
 		}
 	}
 }

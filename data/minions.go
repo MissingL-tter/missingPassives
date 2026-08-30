@@ -5,9 +5,11 @@
 package data
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/modparser"
 )
 
@@ -34,12 +36,16 @@ type Minion struct {
 	WeaponType1                  *string  `lua:"weaponType1"`
 	WeaponType2                  *string  `lua:"weaponType2"`
 	Limit                        string   `lua:"limit,omitempty"`
-	Hostile                      any      `lua:"hostile"`
-	SkillList                    []string `lua:"skillList"`
-	ModList                      []any    `lua:"modList"` // *modparser.Mod (or *D for flag-slot typos)
+	// Hostile marks an enemy minion; HostileScale is the template's numeric
+	// form of the key (no shipped minion uses it; canon renders it as the
+	// number).
+	Hostile      bool `lua:"hostile,omitempty"`
+	HostileScale util.Opt[float64]
+	SkillList    []string         `lua:"skillList"`
+	ModList      []*modparser.Mod `lua:"modList"`
 }
 
-func loadMinionDef(m schema.MinionDef) *Minion {
+func loadMinionDef(m schema.MinionDef) (*Minion, error) {
 	out := &Minion{
 		Name:                         m.Name,
 		MonsterTags:                  emptyIfNil(m.MonsterTags),
@@ -70,27 +76,26 @@ func loadMinionDef(m schema.MinionDef) *Minion {
 	if len(m.DamageFixups) > 0 {
 		out.DamageFixup = &m.DamageFixups[0]
 	}
-	if m.Hostile != "" {
-		switch m.Hostile {
-		case "true":
-			out.Hostile = true
-		case "false":
-			out.Hostile = false
-		default:
-			n, err := strconv.ParseFloat(m.Hostile, 64)
-			if err != nil {
-				panic("data: unhandled hostile value " + m.Hostile)
-			}
-			out.Hostile = n
+	switch m.Hostile {
+	case "", "false":
+	case "true":
+		out.Hostile = true
+	default:
+		n, err := strconv.ParseFloat(m.Hostile, 64)
+		if err != nil {
+			return nil, fmt.Errorf("data: minion %s: bad hostile value %q", m.Key, m.Hostile)
 		}
+		out.Hostile = true // any number is truthy
+		out.HostileScale = util.Some(n)
 	}
-	out.ModList = []any{}
-	for _, line := range m.ModList {
-		if mod, ok := evalModLine(line); ok {
-			out.ModList = append(out.ModList, mod)
+	out.ModList = []*modparser.Mod{}
+	for _, entry := range m.ModList {
+		if len(entry.Mods) == 0 {
+			continue // unmapped stat: a comment in the reference file
 		}
+		out.ModList = append(out.ModList, modparser.DecodeMods(entry.Mods)...)
 	}
-	return out
+	return out, nil
 }
 
 // handMinionsTable ports the minion blocks the Minions template hand-writes
@@ -111,82 +116,48 @@ func handMinionsTable() map[string]*Minion {
 			AttackRange:     6,
 			Accuracy:        1,
 			SkillList:       []string{"RelicTeleport", "Anger", "Hatred", "Wrath"},
-			ModList:         []any{},
+			ModList:         []*modparser.Mod{},
 		},
 	}
 }
 
-func loadMinions(src schema.Minions) {
-	load := func(defs []schema.MinionDef) map[string]*Minion {
+func loadMinions(src schema.Minions) error {
+	load := func(defs []schema.MinionDef) (map[string]*Minion, error) {
 		out := map[string]*Minion{}
 		for _, m := range defs {
 			if m.Skip {
 				continue
 			}
-			out[m.Key] = loadMinionDef(m)
+			def, err := loadMinionDef(m)
+			if err != nil {
+				return nil, err
+			}
+			out[m.Key] = def
 		}
-		return out
+		return out, nil
 	}
 	// Data.lua loads Data/Minions into data.minions and Data/Spectres into
 	// data.spectres, then merges spectres into minions with the spectre
 	// limit applied.
-	Minions = load(src.Minions)
+	var err error
+	if Minions, err = load(src.Minions); err != nil {
+		return err
+	}
 	for name, m := range handMinionsTable() {
 		Minions[name] = m
 	}
-	Spectres = load(src.Spectres)
+	if Spectres, err = load(src.Spectres); err != nil {
+		return err
+	}
 	for name, spectre := range Spectres {
 		spectre.Limit = "ActiveSpectreLimit"
 		Minions[name] = spectre
 	}
 	for _, minion := range Minions {
-		for _, m := range minion.ModList {
-			switch mod := m.(type) {
-			case *modparser.Mod:
-				mod.Source = "Minion:" + minion.Name
-				mod.SourceSet = true
-			case *modparser.D:
-				if mod.KV == nil {
-					mod.KV = map[string]any{}
-				}
-				mod.KV["source"] = "Minion:" + minion.Name
-			}
+		for _, mod := range minion.ModList {
+			mod.Source = "Minion:" + minion.Name
+			mod.SourceSet = true
 		}
 	}
-}
-
-// ModCanon converts a structured skill/minion mod into the plain table
-// shape the archive canon uses (registered as a luacanon adapter by the
-// game-data test).
-func ModCanon(m *modparser.Mod) map[string]any {
-	out := map[string]any{
-		"name":         m.Name,
-		"type":         m.Type,
-		"flags":        m.Flags,
-		"keywordFlags": m.KeywordFlags,
-	}
-	if m.Value != nil {
-		out["value"] = m.Value
-	}
-	if m.SourceSet {
-		out["source"] = m.Source
-	}
-	if m.SourceSlot != "" {
-		out["sourceSlot"] = m.SourceSlot
-	}
-	// ReplaceMod/ConvertMod stamp these on the mod table, so the archive
-	// canon carries them; without them the calc differential is blind to
-	// that bookkeeping. Matches modparser's writeCanonMod.
-	if m.Replaced {
-		out["replaced"] = true
-	}
-	if m.Converted {
-		out["converted"] = true
-	}
-	for i, tag := range m.Tags {
-		if tag != nil {
-			out[strconv.Itoa(i+1)] = tag
-		}
-	}
-	return out
+	return nil
 }
