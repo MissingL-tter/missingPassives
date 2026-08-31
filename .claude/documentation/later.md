@@ -17,6 +17,13 @@ is deleted, or when a behaviour here turns out to matter.
 
 ## 1. Kept Lua-derived code
 
+Note (2026-08-30): commit c456df051's message claims "no Lua-named function,
+truthiness helper, or tostring-style coercion survives in the product". Read
+literally that is false — `util.Tonumber`, `FormatG14`/`FormatIntOrG14`,
+`cap1`, `modparser.Truthy`, `OutValue.Truthy` survive. Every survivor is
+deliberate and inventoried in this section; this list, not the commit
+message, is the authoritative statement.
+
 The remodel's rule: **a production function whose output shape is defined by
 what Lua would produce belongs test-side, regardless of whether it changes a
 compared byte.** These passed that rule. Their common property is that they
@@ -113,8 +120,9 @@ Naming question only — nothing to move.
 `InfoMessage` (`"3 Mirage Archers using …"`). Nothing parses it. Keeping
 Lua's number spelling is a free choice, not a constraint.
 
-Also `modparser/modcache.go:203`: our own JSON codec spells infinity `"inf"`,
-a spelling borrowed from Lua. Ours to change whenever.
+(The codec's Lua-borrowed `"inf"` string spelling for infinite tag params
+was retired 2026-08-30: every infinity now encodes as the tagged
+`{"kind":"inf"}` object — lua-residue.md T3.)
 
 ### 1.5 Mod-cache precision — a PoB-ism, kept by decision (2026-08-29)
 

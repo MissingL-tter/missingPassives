@@ -42,7 +42,7 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | tools/gen_skilldata.lua, tools/gen_datatables.lua (retired generators) | converted-once typed tables in `data/` (`skills_custom.go`, `mapmods.go`, `tables.go`, `timeless.go`); no regeneration path |
 | `string.lower` (ASCII) | `strings.ToLower`; `(?i)` in scan patterns |
 | Item.lua `sanitiseText` / SkillsTab's copy / data's copy | `util.FoldText` (`internal/util/text.go`, one copy; folds uppercase accents too, where the reference folds only lowercase) |
-| Export dat `row:Get(col)` | typed column accessors on `*Row`, checked against the hand-maintained `export/spec.go`; typed row queries (`RowByStr`/`RowByInt`/`RowByRef`/`RowsBy*`) replace the `any`-valued `GetRow`/`GetRowList` |
+| Export dat `row:Get(col)` | typed column accessors on `*Row`, checked against the hand-maintained `export/spec.go`; typed row queries (`RowByStr`/`RowByRef`/`RowsByInt`/`RowsByBool`/`RowsByRef`/`GetRowListMatch`) replace the `any`-valued `GetRow`/`GetRowList` |
 | Export template `#directive` lines | structured JSON directives under `export/templates/` |
 | `data.TrimTreeDependentUniques` (test expedient) | `data.Sources.SkipTreeDependentUniques` |
 | `Env.StubHandoff` (fixture-mode flag) | `calc.ReplayInput.StubHandoff` |
