@@ -15,6 +15,8 @@ throughout the document do not, and `knowledge.md` carries the current form:
 | 147 variants | 145 |
 | skill callbacks counted as `UnportedFn` markers (97 of 131) | the marker type is gone; the data declares `SkillCustom.Callbacks` and calc registers bodies by (effect id, kind) — 34 of 134 declared pairs ported |
 | statMap `_grantedEffect` is settled in sorted id order | still true, and modelled as `GrantedEffect.StatMapOwner` |
+| the granted-passive/ascendancy node maps and the Energy Blade weapons are dump fixtures | derived: `SpecInput.Passives` (`calc.PassiveLookup`, implemented by `build.Passives`) and `calc.energyBladeFor`. `ReplayInput` is `GlobalCache` + `StubHandoff` |
+| slots and config remain fixture-fed until their modules | slots, item sets and the build header are native (package `build`, `test/build_test.go`); only the four config fields are still fixture-fed |
 
 Target: `Modules/Calcs.lua` + `CalcSetup.lua` + `CalcPerform.lua` + `CalcTools.lua` +
 `CalcFormat.lua`, PLUS `CalcActiveSkill.lua` (tracker files it under calc-offence, but

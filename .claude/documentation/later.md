@@ -185,6 +185,7 @@ list; this is a snapshot with the reason each one exists.
 | site | quirk |
 |---|---|
 | `calc/defencetail.go:180` | the reference reads a nil global `modSource`, so the fallback string is always the source |
+| `calc/energyblade.go:37` | the base's implicit lines are looked up on `item.baseName` — a string, where the index reads nil — so the synthesized Energy Blade never gets implicits |
 | `calc/ehp.go:333` | assigns `false` in both branches ("this needs a rework as well"), so `AnyTakenReflect` never becomes true |
 | `calc/ehpmaxhit.go:84` | `a or 0 + b or 0` parses as `a or (0+b) or 0`, so only the shared value is read when non-nil |
 | `calc/ehpstun.go:58` | the second branch is `elseif ~= "Melee"`, which only runs when the category IS "Average", so the Melee multiplier can never apply to a non-melee category |

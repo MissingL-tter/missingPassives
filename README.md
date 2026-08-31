@@ -94,6 +94,31 @@ sorted order — documented divergences. Lua functions carried by the data
 bodies land with the calc/config modules; the four tree-dependent generated
 uniques land with tree-data.
 
+## build
+
+Assembles a `calc.BuildInput` from a saved Path of Building build file, and
+closes the last gap between a saved file and a computed build.
+`build.Load(xml, tree)` loads the item pool, the active passive spec, the
+item sets and the skills tab through the packages that own them, constructs
+`ItemsTab`'s 131-slot table, and resolves the passives item text names
+rather than references by id (anoints, Forbidden Flame/Flesh).
+
+**`TestBuildLoadAgainstReference`** loads every corpus build from its XML
+alone and byte-compares the result against the archive's fixture: **6,157
+slots across 47 builds**, plus header scalars, class stats, spectre list and
+item sets. The calc differential runs on the same assembler.
+
+**Not yet the application's numbers.** The config tab
+(`Classes/ConfigTab.lua` + `Modules/ConfigOptions.lua`: 580 options, 524
+apply closures) is unported, so `configInput`, `configPlaceholder`,
+`configModList` and `configEnemyModList` are unset. Those closures run on
+their defaults as well as on user selections — every corpus build carries
+31–48 modifiers from them, including the enemy's resistances. Run without
+them, `Ugninga.xml` reproduces exactly what Path of Building wrote into its
+own file for everything config does not touch (Life 4919, Mana 893, Armour
+20348, Str/Dex/Int 362/94/145, Speed 1.15668, CritChance 95.2014) and runs
+high on damage.
+
 ## Verification
 
 Two differential tests, both of which **fail on any disagreement**:

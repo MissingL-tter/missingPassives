@@ -46,7 +46,9 @@ into `.archive/` and the Go module lives at the repository root.
 
 The rebuild is engine-first: calculation, parsing, game data and the data
 pipeline are ported; no presentation code exists and there is no runnable Go
-application yet. *(as of 2026-08-31)* ~65,800 lines of production Go, 10,700
+application. Since 2026-08-31 a saved build does compute end to end
+(`build.Load` -> `calc.BuildOutput`), short of the unported config tab, but
+nothing drives that outside the tests. *(as of 2026-08-31)* ~65,800 lines of production Go, 10,700
 of test Go, **zero third-party dependencies**, Go 1.26, no CI, no Makefile, no
 `go:generate`.
 
@@ -102,6 +104,7 @@ Syntax-check Lua with `luajit -e "assert(loadfile('<file>'))"`.
 | `item` | `Item.lua` + `ItemTools.lua` — parse half + range machinery | 4.2k |
 | `tree` | `PassiveTree.lua`, `PassiveSpec.lua`, timeless/abyss jewel generation | 3.9k |
 | `skills` | `SkillsTab.lua` logic half | 0.7k |
+| `build` | `Build.lua`'s load half + `ItemsTab.lua`'s slot table — build XML → `calc.BuildInput` | 0.5k |
 | `export` | `src/Export/` — GGPK dat reader, stat-description engine, 21 script builders | 9.2k |
 | `internal/util` | kept reference numeric/text semantics + `Opt[T]` | 0.2k |
 | `internal/modcachegen` | regenerates `data/raw/modcache.jsonl` from the Go parser | 0.1k |
@@ -111,8 +114,10 @@ Syntax-check Lua with `luajit -e "assert(loadfile('<file>'))"`.
 Import graph (production): `modparser → internal/util`; `modstore →
 modparser`; `item → data, modparser`; `data → data/schema, modparser`;
 `tree → data, item, modparser`; `skills → data, item`; `calc → data, item,
-modparser, modstore, skills`; `export → data, data/schema, modparser`.
-**No production package imports `test/…`.**
+modparser, modstore, skills`; `build → calc, data, item, skills, tree`;
+`export → data, data/schema, modparser`. **No production package imports
+`test/…`.** `build` is the composition root: it is the only package that
+imports `calc`, and nothing imports it but the tests.
 
 Ownership rule: the package that produces or stores a value declares its type
 and every consumer imports it as-is. `modparser` owns `Mod`/`Tag`/`Value`;
@@ -246,14 +251,21 @@ Each build dumps three progressively stripped variants — `full`, `noskills`
 (socket groups wiped), `treeonly` (items also wiped) — so a failure localises:
 if `treeonly` agrees and `full` does not, the problem is items or skills.
 
-The **native bridge** progressively replaces fixture-fed inputs with natively
-built ones as each upstream module lands: the calc differential now parses
-each corpus build's XML through the ported item loader, tree spec and skills
-tab and substitutes those. One test therefore exercises four ports
-transitively. `MP_FIXTURE=1` reverts to pure fixture replay — the switch that
-separates "native parser bug" from "calc bug". Mods are deep-copied at the
-seam because the calc stamps sources in place and the test process shares one
-cached tree.
+The **native bridge** replaces fixture-fed inputs with natively built ones as
+each upstream module lands. It now calls `build.Load` on the corpus build's
+XML and substitutes everything package `build` assembles: spec, item pool,
+slot table, item sets and skills tab, plus the header scalars. Only the four
+config fields (`ConfigInput`, `ConfigPlaceholder`, `ConfigModList`,
+`ConfigEnemyModList`) are still fixture-fed, because the config tab is not
+ported. One test therefore exercises five ports transitively. `MP_FIXTURE=1`
+reverts to pure fixture replay — the switch that separates "native parser
+bug" from "calc bug". Mods are deep-copied at the seam because the calc
+stamps sources in place and the test process shares one cached tree.
+
+The bridge keeps one test-side correction: `referenceOrderModList` permutes a
+Glorious Vanity node's mod list into the reference's `pairs()` order.
+Production merges timeless additions in first-seen order; the archive's order
+is a LuaJIT hash walk, and the emulation of it stays test-side (§6.4).
 
 ### 4.6 Known blind spots
 
@@ -647,8 +659,8 @@ Commit `c456df051`'s claim that no such helper survives is literally false;
 
 **`#EVAL`** marks behaviour that exists only to match the archive — reproduced
 bugs, undefined globals read as nil, precedence accidents, hash-order
-artifacts, LuaJIT internals. `grep -rn '#EVAL'` is the live list (56 sites in
-Go source, 33 prose references *as of 2026-08-31*). Each is a candidate to
+artifacts, LuaJIT internals. `grep -rn '#EVAL'` is the live list (57 sites in
+Go source, 34 prose references *as of 2026-08-31*). Each is a candidate to
 delete once the archive stops being the contract.
 
 ---
@@ -845,7 +857,51 @@ ambiguous).
 The main socket group is `min(max(numberOfGroups,1), configuredIndex)` with 0
 meaning 1, and is **always processed even when disabled**.
 
-### 8.7 Export and data
+### 8.7 Assembling a build
+
+`Modules/Build.lua` loads a saved build by handing each `<...>` element to
+the tab that owns it, then feeds the tabs' state to `calcs.buildOutput`.
+Package `build` ports the load half of that: `build.Load(xml, tree)` returns
+a `calc.BuildInput` plus the models it came from (`*tree.Spec`, the item
+pool, `*skills.Tab`).
+
+What the slot table costs to reproduce is worth knowing, because it is not
+in any tab's data — `ItemsTab` *constructs* it: the 18 base slots in a fixed
+order, a `" Swap"` twin after each weapon, six abyssal-socket sub-slots under
+each weapon-swap twin and again under each of the seven slots that host them,
+then one `"Jewel <id>"` slot per tree socket node in ascending id. 131 slots
+on a 3.29 tree. A slot's `slotNum` is `tonumber(name:match("%d+$") or
+name:match("%d+"))` — trailing digits win, so `"Weapon 1 Swap"` is 1 and
+`"Weapon 1 Abyssal Socket 3"` is 3. Equipped items come from the active
+`<ItemSet>` for ordinary slots and from `spec.jewels` for socket slots.
+`test/build_test.go` compares all of it against the archive: 6,157 slots
+byte-identical across 47 builds.
+
+Two things in that construction are **not** reproduced, deliberately:
+
+- `UpdateSockets` relabels allocated socket slots `"Socket #1"`, `"Socket
+  #2"`… That is a layout pass, not load state — the archive's dumps all
+  carry the bare `"Socket"`, so the port never numbers them.
+- `slot.containJewelSocket` is read by `CalcSetup` (and two trade modules)
+  and **assigned nowhere in the reference**. It is always nil, so the
+  corrupted-jewel-effect branch that tests it always takes the true arm.
+
+**The config tab is the gap.** `Classes/ConfigTab.lua` +
+`Modules/ConfigOptions.lua` (4,179 lines, 580 options, 524 apply closures)
+produce `configInput`, `configPlaceholder`, `configModList` and
+`configEnemyModList`. Those are not optional extras: every corpus build
+carries 31–48 Config-sourced mods, and a build whose XML sets only two
+options still gets ~32, because each option's apply closure runs on its
+*default* as well as on a user selection. The placeholder half is computed
+too — enemy armour, evasion, resistances and damage scaled to the enemy
+level. So `build.Load` leaves all four unset and the calc falls back to its
+own defaults. Run that way, a build agrees with the application on
+everything config does not touch — on `Ugninga.xml`: Life 4919, Mana 893,
+Armour 20348, Str/Dex/Int 362/94/145, Speed 1.15668, CritChance 95.2014, all
+equal to the stats Path of Building wrote into the file — and runs high on
+damage, the enemy's resistances being among the missing mods.
+
+### 8.8 Export and data
 
 Pipeline: `Content.ggpk` → (`bun_extract_file.exe`, not ported) → `.datc64`
 tables → `export/` builders → typed JSON documents (`data/schema`) →
@@ -950,7 +1006,7 @@ only written on a full run.
 | variable | effect |
 |---|---|
 | `MP_EXPORT=1` | enables the export differential (off by default: needs the GGPK, ~97s) |
-| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC` | narrow to one build/prefix |
+| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD` | narrow to one build/prefix |
 | `MP_FIXTURE=1` | revert the calc to pure fixture replay (bypass the native bridge) |
 | `MP_NODRIVER=1` | skip filling the global cache via the `BuildOutput` driver |
 | `MP_GUARDS` | turn an unported-branch panic into a reported failure and carry on, so one run enumerates the whole guard surface |
@@ -999,7 +1055,6 @@ command/agent for compressing `.claude/` instruction files.
 | **`%.14g` mod-cache quantization kept** | — | match PoB now, true precision later; one-call switch |
 | **Lua data generators deleted** | 2026-08-29 | emitted Go converted once to typed form, no regeneration path |
 | **`lua:"…"` tags kept** | 2026-08-29 | cost recorded; the alternative is a test-side field-name table |
-| **statBox byte lock** (flashbang branch) | — | `BuildDisplayStats.lua` + `FormatStat`/`AddDisplayStatList`/`RefreshStatList` output is byte-locked; re-discuss before any change that alters it. **Caveat: the reference clone it was measured against (`E:\tools\missingPassivesTest`) no longer exists on this machine.** |
 
 ---
 
@@ -1020,6 +1075,9 @@ Historical names that appear in memories, commit messages and the README but
 | `tree/timeless.go`, `tree/abyss.go` | `tree/historic.go` |
 | `modstore.Externals` | `modstore.Resolver` |
 | `Env.AllocOrders` / `ReplayInput` order fields | deleted 2026-08-31; `sortedIntKeys` |
+| `ReplayInput.GrantedPassiveNodes` / `.GrantedAscendancyNodes` | deleted 2026-08-31; `SpecInput.Passives` (`calc.PassiveLookup`, implemented by `build.Passives`) |
+| `ReplayInput.EnergyBladeItems` | deleted 2026-08-31; `calc.energyBladeFor` builds the weapon through the item package |
+| `test.itemInputOf` / `test.nodeInputOf` / `test.nativeSpecInput`'s projection | `calc.ItemInputOf`, `build.SpecNodeInput`, `build.SpecInput` |
 | `test/tables_test.go` | `test/modtables_test.go` |
 
 Drift corrected 2026-08-31 (recorded so the fix is not re-litigated):

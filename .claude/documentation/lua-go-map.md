@@ -46,5 +46,9 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | Export template `#directive` lines | structured JSON directives under `export/templates/` |
 | `data.TrimTreeDependentUniques` (test expedient) | `data.Sources.SkipTreeDependentUniques` |
 | `Env.StubHandoff` (fixture-mode flag) | `calc.ReplayInput.StubHandoff` |
+| `Build.lua`'s load half (`Build:Load` + tab dispatch) | package `build` (`build.Load` -> `calc.BuildInput`) |
+| `ItemsTab.slots` / `orderedSlots` (built by `ItemsTabClass` ctor) | `build.slotTable` -> `[]*calc.SlotInput` |
+| `spec.tree.notableMap` / `ascendancyMap` lookups in CalcSetup | `calc.PassiveLookup`, implemented by `build.Passives` |
+| the Energy Blade weapon CalcSetup synthesizes inline | `calc.energyBladeFor` (calc/energyblade.go) |
 | `%.14g` / `tostring(number)` helpers (`luaNumStr`, `luaNum`, `luaTostring`…) | `util.FormatG14` / `util.FormatIntOrG14` (`internal/util`, with `Quantize14`, `RoundHalfUp`, `Tonumber`) |
 | Export/spec.lua | `export/spec.go` (transformed once, Go-maintained) |
