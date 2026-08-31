@@ -1295,589 +1295,589 @@
 		"characterConstants": [
 			{
 				"key": "level",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "is_player",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "energy_shield_recharge_rate_per_minute_%",
-				"value": "2000"
+				"value": 2000
 			},
 			{
 				"key": "mana_regeneration_rate_per_minute_%",
-				"value": "105"
+				"value": 105
 			},
 			{
 				"key": "base_maximum_all_resistances_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "maximum_physical_damage_reduction_%",
-				"value": "90"
+				"value": 90
 			},
 			{
 				"key": "maximum_block_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "base_maximum_spell_block_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "base_attack_speed_+%_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "base_cast_speed_+%_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "object_inherent_damage_+%_final_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_reduction_%_per_endurance_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "elemental_damage_reduction_%_per_endurance_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_%_to_add_as_cold_per_brine_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_%_to_add_as_lightning_per_brine_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "critical_strike_chance_+%_per_power_charge",
-				"value": "50"
+				"value": 50
 			},
 			{
 				"key": "max_viper_strike_orbs",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "dual_wield_inherent_attack_speed_+%_final",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "max_fuse_arrow_orbs",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "max_fire_beam_stacks",
-				"value": "8"
+				"value": 8
 			},
 			{
 				"key": "base_evasion_rating",
-				"value": "15"
+				"value": 15
 			},
 			{
 				"key": "life_per_level",
-				"value": "12"
+				"value": 12
 			},
 			{
 				"key": "mana_per_level",
-				"value": "6"
+				"value": 6
 			},
 			{
 				"key": "accuracy_rating_per_level",
-				"value": "2"
+				"value": 2
 			},
 			{
 				"key": "inherent_block_while_dual_wielding_%",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "base_critical_strike_multiplier",
-				"value": "150"
+				"value": 150
 			},
 			{
 				"key": "critical_ailment_dot_multiplier_+",
-				"value": "50"
+				"value": 50
 			},
 			{
 				"key": "strength_per_level",
-				"value": "0"
+				"value": 0
 			},
 			{
 				"key": "dexterity_per_level",
-				"value": "0"
+				"value": 0
 			},
 			{
 				"key": "intelligence_per_level",
-				"value": "0"
+				"value": 0
 			},
 			{
 				"key": "max_endurance_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "max_frenzy_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "max_power_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "maximum_righteous_charges",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "maximum_blood_scythe_charges",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "base_number_of_totems_allowed",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "base_number_of_traps_allowed",
-				"value": "15"
+				"value": 15
 			},
 			{
 				"key": "base_number_of_remote_mines_allowed",
-				"value": "15"
+				"value": 15
 			},
 			{
 				"key": "max_charged_attack_stacks",
-				"value": "6"
+				"value": 6
 			},
 			{
 				"key": "max_talisman_degen_stacks",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "max_frost_nova_stacks",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "max_rampage_stacks",
-				"value": "1000"
+				"value": 1000
 			},
 			{
 				"key": "damage_+%_per_10_rampage_stacks",
-				"value": "2"
+				"value": 2
 			},
 			{
 				"key": "movement_velocity_+%_per_10_rampage_stacks",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "pvp_shield_damage_+%_final",
-				"value": "-15"
+				"value": -15
 			},
 			{
 				"key": "maximum_life_leech_rate_%_per_minute",
-				"value": "1200"
+				"value": 1200
 			},
 			{
 				"key": "maximum_mana_leech_rate_%_per_minute",
-				"value": "1200"
+				"value": 1200
 			},
 			{
 				"key": "maximum_energy_shield_leech_rate_%_per_minute",
-				"value": "600"
+				"value": 600
 			},
 			{
 				"key": "minions_have_labyrinth_trap_degen_effect_+%",
-				"value": "-90"
+				"value": -90
 			},
 			{
 				"key": "minions_are_immune_to_labyrinth_degen_effect",
-				"value": "0"
+				"value": 0
 			},
 			{
 				"key": "minion_damage_taken_+%_from_spike_traps_final",
-				"value": "-90"
+				"value": -90
 			},
 			{
 				"key": "minion_damage_taken_+%_from_arrow_traps_final",
-				"value": "0"
+				"value": 0
 			},
 			{
 				"key": "minion_damage_taken_+%_from_guillotine_traps_final",
-				"value": "-90"
+				"value": -90
 			},
 			{
 				"key": "minion_global_always_hit",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "traps_explode_on_timeout",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "maximum_rage",
-				"value": "30"
+				"value": 30
 			},
 			{
 				"key": "max_delve_degen_stacks",
-				"value": "5000"
+				"value": 5000
 			},
 			{
 				"key": "max_azurite_debuff_stacks",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "melee_variation",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "impaled_debuff_base_duration_ms",
-				"value": "8000"
+				"value": 8000
 			},
 			{
 				"key": "impaled_debuff_number_of_reflected_hits",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "base_total_number_of_sigils_allowed",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "maximum_life_leech_amount_per_leech_%_max_life",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "maximum_mana_leech_amount_per_leech_%_max_mana",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "enable_movement_skill_animation_skipping",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "melee_hit_damage_stun_multiplier_+%",
-				"value": "25"
+				"value": 25
 			},
 			{
 				"key": "non_physical_hit_damage_stun_multiplier_+%",
-				"value": "-25"
+				"value": -25
 			},
 			{
 				"key": "non_melee_hit_damage_stun_multiplier_+%_final",
-				"value": "-25"
+				"value": -25
 			},
 			{
 				"key": "object_inherent_melee_hit_stun_duration_+%_final",
-				"value": "50"
+				"value": 50
 			},
 			{
 				"key": "additional_insanity_effects_while_delirious",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "max_steel_ammo",
-				"value": "12"
+				"value": 12
 			},
 			{
 				"key": "chance_to_deal_triple_damage_%_per_brutal_charge",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "stun_threshold_+%_per_brutal_charge",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "ailment_damage_+%_final_per_affliction_charge",
-				"value": "8"
+				"value": 8
 			},
 			{
 				"key": "non_damaging_ailment_effect_+%_final_per_affliction_charge",
-				"value": "8"
+				"value": 8
 			},
 			{
 				"key": "elemental_damage_taken_goes_to_energy_shield_over_4_seconds_%_per_absorption_charge",
-				"value": "12"
+				"value": 12
 			},
 			{
 				"key": "actor_scale_+%_limit",
-				"value": "100"
+				"value": 100
 			},
 			{
 				"key": "mines_invulnerable_for_duration_ms",
-				"value": "2000"
+				"value": 2000
 			},
 			{
 				"key": "traps_invulnerable_for_duration_ms",
-				"value": "2000"
+				"value": 2000
 			},
 			{
 				"key": "damage_taken_when_hit_+%_final_per_fortification",
-				"value": "-1"
+				"value": -1
 			},
 			{
 				"key": "base_max_fortification",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "base_presence_radius",
-				"value": "80"
+				"value": 80
 			},
 			{
 				"key": "mtx_max_killcounter_stacks",
-				"value": "30000"
+				"value": 30000
 			},
 			{
 				"key": "soul_eater_maximum_stacks",
-				"value": "45"
+				"value": 45
 			},
 			{
 				"key": "rage_loss_delay_ms",
-				"value": "2000"
+				"value": 2000
 			},
 			{
 				"key": "trigger_attack_graft_each_second_channeling",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "maximum_active_sand_mirage_count",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "base_speed",
-				"value": "37"
+				"value": 37
 			}
 		],
 		"monsterConstants": [
 			{
 				"key": "item_drop_slots",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "energy_shield_recharge_rate_per_minute_%",
-				"value": "2000"
+				"value": 2000
 			},
 			{
 				"key": "mana_regeneration_rate_per_minute_%",
-				"value": "100"
+				"value": 100
 			},
 			{
 				"key": "base_maximum_mana",
-				"value": "200"
+				"value": 200
 			},
 			{
 				"key": "maximum_physical_damage_reduction_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "max_viper_strike_orbs",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "base_maximum_all_resistances_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "max_fuse_arrow_orbs",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "max_fire_beam_stacks",
-				"value": "8"
+				"value": 8
 			},
 			{
 				"key": "max_charged_attack_stacks",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "base_critical_strike_multiplier",
-				"value": "130"
+				"value": 130
 			},
 			{
 				"key": "critical_ailment_dot_multiplier_+",
-				"value": "30"
+				"value": 30
 			},
 			{
 				"key": "max_endurance_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "max_frenzy_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "max_power_charges",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "base_attack_speed_+%_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "base_attack_speed_+%_per_frenzy_charge_if_not_player_minion",
-				"value": "11"
+				"value": 11
 			},
 			{
 				"key": "base_cast_speed_+%_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "base_cast_speed_+%_per_frenzy_charge_if_not_player_minion",
-				"value": "11"
+				"value": 11
 			},
 			{
 				"key": "movement_velocity_+%_per_frenzy_charge_if_not_player_minion",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "object_inherent_damage_+%_final_per_frenzy_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_reduction_%_per_endurance_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_reduction_%_per_endurance_charge_if_not_player_minion",
-				"value": "11"
+				"value": 11
 			},
 			{
 				"key": "elemental_damage_reduction_%_per_endurance_charge_if_player_minion",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "resist_all_elements_%_per_endurance_charge_if_not_player_minion",
-				"value": "15"
+				"value": 15
 			},
 			{
 				"key": "critical_strike_chance_+%_per_power_charge",
-				"value": "50"
+				"value": 50
 			},
 			{
 				"key": "critical_strike_chance_+%_per_power_charge_if_not_player_minion",
-				"value": "150"
+				"value": 150
 			},
 			{
 				"key": "physical_damage_%_to_add_as_cold_per_brine_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "physical_damage_%_to_add_as_lightning_per_brine_charge",
-				"value": "4"
+				"value": 4
 			},
 			{
 				"key": "maximum_block_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "base_maximum_spell_block_%",
-				"value": "75"
+				"value": 75
 			},
 			{
 				"key": "base_number_of_totems_allowed",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "base_number_of_traps_allowed",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "base_number_of_remote_mines_allowed",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "movement_velocity_cap",
-				"value": "128"
+				"value": 128
 			},
 			{
 				"key": "maximum_life_leech_rate_%_per_minute",
-				"value": "1200"
+				"value": 1200
 			},
 			{
 				"key": "maximum_mana_leech_rate_%_per_minute",
-				"value": "1200"
+				"value": 1200
 			},
 			{
 				"key": "maximum_energy_shield_leech_rate_%_per_minute",
-				"value": "600"
+				"value": 600
 			},
 			{
 				"key": "monster_ignite_damage_+%_final",
-				"value": "-72"
+				"value": -72
 			},
 			{
 				"key": "monster_bleeding_damage_+%_final",
-				"value": "-86"
+				"value": -86
 			},
 			{
 				"key": "monster_poison_damage_+%_final",
-				"value": "-50"
+				"value": -50
 			},
 			{
 				"key": "bleeding_moving_damage_%_of_base_override",
-				"value": "500"
+				"value": 500
 			},
 			{
 				"key": "max_azurite_debuff_stacks",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "impaled_debuff_base_duration_ms",
-				"value": "8000"
+				"value": 8000
 			},
 			{
 				"key": "impaled_debuff_number_of_reflected_hits",
-				"value": "5"
+				"value": 5
 			},
 			{
 				"key": "ignore_skill_weapon_restrictions",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "base_total_number_of_sigils_allowed",
-				"value": "3"
+				"value": 3
 			},
 			{
 				"key": "maximum_life_leech_amount_per_leech_%_max_life",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "maximum_mana_leech_amount_per_leech_%_max_mana",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "maximum_energy_shield_leech_amount_per_leech_%_max_energy_shield",
-				"value": "10"
+				"value": 10
 			},
 			{
 				"key": "object_inherent_melee_hit_stun_duration_+%_final",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "scale_melee_range_to_actor_scale",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "use_melee_pattern_range",
-				"value": "1"
+				"value": 1
 			},
 			{
 				"key": "actor_scale_+%_limit",
-				"value": "100"
+				"value": 100
 			},
 			{
 				"key": "damage_taken_when_hit_+%_final_per_fortification",
-				"value": "-1"
+				"value": -1
 			},
 			{
 				"key": "base_max_fortification",
-				"value": "20"
+				"value": 20
 			},
 			{
 				"key": "soul_eater_maximum_stacks",
-				"value": "45"
+				"value": 45
 			}
 		],
 		"totemLifeMult": [

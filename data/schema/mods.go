@@ -24,7 +24,7 @@ type ItemMod struct {
 	WeightMultiplierKey []string    `json:"weightMultiplierKey,omitempty"`
 	WeightMultiplierVal []int64     `json:"weightMultiplierVal,omitempty"`
 	Tags                []string    `json:"tags,omitempty"`
-	ModTags             string      `json:"modTags"`
+	ModTags             []string    `json:"modTags"`
 	TradeHashes         []TradeHash `json:"tradeHashes"`
 }
 

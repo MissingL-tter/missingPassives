@@ -215,10 +215,7 @@ func encodeParam(v ParamValue) any {
 	case JewelNodeFn, JewelFnRef:
 		panic("modparser: a jewel function cannot be encoded")
 	case Num:
-		if math.IsInf(float64(t), 0) {
-			return util.FormatG14(float64(t)) // "inf"/"-inf"; numeric fields coerce it back
-		}
-		return float64(t)
+		return encodeNumber(float64(t))
 	case NumList:
 		out := make([]any, len(t))
 		for i, e := range t {
@@ -418,10 +415,19 @@ func decodeValue(raw json.RawMessage) Value {
 }
 
 // decodeParam reads a tag/record field as its JSON scalar or list;
-// TagFromParams/ValueFromParams coerce it to the field's type.
+// TagFromParams/ValueFromParams narrow it to the field's type. An
+// infinity arrives as the codec's tagged object (see encodeNumber).
 func decodeParam(raw json.RawMessage) ParamValue {
 	var v any
 	mustUnmarshal(raw, &v)
+	if m, ok := v.(map[string]any); ok {
+		switch m["kind"] {
+		case "inf":
+			return Num(math.Inf(1))
+		case "-inf":
+			return Num(math.Inf(-1))
+		}
+	}
 	return ParamOf(v)
 }
 

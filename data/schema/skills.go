@@ -62,9 +62,10 @@ type SkillHeader struct {
 }
 
 type SkillTail struct {
-	// ModsArgs is the raw #mods directive argument (the noBaseFlags/noStats/
-	// ... gates).
-	ModsArgs      string            `json:"modsArgs,omitempty"`
+	// ModsFlags are the #mods directive's emission switches (noBaseFlags,
+	// noStats, ...), typed instead of re-joined directive text
+	// (lua-residue.md T4).
+	ModsFlags     []string          `json:"modsFlags,omitempty"`
 	Support       bool              `json:"support,omitempty"`
 	BaseFlags     []string          `json:"baseFlags,omitempty"`
 	BaseMods      []json.RawMessage `json:"baseMods,omitempty"` // structured mods (modparser codec), one list per template line

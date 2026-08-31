@@ -32,15 +32,11 @@ func TestProfileRecalc(t *testing.T) {
 		t.Fatalf("no dump for %q: %v", build, err)
 	}
 	variant := build + ".full"
-	var fixture, allocOrders, nodeOrders, grantedNodes, grantedAsc, ebItems string
+	var fixture, grantedNodes, grantedAsc, ebItems string
 	forEachCalcRecord(t, path, func(k, c string) {
 		switch k {
 		case variant + ".fixture":
 			fixture = c
-		case variant + ".allocOrders":
-			allocOrders = c
-		case variant + ".nodeOrders":
-			nodeOrders = c
 		case variant + ".grantedPassiveNodes":
 			grantedNodes = c
 		case variant + ".grantedAscendancyNodes":
@@ -54,8 +50,6 @@ func TestProfileRecalc(t *testing.T) {
 		t.Fatal(err)
 	}
 	replay := &calc.ReplayInput{
-		AllocOrders:            decodeAllocOrders(allocOrders),
-		NodeOrders:             decodeAllocOrders(nodeOrders),
 		GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
 		GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
 		EnergyBladeItems:       decodeEnergyBladeItems(ebItems),

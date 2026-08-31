@@ -382,11 +382,18 @@ func parseMod(line string, order int) parseResult {
 		// ModParser.lua:6795.
 		if modName != nil && len(modName.Names) > 0 {
 			modNameString := modName.Names[0]
-			// The reference writes into its (shared) name table entry.
-			for len(modName.Names) < 2 {
-				modName.Names = append(modName.Names, "")
+			// The reference writes into its (shared) name table entry
+			// (ModParser.lua:6795); a *PatternEntry name here is the global
+			// table's own pointer, so write a copy instead — first-parse
+			// behaviour is identical and the tables stay immutable after
+			// init (lua-residue.md T2).
+			cp := *modName
+			cp.Names = append([]string{}, modName.Names...)
+			for len(cp.Names) < 2 {
+				cp.Names = append(cp.Names, "")
 			}
-			modName.Names[1] = "Multiplier:" + modNameString + "Doubled"
+			cp.Names[1] = "Multiplier:" + modNameString + "Doubled"
+			modName = &cp
 			modTypes = []ModType{More, Override}
 			modValues = []Value{Num(100), Num(1)}
 			modExtraTags = &PatternEntry{PerModTags: [][]Tag{{

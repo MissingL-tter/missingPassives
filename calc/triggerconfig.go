@@ -24,6 +24,10 @@ var triggerConfigTable map[string]triggerConfigBuilder
 
 func init() {
 	triggerConfigTable = map[string]triggerConfigBuilder{
+		// Unported (its comparer overloads the rate argument as totem
+		// life); nil = the documented loud panic on match, never a silent
+		// no-config (lua-residue.md T2).
+		"avenging flame":                     nil,
 		"law of the wilds":                   lawOfTheWildsConfig,
 		"the rippling thoughts":              ripplingThoughtsConfig(false),
 		"the surging thoughts":               ripplingThoughtsConfig(true),

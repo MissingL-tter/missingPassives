@@ -184,17 +184,7 @@ type Env struct {
 	ModeBuffs, ModeCombat, ModeEffective bool
 	ClassID                              float64
 
-	// AllocOrders holds the reference's pairs() order over env.allocNodes
-	// for each buildModListForNodeList call, captured by the dump (LuaJIT
-	// hash order is deterministic per table state but not derivable here,
-	// and the table grows mid-initEnv when passives are granted).
-	AllocOrders [][]int
-	// ExtraOrders holds, per buildModListForNodeList call, the captured
-	// pairs() order over env.extraRadiusNodeList (the node-call sequence
-	// tail beyond the allocated nodes).
-	ExtraOrders   [][]int
-	Replay        *ReplayInput
-	allocOrderIdx int
+	Replay *ReplayInput
 	// buildDepth counts nested BuildActiveSkill environments (defensive).
 	buildDepth       int
 	AllocNodes       map[int]*NodeInput
@@ -546,21 +536,11 @@ func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, ExplodeSou
 	return modList, nil
 }
 
-// nextAllocOrder pops the captured iteration order for the next
-// buildModListForNodeList call.
-func (env *Env) nextAllocOrder() []int {
-	if env.allocOrderIdx >= len(env.AllocOrders) {
-		panic(fmt.Sprintf("calc: more buildModListForNodeList calls than captured allocOrders (have %d, depth %d, mode %s)", len(env.AllocOrders), env.buildDepth, env.Mode))
-	}
-	order := env.AllocOrders[env.allocOrderIdx]
-	env.allocOrderIdx++
-	return order
-}
-
-// buildModListForNodeList ports calcs.buildModListForNodeList over the
-// captured pairs() orders.
+// buildModListForNodeList ports calcs.buildModListForNodeList. Node maps
+// iterate in ascending id order: the archive dump ran the Calc modules
+// under a sorted pairs() (tools/dump_calc.lua:131), so ascending ids ARE
+// the reference order, derived instead of replayed (lua-residue.md T1).
 func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []ExplodeSource) {
-	callIdx := env.allocOrderIdx
 	// Initialise radius jewels
 	for _, rad := range env.RadiusJewelList {
 		rad.Data = &modparser.JewelFuncTag{ModSource: fmt.Sprintf("Tree:%d", rad.NodeID)}
@@ -569,11 +549,8 @@ func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []Ex
 	// Add node modifiers
 	modList := modstore.NewList(nil)
 	explodeSources := []ExplodeSource{}
-	for _, id := range env.nextAllocOrder() {
+	for _, id := range sortedIntKeys(env.AllocNodes) {
 		node := env.AllocNodes[id]
-		if node == nil {
-			panic(fmt.Sprintf("calc: allocOrder id %d missing from allocNodes", id))
-		}
 		nodeModList, explode := env.buildModListForNode(node)
 		if explode != nil {
 			explodeSources = append(explodeSources, explode)
@@ -583,18 +560,9 @@ func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []Ex
 
 	if finishJewels {
 		// Process extra radius nodes (unallocated nodes near conversion or
-		// threshold jewels), in the reference's captured pairs() order.
-		if len(env.ExtraRadiusNodeList) > 0 {
-			if callIdx >= len(env.ExtraOrders) {
-				panic("calc: extraRadiusNodeList populated but no captured order for this call")
-			}
-			for _, id := range env.ExtraOrders[callIdx] {
-				node := env.ExtraRadiusNodeList[id]
-				if node == nil {
-					panic(fmt.Sprintf("calc: extra order id %d missing from extraRadiusNodeList", id))
-				}
-				env.buildModListForNode(node)
-			}
+		// threshold jewels), ascending ids.
+		for _, id := range sortedIntKeys(env.ExtraRadiusNodeList) {
+			env.buildModListForNode(env.ExtraRadiusNodeList[id])
 		}
 
 		// Finalise radius jewels (jewelRadiusData is UI state, skipped)
@@ -609,11 +577,6 @@ func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []Ex
 // ReplayInput carries the dump-captured reference state a byte-exact
 // replay needs beyond the build fixture itself.
 type ReplayInput struct {
-	// AllocOrders: pairs() order per buildModListForNodeList call.
-	AllocOrders [][]int
-	// NodeOrders: the full buildModListForNode call sequence per NodeList
-	// call; the tail beyond AllocOrders is the extraRadiusNodeList order.
-	NodeOrders [][]int
 	// GrantedPassiveNodes: resolved notable/ascendancy nodes by the
 	// GrantedPassive value (anoints etc.).
 	GrantedPassiveNodes map[string]*NodeInput
@@ -627,11 +590,6 @@ type ReplayInput struct {
 	// it. Filled by Calcs.lua's buildOutput driver, which is not one of the
 	// stages ported here (see calc/globalcache.go).
 	GlobalCache map[string]*CachedSkill
-	// MirageAllocOrders / MirageNodeOrders: the same two sequences for the
-	// second initEnv copyActiveSkill runs (CALCULATOR mode) when a mirage
-	// path takes over. Empty for a build with no mirages.
-	MirageAllocOrders [][]int
-	MirageNodeOrders  [][]int
 	// StubHandoff makes nested performs body-only, mirroring the archive
 	// dump's checkpoint phase where calcs.defence/offence are stubbed out
 	// (the reference's nested calls inherit whatever those functions
@@ -653,18 +611,16 @@ func InitEnv(in *BuildInput, mode CalcMode, replay *ReplayInput) *Env {
 // mode, env.override)`) so a sub-environment inherits an Energy Blade
 // re-entry instead of rediscovering it.
 func initEnvOverride(in *BuildInput, mode CalcMode, replay *ReplayInput, overrideConditions []string) *Env {
-	orderStart := 0
 	for {
-		env, restart := initEnvPass(in, mode, replay, orderStart, overrideConditions)
+		env, restart := initEnvPass(in, mode, replay, overrideConditions)
 		if !restart {
 			return env
 		}
-		orderStart = env.allocOrderIdx
 		overrideConditions = append(overrideConditions, "AffectedByEnergyBlade")
 	}
 }
 
-func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, orderStart int, overrideConditions []string) (*Env, bool) {
+func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, overrideConditions []string) (*Env, bool) {
 	// CALCULATOR is what copyActiveSkill's second initEnv uses. It differs
 	// from MAIN only in skipping the write-backs onto the build objects
 	// that exist for the UI (node.finalModList, gemInstance.displayEffect,
@@ -685,8 +641,6 @@ func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, orderStart 
 		Mode:                mode,
 		ConfigInput:         in.ConfigInput,
 		ClassID:             in.ClassID,
-		AllocOrders:         replay.AllocOrders,
-		allocOrderIdx:       orderStart,
 		Replay:              replay,
 		GlobalCache:         replay.GlobalCache,
 		ExtraRadiusNodeList: map[int]*NodeInput{},
@@ -702,12 +656,6 @@ func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, orderStart 
 	if mode != ModeMain {
 		env.GlobalCache = map[string]*CachedSkill{}
 	}
-	for i, seq := range replay.NodeOrders {
-		if i < len(replay.AllocOrders) {
-			env.ExtraOrders = append(env.ExtraOrders, seq[len(replay.AllocOrders[i]):])
-		}
-	}
-
 	modDB := modstore.NewDB(nil)
 	env.ModDB = modDB
 	enemyDB := modstore.NewDB(nil)
@@ -959,9 +907,10 @@ func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, orderStart 
 		panic("calc: ExtraJewelFunc re-entry reached - items stage not ported")
 	}
 
-	// Find skills granted by tree nodes. pairs(env.allocNodes) over the
-	// same table state as the tree merge — reuse that captured order.
-	for _, id := range env.AllocOrders[len(env.AllocOrders)-1] {
+	// Find skills granted by tree nodes: pairs(env.allocNodes) over the
+	// same table state as the tree merge — ascending ids (see
+	// buildModListForNodeList).
+	for _, id := range sortedIntKeys(env.AllocNodes) {
 		node := env.AllocNodes[id]
 		for _, skill := range node.GrantedSkills {
 			granted := skill

@@ -4,21 +4,25 @@
 package export
 
 import (
+	"fmt"
 	"math"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
+	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 func init() {
 	Scripts = append(Scripts, Script{Name: "miscdata", Build: buildMiscdata})
 }
 
-// otConstants parses an .ot file's wanted blocks the way miscdata.lua does.
-func otConstants(x *Ctx, file string, alsoPathfinding bool) []schema.KV {
+// otConstants parses an .ot file's wanted blocks the way miscdata.lua
+// does, evaluating each value to a number at this edge (the reference
+// shipped raw text and re-ran tonumber at load — lua-residue.md T4).
+func otConstants(x *Ctx, file string, alsoPathfinding bool) ([]schema.KV, error) {
 	raw := x.GetFile(file)
 	if raw == "" {
-		return nil
+		return nil, nil
 	}
 	text := convertUTF16to8([]byte(raw), 0)
 	ws := strings.NewReplacer(" ", "", "\t", "", "\v", "", "\f", "")
@@ -34,11 +38,15 @@ func otConstants(x *Ctx, file string, alsoPathfinding bool) []schema.KV {
 			eq := strings.Index(stripped, "=")
 			key, value := stripped[:eq], stripped[eq+1:]
 			if value != "" {
-				out = append(out, schema.KV{Key: key, Value: value})
+				n, ok := util.Tonumber(value)
+				if !ok {
+					return nil, fmt.Errorf("%s: non-numeric constant %s = %q", file, key, value)
+				}
+				out = append(out, schema.KV{Key: key, Value: n})
 			}
 		}
 	}
-	return out
+	return out, nil
 }
 
 func buildMiscdata(x *Ctx) (schema.Document, error) {
@@ -90,8 +98,13 @@ func buildMiscdata(x *Ctx) (schema.Document, error) {
 		})
 	}
 
-	m.CharacterConstants = otConstants(x, "Metadata/Characters/Character.ot", true)
-	m.MonsterConstants = otConstants(x, "Metadata/Monsters/Monster.ot", false)
+	var err error
+	if m.CharacterConstants, err = otConstants(x, "Metadata/Characters/Character.ot", true); err != nil {
+		return nil, err
+	}
+	if m.MonsterConstants, err = otConstants(x, "Metadata/Monsters/Monster.ot", false); err != nil {
+		return nil, err
+	}
 
 	totemKeys := map[int64]bool{}
 	for vr := range totemVariations.Rows() {

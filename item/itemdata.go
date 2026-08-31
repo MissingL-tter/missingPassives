@@ -6,6 +6,7 @@
 package item
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/internal/util"
@@ -423,21 +424,38 @@ type AffixRange struct {
 	Multi  []float64
 }
 
+// num, optNum and str read a Set value's scalar. A nil value is the Lua
+// nil assignment (clears the key: zero / unset / ""); any other kind is a
+// shape no producer emits, and panics rather than silently writing a zero
+// (lua-residue.md T2).
 func num(v modparser.Value) float64 {
-	n, _ := v.(modparser.Num)
-	return float64(n)
+	switch t := v.(type) {
+	case nil:
+		return 0
+	case modparser.Num:
+		return float64(t)
+	}
+	panic(fmt.Sprintf("item: %T where the reference stores a number", v))
 }
 
 func optNum(v modparser.Value) util.Opt[float64] {
-	if n, ok := v.(modparser.Num); ok {
-		return util.Some(float64(n))
+	switch t := v.(type) {
+	case nil:
+		return util.Opt[float64]{}
+	case modparser.Num:
+		return util.Some(float64(t))
 	}
-	return util.Opt[float64]{}
+	panic(fmt.Sprintf("item: %T where the reference stores a number", v))
 }
 
 func str(v modparser.Value) string {
-	s, _ := v.(modparser.Str)
-	return string(s)
+	switch t := v.(type) {
+	case nil:
+		return ""
+	case modparser.Str:
+		return string(t)
+	}
+	panic(fmt.Sprintf("item: %T where the reference stores text", v))
 }
 
 func setExtra(m map[string]modparser.Value, key string, v modparser.Value) map[string]modparser.Value {

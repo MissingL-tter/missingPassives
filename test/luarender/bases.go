@@ -62,7 +62,7 @@ func renderItemBase(b *B, ib schema.ItemBase) {
 	}
 	b.W("\timplicitModTypes = { ")
 	for _, t := range ib.ImplicitModTypes {
-		b.W("{ ", t, " }, ")
+		b.W("{ ", joinModTags(t), " }, ")
 	}
 	b.W("},\n")
 	if len(ib.ImplicitIds) > 0 {
@@ -75,7 +75,7 @@ func renderItemBase(b *B, ib schema.ItemBase) {
 		}
 		b.W("\tenchantModTypes = { ")
 		for _, t := range ib.EnchantModTypes {
-			b.W("{ ", t, " }, ")
+			b.W("{ ", joinModTags(t), " }, ")
 		}
 		b.W("},\n")
 	}

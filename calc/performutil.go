@@ -612,7 +612,10 @@ func applyEnemyModifiers(actor *performActor, clearCache bool) {
 			if !mod.SourceSet {
 				source = value.Mod.Source
 			}
-			enemyDB.AddMod(modparser.SetSource(mod, source))
+			// The reference stamps the shared value.mod in place; stamp a
+			// clone so the loaded game data stays immutable after Load
+			// (lua-residue.md T2). The cache stays keyed on the original.
+			enemyDB.AddMod(modparser.SetSource(mod.Clone(), source))
 			cache[mod] = true
 		}
 	}

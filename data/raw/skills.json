@@ -527081,7 +527081,9 @@
 					]
 				},
 				{
-					"modsArgs": "noLevels",
+					"modsFlags": [
+						"noLevels"
+					],
 					"baseFlags": [
 						"attack",
 						"hit",
@@ -527331,7 +527333,9 @@
 					]
 				},
 				{
-					"modsArgs": "noLevels",
+					"modsFlags": [
+						"noLevels"
+					],
 					"baseFlags": [
 						"attack",
 						"hit",
@@ -527399,7 +527403,9 @@
 					]
 				},
 				{
-					"modsArgs": "noLevels",
+					"modsFlags": [
+						"noLevels"
+					],
 					"baseFlags": [
 						"spell",
 						"hit",
@@ -529370,7 +529376,10 @@
 					]
 				},
 				{
-					"modsArgs": "noStats noLevels",
+					"modsFlags": [
+						"noStats",
+						"noLevels"
+					],
 					"baseFlags": [
 						"spell",
 						"hit",
@@ -529723,7 +529732,10 @@
 					]
 				},
 				{
-					"modsArgs": "noStats noLevels",
+					"modsFlags": [
+						"noStats",
+						"noLevels"
+					],
 					"baseFlags": [
 						"spell",
 						"buff",
@@ -638882,18 +638894,15 @@
 						],
 						[
 							{
-								"arr": [],
-								"kind": "mixed",
-								"kv": {
-									"flags": {
-										"div": 8,
-										"type": "Multiplier",
-										"var": "ValourStacks"
-									},
-									"keywordFlags": 0,
-									"name": "Multiplier:BloodsoakedBannerMaxStages",
-									"type": "BASE",
-									"value": 1
+								"kind": "typo",
+								"name": "Multiplier:BloodsoakedBannerMaxStages",
+								"type": "BASE",
+								"value": 1,
+								"keywordFlags": 0,
+								"flagsTag": {
+									"kind": "Multiplier",
+									"div": 8,
+									"var": "ValourStacks"
 								}
 							}
 						],

@@ -3,6 +3,7 @@ package luacanon
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -47,12 +48,36 @@ func ModFromTable(m map[string]any) *modparser.Mod {
 }
 
 // TagFromTable rebuilds a tag from its canon table.
+// numericTagFields is the closed set of numeric tag fields the reference's
+// parser filled from raw text captures ("div":"5"); the port parses them
+// at parse time, so the fixtures' strings convert on decode (the canon
+// text compare uses NormalizeArchiveMods over the same set).
+var numericTagFields = map[string]bool{"div": true, "limit": true, "percent": true, "base": true,
+	"threshold": true, "thresholdPercent": true, "globalLimit": true}
+
+// numText reads strictly-numeric text (the normaliser's grammar — not
+// Tonumber's, whose hex/inf spellings must stay strings here).
+func numText(s string) (float64, bool) {
+	if !reNumText.MatchString(s) {
+		return 0, false
+	}
+	n, err := strconv.ParseFloat(s, 64)
+	return n, err == nil
+}
+
+var reNumText = regexp.MustCompile(`^-?[0-9]+(\.[0-9]+)?$`)
+
 func TagFromTable(m map[string]any) modparser.Tag {
 	typ, _ := m["type"].(string)
 	params := make([]modparser.Param, 0, len(m))
 	for k, v := range m {
 		if k == "type" {
 			continue
+		}
+		if s, ok := v.(string); ok && numericTagFields[k] {
+			if n, isNum := numText(s); isNum {
+				v = n
+			}
 		}
 		params = append(params, modparser.Param{Name: k, Value: modparser.ParamOf(canonList(v))})
 	}
@@ -122,6 +147,12 @@ func ValueFromTable(v any) modparser.Value {
 			return modparser.Num(math.Inf(1))
 		case "-inf":
 			return modparser.Num(math.Inf(-1))
+		}
+		// The archive parser stored numeric captures as text; the port
+		// parses them at parse time, so pure numeric text converts here
+		// (the compare side does the same via NormalizeArchiveMods).
+		if n, ok := numText(t); ok {
+			return modparser.Num(n)
 		}
 		return modparser.Str(t)
 	case map[string]any:

@@ -385,7 +385,7 @@ func formatMinMax(v *statVal, prefix string) (string, error) {
 type StatLines struct {
 	Lines   []string
 	Orders  []float64
-	ModTags string
+	ModTags []string
 }
 
 // DescribeStats ports describeStats. stats maps stat ids to their values;
@@ -616,18 +616,15 @@ func replaceAll(s, token string, repl func() string) string {
 	}
 }
 
-// DescribeModTags ports describeModTags.
-func (x *Ctx) DescribeModTags(modTags []*Row) string {
-	var b strings.Builder
+// DescribeModTags ports describeModTags: the tag ids, typed — the
+// reference pre-joined them into Lua list-literal text, which the render
+// test re-spells (lua-residue.md T4).
+func (x *Ctx) DescribeModTags(modTags []*Row) []string {
+	out := make([]string, 0, len(modTags))
 	for _, row := range modTags {
-		if b.Len() > 0 {
-			b.WriteString(", ")
-		}
-		b.WriteString("\"")
-		b.WriteString(row.Str("Id"))
-		b.WriteString("\"")
+		out = append(out, row.Str("Id"))
 	}
-	return b.String()
+	return out
 }
 
 // DescribeMod ports describeMod.

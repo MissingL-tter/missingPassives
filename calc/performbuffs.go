@@ -542,19 +542,29 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 		if activeSkill.Minion != nil && activeSkill.Minion.ActiveSkillList != nil {
 			castingMinion := activeSkill.Minion
 			for _, activeMinionSkill := range castingMinion.ActiveSkillList {
-				setSpectreSource := func(modList []*modparser.Mod, sourceSkill string) {
-					if activeSkill.SkillFlags["spectre"] {
-						source := "Spectre:"
-						if sourceSkill != "" {
-							source = source + sourceSkill + " - " + castingMinion.MinionData.Name
-						} else {
-							source = source + castingMinion.MinionData.Name
-						}
-						for _, m := range modList {
-							m.Source = source
-							m.SourceSet = true
-						}
+				setSpectreSource := func(modList []*modparser.Mod, sourceSkill string) []*modparser.Mod {
+					if !activeSkill.SkillFlags["spectre"] {
+						return modList
 					}
+					source := "Spectre:"
+					if sourceSkill != "" {
+						source = source + sourceSkill + " - " + castingMinion.MinionData.Name
+					} else {
+						source = source + castingMinion.MinionData.Name
+					}
+					// The reference stamps the shared tables in place
+					// (CalcPerform.lua L2724-2736), which reaches mods aliased
+					// into the loaded game data; stamped clones carry the same
+					// bytes into every merge without mutating data.Skills
+					// (lua-residue.md T2).
+					out := make([]*modparser.Mod, len(modList))
+					for i, m := range modList {
+						c := m.Clone()
+						c.Source = source
+						c.SourceSet = true
+						out[i] = c
+					}
+					return out
 				}
 				minionSkillModList := activeMinionSkill.SkillModList
 				minionSkillCfg := activeMinionSkill.SkillCfg
@@ -622,7 +632,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 									srcList := modstore.NewList(nil)
 									srcList.ScaleAddList(buff.ModList, mult, false)
 									srcList.ScaleAddList(extraAuraModList, mult, false)
-									setSpectreSource(srcList.Mods, buffName)
+									srcList.Mods = setSpectreSource(srcList.Mods, buffName)
 									mergeBuff(srcList.Mods, buffs, buffName)
 								}
 								if env.Minion != nil && !env.Minion.DB.Conditions.Get("AffectedBy"+noSpace(buffName)) && (env.Minion != castingMinion || !activeSkill.SkillData.Flag("auraCannotAffectSelf")) {
@@ -635,13 +645,15 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 									srcList := modstore.NewList(nil)
 									srcList.ScaleAddList(buff.ModList, mult, false)
 									srcList.ScaleAddList(extraAuraModList, mult, false)
-									setSpectreSource(srcList.Mods, buffName)
+									srcList.Mods = setSpectreSource(srcList.Mods, buffName)
 									mergeBuff(srcList.Mods, minionBuffs, buffName)
 								}
-								// export list mutation: setSpectreSource runs over the
-								// SHARED buff/extra mods (AddList aliases them)
-								newModList := append(append([]*modparser.Mod{}, buff.ModList...), extraAuraModList...)
-								setSpectreSource(newModList, buffName)
+								// The reference additionally stamps the SHARED buff/extra
+								// mod tables here ("export list mutation",
+								// CalcPerform.lua L2733-2736) — a write into loaded game
+								// data whose only effect is cross-build; deliberately not
+								// reproduced (lua-residue.md T2). The merges above carry
+								// the stamped clones.
 								if env.PlayerMainSkill.SkillFlags["totem"] && !env.PlayerMainSkill.SkillModList.Conditions.Get("AffectedBy"+noSpace(buffName)) {
 									activeMinionSkill.TotemBuffSkill = true
 									env.PlayerMainSkill.SkillModList.Conditions.Set("AffectedBy"+noSpace(buffName), true)
@@ -657,7 +669,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 											}
 										}
 									}
-									setSpectreSource(srcList.Mods, "")
+									srcList.Mods = setSpectreSource(srcList.Mods, "")
 									mergeBuff(srcList.Mods, buffs, "Totem "+buffName)
 								}
 							}

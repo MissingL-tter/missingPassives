@@ -481,11 +481,11 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 		return nil
 	}
 	// closeSkill emits the pending skill's tail; flags are the emission
-	// switches carried verbatim into ModsArgs.
+	// switches.
 	closeSkill := func(flags []string) {
 		skill := state.skill
 		tail := schema.SkillTail{
-			ModsArgs:      strings.Join(flags, " "),
+			ModsFlags:     append([]string(nil), flags...),
 			Support:       skill.isSupport,
 			BaseFlags:     append([]string(nil), skill.baseFlags...),
 			BaseMods:      append([]json.RawMessage(nil), skill.mods...),

@@ -64,7 +64,7 @@ func loadModPool(pool []schema.ItemMod) map[string]ItemModData {
 			Group:     m.Group,
 			WeightKey: emptyIfNil(m.WeightKey),
 			WeightVal: intsToFloats(m.WeightVal),
-			ModTags:   splitModTags(m.ModTags),
+			ModTags:   emptyIfNil(m.ModTags),
 		}
 		if len(m.WeightMultiplierKey) > 0 {
 			e.WeightMultiplierKey = m.WeightMultiplierKey

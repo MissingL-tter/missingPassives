@@ -649,6 +649,7 @@ func (env *Env) buildSkillsStage() bool {
 				}
 				skillListsByGroup[group] = append(skillListsByGroup[group], activeSkill)
 				env.PlayerActiveSkills = append(env.PlayerActiveSkills, activeSkill)
+				env.Player.ActiveSkillList = append(env.Player.ActiveSkillList, activeSkill)
 			}
 			if gem.GemData != nil {
 				req := func(v util.Opt[float64]) float64 {
@@ -717,6 +718,7 @@ func (env *Env) buildSkillsStage() bool {
 		}
 		env.PlayerMainSkill = env.createActiveSkill(defaultEffect, nil, env.Player, nil, nil)
 		env.PlayerActiveSkills = append(env.PlayerActiveSkills, env.PlayerMainSkill)
+		env.Player.ActiveSkillList = append(env.Player.ActiveSkillList, env.PlayerMainSkill)
 	}
 
 	// Build skill modifier lists

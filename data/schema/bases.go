@@ -29,14 +29,14 @@ type ItemBase struct {
 	Tags             []string `json:"tags"` // sorted
 	InfluenceBaseTag string   `json:"influenceBaseTag,omitempty"`
 
-	Implicit         []string `json:"implicit,omitempty"` // described lines
-	ImplicitModTypes []string `json:"implicitModTypes"`   // one ModTags string per line
-	ImplicitIds      []string `json:"implicitIds,omitempty"`
+	Implicit         []string   `json:"implicit,omitempty"` // described lines
+	ImplicitModTypes [][]string `json:"implicitModTypes"`   // one ModTags list per line
+	ImplicitIds      []string   `json:"implicitIds,omitempty"`
 
-	Enchant          []string `json:"enchant,omitempty"`
-	EnchantIds       []string `json:"enchantIds,omitempty"`
-	EnchantModTypes  []string `json:"enchantModTypes,omitempty"`
-	CannotBeAnointed bool     `json:"cannotBeAnointed,omitempty"`
+	Enchant          []string   `json:"enchant,omitempty"`
+	EnchantIds       []string   `json:"enchantIds,omitempty"`
+	EnchantModTypes  [][]string `json:"enchantModTypes,omitempty"`
+	CannotBeAnointed bool       `json:"cannotBeAnointed,omitempty"`
 
 	Weapon   *WeaponBase   `json:"weapon,omitempty"`
 	Armour   *ArmourBase   `json:"armour,omitempty"`

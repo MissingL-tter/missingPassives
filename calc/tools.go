@@ -319,16 +319,13 @@ func stripVaalPrefix(s string) string {
 	return s
 }
 
-// valueNum is Lua arithmetic over a mod value: numbers and numeric text;
-// nil is 0 (`value or 0`). Anything else is the Lua arithmetic error.
+// valueNum is Lua arithmetic over a mod value: numbers; nil is 0
+// (`value or 0`). Anything else is the Lua arithmetic error (numeric
+// captures parse to Num at parse time — lua-residue.md T3).
 func valueNum(v modparser.Value) float64 {
 	switch n := v.(type) {
 	case modparser.Num:
 		return float64(n)
-	case modparser.Str:
-		if f, ok := modparser.NumOf(n); ok {
-			return f
-		}
 	case nil:
 		return 0
 	}
@@ -361,6 +358,45 @@ func sortedNumKeys(m map[float64]float64) []float64 {
 	}
 	sort.Float64s(keys)
 	return keys
+}
+
+// sortedIntKeys is ascending map-key order — the calc's node iteration
+// order. The archive dump ran the Calc modules under a sorted pairs()
+// (tools/dump_calc.lua:131), so ascending ids reproduce the reference's
+// iteration wherever it walks a node table.
+func sortedIntKeys[V any](m map[int]V) []int {
+	keys := make([]int, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	return keys
+}
+
+// modstore.ActiveSkill implementation: live views for GetStat's
+// reservation branch — the reference reads actor.activeSkillList's shared
+// tables at eval time, so these read the current skill state, not a
+// snapshot (lua-gtfo B1).
+
+func (s *ActiveSkill) SkillTypeHasReservation() bool {
+	return s.SkillTypes[modparser.SkillTypeHasReservation]
+}
+
+func (s *ActiveSkill) Disabled() bool { return s.SkillFlags["disable"] }
+
+func (s *ActiveSkill) SkillDataN(key string) float64 {
+	if s.SkillData == nil {
+		return 0
+	}
+	return s.SkillData.N(key)
+}
+
+func (s *ActiveSkill) BuffNames() []string {
+	names := make([]string, len(s.BuffListTyped))
+	for i, b := range s.BuffListTyped {
+		names[i] = b.Name
+	}
+	return names
 }
 
 // weaponData presents an item's weapon data to the weapon-condition tags;

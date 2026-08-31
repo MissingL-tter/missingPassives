@@ -45,12 +45,19 @@ type Item interface {
 	FindModifierSubstring(substring, itemSlotName string) bool
 }
 
-// ActiveSkill carries what GetStat's reservation branches read.
-type ActiveSkill struct {
-	SkillTypes map[modparser.SkillTypeID]bool
-	Disable    bool // skillFlags.disable
-	SkillData  map[string]float64
-	BuffNames  []string // buffList[i].name
+// ActiveSkill is one actor.activeSkillList entry as GetStat's reservation
+// branch reads it — an interface so the reads are live views into the
+// calc's skill (the perform stage writes the ReservedBase keys after the
+// list is built; the reference's shared tables see that at eval time).
+type ActiveSkill interface {
+	// SkillTypeHasReservation is skillTypes[SkillType.HasReservation].
+	SkillTypeHasReservation() bool
+	// Disabled is skillFlags.disable.
+	Disabled() bool
+	// SkillDataN is skillData[key] as a number (absent = 0).
+	SkillDataN(key string) float64
+	// BuffNames lists buffList[i].name.
+	BuffNames() []string
 }
 
 // MinionData carries the minion-table fields mod evaluation and the skill
@@ -71,10 +78,9 @@ type Actor struct {
 	ItemList    map[string]Item
 	WeaponData1 WeaponData
 	WeaponData2 WeaponData
-	// No ported production path populates ActiveSkillList: calc's minion skill
-	// list is calc.Minion's own field, not this one. So the reservation branch
-	// in getStat is exercised only by the modstore differential.
-	ActiveSkillList []*ActiveSkill
+	// ActiveSkillList is env.player.activeSkillList; calc wires it at the
+	// skills stage (lua-gtfo B1, closed 2026-08-30).
+	ActiveSkillList []ActiveSkill
 	MinionData      *MinionData
 	ManaEfficiency  float64
 	Resolver        Resolver
@@ -141,8 +147,8 @@ func floorf(v float64) float64 { return math.Floor(v) }
 // getStat ports ModStore:GetStat over an explicit target store.
 func getStat(s Store, stat string, cfg *Cfg) float64 {
 	actor := s.base().Actor
-	isNameInBuffList := func(skill *ActiveSkill, names ...string) bool {
-		for _, buff := range skill.BuffNames {
+	isNameInBuffList := func(skill ActiveSkill, names ...string) bool {
+		for _, buff := range skill.BuffNames() {
 			for _, name := range names {
 				if name != "" && buff == name {
 					return true
@@ -158,9 +164,9 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 			return 0
 		}
 		for _, skill := range actor.ActiveSkillList {
-			if skill.SkillTypes[modparser.SkillTypeHasReservation] && !skill.Disable && len(skill.BuffNames) > 0 && cfg != nil &&
+			if skill.SkillTypeHasReservation() && !skill.Disabled() && len(skill.BuffNames()) > 0 && cfg != nil &&
 				isNameInBuffList(skill, cfg.SkillName, cfg.SummonSkillName) {
-				reserved = math.Floor(skill.SkillData[baseKey] / total * 100)
+				reserved = math.Floor(skill.SkillDataN(baseKey) / total * 100)
 				break
 			}
 		}
@@ -198,8 +204,8 @@ func getStat(s Store, stat string, cfg *Cfg) float64 {
 
 var reCapWords = regexp.MustCompile(`([a-z])([0-9A-Za-z]*)`)
 
-// valueNum is Lua arithmetic over a mod value: numbers or numeric strings;
-// anything else is the Lua arithmetic error.
+// valueNum is Lua arithmetic over a mod value: numbers; anything else is
+// the Lua arithmetic error (numeric captures parse to Num at parse time).
 func valueNum(v modparser.Value) float64 {
 	n, ok := modparser.NumOf(v)
 	if !ok {

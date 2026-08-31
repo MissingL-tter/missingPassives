@@ -136,11 +136,14 @@ func (env *Env) ehpGuard(actor *performActor, damageCategoryConfig DamageCategor
 	// minion's Life.
 	for _, ally := range allyLifePoolList {
 		if modDB.Flag(nil, "MinionLifeShares"+ally.life) {
-			specificOverride, _ := modDB.Override(nil, ally.life)
-			if !hasOverride(modDB, nil, "TotalMinionLife") && specificOverride != nil {
+			specificOverride, ok := modDB.Override(nil, ally.life)
+			if ok && !hasOverride(modDB, nil, "TotalMinionLife") {
 				output.SetN("TotalMinionLife", valueNum(specificOverride))
-			} else if !output.Has("TotalMinionLife") {
-				output.SetN("TotalMinionLife", output.N(ally.life))
+			} else if output.N("TotalMinionLife") == 0 {
+				// `not x or x == 0`: absent and present-zero both take the
+				// ally pool, and assigning an absent value deletes the key,
+				// as the Lua nil assignment does (CalcDefence.lua:2484-2485).
+				output.Set("TotalMinionLife", output.Get(ally.life))
 			}
 			output.SetN("MinionAllyDamageMitigation", output.N("MinionAllyDamageMitigation")+output.N(ally.mitigation))
 			output.SetN(ally.mitigation, 0.0)

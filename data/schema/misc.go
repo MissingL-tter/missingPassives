@@ -32,10 +32,12 @@ type IdValue struct {
 	Value float64 `json:"value"`
 }
 
-// KV is one .ot constant; Value is the raw text after the '='.
+// KV is one .ot constant, parsed to a number at the export edge (the
+// reference shipped the raw text after the '=' and re-evaluated it with
+// tonumber at load — lua-residue.md T4).
 type KV struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
 }
 
 type IntMult struct {

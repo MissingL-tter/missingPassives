@@ -382,13 +382,8 @@ func loadMisc(m schema.MiscData) error {
 	for _, c := range m.Misc.GameConstants {
 		GameConstants[c.Id] = c.Value
 	}
-	var err error
-	if CharacterConstants, err = otConstantMap(m.Misc.CharacterConstants); err != nil {
-		return err
-	}
-	if MonsterConstants, err = otConstantMap(m.Misc.MonsterConstants); err != nil {
-		return err
-	}
+	CharacterConstants = otConstantMap(m.Misc.CharacterConstants)
+	MonsterConstants = otConstantMap(m.Misc.MonsterConstants)
 	TotemLifeMult = map[int64]float64{}
 	for _, t := range m.Misc.TotemLifeMult {
 		TotemLifeMult[t.Id] = t.Mult
@@ -411,17 +406,14 @@ func loadMisc(m schema.MiscData) error {
 	return nil
 }
 
-// otConstantMap evaluates the .ot constants' raw value text as Lua numbers.
-func otConstantMap(kvs []schema.KV) (map[string]float64, error) {
+// otConstantMap indexes the .ot constants (parsed to numbers at the
+// export edge — lua-residue.md T4).
+func otConstantMap(kvs []schema.KV) map[string]float64 {
 	out := map[string]float64{}
 	for _, kv := range kvs {
-		n, ok := util.Tonumber(kv.Value)
-		if !ok {
-			return nil, fmt.Errorf("data: non-numeric .ot constant %s = %q", kv.Key, kv.Value)
-		}
-		out[kv.Key] = n
+		out[kv.Key] = kv.Value
 	}
-	return out, nil
+	return out
 }
 
 func buildMonsterExperienceLevelMap(misc misc) map[int]float64 {

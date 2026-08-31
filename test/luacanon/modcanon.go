@@ -405,11 +405,12 @@ func writeCanonString(sb *strings.Builder, s string) {
 	sb.WriteByte('"')
 }
 
-// numericStringField matches the closed set of numeric tag fields the
-// reference's parser filled from raw text captures ("div":"5"); the port
-// parses them at parse time, so the archive side is normalised to numbers
-// before comparison.
-var numericStringField = regexp.MustCompile(`"(div|limit|percent|base|threshold|thresholdPercent|globalLimit)":"(-?[0-9]+(?:\.[0-9]+)?)"`)
+// numericStringField matches the closed set of numeric tag fields — plus
+// the mod value itself — that the reference's parser filled from raw text
+// captures ("div":"5", "value":"2"); the port parses them at parse time,
+// so the archive side is normalised to numbers before comparison
+// (lua-residue.md T3).
+var numericStringField = regexp.MustCompile(`"(div|limit|percent|base|threshold|thresholdPercent|globalLimit|value)":"(-?[0-9]+(?:\.[0-9]+)?)"`)
 
 // NormalizeArchiveMods rewrites a fixture's canon text so numeric strings
 // in the closed numeric tag fields read as numbers.

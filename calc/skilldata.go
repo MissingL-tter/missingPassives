@@ -19,18 +19,11 @@ func newSkillData() *SkillData {
 	return &SkillData{Nums: map[string]float64{}, Flags: map[string]bool{}, Strs: map[string]string{}}
 }
 
-// N reads a numeric entry; absent or non-numeric reads 0 (numeric text
-// coerces, as Lua arithmetic does).
+// N reads a numeric entry; absent or non-numeric reads 0 (its twin,
+// modstore.Output.N, has the same contract — lua-residue.md T3 settled
+// the pair by deleting the text coercion).
 func (d *SkillData) N(key string) float64 {
-	if n, ok := d.Nums[key]; ok {
-		return n
-	}
-	if s, ok := d.Strs[key]; ok {
-		if n, ok := modparser.NumOf(modparser.Str(s)); ok {
-			return n
-		}
-	}
-	return 0
+	return d.Nums[key]
 }
 
 // Has reports key presence, whatever the value.

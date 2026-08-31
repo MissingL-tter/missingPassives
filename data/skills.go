@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/MissingL-tter/missingPassives/data/schema"
 	"github.com/MissingL-tter/missingPassives/internal/util"
@@ -618,8 +617,10 @@ func notMinionStatApplies(ge *GrantedEffect, statName string) bool {
 }
 
 // decodeBaseMods reads one template line's structured mods: codec mods, or
-// the exporter's {"kind":"mixed"} record for a mod() call with a tag in its
-// flags slot (one template line has one).
+// a {"kind":"typo"} record for the template's one mod() call with a tag in
+// its flags slot (the reference keeps the malformed table; see TypoMod).
+// The record was formerly a Lua-shaped {"kind":"mixed","arr":…,"kv":…}
+// table — retired 2026-08-30 (lua-residue.md T4).
 func decodeBaseMods(blob []byte) ([]SkillMod, error) {
 	var list []json.RawMessage
 	if err := json.Unmarshal(blob, &list); err != nil {
@@ -628,15 +629,13 @@ func decodeBaseMods(blob []byte) ([]SkillMod, error) {
 	out := make([]SkillMod, 0, len(list))
 	for _, e := range list {
 		var probe struct {
-			Kind string          `json:"kind"`
-			Arr  []float64       `json:"arr"`
-			KV   json.RawMessage `json:"kv"`
+			Kind string `json:"kind"`
 		}
-		if err := json.Unmarshal(e, &probe); err != nil || probe.Kind != "mixed" {
+		if err := json.Unmarshal(e, &probe); err != nil || probe.Kind != "typo" {
 			out = append(out, SkillMod{Mod: modparser.DecodeMod(e)})
 			continue
 		}
-		typo, err := decodeTypoMod(probe.KV, probe.Arr)
+		typo, err := decodeTypoMod(e)
 		if err != nil {
 			return nil, err
 		}
@@ -645,43 +644,29 @@ func decodeBaseMods(blob []byte) ([]SkillMod, error) {
 	return out, nil
 }
 
-// decodeTypoMod reads a mixed record's hash part: the mod() fields with the
-// flags slot holding a tag table ({type = ..., ...}) or a number.
-func decodeTypoMod(kv json.RawMessage, nums []float64) (*TypoMod, error) {
+// decodeTypoMod reads a typo record: the mod() fields, with the flags slot
+// holding either a number ("flags") or a codec tag ("flagsTag").
+func decodeTypoMod(raw json.RawMessage) (*TypoMod, error) {
 	var rec struct {
 		Name         string          `json:"name"`
 		Type         string          `json:"type"`
 		Value        json.RawMessage `json:"value"`
-		Flags        json.RawMessage `json:"flags"`
+		Flags        float64         `json:"flags"`
+		FlagsTag     json.RawMessage `json:"flagsTag"`
 		KeywordFlags float64         `json:"keywordFlags"`
+		StrayNums    []float64       `json:"strayNums"`
 	}
-	if err := json.Unmarshal(kv, &rec); err != nil {
-		return nil, fmt.Errorf("data: bad mixed baseMods record: %w", err)
+	if err := json.Unmarshal(raw, &rec); err != nil {
+		return nil, fmt.Errorf("data: bad typo baseMods record: %w", err)
 	}
-	t := &TypoMod{Name: rec.Name, Type: rec.Type, KeywordFlags: rec.KeywordFlags, StrayNums: nums}
-	// The flags slot holds either a number or a tag table. The tag table
-	// keeps the reference's own key spelling, "type", which the exporter
-	// writes through unchanged; the mod codec spells that discriminator
-	// "kind", so the key is renamed before the tag goes to the codec.
-	var tagJSON json.RawMessage
-	if err := json.Unmarshal(rec.Flags, &t.Flags); err != nil {
-		var tag map[string]json.RawMessage
-		if err := json.Unmarshal(rec.Flags, &tag); err != nil {
-			return nil, fmt.Errorf("data: bad mixed baseMods flags: %w", err)
-		}
-		tag["kind"] = tag["type"]
-		delete(tag, "type")
-		tagJSON, _ = json.Marshal(tag)
-	}
-	// The value and the flags-slot tag are mod-codec shapes, decoded by the
-	// codec's own single-value and single-tag decoders.
+	t := &TypoMod{Name: rec.Name, Type: rec.Type, Flags: rec.Flags, KeywordFlags: rec.KeywordFlags, StrayNums: rec.StrayNums}
 	var err error
 	if t.Value, err = modparser.DecodeValue(rec.Value); err != nil {
-		return nil, fmt.Errorf("data: bad mixed baseMods value: %w", err)
+		return nil, fmt.Errorf("data: bad typo baseMods value: %w", err)
 	}
-	if tagJSON != nil {
-		if t.FlagsTag, err = modparser.DecodeTag(tagJSON); err != nil {
-			return nil, fmt.Errorf("data: bad mixed baseMods flags tag: %w", err)
+	if rec.FlagsTag != nil {
+		if t.FlagsTag, err = modparser.DecodeTag(rec.FlagsTag); err != nil {
+			return nil, fmt.Errorf("data: bad typo baseMods flags tag: %w", err)
 		}
 	}
 	return t, nil
@@ -732,8 +717,14 @@ func buildGrantedEffect(hdr schema.SkillHeader, tail schema.SkillTail) (*Granted
 		}
 	}
 
-	args := tail.ModsArgs
-	noArg := func(flag string) bool { return strings.Contains(args, flag) }
+	noArg := func(flag string) bool {
+		for _, f := range tail.ModsFlags {
+			if f == flag {
+				return true
+			}
+		}
+		return false
+	}
 	if !noArg("noBaseFlags") && !tail.Support {
 		ge.BaseFlags = map[string]bool{}
 		for _, f := range tail.BaseFlags {

@@ -14,7 +14,10 @@
 						"(20-30)% increased Mana Regeneration Rate"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"ManaRegenerationImplicitAmulet1"
@@ -32,7 +35,11 @@
 						"Regenerate (2-4) Life per second"
 					],
 					"implicitModTypes": [
-						"\"flat_life_regen\", \"resource\", \"life\""
+						[
+							"flat_life_regen",
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"LifeRegenerationImplicitAmulet1"
@@ -50,7 +57,9 @@
 						"+(20-30) to Strength"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"StrengthImplicitAmulet1"
@@ -69,7 +78,9 @@
 						"+(20-30) to Dexterity"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"DexterityImplicitAmulet1"
@@ -88,7 +99,9 @@
 						"+(20-30) to Intelligence"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"IntelligenceImplicitAmulet1"
@@ -107,7 +120,9 @@
 						"(12-20)% increased Rarity of Items found"
 					],
 					"implicitModTypes": [
-						"\"drop\""
+						[
+							"drop"
+						]
 					],
 					"implicitIds": [
 						"ItemFoundRarityIncreaseImplicitAmulet1"
@@ -126,7 +141,9 @@
 						"+(10-16) to all Attributes"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"AllAttributesImplicitAmulet1"
@@ -145,7 +162,9 @@
 						"+(16-24) to Dexterity and Intelligence"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"HybridDexInt"
@@ -164,7 +183,9 @@
 						"+(16-24) to Strength and Intelligence"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"HybridStrInt"
@@ -183,7 +204,9 @@
 						"+(16-24) to Strength and Dexterity"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"HybridStrDex"
@@ -203,7 +226,11 @@
 						"+(20-30)% to Fire Resistance"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireResistImplicitAmulet1"
@@ -222,7 +249,7 @@
 						"Has 1 Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AmuletHasOneSocket"
@@ -242,7 +269,10 @@
 						"+(8-10)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitAmulet1"
@@ -266,7 +296,10 @@
 						"(48-56)% increased Mana Regeneration Rate"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"ManaRegenerationImplicitAmulet2"
@@ -288,7 +321,10 @@
 						"Regenerate (1.2-1.6)% of Life per second"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"LifeRegenerationImplicitAmulet2"
@@ -310,7 +346,10 @@
 						"(10-15)% faster start of Energy Shield Recharge"
 					],
 					"implicitModTypes": [
-						"\"defences\", \"energy_shield\""
+						[
+							"defences",
+							"energy_shield"
+						]
 					],
 					"implicitIds": [
 						"ReducedEnergyShieldDelayImplicit1_"
@@ -334,8 +373,8 @@
 						"Has Elder, Shaper and all Conqueror Influences"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"CanHaveEveryInfluenceTypeImplicitE1"
@@ -359,10 +398,10 @@
 						"100% increased Explicit Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixModEffectImplicitE2"
@@ -386,10 +425,10 @@
 						"100% increased Explicit Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixModEffectImplicitE3"
@@ -412,7 +451,10 @@
 						"+(8-12)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitVictorAmulet"
@@ -435,7 +477,7 @@
 						"Has 1 Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TalismanHasOneSocket_"
@@ -461,7 +503,10 @@
 						"(20-30)% increased maximum Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedMana"
@@ -486,7 +531,12 @@
 						"(20-30)% increased Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedFireDamage"
@@ -512,7 +562,12 @@
 						"(20-30)% increased Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedLightningDamage"
@@ -538,7 +593,12 @@
 						"(20-30)% increased Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedColdDamage"
@@ -564,7 +624,11 @@
 						"(20-30)% increased Global Physical Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\""
+						[
+							"physical_damage",
+							"damage",
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedPhysicalDamage"
@@ -590,7 +654,11 @@
 						"(19-31)% increased Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"damage\", \"chaos\""
+						[
+							"chaos_damage",
+							"damage",
+							"chaos"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedChaosDamage"
@@ -616,7 +684,9 @@
 						"+1 to maximum number of Raised Zombies"
 					],
 					"implicitModTypes": [
-						"\"minion\""
+						[
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"TalismanAdditionalZombie"
@@ -642,7 +712,9 @@
 						"(30-40)% increased Fish Bite Sensitivity"
 					],
 					"implicitModTypes": [
-						"\"green_herring\""
+						[
+							"green_herring"
+						]
 					],
 					"implicitIds": [
 						"TalismanFishBiteSensitivity"
@@ -668,7 +740,11 @@
 						"(6-10)% increased Attack and Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"caster\", \"speed\""
+						[
+							"attack",
+							"caster",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"TalismanAttackAndCastSpeed"
@@ -694,7 +770,11 @@
 						"(20-30)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"TalismanSpellDamage"
@@ -720,7 +800,10 @@
 						"(20-30)% increased Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"attack\""
+						[
+							"damage",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"TalismanAttackDamage"
@@ -746,7 +829,9 @@
 						"(40-50)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedCriticalChance"
@@ -772,7 +857,10 @@
 						"Regenerate 2% of Life per second"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"TalismanPercentLifeRegeneration"
@@ -798,7 +886,10 @@
 						"+(24-36)% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedCriticalStrikeMultiplier_"
@@ -824,7 +915,13 @@
 						"(4-6)% chance to Freeze, Shock and Ignite"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"lightning\", \"ailment\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"lightning",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TalismanChanceToFreezeShockIgnite_"
@@ -850,7 +947,9 @@
 						"(15-25)% increased Global Defences"
 					],
 					"implicitModTypes": [
-						"\"defences\""
+						[
+							"defences"
+						]
 					],
 					"implicitIds": [
 						"TalismanGlobalDefensesPercent"
@@ -876,7 +975,11 @@
 						"50% of Fire Damage from Hits taken as Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\""
+						[
+							"elemental",
+							"fire",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"TalismanFireTakenAsCold"
@@ -902,7 +1005,11 @@
 						"50% of Fire Damage from Hits taken as Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\""
+						[
+							"elemental",
+							"fire",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanFireTakenAsLightning"
@@ -928,7 +1035,11 @@
 						"50% of Cold Damage from Hits taken as Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\""
+						[
+							"elemental",
+							"fire",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"TalismanColdTakenAsFire"
@@ -954,7 +1065,11 @@
 						"50% of Cold Damage from Hits taken as Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanColdTakenAsLightning"
@@ -980,7 +1095,11 @@
 						"50% of Lightning Damage from Hits taken as Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanLightningTakenAsCold"
@@ -1006,7 +1125,11 @@
 						"50% of Lightning Damage from Hits taken as Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\""
+						[
+							"elemental",
+							"fire",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanLightningTakenAsFire"
@@ -1032,7 +1155,10 @@
 						"(8-12)% increased maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedLife"
@@ -1058,7 +1184,7 @@
 						"Projectiles Pierce 2 additional Targets"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TalismanAdditionalPierce"
@@ -1084,7 +1210,10 @@
 						"+(12-18)% to Damage over Time Multiplier"
 					],
 					"implicitModTypes": [
-						"\"dot_multi\", \"damage\""
+						[
+							"dot_multi",
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"TalismanGlobalDamageOverTimeMultiplier"
@@ -1110,7 +1239,9 @@
 						"(12-16)% increased Attributes"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedAllAttributes"
@@ -1136,7 +1267,7 @@
 						"(5-8)% increased Area of Effect"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TalismanIncreasedAreaOfEffect"
@@ -1162,7 +1293,9 @@
 						"(4-6)% additional Physical Damage Reduction"
 					],
 					"implicitModTypes": [
-						"\"physical\""
+						[
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"TalismanReducedPhysicalDamageTaken_"
@@ -1188,7 +1321,9 @@
 						"(25-35)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"TalismanIncreasedDamage"
@@ -1214,7 +1349,9 @@
 						"10% chance to gain a Power Charge on Kill"
 					],
 					"implicitModTypes": [
-						"\"power_charge\""
+						[
+							"power_charge"
+						]
 					],
 					"implicitIds": [
 						"TalismanPowerChargeOnKill"
@@ -1240,7 +1377,9 @@
 						"10% chance to gain a Frenzy Charge on Kill"
 					],
 					"implicitModTypes": [
-						"\"frenzy_charge\""
+						[
+							"frenzy_charge"
+						]
 					],
 					"implicitIds": [
 						"TalismanFrenzyChargeOnKill"
@@ -1266,7 +1405,9 @@
 						"10% chance to gain an Endurance Charge on Kill"
 					],
 					"implicitModTypes": [
-						"\"endurance_charge\""
+						[
+							"endurance_charge"
+						]
 					],
 					"implicitIds": [
 						"TalismanEnduranceChargeOnKill_"
@@ -1292,7 +1433,13 @@
 						"Gain (6-12)% of Physical Damage as Extra Damage of a random Element"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"elemental_damage\", \"damage\", \"physical\", \"elemental\""
+						[
+							"physical_damage",
+							"elemental_damage",
+							"damage",
+							"physical",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"TalismanDamageDealtAddedAsRandomElement"
@@ -1339,7 +1486,7 @@
 						"TalismanEnchantAreaOfEffect"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1367,7 +1514,10 @@
 						"TalismanEnchantMaximumLifeIncreasePercent"
 					],
 					"enchantModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1394,7 +1544,7 @@
 						"TalismanEnchantAdditionalPierce"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1422,7 +1572,9 @@
 						"TalismanEnchantMaximumLifeAddedAsArmour"
 					],
 					"enchantModTypes": [
-						"\"defences\""
+						[
+							"defences"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1450,7 +1602,7 @@
 						"TalismanEnchantGlobalCooldownRecovery"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1478,7 +1630,9 @@
 						"TalismanEnchantProjectileSpeed"
 					],
 					"enchantModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1506,7 +1660,10 @@
 						"TalismanEnchantMaximumManaIncreasePercent"
 					],
 					"enchantModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1534,7 +1691,9 @@
 						"TalismanEnchantMovementVelocity"
 					],
 					"enchantModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1562,7 +1721,9 @@
 						"TalismanEnchantAllDefences"
 					],
 					"enchantModTypes": [
-						"\"defences\""
+						[
+							"defences"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1590,7 +1751,9 @@
 						"TalismanEnchantIgnoreEnemyArmour"
 					],
 					"enchantModTypes": [
-						"\"physical\""
+						[
+							"physical"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1618,7 +1781,12 @@
 						"TalismanEnchantFireResistancePenetration"
 					],
 					"enchantModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1646,7 +1814,9 @@
 						"TalismanEnchantWitheredEffect"
 					],
 					"enchantModTypes": [
-						"\"chaos\""
+						[
+							"chaos"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1674,7 +1844,12 @@
 						"TalismanEnchantLightningResistancePenetration"
 					],
 					"enchantModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1702,7 +1877,12 @@
 						"TalismanEnchantColdResistancePenetration"
 					],
 					"enchantModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1730,7 +1910,11 @@
 						"TalismanEnchantMaximumFireResist"
 					],
 					"enchantModTypes": [
-						"\"elemental\", \"fire\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"resistance"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1758,7 +1942,11 @@
 						"TalismanEnchantMaximumColdResist"
 					],
 					"enchantModTypes": [
-						"\"elemental\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"resistance"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1786,7 +1974,11 @@
 						"TalismanEnchantMaximumLightningResistance"
 					],
 					"enchantModTypes": [
-						"\"elemental\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"lightning",
+							"resistance"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1814,7 +2006,11 @@
 						"TalismanEnchantMinimumEndurancePowerFrenzyCharges"
 					],
 					"enchantModTypes": [
-						"\"endurance_charge\", \"power_charge\", \"frenzy_charge\""
+						[
+							"endurance_charge",
+							"power_charge",
+							"frenzy_charge"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1842,7 +2038,10 @@
 						"TalismanEnchantCriticalStrikeMultiplier"
 					],
 					"enchantModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1870,7 +2069,7 @@
 						"TalismanEnchantUnaffectedByIgnite"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1898,7 +2097,7 @@
 						"TalismanEnchantWarcriesExertAnAdditionalAttack"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1926,7 +2125,10 @@
 						"TalismanEnchantMarkEffect"
 					],
 					"enchantModTypes": [
-						"\"caster\", \"curse\""
+						[
+							"caster",
+							"curse"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1954,7 +2156,9 @@
 						"TalismanEnchantMaximumEnduranceCharges"
 					],
 					"enchantModTypes": [
-						"\"endurance_charge\""
+						[
+							"endurance_charge"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -1982,7 +2186,9 @@
 						"TalismanEnchantIncreasedMaximumPowerCharges"
 					],
 					"enchantModTypes": [
-						"\"power_charge\""
+						[
+							"power_charge"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2010,7 +2216,9 @@
 						"TalismanEnchantMaximumFrenzyCharges"
 					],
 					"enchantModTypes": [
-						"\"frenzy_charge\""
+						[
+							"frenzy_charge"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2038,7 +2246,9 @@
 						"TalismanEnchantMaximumSpectreCount"
 					],
 					"enchantModTypes": [
-						"\"minion\""
+						[
+							"minion"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2066,7 +2276,9 @@
 						"TalismanEnchantGlobalHeraldGemlevel"
 					],
 					"enchantModTypes": [
-						"\"gem\""
+						[
+							"gem"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2094,7 +2306,7 @@
 						"TalismanEnchantUtilityFlaskPassiveChargeGain"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2122,7 +2334,10 @@
 						"TalismanEnchantGlobalDamageOverTimeMultiplier"
 					],
 					"enchantModTypes": [
-						"\"dot_multi\", \"damage\""
+						[
+							"dot_multi",
+							"damage"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2150,7 +2365,9 @@
 						"TalismanEnchantActionSpeedReduction"
 					],
 					"enchantModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2178,7 +2395,7 @@
 						"TalismanEnchantAdditionalProjectiles"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2206,7 +2423,12 @@
 						"TalismanEnchantColdAndLightningDamageTakenAsFire"
 					],
 					"enchantModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"lightning"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2234,7 +2456,10 @@
 						"TalismanEnchantMinionDotMultiplier"
 					],
 					"enchantModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2262,7 +2487,7 @@
 						"TalismanEnchantFreezeEnemiesWhenHitChance"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2290,7 +2515,9 @@
 						"TalismanEnchantGlobalSkillGemQuality"
 					],
 					"enchantModTypes": [
-						"\"gem\""
+						[
+							"gem"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2318,7 +2545,9 @@
 						"TalismanEnchantPercentageAllAttributes"
 					],
 					"enchantModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2346,7 +2575,9 @@
 						"TalismanEnchantGlobalSkillGemLevel"
 					],
 					"enchantModTypes": [
-						"\"gem\""
+						[
+							"gem"
+						]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2374,7 +2605,7 @@
 						"TalismanEnchantCrabAspectBuffEffect"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2402,7 +2633,7 @@
 						"TalismanEnchantSpiderAspectDebuffEffect"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2430,7 +2661,7 @@
 						"TalismanEnchantAvianAspectBuffEffect"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2458,7 +2689,7 @@
 						"TalismanEnchantCatAspectBuffEffect"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2487,7 +2718,7 @@
 						"TalismanEnchantGreatwolf"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2515,7 +2746,7 @@
 						"TalismanHasOneSocket_"
 					],
 					"enchantModTypes": [
-						""
+						[]
 					],
 					"cannotBeAnointed": true,
 					"flavourText": [
@@ -2541,7 +2772,11 @@
 						"50% of Fire Damage from Hits taken as Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\""
+						[
+							"elemental",
+							"fire",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"TalismanFireTakenAsCold"
@@ -2569,7 +2804,11 @@
 						"50% of Fire Damage from Hits taken as Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\""
+						[
+							"elemental",
+							"fire",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanFireTakenAsLightning"
@@ -2597,7 +2836,11 @@
 						"50% of Cold Damage from Hits taken as Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\""
+						[
+							"elemental",
+							"fire",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"TalismanColdTakenAsFire"
@@ -2625,7 +2868,11 @@
 						"50% of Cold Damage from Hits taken as Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanColdTakenAsLightning"
@@ -2653,7 +2900,11 @@
 						"50% of Lightning Damage from Hits taken as Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"TalismanLightningTakenAsCold"
@@ -2681,7 +2932,9 @@
 						"10% chance to gain a Power Charge on Kill"
 					],
 					"implicitModTypes": [
-						"\"power_charge\""
+						[
+							"power_charge"
+						]
 					],
 					"implicitIds": [
 						"TalismanPowerChargeOnKill"
@@ -2709,7 +2962,9 @@
 						"10% chance to gain a Frenzy Charge on Kill"
 					],
 					"implicitModTypes": [
-						"\"frenzy_charge\""
+						[
+							"frenzy_charge"
+						]
 					],
 					"implicitIds": [
 						"TalismanFrenzyChargeOnKill"
@@ -2934,7 +3189,11 @@
 						"8% increased Global Physical Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\""
+						[
+							"physical_damage",
+							"damage",
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"IncreasedPhysicalDamagePercentImplicitMarakethOneHandAxe1"
@@ -3136,7 +3395,11 @@
 						"8% increased Global Physical Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\""
+						[
+							"physical_damage",
+							"damage",
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"IncreasedPhysicalDamagePercentImplicitMarakethOneHandAxe1"
@@ -3342,7 +3605,11 @@
 						"12% increased Global Physical Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\""
+						[
+							"physical_damage",
+							"damage",
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"IncreasedPhysicalDamagePercentImplicitMarakethOneHandAxe2"
@@ -3376,7 +3643,7 @@
 						"Gain 3 Rage on Melee Hit"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"RageOnMeleeHitE1"
@@ -3410,7 +3677,7 @@
 						"Gain 4 Rage on Melee Hit"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"RageOnMeleeHitE2"
@@ -3444,7 +3711,7 @@
 						"Gain 5 Rage on Melee Hit"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"RageOnMeleeHitE3"
@@ -3647,7 +3914,10 @@
 						"50% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitMarakethTwoHandAxe1"
@@ -3825,7 +4095,10 @@
 						"50% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitMarakethTwoHandAxe1"
@@ -3881,7 +4154,14 @@
 						"+20% to Damage over Time Multiplier for Bleeding"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"bleed\", \"damage\", \"physical\", \"attack\", \"ailment\""
+						[
+							"physical_damage",
+							"bleed",
+							"damage",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"BleedDotMultiplier2HImplicit1"
@@ -3939,7 +4219,9 @@
 						"25% chance to Maim on Hit"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalMaimOnHit2HImplicit_1"
@@ -4023,7 +4305,10 @@
 						"50% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitMarakethTwoHandAxe2"
@@ -4057,7 +4342,12 @@
 						"Hits with this Weapon have 30% chance to ignore Enemy Physical Damage Reduction"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalIgnorePhysReductionImplicitE1"
@@ -4091,7 +4381,12 @@
 						"Hits with this Weapon have 50% chance to ignore Enemy Physical Damage Reduction"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalIgnorePhysReductionImplicitE2"
@@ -4125,7 +4420,12 @@
 						"Hits with this Weapon ignore Enemy Physical Damage Reduction"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalIgnorePhysReductionImplicitE3"
@@ -4157,7 +4457,11 @@
 						"(12-24)% increased Global Physical Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\""
+						[
+							"physical_damage",
+							"damage",
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"IncreasedPhysicalDamagePercentImplicitBelt1"
@@ -4175,7 +4479,10 @@
 						"+(9-20) to maximum Energy Shield"
 					],
 					"implicitModTypes": [
-						"\"defences\", \"energy_shield\""
+						[
+							"defences",
+							"energy_shield"
+						]
 					],
 					"implicitIds": [
 						"IncreasedEnergyShieldImplicitBelt1"
@@ -4193,7 +4500,10 @@
 						"+(25-40) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitBelt1"
@@ -4212,7 +4522,9 @@
 						"+(25-35) to Strength"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"StrengthImplicitBelt1"
@@ -4231,7 +4543,7 @@
 						"(15-25)% increased Stun and Block Recovery"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunRecoveryImplicitBelt1"
@@ -4250,7 +4562,7 @@
 						"(20-30)% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitBelt1"
@@ -4273,8 +4585,8 @@
 						"Can't use Flask in Fifth Slot"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"CannotUseFlaskInFifthSlotImplicitE1_"
@@ -4294,7 +4606,7 @@
 						"Trigger Level 20 Summon Taunting Contraption when you use a Flask"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"SummonTauntingContraptionOnFlaskUseImplicitE1"
@@ -4314,7 +4626,7 @@
 						"Has 1 Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"BeltHasOneSocket"
@@ -4338,7 +4650,11 @@
 						"+(260-320) to Armour and Evasion Rating"
 					],
 					"implicitModTypes": [
-						"\"defences\", \"armour\", \"evasion\""
+						[
+							"defences",
+							"armour",
+							"evasion"
+						]
 					],
 					"implicitIds": [
 						"ArmourAndEvasionImplicitBelt1"
@@ -4360,7 +4676,10 @@
 						"+(60-80) to maximum Energy Shield"
 					],
 					"implicitModTypes": [
-						"\"defences\", \"energy_shield\""
+						[
+							"defences",
+							"energy_shield"
+						]
 					],
 					"implicitIds": [
 						"IncreasedEnergyShieldImplicitBelt2"
@@ -4382,7 +4701,7 @@
 						"Has 1 Abyssal Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AbyssJewelSocketImplicit"
@@ -4403,7 +4722,7 @@
 						"Can be Anointed"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"BeltEnchantImplicit"
@@ -4425,7 +4744,9 @@
 						"(20-30)% increased Rarity of Items found"
 					],
 					"implicitModTypes": [
-						"\"drop\""
+						[
+							"drop"
+						]
 					],
 					"implicitIds": [
 						"ItemFoundRarityIncreaseImplicitDemigodsBelt1"
@@ -4745,7 +5066,10 @@
 						"+(8-12)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitArmour1"
@@ -5226,7 +5550,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitArmour1"
@@ -5619,7 +5945,11 @@
 						"(3-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitArmour1"
@@ -7129,7 +7459,10 @@
 						"+(20-25) to maximum Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"IncreasedManaImplicitArmour1"
@@ -7242,7 +7575,9 @@
 						"+1 to Level of all Vaal Skill Gems"
 					],
 					"implicitModTypes": [
-						"\"gem\""
+						[
+							"gem"
+						]
 					],
 					"implicitIds": [
 						"GlobalVaalGemsLevelImplicit1_"
@@ -7316,7 +7651,10 @@
 						"+(15-25)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesDemigodsImplicit"
@@ -7583,8 +7921,8 @@
 						"20% reduced Stun Threshold"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"IncreasedStunRecoveryReducedStunThresholdImplicitR1"
@@ -7614,8 +7952,8 @@
 						"20% reduced Stun Threshold"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"IncreasedStunRecoveryReducedStunThresholdImplicitR2"
@@ -7645,8 +7983,8 @@
 						"20% reduced Stun Threshold"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"IncreasedStunRecoveryReducedStunThresholdImplicitR3"
@@ -7905,8 +8243,12 @@
 						"25% less Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\"",
-						"\"attack\""
+						[
+							"attack"
+						],
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamagePerAccuracyReducedAccuracyImplicitR1_"
@@ -7936,8 +8278,12 @@
 						"25% less Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\"",
-						"\"attack\""
+						[
+							"attack"
+						],
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamagePerAccuracyReducedAccuracyImplicitR2_"
@@ -7967,8 +8313,12 @@
 						"25% less Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\"",
-						"\"attack\""
+						[
+							"attack"
+						],
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamagePerAccuracyReducedAccuracyImplicitR3"
@@ -8227,8 +8577,12 @@
 						"(45-50)% increased Cooldown Recovery Rate of Movement Skills"
 					],
 					"implicitModTypes": [
-						"\"speed\"",
-						"\"speed\""
+						[
+							"speed"
+						],
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementSkillCooldownReducedMoveSpeedImplicitR1"
@@ -8258,8 +8612,12 @@
 						"(45-50)% increased Cooldown Recovery Rate of Movement Skills"
 					],
 					"implicitModTypes": [
-						"\"speed\"",
-						"\"speed\""
+						[
+							"speed"
+						],
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementSkillCooldownReducedMoveSpeedImplicitR2_"
@@ -8289,8 +8647,12 @@
 						"(45-50)% increased Cooldown Recovery Rate of Movement Skills"
 					],
 					"implicitModTypes": [
-						"\"speed\"",
-						"\"speed\""
+						[
+							"speed"
+						],
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementSkillCooldownReducedMoveSpeedImplicitR3_"
@@ -8561,7 +8923,12 @@
 						"+(8-12)% to Fire and Cold Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndColdResistImplicitBoots1_"
@@ -8835,7 +9202,12 @@
 						"+(8-12)% to Fire and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndLightningResistImplicitBoots1"
@@ -9132,7 +9504,10 @@
 						"+(13-17)% to Chaos Resistance"
 					],
 					"implicitModTypes": [
-						"\"chaos\", \"resistance\""
+						[
+							"chaos",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ChaosResistImplicitBoots1"
@@ -9168,7 +9543,12 @@
 						"+(8-12)% to Cold and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ColdAndLightningResistImplicitBoots1"
@@ -9272,7 +9652,10 @@
 						"+(8-16)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplictBootsDemigods1"
@@ -9396,7 +9779,10 @@
 						"+(15-25)% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitBow1"
@@ -9452,7 +9838,12 @@
 						"(20-24)% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"WeaponElementalDamageImplicitBow1"
@@ -9484,7 +9875,10 @@
 						"(30-50)% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitBow1"
@@ -9518,7 +9912,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityMarakethBowImplicit1"
@@ -9622,7 +10018,10 @@
 						"+(15-25)% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitBow1"
@@ -9678,7 +10077,12 @@
 						"(20-24)% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"WeaponElementalDamageImplicitBow1"
@@ -9710,7 +10114,10 @@
 						"(30-50)% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitBow1"
@@ -9744,7 +10151,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityMarakethBowImplicit1"
@@ -9849,7 +10258,10 @@
 						"+(15-25)% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitBow1"
@@ -9907,7 +10319,12 @@
 						"(20-24)% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"WeaponElementalDamageImplicitBow1"
@@ -9940,7 +10357,10 @@
 						"(30-50)% increased Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"LocalCriticalStrikeChanceImplicitBow1"
@@ -9974,7 +10394,9 @@
 						"10% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityMarakethBowImplicit2"
@@ -10008,7 +10430,13 @@
 						"Adds (46-55) to (69-83) Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedFireDamageImplicitE1_"
@@ -10042,7 +10470,13 @@
 						"Adds (80-97) to (126-144) Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedFireDamageImplicitE2_"
@@ -10076,7 +10510,13 @@
 						"Adds (121-133) to (184-197) Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedFireDamageImplicitE3_"
@@ -10135,7 +10575,11 @@
 						"Grants 3 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw1"
@@ -10166,7 +10610,11 @@
 						"Grants 6 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw2"
@@ -10198,7 +10646,11 @@
 						"Grants 7 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw3"
@@ -10230,7 +10682,11 @@
 						"Grants 8 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw3_1"
@@ -10262,7 +10718,11 @@
 						"Grants 12 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw4"
@@ -10294,7 +10754,11 @@
 						"Grants 19 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw4_1"
@@ -10326,7 +10790,11 @@
 						"Grants 15 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw5"
@@ -10358,7 +10826,11 @@
 						"Grants 20 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw5_1"
@@ -10393,8 +10865,18 @@
 						"Grants 6 Mana per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"mana\", \"attack\"",
-						"\"resource\", \"life\", \"mana\", \"attack\""
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						],
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeAndManaOnHitSeparatedImplicitMarakethClaw1"
@@ -10426,7 +10908,11 @@
 						"Grants 25 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw6"
@@ -10458,7 +10944,11 @@
 						"Grants 24 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw7"
@@ -10490,7 +10980,12 @@
 						"1.6% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw1"
@@ -10522,7 +11017,11 @@
 						"Grants 44 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw8"
@@ -10554,7 +11053,12 @@
 						"2% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw2"
@@ -10586,7 +11090,11 @@
 						"Grants 40 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw9_"
@@ -10618,7 +11126,12 @@
 						"2% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw2"
@@ -10653,8 +11166,18 @@
 						"Grants 10 Mana per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"mana\", \"attack\"",
-						"\"resource\", \"life\", \"mana\", \"attack\""
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						],
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeAndManaOnHitSeparatedImplicitMarakethClaw2"
@@ -10686,7 +11209,11 @@
 						"Grants 46 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw10"
@@ -10718,7 +11245,11 @@
 						"Grants 40 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw11_"
@@ -10750,7 +11281,12 @@
 						"1.6% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw1"
@@ -10783,7 +11319,11 @@
 						"Grants 50 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw12"
@@ -10816,7 +11356,12 @@
 						"2% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw2"
@@ -10849,7 +11394,11 @@
 						"Grants 46 Life per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicit2Claw13"
@@ -10882,7 +11431,12 @@
 						"2% of Physical Attack Damage Leeched as Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"physical\", \"attack\""
+						[
+							"resource",
+							"life",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeLeechPermyriadImplicitClaw2"
@@ -10917,8 +11471,18 @@
 						"Grants 14 Mana per Enemy Hit"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"mana\", \"attack\"",
-						"\"resource\", \"life\", \"mana\", \"attack\""
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						],
+						[
+							"resource",
+							"life",
+							"mana",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeAndManaOnHitSeparatedImplicitMarakethClaw3"
@@ -10952,7 +11516,12 @@
 						"Adds (26-38) to (52-70) Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"damage\", \"chaos\", \"attack\""
+						[
+							"chaos_damage",
+							"damage",
+							"chaos",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedChaosDamageImplicitE1"
@@ -10986,7 +11555,12 @@
 						"Adds (43-55) to (81-104) Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"damage\", \"chaos\", \"attack\""
+						[
+							"chaos_damage",
+							"damage",
+							"chaos",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedChaosDamageImplicitE2"
@@ -11020,7 +11594,12 @@
 						"Adds (46-63) to (92-113) Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"damage\", \"chaos\", \"attack\""
+						[
+							"chaos_damage",
+							"damage",
+							"chaos",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalAddedChaosDamageImplicitE3_"
@@ -11057,7 +11636,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11089,7 +11670,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11122,7 +11705,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11157,7 +11742,9 @@
 						"4% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockPercentMarakethDaggerImplicit1"
@@ -11190,7 +11777,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11223,7 +11812,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11258,7 +11849,9 @@
 						"4% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockPercentMarakethDaggerImplicit1"
@@ -11291,7 +11884,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11324,7 +11919,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11359,7 +11956,9 @@
 						"6% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockPercentMarakethDaggerImplicit2_"
@@ -11394,7 +11993,7 @@
 						"All Damage from Hits with This Weapon can Poison"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"LocalAllDamageCanPoisonImplicitE1_"
@@ -11429,7 +12028,7 @@
 						"All Damage from Hits with This Weapon can Poison"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"LocalAllDamageCanPoisonImplicitE1_"
@@ -11464,7 +12063,7 @@
 						"All Damage from Hits with This Weapon can Poison"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"LocalAllDamageCanPoisonImplicitE1_"
@@ -11524,7 +12123,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11557,7 +12158,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11590,7 +12193,9 @@
 						"(60-65)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew3"
@@ -11623,7 +12228,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11656,7 +12263,9 @@
 						"(50-55)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew2"
@@ -11689,7 +12298,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11722,7 +12333,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11755,7 +12368,9 @@
 						"(60-65)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew3"
@@ -11788,7 +12403,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11821,7 +12438,9 @@
 						"(50-55)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew2"
@@ -11854,7 +12473,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11888,7 +12509,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11922,7 +12545,9 @@
 						"(60-65)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew3"
@@ -11956,7 +12581,9 @@
 						"(40-45)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew1"
@@ -11990,7 +12617,9 @@
 						"(50-55)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitDaggerNew2"
@@ -12025,7 +12654,7 @@
 						"Trigger Level 10 Flame Dash when you use a Socketed Skill"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TriggerFlameDashOnSocketedSkillUseImplicitE1"
@@ -12061,8 +12690,8 @@
 						"20% increased Cooldown Recovery Rate of Travel Skills"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"TriggerFlameDashOnSocketedSkillUseImplicitE2"
@@ -12098,8 +12727,8 @@
 						"40% increased Cooldown Recovery Rate of Travel Skills"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"TriggerFlameDashOnSocketedSkillUseImplicitE3_"
@@ -12905,7 +13534,9 @@
 						"Taunts nearby Enemies on use"
 					],
 					"implicitModTypes": [
-						"\"flask\""
+						[
+							"flask"
+						]
 					],
 					"implicitIds": [
 						"UtilityFlaskTaunt_"
@@ -12934,7 +13565,9 @@
 						"Creates Chilled Ground on Use"
 					],
 					"implicitModTypes": [
-						"\"flask\""
+						[
+							"flask"
+						]
 					],
 					"implicitIds": [
 						"UtilityFlaskChilledGround"
@@ -12963,7 +13596,9 @@
 						"Creates a Smoke Cloud on Use"
 					],
 					"implicitModTypes": [
-						"\"flask\""
+						[
+							"flask"
+						]
 					],
 					"implicitIds": [
 						"UtilityFlaskSmokeCloud"
@@ -12992,7 +13627,9 @@
 						"Creates Consecrated Ground on Use"
 					],
 					"implicitModTypes": [
-						"\"flask\""
+						[
+							"flask"
+						]
 					],
 					"implicitIds": [
 						"UtilityFlaskConsecrate"
@@ -13108,7 +13745,9 @@
 						"Restores Ward on use"
 					],
 					"implicitModTypes": [
-						"\"flask\""
+						[
+							"flask"
+						]
 					],
 					"implicitIds": [
 						"UtilityFlaskWard"
@@ -13373,8 +14012,12 @@
 						"You take 10% of Damage from Blocked Hits"
 					],
 					"implicitModTypes": [
-						"\"block\"",
-						"\"block\""
+						[
+							"block"
+						],
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"ChanceToBlockAndDamageTakenFromBlockedHitsImplicitR4"
@@ -13404,8 +14047,12 @@
 						"You take 10% of Damage from Blocked Hits"
 					],
 					"implicitModTypes": [
-						"\"block\"",
-						"\"block\""
+						[
+							"block"
+						],
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"ChanceToBlockAndDamageTakenFromBlockedHitsImplicitR5"
@@ -13435,8 +14082,12 @@
 						"You take 10% of Damage from Blocked Hits"
 					],
 					"implicitModTypes": [
-						"\"block\"",
-						"\"block\""
+						[
+							"block"
+						],
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"ChanceToBlockAndDamageTakenFromBlockedHitsImplicitR6"
@@ -13469,7 +14120,10 @@
 						"(16-20)% increased Melee Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"attack\""
+						[
+							"damage",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"MeleeDamageImplicitGloves1"
@@ -13728,8 +14382,8 @@
 						"Trap Skills have (10-15)% increased Skill Effect Duration"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"TrapSkillEffectDurationTrapCooldownPenaltyImplicitR1"
@@ -13759,8 +14413,8 @@
 						"Trap Skills have (15-20)% increased Skill Effect Duration"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"TrapSkillEffectDurationTrapCooldownPenaltyImplicitR2"
@@ -13790,8 +14444,8 @@
 						"Trap Skills have (20-25)% increased Skill Effect Duration"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"TrapSkillEffectDurationTrapCooldownPenaltyImplicitR3"
@@ -13824,7 +14478,10 @@
 						"(14-18)% increased Projectile Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"attack\""
+						[
+							"damage",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"ProjectileAttackDamageImplicitGloves1"
@@ -14083,8 +14740,14 @@
 						"(25-30)% chance when you pay a Skill's Cost to gain that much Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\"",
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						],
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"GainManaOnManaPaidManaCost1"
@@ -14114,8 +14777,14 @@
 						"(25-30)% chance when you pay a Skill's Cost to gain that much Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\"",
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						],
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"GainManaOnManaPaidManaCost2"
@@ -14145,8 +14814,14 @@
 						"(25-30)% chance when you pay a Skill's Cost to gain that much Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\"",
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						],
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"GainManaOnManaPaidManaCost3____"
@@ -14179,7 +14854,11 @@
 						"(12-16)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitGloves1"
@@ -14687,7 +15366,9 @@
 						"(14-18)% increased Damage over Time"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"DegenerationDamageImplicit1"
@@ -15029,7 +15710,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitGlovesDemigods1"
@@ -15055,7 +15739,7 @@
 						"(4-12)% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"GraftImplicitUulNetol1"
@@ -15075,7 +15759,12 @@
 						"Attacks have (4-12)% chance to cause Bleeding"
 					],
 					"implicitModTypes": [
-						"\"bleed\", \"physical\", \"attack\", \"ailment\""
+						[
+							"bleed",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitUulNetol2"
@@ -15094,7 +15783,10 @@
 						"(4-12)% chance to Impale Enemies on Hit with Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical\", \"attack\""
+						[
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitUulNetol3"
@@ -15113,7 +15805,9 @@
 						"(1-3)% additional Physical Damage Reduction"
 					],
 					"implicitModTypes": [
-						"\"physical\""
+						[
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitUulNetol4"
@@ -15135,7 +15829,10 @@
 						"(10-20)% increased Armour"
 					],
 					"implicitModTypes": [
-						"\"defences\", \"armour\""
+						[
+							"defences",
+							"armour"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitXoph1"
@@ -15155,7 +15852,9 @@
 						"(8-16)% increased Area Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitXoph2"
@@ -15175,7 +15874,12 @@
 						"(8-16)% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitXoph3"
@@ -15194,7 +15898,13 @@
 						"(5-10)% increased Duration of Elemental Ailments on Enemies"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"lightning\", \"ailment\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"lightning",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitXoph4"
@@ -15216,7 +15926,12 @@
 						"Adds (1-4) to (18-20) Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitEsh1"
@@ -15236,7 +15951,9 @@
 						"(3-5)% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitEsh2"
@@ -15256,7 +15973,9 @@
 						"Spell Skills have (5-10)% increased Area of Effect"
 					],
 					"implicitModTypes": [
-						"\"caster\""
+						[
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitEsh3"
@@ -15275,7 +15994,9 @@
 						"(4-12)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitEsh4"
@@ -15297,7 +16018,9 @@
 						"(8-16)% increased Projectile Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitTul1"
@@ -15317,7 +16040,11 @@
 						"(8-12)% chance to Freeze"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"ailment\""
+						[
+							"elemental",
+							"cold",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitTul2"
@@ -15336,7 +16063,12 @@
 						"Minions have (4-8)% increased Attack and Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"caster\", \"speed\", \"minion\""
+						[
+							"attack",
+							"caster",
+							"speed",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitTul3"
@@ -15355,7 +16087,10 @@
 						"+(3-6)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"GraftImplicitTul4"
@@ -16538,8 +17273,8 @@
 						"You are Crushed"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxChaosResistanceCrushedImplicitR1"
@@ -16572,8 +17307,8 @@
 						"You are Crushed"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxChaosResistanceCrushedImplicitR2"
@@ -16606,8 +17341,8 @@
 						"You are Crushed"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxChaosResistanceCrushedImplicitR3"
@@ -16951,8 +17686,8 @@
 						"+1 to Level of Socketed Skill Gems"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"SocketedActiveGemLevelSupportGemPenaltyImplicitR1"
@@ -16985,8 +17720,8 @@
 						"+1 to Level of Socketed Skill Gems"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"SocketedActiveGemLevelSupportGemPenaltyImplicitR1"
@@ -17019,8 +17754,8 @@
 						"+2 to Level of Socketed Skill Gems"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"SocketedActiveGemLevelSupportGemPenaltyImplicitR2"
@@ -17056,7 +17791,10 @@
 						"Minions deal (15-20)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitHelmet1"
@@ -17422,8 +18160,18 @@
 						"Your Hits treat Cold Resistance as 10% higher than actual value"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageColdPenetration1"
@@ -17456,8 +18204,18 @@
 						"Your Hits treat Cold Resistance as 10% higher than actual value"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageColdPenetration2"
@@ -17490,8 +18248,18 @@
 						"Your Hits treat Cold Resistance as 10% higher than actual value"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageColdPenetration3"
@@ -17595,7 +18363,9 @@
 						"+(16-24) to all Attributes"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"AllAttributesImplicitWreath1"
@@ -17852,7 +18622,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -17882,7 +18652,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -17913,7 +18683,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -17944,7 +18714,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -17975,7 +18745,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18006,7 +18776,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18037,7 +18807,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -18068,7 +18838,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18101,7 +18871,10 @@
 						"4% increased Attack Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"speed\""
+						[
+							"attack",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"LocalIncreasedAttackSpeedImplicitMarakethOneHandMace1"
@@ -18132,7 +18905,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18163,7 +18936,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18194,7 +18967,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -18225,7 +18998,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18256,7 +19029,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18287,7 +19060,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -18318,7 +19091,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18351,7 +19124,10 @@
 						"4% increased Attack Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"speed\""
+						[
+							"attack",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"LocalIncreasedAttackSpeedImplicitMarakethOneHandMace1"
@@ -18382,7 +19158,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18413,7 +19189,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18444,7 +19220,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -18476,7 +19252,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18508,7 +19284,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18540,7 +19316,7 @@
 						"15% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace2"
@@ -18572,7 +19348,7 @@
 						"10% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace1"
@@ -18605,7 +19381,10 @@
 						"6% increased Attack Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"speed\""
+						[
+							"attack",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"LocalIncreasedAttackSpeedImplicitMarakethOneHandMace2"
@@ -18638,7 +19417,7 @@
 						"Trigger Level 10 Fiery Impact on Melee Hit with this Weapon"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TriggeredFieryImpactOnHitWithWeaponImplicitE1"
@@ -18671,7 +19450,7 @@
 						"Trigger Level 15 Fiery Impact on Melee Hit with this Weapon"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TriggeredFieryImpactOnHitWithWeaponImplicitE2_"
@@ -18704,7 +19483,7 @@
 						"Trigger Level 20 Fiery Impact on Melee Hit with this Weapon"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"TriggeredFieryImpactOnHitWithWeaponImplicitE3"
@@ -18737,7 +19516,11 @@
 						"10% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew1"
@@ -18768,7 +19551,11 @@
 						"12% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew2"
@@ -18800,7 +19587,11 @@
 						"12% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew3"
@@ -18832,7 +19623,11 @@
 						"20% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew4"
@@ -18864,7 +19659,11 @@
 						"14% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew5"
@@ -18896,7 +19695,11 @@
 						"16% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew6"
@@ -18928,7 +19731,11 @@
 						"16% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew7"
@@ -18960,7 +19767,11 @@
 						"22% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew8"
@@ -18994,7 +19805,11 @@
 						"Damage Penetrates 4% Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalPenetrationMarakethSceptreImplicit1"
@@ -19026,7 +19841,11 @@
 						"18% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew9"
@@ -19058,7 +19877,11 @@
 						"18% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew10"
@@ -19090,7 +19913,11 @@
 						"30% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew11"
@@ -19122,7 +19949,11 @@
 						"22% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew12___"
@@ -19154,7 +19985,11 @@
 						"24% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew13"
@@ -19186,7 +20021,11 @@
 						"24% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew14"
@@ -19218,7 +20057,11 @@
 						"30% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew15"
@@ -19252,7 +20095,11 @@
 						"Damage Penetrates 4% Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalPenetrationMarakethSceptreImplicit1"
@@ -19284,7 +20131,11 @@
 						"26% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew16"
@@ -19316,7 +20167,11 @@
 						"26% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew17"
@@ -19348,7 +20203,11 @@
 						"40% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew18"
@@ -19381,7 +20240,11 @@
 						"30% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew19"
@@ -19414,7 +20277,11 @@
 						"32% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew20"
@@ -19447,7 +20314,11 @@
 						"32% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew21__"
@@ -19480,7 +20351,11 @@
 						"40% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitSceptreNew22"
@@ -19514,7 +20389,11 @@
 						"Damage Penetrates 6% Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalPenetrationMarakethSceptreImplicit2"
@@ -19548,7 +20427,12 @@
 						"Elemental Overload"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"critical\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"KeystoneElementalOverloadSceptreImplicit1_"
@@ -19582,7 +20466,11 @@
 						"Elemental Equilibrium"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"KeystoneElementalEquilibriumSceptreImplicit1"
@@ -19616,7 +20504,7 @@
 						"Secrets of Suffering"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"SecretsOfSufferingKeystoneSceptreImplicit1"
@@ -19650,7 +20538,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19680,7 +20568,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19711,7 +20599,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19742,7 +20630,7 @@
 						"45% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace2"
@@ -19773,7 +20661,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19804,7 +20692,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19835,7 +20723,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19868,7 +20756,7 @@
 						"15% increased Area of Effect"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AreaOfEffectImplicitMarakethTwoHandMace1"
@@ -19899,7 +20787,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19930,7 +20818,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -19961,7 +20849,7 @@
 						"45% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace2"
@@ -19992,7 +20880,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -20023,7 +20911,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -20054,7 +20942,7 @@
 						"30% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace1"
@@ -20087,7 +20975,7 @@
 						"15% increased Area of Effect"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AreaOfEffectImplicitMarakethTwoHandMace1"
@@ -20118,7 +21006,7 @@
 						"45% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitMace2"
@@ -20149,7 +21037,9 @@
 						"30% increased Area Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"AreaDamageImplicitMace1"
@@ -20181,7 +21071,7 @@
 						"20% reduced Enemy Stun Threshold"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunThresholdReductionImplicitMace3_"
@@ -20213,7 +21103,9 @@
 						"5% chance to deal Double Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\""
+						[
+							"damage"
+						]
 					],
 					"implicitIds": [
 						"DoubleDamageChanceImplicitMace1"
@@ -20245,7 +21137,9 @@
 						"10% increased Strength"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"PercentageStrengthImplicitMace1"
@@ -20277,7 +21171,7 @@
 						"25% chance to double Stun Duration"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceForDoubleStunDurationImplicitMace_1"
@@ -20310,7 +21204,7 @@
 						"20% increased Area of Effect"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AreaOfEffectImplicitMarakethTwoHandMace2"
@@ -20343,7 +21237,7 @@
 						"Warcries Exert 1 additional Attack"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"WarcriesExertAnAdditionalAttackImplicitE1_"
@@ -20376,7 +21270,7 @@
 						"Warcries Exert 1 additional Attack"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"WarcriesExertAnAdditionalAttackImplicitE1_"
@@ -20409,7 +21303,7 @@
 						"Warcries Exert 2 additional Attacks"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"WarcriesExertAnAdditionalAttackImplicitE2"
@@ -20441,7 +21335,13 @@
 						"Adds 2 to 4 Fire Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageImplicitQuiver1"
@@ -20460,7 +21360,13 @@
 						"Adds 2 to 3 Cold Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageImplicitQuiver1"
@@ -20479,7 +21385,13 @@
 						"Adds 1 to 5 Lightning Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamageImplicitQuiver1"
@@ -20498,7 +21410,12 @@
 						"Adds 1 to 4 Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver1"
@@ -20518,7 +21435,9 @@
 						"+(30-40) to Dexterity"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"DexterityImplicitQuiver1"
@@ -20539,7 +21458,12 @@
 						"1 to 4 Added Physical Damage with Bow Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver6_"
@@ -20560,7 +21484,9 @@
 						"(20-30)% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracyPercentImplicitQuiver7"
@@ -20581,7 +21507,11 @@
 						"Gain (3-4) Life per Enemy Hit with Attacks"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicitQuiver8"
@@ -20602,7 +21532,7 @@
 						"(25-35)% increased Stun Duration on Enemies"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"StunDurationImplicitQuiver9"
@@ -20623,7 +21553,13 @@
 						"4 to 8 Added Fire Damage with Bow Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageImplicitQuiver10"
@@ -20644,7 +21580,12 @@
 						"6 to 12 Added Physical Damage with Bow Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver11"
@@ -20665,7 +21606,9 @@
 						"Arrows Pierce an additional Target"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AdditionalArrowPierceImplicitQuiver12_"
@@ -20686,7 +21629,9 @@
 						"(20-30)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitQuiver13"
@@ -20708,7 +21653,7 @@
 						"Has 1 Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"QuiverHasOneSocket"
@@ -20729,7 +21674,12 @@
 						"Adds 1 to 4 Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver1New"
@@ -20748,7 +21698,13 @@
 						"Adds 3 to 5 Fire Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageImplicitQuiver2New"
@@ -20767,7 +21723,11 @@
 						"Gain (6-8) Life per Enemy Hit with Attacks"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\", \"attack\""
+						[
+							"resource",
+							"life",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LifeGainPerTargetImplicitQuiver3New"
@@ -20786,7 +21746,9 @@
 						"(20-30)% increased Projectile Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"ProjectileSpeedImplicitQuiver4New"
@@ -20805,7 +21767,9 @@
 						"Arrows Pierce an additional Target"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AdditionalArrowPierceImplicitQuiver5New"
@@ -20824,7 +21788,12 @@
 						"Adds (7-9) to (13-16) Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver6New"
@@ -20843,7 +21812,9 @@
 						"(20-30)% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracyPercentImplicitQuiver7New"
@@ -20862,7 +21833,10 @@
 						"(20-30)% increased Critical Strike Chance with Bows"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitQuiver8New"
@@ -20881,7 +21855,13 @@
 						"Adds (12-15) to (24-27) Fire Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageImplicitQuiver9New"
@@ -20900,7 +21880,10 @@
 						"(8-10)% increased Attack Speed"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"speed\""
+						[
+							"attack",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAttackSpeedImplicitQuiver10New"
@@ -20919,7 +21902,13 @@
 						"Gain (10-15)% of Physical Damage as Extra Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"chaos_damage\", \"damage\", \"physical\", \"chaos\""
+						[
+							"physical_damage",
+							"chaos_damage",
+							"damage",
+							"physical",
+							"chaos"
+						]
 					],
 					"implicitIds": [
 						"PhysicalDamageAddedAsChaosImplicitQuiver11New"
@@ -20938,7 +21927,12 @@
 						"Adds (12-15) to (24-27) Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitQuiver12New"
@@ -20957,7 +21951,12 @@
 						"(20-30)% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"WeaponElementalDamageImplicitQuiver13New"
@@ -20982,7 +21981,9 @@
 						"(20-30)% increased Totem Placement speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"SummonTotemCastSpeedImplicit1"
@@ -21005,7 +22006,12 @@
 						"Adds 1 to 4 Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitRing1"
@@ -21023,7 +22029,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitRing1"
@@ -21041,7 +22050,10 @@
 						"+(20-30) to maximum Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"IncreasedManaImplicitRing1"
@@ -21059,7 +22071,9 @@
 						"(6-15)% increased Rarity of Items found"
 					],
 					"implicitModTypes": [
-						"\"drop\""
+						[
+							"drop"
+						]
 					],
 					"implicitIds": [
 						"ItemFoundRarityIncreaseImplicitRing1"
@@ -21078,7 +22092,11 @@
 						"+(20-30)% to Lightning Resistance"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"LightningResistImplicitRing1"
@@ -21097,7 +22115,11 @@
 						"+(20-30)% to Cold Resistance"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ColdResistImplicitRing1"
@@ -21116,7 +22138,11 @@
 						"+(20-30)% to Fire Resistance"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireResistImplicitRing1"
@@ -21135,7 +22161,10 @@
 						"+(8-10)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitRing1"
@@ -21154,7 +22183,10 @@
 						"(7-10)% increased Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"caster\", \"speed\""
+						[
+							"caster",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"IncreasedCastSpeedImplicitRing1"
@@ -21173,7 +22205,10 @@
 						"+(17-23)% to Chaos Resistance"
 					],
 					"implicitModTypes": [
-						"\"chaos\", \"resistance\""
+						[
+							"chaos",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ChaosResistImplicitRing1"
@@ -21192,7 +22227,9 @@
 						"(20-30)% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitRing1"
@@ -21212,7 +22249,12 @@
 						"+(12-16)% to Fire and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndLightningResistImplicitRing1"
@@ -21232,7 +22274,12 @@
 						"+(12-16)% to Cold and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ColdAndLightningResistImplicitRing1"
@@ -21252,7 +22299,12 @@
 						"+(12-16)% to Fire and Cold Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndColdResistImplicitRing1"
@@ -21272,7 +22324,7 @@
 						"Has 1 Socket"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"RingHasOneSocket"
@@ -21292,7 +22344,11 @@
 						"Minions have +(10-15)% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\", \"minion\""
+						[
+							"elemental",
+							"resistance",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionElementalResistanceImplicitRing1"
@@ -21316,7 +22372,12 @@
 						"Adds (3-4) to (10-14) Physical Damage to Attacks"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"damage\", \"physical\", \"attack\""
+						[
+							"physical_damage",
+							"damage",
+							"physical",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AddedPhysicalDamageImplicitRing2"
@@ -21338,7 +22399,11 @@
 						"(15-25)% increased Elemental Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"ElementalDamagePercentImplicitAtlasRing_"
@@ -21360,7 +22425,10 @@
 						"(5-7)% increased maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"MaximumLifeImplicitAtlasRing"
@@ -21382,7 +22450,10 @@
 						"(8-10)% increased maximum Mana"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"mana\""
+						[
+							"resource",
+							"mana"
+						]
 					],
 					"implicitIds": [
 						"MaximumManaImplicitAtlasRing_"
@@ -21404,7 +22475,11 @@
 						"(17-23)% increased Chaos Damage"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"damage\", \"chaos\""
+						[
+							"chaos_damage",
+							"damage",
+							"chaos"
+						]
 					],
 					"implicitIds": [
 						"IncreasedChaosDamageImplicit1_"
@@ -21426,7 +22501,12 @@
 						"+(12-16)% to Fire and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndLightningResistImplicitRing1"
@@ -21448,7 +22528,12 @@
 						"+(12-16)% to Cold and Lightning Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ColdAndLightningResistImplicitRing1"
@@ -21470,7 +22555,12 @@
 						"+(12-16)% to Fire and Cold Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"cold",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"FireAndColdResistImplicitRing1"
@@ -21496,10 +22586,10 @@
 						"25% increased Suffix Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE1__"
@@ -21523,10 +22613,10 @@
 						"25% increased Prefix Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE2_"
@@ -21549,9 +22639,9 @@
 						"Implicit Modifiers Cannot Be Changed"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						""
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE3"
@@ -21575,10 +22665,10 @@
 						"50% increased Prefix Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE4"
@@ -21601,9 +22691,9 @@
 						"Implicit Modifiers Cannot Be Changed"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						""
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE5"
@@ -21627,10 +22717,10 @@
 						"50% increased Suffix Modifier magnitudes"
 					],
 					"implicitModTypes": [
-						"",
-						"",
-						"",
-						""
+						[],
+						[],
+						[],
+						[]
 					],
 					"implicitIds": [
 						"MaxPrefixMaxSuffixImplicitE6"
@@ -21653,8 +22743,8 @@
 						"Right ring slot: 15% increased Skill Effect Duration"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"ReflectedDurationRingImplicitK1"
@@ -21675,8 +22765,12 @@
 						"Right ring slot: 30% increased Effect of Curses on you"
 					],
 					"implicitModTypes": [
-						"\"curse\"",
-						"\"curse\""
+						[
+							"curse"
+						],
+						[
+							"curse"
+						]
 					],
 					"implicitIds": [
 						"ReflectedCurseEffectOnSelfImplicitK2"
@@ -21698,8 +22792,12 @@
 						"Right ring slot: Minions take 15% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"minion\"",
-						"\"minion\""
+						[
+							"minion"
+						],
+						[
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"ReflectedMinionDamageTakenImplicitK3"
@@ -21720,8 +22818,12 @@
 						"Right ring slot: 30% increased Duration of Ailments on You"
 					],
 					"implicitModTypes": [
-						"\"ailment\"",
-						"\"ailment\""
+						[
+							"ailment"
+						],
+						[
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"ReflectedAilmentDurationOnSelfImplicitK4"
@@ -21742,8 +22844,16 @@
 						"Right ring slot: 25% of Fire Damage from Hits taken as Cold Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"cold\"",
-						"\"elemental\", \"fire\", \"cold\""
+						[
+							"elemental",
+							"fire",
+							"cold"
+						],
+						[
+							"elemental",
+							"fire",
+							"cold"
+						]
 					],
 					"implicitIds": [
 						"ReflectedFireColdDamageTakenConversionImplicitK5a"
@@ -21764,8 +22874,16 @@
 						"Right ring slot: 25% of Lightning Damage from Hits taken as Fire Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"lightning\"",
-						"\"elemental\", \"fire\", \"lightning\""
+						[
+							"elemental",
+							"fire",
+							"lightning"
+						],
+						[
+							"elemental",
+							"fire",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"ReflectedFireLightningDamageTakenConversionImplicitK5b"
@@ -21786,8 +22904,16 @@
 						"Right ring slot: 25% of Cold Damage from Hits taken as Lightning Damage"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"lightning\"",
-						"\"elemental\", \"cold\", \"lightning\""
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						],
+						[
+							"elemental",
+							"cold",
+							"lightning"
+						]
 					],
 					"implicitIds": [
 						"ReflectedColdLightningDamageTakenConversionImplicitK5c"
@@ -21810,8 +22936,12 @@
 						"50% reduced Effect of Curses on you"
 					],
 					"implicitModTypes": [
-						"\"elemental\"",
-						"\"elemental\""
+						[
+							"elemental"
+						],
+						[
+							"elemental"
+						]
 					],
 					"implicitIds": [
 						"CurseEffectElementalAilmentDurationOnSelfR1"
@@ -21834,8 +22964,16 @@
 						"Cannot roll Modifiers of Non-Cold Damage Types"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"cold\", \"resistance\"",
-						"\"elemental\", \"cold\", \"resistance\""
+						[
+							"elemental",
+							"cold",
+							"resistance"
+						],
+						[
+							"elemental",
+							"cold",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"TulBreachRingImplicit"
@@ -21859,8 +22997,16 @@
 						"Cannot roll Modifiers of Non-Fire Damage Types"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"fire\", \"resistance\"",
-						"\"elemental\", \"fire\", \"resistance\""
+						[
+							"elemental",
+							"fire",
+							"resistance"
+						],
+						[
+							"elemental",
+							"fire",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"XophBreachRingImplicit"
@@ -21884,8 +23030,16 @@
 						"Cannot roll Modifiers of Non-Lightning Damage Types"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"lightning\", \"resistance\"",
-						"\"elemental\", \"lightning\", \"resistance\""
+						[
+							"elemental",
+							"lightning",
+							"resistance"
+						],
+						[
+							"elemental",
+							"lightning",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"EshBreachRingImplicit"
@@ -21909,8 +23063,12 @@
 						"Cannot roll Modifiers of Non-Physical Damage Types"
 					],
 					"implicitModTypes": [
-						"\"physical\"",
-						"\"physical\""
+						[
+							"physical"
+						],
+						[
+							"physical"
+						]
 					],
 					"implicitIds": [
 						"UulNetolBreachRingImplicit"
@@ -21934,8 +23092,14 @@
 						"Cannot roll Modifiers of Non-Chaos Damage Types"
 					],
 					"implicitModTypes": [
-						"\"chaos\", \"resistance\"",
-						"\"chaos\", \"resistance\""
+						[
+							"chaos",
+							"resistance"
+						],
+						[
+							"chaos",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ChayulaBreachRingImplicit"
@@ -21958,7 +23122,9 @@
 						"(5-7)% increased Global Defences"
 					],
 					"implicitModTypes": [
-						"\"defences\""
+						[
+							"defences"
+						]
 					],
 					"implicitIds": [
 						"FormlessBreachRingImplicit"
@@ -21993,7 +23159,7 @@
 						"Properties are doubled while in a Breach"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ItemStatsDoubledInBreachImplicit"
@@ -22015,7 +23181,9 @@
 						"+(8-12) to all Attributes"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"AllAttributesImplicitDemigodRing1"
@@ -22038,7 +23206,9 @@
 						"(5-10)% increased Global Defences"
 					],
 					"implicitModTypes": [
-						"\"defences\""
+						[
+							"defences"
+						]
 					],
 					"implicitIds": [
 						"AllDefensesImplicitJetRing"
@@ -22087,7 +23257,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22118,7 +23291,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22149,7 +23325,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22180,7 +23359,10 @@
 						"+(30-40) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield3"
@@ -22211,7 +23393,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22242,7 +23427,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22273,7 +23461,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22304,7 +23495,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22335,7 +23529,10 @@
 						"+(30-40) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield3"
@@ -22366,7 +23563,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22397,7 +23597,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22428,7 +23631,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22459,7 +23665,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22491,7 +23700,10 @@
 						"+(30-40) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield3"
@@ -22523,7 +23735,10 @@
 						"+(10-20) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield1"
@@ -22555,7 +23770,10 @@
 						"+(20-30) to maximum Life"
 					],
 					"implicitModTypes": [
-						"\"resource\", \"life\""
+						[
+							"resource",
+							"life"
+						]
 					],
 					"implicitIds": [
 						"IncreasedLifeImplicitShield2"
@@ -22590,7 +23808,7 @@
 						"Scorch Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
@@ -22623,7 +23841,7 @@
 						"Scorch Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
@@ -22656,7 +23874,7 @@
 						"Scorch Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
@@ -22689,7 +23907,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -22719,7 +23939,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -22750,7 +23972,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -22781,7 +24005,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -22812,7 +24038,9 @@
 						"9% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield3"
@@ -22843,7 +24071,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -22874,7 +24104,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -22905,7 +24137,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -22936,7 +24170,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -22967,7 +24203,9 @@
 						"9% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield3"
@@ -22998,7 +24236,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -23029,7 +24269,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -23060,7 +24302,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -23092,7 +24336,9 @@
 						"3% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield1"
@@ -23124,7 +24370,9 @@
 						"9% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield3"
@@ -23156,7 +24404,9 @@
 						"6% increased Movement Speed"
 					],
 					"implicitModTypes": [
-						"\"speed\""
+						[
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"MovementVelocityImplicitShield2"
@@ -23191,7 +24441,7 @@
 						"Inflict Brittle on Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
@@ -23224,7 +24474,7 @@
 						"Inflict Brittle on Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
@@ -23257,7 +24507,7 @@
 						"Inflict Brittle on Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
@@ -23290,7 +24540,11 @@
 						"(10-15)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield2"
@@ -23320,7 +24574,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23352,7 +24610,10 @@
 						"Minions deal (5-10)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitShield1"
@@ -23383,7 +24644,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23414,7 +24679,11 @@
 						"(10-15)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield2"
@@ -23468,7 +24737,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23500,7 +24773,10 @@
 						"Minions deal (5-10)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitShield1"
@@ -23531,7 +24807,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23562,7 +24842,11 @@
 						"(10-15)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield2"
@@ -23616,7 +24900,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23649,7 +24937,10 @@
 						"Minions deal (5-10)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitShield1"
@@ -23681,7 +24972,11 @@
 						"(5-10)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield1"
@@ -23713,7 +25008,11 @@
 						"(10-15)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageImplicitShield2"
@@ -23772,7 +25071,7 @@
 						"Sap Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictSapOnEnemyOnBlockImplicitE1"
@@ -23805,7 +25104,7 @@
 						"Sap Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictSapOnEnemyOnBlockImplicitE1"
@@ -23838,7 +25137,7 @@
 						"Sap Enemies when you Block their Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToInflictSapOnEnemyOnBlockImplicitE1"
@@ -23871,7 +25170,9 @@
 						"60% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield1"
@@ -23905,7 +25206,9 @@
 						"180% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield3"
@@ -23939,7 +25242,9 @@
 						"60% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield1"
@@ -23999,7 +25304,9 @@
 						"120% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield2"
@@ -24033,7 +25340,9 @@
 						"180% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield3"
@@ -24067,7 +25376,9 @@
 						"60% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield1"
@@ -24127,7 +25438,9 @@
 						"120% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield2"
@@ -24161,7 +25474,9 @@
 						"180% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield3"
@@ -24196,7 +25511,9 @@
 						"60% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield1"
@@ -24258,7 +25575,9 @@
 						"120% increased Block Recovery"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"BlockRecoveryImplicitShield2"
@@ -24294,7 +25613,10 @@
 						"+4% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield1"
@@ -24328,7 +25650,10 @@
 						"+4% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield1"
@@ -24388,7 +25713,10 @@
 						"+8% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield2"
@@ -24422,7 +25750,10 @@
 						"+12% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield3"
@@ -24456,7 +25787,10 @@
 						"+4% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield1"
@@ -24516,7 +25850,10 @@
 						"+8% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield2"
@@ -24550,7 +25887,10 @@
 						"+12% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield3"
@@ -24584,7 +25924,10 @@
 						"+4% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield1"
@@ -24646,7 +25989,10 @@
 						"+8% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield2"
@@ -24681,7 +26027,10 @@
 						"+12% to all Elemental Resistances"
 					],
 					"implicitModTypes": [
-						"\"elemental\", \"resistance\""
+						[
+							"elemental",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"AllResistancesImplicitShield3"
@@ -24717,7 +26066,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield1"
@@ -24751,7 +26100,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield1"
@@ -24785,7 +26134,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield1"
@@ -24819,7 +26168,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield2"
@@ -24853,7 +26202,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield2"
@@ -24887,7 +26236,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield1"
@@ -24921,7 +26270,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield1"
@@ -24955,7 +26304,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield2"
@@ -24989,7 +26338,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield2"
@@ -25023,7 +26372,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield1"
@@ -25058,7 +26407,7 @@
 						"+3% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield1"
@@ -25093,7 +26442,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeImplicitShield2"
@@ -25128,7 +26477,7 @@
 						"+5% chance to Suppress Spell Damage"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"ChanceToDodgeSpellsImplicitShield2"
@@ -25163,7 +26512,10 @@
 						"+(11-19)% to Chaos Resistance"
 					],
 					"implicitModTypes": [
-						"\"chaos\", \"resistance\""
+						[
+							"chaos",
+							"resistance"
+						]
 					],
 					"implicitIds": [
 						"ChaosResistDemigodsTorchImplicit"
@@ -25195,7 +26547,9 @@
 						"+20% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercentImplicitStaff__1"
@@ -25226,7 +26580,9 @@
 						"+20% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercentImplicitStaff__1"
@@ -25258,7 +26614,9 @@
 						"+20% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercentImplicitStaff__1"
@@ -25290,7 +26648,9 @@
 						"+20% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercentImplicitStaff__1"
@@ -25324,7 +26684,9 @@
 						"80% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitMarakethStaff1"
@@ -25356,7 +26718,9 @@
 						"+22% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent2"
@@ -25388,7 +26752,9 @@
 						"+22% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent2"
@@ -25420,7 +26786,9 @@
 						"+22% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent2"
@@ -25454,7 +26822,9 @@
 						"80% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitMarakethStaff1"
@@ -25486,7 +26856,9 @@
 						"+25% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent3"
@@ -25519,7 +26891,9 @@
 						"+25% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent3"
@@ -25552,7 +26926,9 @@
 						"+25% Chance to Block Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffSpellBlockPercent3"
@@ -25586,7 +26962,9 @@
 						"100% increased Global Critical Strike Chance"
 					],
 					"implicitModTypes": [
-						"\"critical\""
+						[
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalStrikeChanceImplicitMarakethStaff2"
@@ -25621,8 +26999,8 @@
 						"+(66-80) to maximum Energy Shield"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"EnergyShieldLocalDisplaySpendEnergyShieldForCostsBeforeManaForSocketedSkillsImplicitE1"
@@ -25657,8 +27035,8 @@
 						"+(100-120) to maximum Energy Shield"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"EnergyShieldLocalDisplaySpendEnergyShieldForCostsBeforeManaForSocketedSkillsImplicitE2"
@@ -25693,8 +27071,8 @@
 						"+(140-165) to maximum Energy Shield"
 					],
 					"implicitModTypes": [
-						"",
-						""
+						[],
+						[]
 					],
 					"implicitIds": [
 						"EnergyShieldLocalDisplaySpendEnergyShieldForCostsBeforeManaForSocketedSkillsImplicitE3"
@@ -25731,7 +27109,9 @@
 						"+20% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff1"
@@ -25766,7 +27146,9 @@
 						"+20% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff1"
@@ -25801,7 +27183,9 @@
 						"+20% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff1"
@@ -25836,7 +27220,9 @@
 						"+22% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff2"
@@ -25871,7 +27257,9 @@
 						"+22% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff2"
@@ -25906,7 +27294,9 @@
 						"+22% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff2"
@@ -25942,7 +27332,9 @@
 						"+25% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff3"
@@ -25978,7 +27370,9 @@
 						"+25% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff3"
@@ -26014,7 +27408,9 @@
 						"+25% Chance to Block Attack Damage"
 					],
 					"implicitModTypes": [
-						"\"block\""
+						[
+							"block"
+						]
 					],
 					"implicitIds": [
 						"StaffBlockPercentImplicitStaff3"
@@ -26050,7 +27446,7 @@
 						"+1 to Maximum Power Charges and Maximum Endurance Charges"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"MaximumPowerandEnduranceChargesImplicitE1"
@@ -26086,7 +27482,7 @@
 						"+1 to Maximum Power Charges and Maximum Endurance Charges"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"MaximumPowerandEnduranceChargesImplicitE1"
@@ -26122,7 +27518,7 @@
 						"+1 to Maximum Power Charges and Maximum Endurance Charges"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"MaximumPowerandEnduranceChargesImplicitE1"
@@ -26158,7 +27554,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26189,7 +27587,9 @@
 						"+45 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit1"
@@ -26221,7 +27621,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26253,7 +27655,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26285,7 +27689,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26317,7 +27723,9 @@
 						"+165 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit2"
@@ -26349,7 +27757,9 @@
 						"+190 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit3"
@@ -26381,7 +27791,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26415,7 +27827,9 @@
 						"15% chance to Maim on Hit"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"DodgeImplicitMarakethSword1"
@@ -26447,7 +27861,9 @@
 						"+240 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit4"
@@ -26479,7 +27895,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26511,7 +27929,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26543,7 +27963,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26575,7 +27997,9 @@
 						"+330 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit5"
@@ -26607,7 +28031,9 @@
 						"+350 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit6"
@@ -26639,7 +28065,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26673,7 +28101,9 @@
 						"15% chance to Maim on Hit"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"DodgeImplicitMarakethSword1"
@@ -26705,7 +28135,9 @@
 						"+400 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit7"
@@ -26737,7 +28169,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26769,7 +28203,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26802,7 +28238,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26835,7 +28273,9 @@
 						"+460 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit8"
@@ -26868,7 +28308,9 @@
 						"+475 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracySwordImplicit9"
@@ -26901,7 +28343,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -26935,7 +28379,9 @@
 						"20% chance to Maim on Hit"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"DodgeImplicitMarakethSword2"
@@ -26969,7 +28415,14 @@
 						"100% of Physical Damage from Hits with this Weapon is Converted to a random Element"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"elemental_damage\", \"damage\", \"physical\", \"elemental\", \"attack\""
+						[
+							"physical_damage",
+							"elemental_damage",
+							"damage",
+							"physical",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalDamageConversionToRandomElementImplicitE1"
@@ -27003,7 +28456,14 @@
 						"100% of Physical Damage from Hits with this Weapon is Converted to a random Element"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"elemental_damage\", \"damage\", \"physical\", \"elemental\", \"attack\""
+						[
+							"physical_damage",
+							"elemental_damage",
+							"damage",
+							"physical",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalDamageConversionToRandomElementImplicitE1"
@@ -27037,7 +28497,14 @@
 						"100% of Physical Damage from Hits with this Weapon is Converted to a random Element"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"elemental_damage\", \"damage\", \"physical\", \"elemental\", \"attack\""
+						[
+							"physical_damage",
+							"elemental_damage",
+							"damage",
+							"physical",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"LocalDamageConversionToRandomElementImplicitE1"
@@ -27107,7 +28574,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -27167,7 +28636,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27199,7 +28671,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27232,7 +28707,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27265,7 +28743,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27298,7 +28779,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27331,7 +28815,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27364,7 +28851,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27397,7 +28887,10 @@
 						"+35% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword2"
@@ -27432,7 +28925,12 @@
 						"15% chance to cause Bleeding on Hit"
 					],
 					"implicitModTypes": [
-						"\"bleed\", \"physical\", \"attack\", \"ailment\""
+						[
+							"bleed",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"LocalChanceToBleedImplicitMarakethRapier1"
@@ -27465,7 +28963,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27498,7 +28999,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27531,7 +29035,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27564,7 +29071,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27597,7 +29107,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27630,7 +29143,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27663,7 +29179,10 @@
 						"+35% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword2"
@@ -27698,7 +29217,12 @@
 						"15% chance to cause Bleeding on Hit"
 					],
 					"implicitModTypes": [
-						"\"bleed\", \"physical\", \"attack\", \"ailment\""
+						[
+							"bleed",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"LocalChanceToBleedImplicitMarakethRapier1"
@@ -27731,7 +29255,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27764,7 +29291,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27797,7 +29327,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27831,7 +29364,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27865,7 +29401,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27899,7 +29438,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword1"
@@ -27933,7 +29475,10 @@
 						"+35% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword2"
@@ -27968,7 +29513,12 @@
 						"20% chance to cause Bleeding on Hit"
 					],
 					"implicitModTypes": [
-						"\"bleed\", \"physical\", \"attack\", \"ailment\""
+						[
+							"bleed",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"LocalChanceToBleedImplicitMarakethRapier2"
@@ -28028,7 +29578,9 @@
 						"40% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicitSword1"
@@ -28059,7 +29611,9 @@
 						"+60 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit1"
@@ -28091,7 +29645,9 @@
 						"60% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword1"
@@ -28123,7 +29679,9 @@
 						"+120 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit2"
@@ -28155,7 +29713,9 @@
 						"60% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword1"
@@ -28187,7 +29747,9 @@
 						"+185 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit3"
@@ -28219,7 +29781,9 @@
 						"45% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword2_"
@@ -28253,7 +29817,10 @@
 						"+40% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSwordM2"
@@ -28285,7 +29852,9 @@
 						"+250 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit4"
@@ -28317,7 +29886,9 @@
 						"60% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword1"
@@ -28349,7 +29920,9 @@
 						"+305 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit5"
@@ -28381,7 +29954,9 @@
 						"60% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword1"
@@ -28413,7 +29988,9 @@
 						"+360 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit6"
@@ -28445,7 +30022,9 @@
 						"45% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword2_"
@@ -28479,7 +30058,10 @@
 						"+40% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSwordM2"
@@ -28511,7 +30093,9 @@
 						"+400 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit7"
@@ -28543,7 +30127,9 @@
 						"60% increased Global Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"AccuracyPercentImplicit2HSword1"
@@ -28576,7 +30162,10 @@
 						"+25% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword2H1"
@@ -28609,7 +30198,9 @@
 						"+470 to Accuracy Rating"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"IncreasedAccuracy2hSwordImplicit9"
@@ -28642,7 +30233,9 @@
 						"+50 to Strength and Dexterity"
 					],
 					"implicitModTypes": [
-						"\"attribute\""
+						[
+							"attribute"
+						]
 					],
 					"implicitIds": [
 						"StrengthDexterityImplicitSword_1"
@@ -28675,7 +30268,12 @@
 						"30% increased Elemental Damage with Attack Skills"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"WeaponElementalDamageImplicitSword1"
@@ -28709,7 +30307,10 @@
 						"+50% to Global Critical Strike Multiplier"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"critical\""
+						[
+							"damage",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"CriticalMultiplierImplicitSword3"
@@ -28743,7 +30344,7 @@
 						"Attack Critical Strikes ignore Enemy Monster Elemental Resistances"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AttackCriticalStrikesIgnoreElementalResistancesImplicitE1"
@@ -28777,7 +30378,7 @@
 						"Attack Critical Strikes ignore Enemy Monster Elemental Resistances"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AttackCriticalStrikesIgnoreElementalResistancesImplicitE1"
@@ -28811,7 +30412,7 @@
 						"Attack Critical Strikes ignore Enemy Monster Elemental Resistances"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"AttackCriticalStrikesIgnoreElementalResistancesImplicitE1"
@@ -28877,7 +30478,12 @@
 						"(70-100)% increased Elemental Damage with Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"attack\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"TinctureElementalDamageImplicit1"
@@ -28898,7 +30504,10 @@
 						"(100-150)% increased Critical Strike Chance with Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"attack\", \"critical\""
+						[
+							"attack",
+							"critical"
+						]
 					],
 					"implicitIds": [
 						"TinctureCriticalStrikeChanceImplicit1"
@@ -28920,8 +30529,12 @@
 						"(15-25)% increased Stun Duration with Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"attack\"",
-						"\"attack\""
+						[
+							"attack"
+						],
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"TinctureStunThresholdImplicit1"
@@ -28943,8 +30556,22 @@
 						"(60-90)% increased Damage with Ignite from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\", \"ailment\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"fire\", \"attack\", \"ailment\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack",
+							"ailment"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToIgniteImplicit1"
@@ -28966,8 +30593,22 @@
 						"(25-35)% increased Effect of Chill from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\", \"attack\", \"ailment\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"cold\", \"attack\", \"ailment\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold",
+							"attack",
+							"ailment"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"cold",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToFreezeImplicit1"
@@ -28989,8 +30630,22 @@
 						"(25-35)% increased Effect of Shock from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\", \"attack\", \"ailment\"",
-						"\"elemental_damage\", \"damage\", \"elemental\", \"lightning\", \"attack\", \"ailment\""
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning",
+							"attack",
+							"ailment"
+						],
+						[
+							"elemental_damage",
+							"damage",
+							"elemental",
+							"lightning",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToShockImplicit1"
@@ -29012,8 +30667,22 @@
 						"(60-90)% increased Damage with Poison from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"chaos_damage\", \"poison\", \"damage\", \"chaos\", \"attack\", \"ailment\"",
-						"\"chaos_damage\", \"poison\", \"damage\", \"chaos\", \"attack\", \"ailment\""
+						[
+							"chaos_damage",
+							"poison",
+							"damage",
+							"chaos",
+							"attack",
+							"ailment"
+						],
+						[
+							"chaos_damage",
+							"poison",
+							"damage",
+							"chaos",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToPoisonImplicit1"
@@ -29035,8 +30704,22 @@
 						"(60-90)% increased Damage with Bleeding from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"physical_damage\", \"bleed\", \"damage\", \"physical\", \"attack\", \"ailment\"",
-						"\"physical_damage\", \"bleed\", \"damage\", \"physical\", \"attack\", \"ailment\""
+						[
+							"physical_damage",
+							"bleed",
+							"damage",
+							"physical",
+							"attack",
+							"ailment"
+						],
+						[
+							"physical_damage",
+							"bleed",
+							"damage",
+							"physical",
+							"attack",
+							"ailment"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToBleedImplicit1"
@@ -29057,7 +30740,9 @@
 						"Gain 3 Rage on Melee Weapon Hit"
 					],
 					"implicitModTypes": [
-						"\"attack\""
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"TinctureRageOnHitImplicit1"
@@ -29079,8 +30764,12 @@
 						"(25-35)% increased Effect of Blind from Melee Weapons"
 					],
 					"implicitModTypes": [
-						"\"attack\"",
-						"\"attack\""
+						[
+							"attack"
+						],
+						[
+							"attack"
+						]
 					],
 					"implicitIds": [
 						"TinctureChanceToBlindImplicit1"
@@ -29112,7 +30801,11 @@
 						"(8-12)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand1"
@@ -29144,7 +30837,15 @@
 						"Adds (1-2) to (3-4) Fire Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"fire\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageSpellsAndAttacksImplicit1"
@@ -29177,7 +30878,11 @@
 						"(11-15)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand3"
@@ -29210,7 +30915,15 @@
 						"Adds (2-3) to (4-7) Cold Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"cold\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"cold",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageSpellsAndAttacksImplicit1"
@@ -29243,7 +30956,15 @@
 						"Adds (1-2) to (9-11) Lightning Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"lightning\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"lightning",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamageSpellsAndAttacksImplicit1"
@@ -29276,7 +30997,11 @@
 						"(17-21)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand6"
@@ -29311,7 +31036,10 @@
 						"10% increased Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"caster\", \"speed\""
+						[
+							"caster",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"IncreasedCastSpeedImplicitMarakethWand1"
@@ -29344,7 +31072,15 @@
 						"Adds (5-10) to (11-13) Fire Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"fire\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"fire",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedFireDamageSpellsAndAttacksImplicit2"
@@ -29377,7 +31113,11 @@
 						"(22-26)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand9"
@@ -29410,7 +31150,15 @@
 						"Adds (4-8) to (10-12) Cold Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"cold\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"cold",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedColdDamageSpellsAndAttacksImplicit2"
@@ -29443,7 +31191,15 @@
 						"Adds (1-2) to (22-24) Lightning Damage to Spells and Attacks"
 					],
 					"implicitModTypes": [
-						"\"elemental_damage\", \"caster_damage\", \"damage\", \"elemental\", \"lightning\", \"attack\", \"caster\""
+						[
+							"elemental_damage",
+							"caster_damage",
+							"damage",
+							"elemental",
+							"lightning",
+							"attack",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"AddedLightningDamageSpellsAndAttacksImplicit2"
@@ -29476,7 +31232,11 @@
 						"(27-31)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand12"
@@ -29511,7 +31271,10 @@
 						"10% increased Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"caster\", \"speed\""
+						[
+							"caster",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"IncreasedCastSpeedImplicitMarakethWand1"
@@ -29544,7 +31307,11 @@
 						"(30-34)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand13"
@@ -29577,7 +31344,11 @@
 						"(33-37)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand15"
@@ -29611,7 +31382,11 @@
 						"(31-35)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand14"
@@ -29645,7 +31420,11 @@
 						"(35-39)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand16"
@@ -29679,7 +31458,11 @@
 						"(36-40)% increased Spell Damage"
 					],
 					"implicitModTypes": [
-						"\"caster_damage\", \"damage\", \"caster\""
+						[
+							"caster_damage",
+							"damage",
+							"caster"
+						]
 					],
 					"implicitIds": [
 						"SpellDamageOnWeaponImplicitWand17"
@@ -29714,7 +31497,10 @@
 						"14% increased Cast Speed"
 					],
 					"implicitModTypes": [
-						"\"caster\", \"speed\""
+						[
+							"caster",
+							"speed"
+						]
 					],
 					"implicitIds": [
 						"IncreasedCastSpeedImplicitMarakethWand2"
@@ -29749,7 +31535,7 @@
 						"Gain an Endurance, Frenzy or Power Charge every 6 seconds"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"GainRandomChargeEvery6SecondsImplicitE1"
@@ -29784,7 +31570,7 @@
 						"Gain an Endurance, Frenzy or Power Charge every 6 seconds"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"GainRandomChargeEvery6SecondsImplicitE1"
@@ -29819,7 +31605,7 @@
 						"Gain 2 Endurance, Frenzy or Power Charges every 6 seconds"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"GainRandomChargeEvery6SecondsImplicitE2"
@@ -29851,7 +31637,7 @@
 						"Cannot roll Caster Modifiers"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"KineticWandImplicit"
@@ -29883,7 +31669,7 @@
 						"Cannot roll Caster Modifiers"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"KineticWandImplicit"
@@ -29916,7 +31702,7 @@
 						"Cannot roll Caster Modifiers"
 					],
 					"implicitModTypes": [
-						""
+						[]
 					],
 					"implicitIds": [
 						"KineticWandImplicit"
@@ -29955,7 +31741,10 @@
 						"Minions deal (26-30)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitWand1"
@@ -29991,7 +31780,10 @@
 						"Minions deal (12-16)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitWand3"
@@ -30027,7 +31819,10 @@
 						"Minions deal (20-24)% increased Damage"
 					],
 					"implicitModTypes": [
-						"\"damage\", \"minion\""
+						[
+							"damage",
+							"minion"
+						]
 					],
 					"implicitIds": [
 						"MinionDamageImplicitWand2"

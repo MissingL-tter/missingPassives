@@ -24,6 +24,21 @@ import (
 //
 // Regenerate from .archive/src/ with: luajit ../../tools/dump_modstore.lua
 
+// fixtureActiveSkill implements modstore.ActiveSkill over the dump's
+// literal values (the interface exists so production reads live calc
+// state; the fixture is static by nature).
+type fixtureActiveSkill struct {
+	hasRes    bool
+	disable   bool
+	skillData map[string]float64
+	buffNames []string
+}
+
+func (s *fixtureActiveSkill) SkillTypeHasReservation() bool { return s.hasRes }
+func (s *fixtureActiveSkill) Disabled() bool                { return s.disable }
+func (s *fixtureActiveSkill) SkillDataN(key string) float64 { return s.skillData[key] }
+func (s *fixtureActiveSkill) BuffNames() []string           { return s.buffNames }
+
 type msItem struct {
 	name, itype, rarity      string
 	corrupted, shaper, elder bool
@@ -198,10 +213,9 @@ func TestModStoreAgainstReference(t *testing.T) {
 	playerActor.WeaponData2 = &msWeapon{}
 	playerActor.MinionData = &modstore.MinionData{MonsterTags: []string{"demon", "humanoid"}}
 	playerActor.ManaEfficiency = 20
-	hasRes := modparser.SkillTypeHasReservation
-	playerActor.ActiveSkillList = []*modstore.ActiveSkill{
-		{SkillTypes: map[modparser.SkillTypeID]bool{hasRes: true}, SkillData: map[string]float64{"ManaReservedBase": 300, "LifeReservedBase": 960}, BuffNames: []string{"Hatred"}},
-		{SkillTypes: map[modparser.SkillTypeID]bool{hasRes: true}, Disable: true, SkillData: map[string]float64{"ManaReservedBase": 500}, BuffNames: []string{"Wrath"}},
+	playerActor.ActiveSkillList = []modstore.ActiveSkill{
+		&fixtureActiveSkill{hasRes: true, skillData: map[string]float64{"ManaReservedBase": 300, "LifeReservedBase": 960}, buffNames: []string{"Hatred"}},
+		&fixtureActiveSkill{hasRes: true, disable: true, skillData: map[string]float64{"ManaReservedBase": 500}, buffNames: []string{"Wrath"}},
 	}
 	stores := map[string]modstore.Store{
 		"root": rootDB, "mid": midList, "leaf": leafDB, "enemy": enemyDB, "parentDB": parentDB,

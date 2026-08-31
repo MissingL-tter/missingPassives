@@ -100,6 +100,15 @@ func renderModScalability(sc schema.ModScalability, _ Templates) (map[string]str
 	return map[string]string{"Data/ModScalability.lua": b.String()}, nil
 }
 
+// joinModTags re-spells the reference's pre-joined modTags list text
+// (`"a", "b"`, or empty) from the typed tag ids.
+func joinModTags(tags []string) string {
+	if len(tags) == 0 {
+		return ""
+	}
+	return "\"" + strings.Join(tags, "\", \"") + "\""
+}
+
 func renderMasters(mc schema.MasterCrafts, _ Templates) (map[string]string, error) {
 	var b B
 	b.itemHeader()
@@ -109,7 +118,7 @@ func renderMasters(mc schema.MasterCrafts, _ Templates) (map[string]string, erro
 			b.W("type = \"", c.Type, "\", ")
 		}
 		b.W("affix = \"", c.Affix, "\", ")
-		b.W("modTags = { ", c.ModTags, " }, ")
+		b.W("modTags = { ", joinModTags(c.ModTags), " }, ")
 		b.W("\"", strings.Join(c.Lines, "\", \""), "\", ")
 		b.W("statOrder = { ", nums(c.StatOrders, ", "), " }, ")
 		b.W("level = ", c.Level, ", group = \"", c.Group, "\", ")
@@ -159,7 +168,7 @@ func renderCrucible(cn schema.CrucibleNodes, _ Templates) (map[string]string, er
 				b.W("}, ")
 			}
 		}
-		b.W("modTags = { ", n.ModTags, " }, ")
+		b.W("modTags = { ", joinModTags(n.ModTags), " }, ")
 		b.W("},\n")
 	}
 	b.W("}")

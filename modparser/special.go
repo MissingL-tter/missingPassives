@@ -1097,7 +1097,7 @@ var specialModListData = map[string]modsValue{
 	}),
 	`shield crush and spectral shield throw do not gain added physical damage based on armour or evasion on shield`: modList{flag("Condition:ShieldThrowCrushNoArmourEvasion", &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true})},
 	`shield crush and spectral shield throw gains ([0-9]+) to ([0-9]+) added lightning damage per ([0-9]+) energy shield on shield`: modFn(func(c caps) []*Mod {
-		return []*Mod{modf("LightningMin", Base, c.str(1), FlagNone, KeywordNone, &CondTag{Var: "OffHandAttack"}, &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(3))}, &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true}), modf("LightningMax", Base, c.str(2), FlagNone, KeywordNone, &CondTag{Var: "OffHandAttack"}, &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(3))}, &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true})}
+		return []*Mod{modf("LightningMin", Base, c.v(1), FlagNone, KeywordNone, &CondTag{Var: "OffHandAttack"}, &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(3))}, &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true}), modf("LightningMax", Base, c.v(2), FlagNone, KeywordNone, &CondTag{Var: "OffHandAttack"}, &StatTag{StatKind: TagPerStat, Stat: "EnergyShieldOnWeapon 2", Div: opt(c.n(3))}, &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true})}
 	}),
 	`([0-9]+)% of shield crush and spectral shield throw physical damage converted to lightning damage`: modFn(func(c caps) []*Mod {
 		return []*Mod{modf("SkillPhysicalDamageConvertToLightning", Base, Num(c.n(1)), FlagNone, KeywordNone, &SkillNameTag{SkillNameList: []string{"Spectral Shield Throw", "Shield Crush"}, IncludeTransfigured: true})}
@@ -1775,7 +1775,7 @@ var specialModListData = map[string]modsValue{
 	`your warcries cover enemies in ash for ([0-9]+) seconds`:                                            modList{mod("CoveredInAshEffect", Base, Num(20), &CondTag{Var: "UsedWarcryRecently"})},
 	`enemies near targets you shatter have ([0-9]+)% chance to be covered in frost for ([0-9]+) seconds`: modList{mod("CoveredInFrostEffect", Base, Num(20), &CondTag{Var: "ShatteredEnemyRecently"})},
 	`([a-zA-Z \t\n\v\f\r]+) has ([0-9]+)% increased effect`: modFn(func(c caps) []*Mod {
-		return []*Mod{mod("BuffEffect", Inc, c.str(2), &SkillIDTag{SkillID: gemIdOrNil(c.s(1))})}
+		return []*Mod{mod("BuffEffect", Inc, c.v(2), &SkillIDTag{SkillID: gemIdOrNil(c.s(1))})}
 	}),
 	`debuffs on you expire ([0-9]+)% faster`: modFn(func(c caps) []*Mod { return []*Mod{mod("SelfDebuffExpirationRate", Base, Num(c.n(1)))} }),
 	`debuffs on you expire ([0-9]+)% slower`: modFn(func(c caps) []*Mod { return []*Mod{mod("SelfDebuffExpirationRate", Base, Num(-c.n(1)))} }),
@@ -2087,7 +2087,7 @@ var specialModListData = map[string]modsValue{
 		return []*Mod{mod("PierceCount", Base, Num(c.n(1)), &CondTag{Var: "Phasing"})}
 	}),
 	`projectiles pierce ([0-9]+) additional targets if ([0-9]+) ([a-zA-Z]+) items are equipped`: modFn(func(c caps) []*Mod {
-		return []*Mod{mod("PierceCount", Base, c.str(1), &MultiplierTag{IsThreshold: true, Var: firstToUpper(c.s(3)) + "Item", Threshold: opt(c.n(2))})}
+		return []*Mod{mod("PierceCount", Base, c.v(1), &MultiplierTag{IsThreshold: true, Var: firstToUpper(c.s(3)) + "Item", Threshold: opt(c.n(2))})}
 	}),
 	`projectiles pierce all targets while you have phasing`: modList{flag("PierceAllTargets", &CondTag{Var: "Phasing"})},
 	`projectiles pierce all burning enemies`:                modList{flag("PierceAllTargets", &CondTag{IsActor: true, Actor: "enemy", Var: "Burning"})},
@@ -2358,7 +2358,7 @@ var specialModListData = map[string]modsValue{
 	`recoup energy shield instead of life`:                                   modList{flag("EnergyShieldRecoupInsteadOfLife")},
 	`damage taken recouped as ([a-zA-Z]+) is also recouped as energy shield`: modFn(func(c caps) []*Mod { return []*Mod{flag("Add" + firstToUpper(c.s(1)) + "RecoupToEnergyShieldRecoup")} }),
 	`([0-9.]+)% of physical damage prevented from hits in the past ([0-9]+) seconds is regenerated as life per second`: modFn(func(c caps) []*Mod {
-		return []*Mod{mod("PhysicalDamageMitigatedLifePseudoRecoup", Base, Num(c.n(1)*c.n(2))), mod("PhysicalDamageMitigatedLifePseudoRecoupDuration", Base, c.str(2))}
+		return []*Mod{mod("PhysicalDamageMitigatedLifePseudoRecoup", Base, Num(c.n(1)*c.n(2))), mod("PhysicalDamageMitigatedLifePseudoRecoupDuration", Base, c.v(2))}
 	}),
 	`([0-9.]+)% of physical damage prevented from hits recently is regenerated as energy shield per second`: modFn(func(c caps) []*Mod {
 		return []*Mod{mod("PhysicalDamageMitigatedEnergyShieldPseudoRecoup", Base, Num(c.n(1)*4))}
@@ -3318,7 +3318,7 @@ var specialModListData = map[string]modsValue{
 		return []*Mod{mod("ExtraSkillStat", List, DataRef{Key: "frost_globe_health_per_stage", Value: Num(c.n(1))}, &SkillNameTag{SkillName: "Frost Shield"})}
 	}),
 	`flame wall grants ([0-9]+) to ([0-9]+) added fire damage to projectiles`: modFn(func(c caps) []*Mod {
-		return []*Mod{mod("ExtraSkillStat", List, DataRef{Key: "flame_wall_minimum_added_fire_damage", Value: c.str(1)}, &SkillNameTag{SkillName: "Flame Wall"}), mod("ExtraSkillStat", List, DataRef{Key: "flame_wall_maximum_added_fire_damage", Value: c.str(2)}, &SkillNameTag{SkillName: "Flame Wall"})}
+		return []*Mod{mod("ExtraSkillStat", List, DataRef{Key: "flame_wall_minimum_added_fire_damage", Value: c.v(1)}, &SkillNameTag{SkillName: "Flame Wall"}), mod("ExtraSkillStat", List, DataRef{Key: "flame_wall_maximum_added_fire_damage", Value: c.v(2)}, &SkillNameTag{SkillName: "Flame Wall"})}
 	}),
 	`plague bearer buff grants \+([0-9]+)% to poison damage over time multiplier while infecting`: modFn(func(c caps) []*Mod {
 		return []*Mod{mod("ExtraSkillStat", List, DataRef{Key: "corrosive_shroud_poison_dot_multiplier_+_while_aura_active", Value: Num(c.n(1))}, &SkillNameTag{SkillName: "Plague Bearer"})}

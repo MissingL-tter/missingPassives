@@ -89,7 +89,10 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output modstore.Output
 		minion.DB.AddMod(mod)
 	}
 	if env.AegisModList != nil {
+		// One actor table in the reference: the store-facing map must see
+		// the same items (lua-residue.md T2).
 		minion.ItemList["Weapon 3"] = env.aegisItem
+		minion.Ms.ItemList["Weapon 3"] = env.aegisItem
 		minion.DB.AddList(env.AegisModList.Mods)
 	}
 	if env.TheIronMass != nil && minion.Type == "RaisedSkeleton" {
@@ -133,6 +136,7 @@ func (env *Env) initMinionModDB(activeSkill *ActiveSkill, output modstore.Output
 			}
 			if item != nil {
 				minion.ItemList[slotName] = item
+				minion.Ms.ItemList[slotName] = item
 				srcList := item.In.ModList
 				if srcList == nil && item.In.SlotModList != nil && slot.SlotNum != nil {
 					srcList = item.In.SlotModList[int(*slot.SlotNum)]

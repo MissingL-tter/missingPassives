@@ -67,7 +67,7 @@ func renderMods(d schema.ModsData, _ Templates) (map[string]string, error) {
 					b.W("}, ")
 				}
 			}
-			b.W("modTags = { ", m.ModTags, " }, ")
+			b.W("modTags = { ", joinModTags(m.ModTags), " }, ")
 			// The document carries the mod's stat order; the reference file
 			// wrote pairs() over a hash table — replay the insertions and
 			// walk LuaJIT's iteration order.

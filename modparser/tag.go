@@ -754,9 +754,9 @@ func TagTypeName(t Tag) string {
 
 // TagFromParams builds a tag of the named kind from its reference-keyed
 // params — the inverse of Params. Values follow the same closed set; a
-// number may also arrive as a numeric string, which coerces as Lua
-// arithmetic would. An unknown kind becomes a RawTag; an unknown key on a
-// known kind fails.
+// numeric field takes only a number (the archive decoder converts the
+// fixtures' numeric strings before calling in). An unknown kind becomes a
+// RawTag; an unknown key on a known kind fails.
 func TagFromParams(kind string, params []Param) (Tag, bool) {
 	k, ok := TagKindByName[kind]
 	if !ok {
@@ -890,8 +890,10 @@ func (r *paramReader) optBool(k string) util.Opt[bool] {
 	return util.Some(bool(b))
 }
 
-// numOfParam reads a param in an arithmetic context: numeric text converts,
-// as Lua arithmetic would.
+// numOfParam reads a numeric param kind. Text never reaches a numeric
+// field: the parser coerces captures at parse time, the codec spells
+// infinities as tagged objects, and the archive decoder (test/luacanon)
+// converts the fixtures' numeric strings before calling in.
 func numOfParam(v ParamValue) (float64, bool) {
 	switch n := v.(type) {
 	case Num:
@@ -902,8 +904,6 @@ func numOfParam(v ParamValue) (float64, bool) {
 		return float64(n), true
 	case KeywordFlag:
 		return float64(n), true
-	case Str:
-		return util.Tonumber(string(n))
 	}
 	return 0, false
 }
@@ -957,16 +957,6 @@ func (r *paramReader) nums(k string) []float64 {
 	switch l := v.(type) {
 	case NumList:
 		return l
-	case StrList:
-		out := make([]float64, len(l))
-		for i, e := range l {
-			n, isNum := util.Tonumber(e)
-			if !isNum {
-				r.bad = true
-			}
-			out[i] = n
-		}
-		return out
 	}
 	r.bad = true
 	return nil

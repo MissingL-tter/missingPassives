@@ -136,7 +136,9 @@ func getPerStat(dst string, modType ModType, flags ModFlag, stat string, factor 
 	return func(node JewelNodeRef, out JewelStoreWriter, data *JewelFuncTag) {
 		if node != nil {
 			data.AddStat(stat, out.Sum(Base, stat))
-		} else if data.Stat(stat) != 0 {
+		} else if !data.HasStat(stat) || data.Stat(stat) != 0 {
+			// `data[stat] ~= 0` (ModParser.lua:6318): nil ~= 0 is TRUE, so a
+			// radius that never accumulated emits a zero-valued mod.
 			out.AddMod(modsf(dst, modType, Num(math.Floor(data.Stat(stat)*factor)), data.ModSource, flags, KeywordNone))
 		}
 	}

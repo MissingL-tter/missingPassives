@@ -5,8 +5,6 @@
 package data
 
 import (
-	"strings"
-
 	"github.com/MissingL-tter/missingPassives/data/schema"
 )
 
@@ -98,7 +96,7 @@ func loadCrucible(src schema.CrucibleNodes) map[string]CrucibleNode {
 			NodeLocation: intsToFloats(n.NodeLocation),
 			WeightKey:    emptyIfNil(n.WeightKey),
 			WeightVal:    intsToFloats(n.WeightVal),
-			ModTags:      splitModTags(n.ModTags),
+			ModTags:      emptyIfNil(n.ModTags),
 		}
 		if len(n.WeightMultiplierKey) > 0 {
 			c.WeightMultiplierKey = n.WeightMultiplierKey
@@ -135,7 +133,7 @@ func loadMasterMods(src schema.MasterCrafts) []MasterCraft {
 			Lines:     emptyIfNil(c.Lines),
 			Type:      c.Type,
 			Affix:     c.Affix,
-			ModTags:   splitModTags(c.ModTags),
+			ModTags:   emptyIfNil(c.ModTags),
 			StatOrder: c.StatOrders,
 			Level:     float64(c.Level),
 			Group:     c.Group,
@@ -236,17 +234,4 @@ func emptyIfNil[T any](s []T) []T {
 		return []T{}
 	}
 	return s
-}
-
-// splitModTags parses a describeModTags string (`"a", "b"` or empty) back
-// into the tag list Lua sees after loading it inside `{ ... }`.
-func splitModTags(s string) []string {
-	if s == "" {
-		return []string{}
-	}
-	var out []string
-	for _, part := range strings.Split(s, ", ") {
-		out = append(out, strings.Trim(part, "\""))
-	}
-	return out
 }

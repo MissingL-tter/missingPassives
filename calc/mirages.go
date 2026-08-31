@@ -125,7 +125,7 @@ func (env *Env) copyActiveSkill(mode CalcMode, skill *ActiveSkill) (*ActiveSkill
 	}
 
 	newSkill := env.createActiveSkill(activeEffect, skill.SupportList, skill.Actor, skill.SocketGroup, skill.SummonSkill)
-	newEnv := initEnvOverride(env.Build, mode, env.mirageReplay(), env.OverrideConditions)
+	newEnv := initEnvOverride(env.Build, mode, env.Replay, env.OverrideConditions)
 	newEnv.buildActiveSkillModList(newSkill)
 	newSkill.SkillModList = modstore.NewList(newSkill.BaseSkillModList)
 	if newSkill.Minion != nil {
@@ -150,21 +150,6 @@ func (env *Env) copyActiveSkill(mode CalcMode, skill *ActiveSkill) (*ActiveSkill
 		newSkill.SkillPartName = m.MainSkill.ActiveEffect.GrantedEffect.Name
 	}
 	return newSkill, newEnv
-}
-
-// mirageReplay is the fixture the sub-environment's initEnv replays: the same
-// build, but the node orders the dump recorded for that second initEnv. A
-// mirage that only runs inside a cache-driver build (the Saviour skill is
-// never the build's own main skill) has no recorded mirage orders; every
-// initEnv of one build yields identical orders (dump-verified), so the
-// env's own orders stand in.
-func (env *Env) mirageReplay() *ReplayInput {
-	sub := *env.Replay
-	if len(env.Replay.MirageAllocOrders) > 0 {
-		sub.AllocOrders = env.Replay.MirageAllocOrders
-		sub.NodeOrders = env.Replay.MirageNodeOrders
-	}
-	return &sub
 }
 
 // mirageArcherConfig ports the triggeredByMirageArcher branch: the archers

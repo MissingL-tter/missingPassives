@@ -596,6 +596,45 @@ func decodeAllocOrders(c string) [][]int {
 	return out
 }
 
+// assertOrdersSorted proves the dump's recorded pairs() orders are what
+// production now derives: ascending ids per buildModListForNodeList call
+// (the dump ran the Calc modules under sortedPairs — tools/dump_calc.lua:131),
+// each nodeOrders sequence being its alloc order plus an ascending
+// extra-radius tail.
+func assertOrdersSorted(t *testing.T, label string, allocOrders, nodeOrders [][]int) {
+	t.Helper()
+	ascending := func(s []int) bool {
+		for i := 1; i < len(s); i++ {
+			if s[i-1] >= s[i] {
+				return false
+			}
+		}
+		return true
+	}
+	for i, order := range allocOrders {
+		if !ascending(order) {
+			t.Fatalf("%s: allocOrders[%d] not ascending: %v", label, i, order)
+		}
+	}
+	for i, seq := range nodeOrders {
+		if i >= len(allocOrders) {
+			break
+		}
+		alloc := allocOrders[i]
+		if len(seq) < len(alloc) {
+			t.Fatalf("%s: nodeOrders[%d] shorter than its alloc order", label, i)
+		}
+		for j, id := range alloc {
+			if seq[j] != id {
+				t.Fatalf("%s: nodeOrders[%d][%d]=%d != allocOrders' %d", label, i, j, seq[j], id)
+			}
+		}
+		if !ascending(seq[len(alloc):]) {
+			t.Fatalf("%s: nodeOrders[%d] extra tail not ascending: %v", label, i, seq[len(alloc):])
+		}
+	}
+}
+
 func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 	var m map[string]map[string]any
 	if err := json.Unmarshal([]byte(c), &m); err != nil {
@@ -909,14 +948,15 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
 			t.Fatal(err)
 		}
+		// The recorded orders are no longer replayed: production iterates
+		// ascending ids (lua-residue.md T1). Prove the derivation faithful
+		// against every dump instead.
+		assertOrdersSorted(t, variant, decodeAllocOrders(allocOrders), decodeAllocOrders(nodeOrders))
+		assertOrdersSorted(t, variant+" (mirage)", decodeAllocOrders(mirageAllocOrders), decodeAllocOrders(mirageNodeOrders))
 		replay := &calc.ReplayInput{
-			AllocOrders:            decodeAllocOrders(allocOrders),
-			NodeOrders:             decodeAllocOrders(nodeOrders),
 			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
 			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
 			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
-			MirageAllocOrders:      decodeAllocOrders(mirageAllocOrders),
-			MirageNodeOrders:       decodeAllocOrders(mirageNodeOrders),
 		}
 		in := decodeCalcFixture(m)
 		// The native bridge: spec and item pool come from the natively
@@ -1140,8 +1180,6 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		bad := decodeCalcFixture(m)
 		bad.ConfigModList = bad.ConfigModList[1:]
 		badEnv := calc.InitEnv(bad, "MAIN", &calc.ReplayInput{
-			AllocOrders:            decodeAllocOrders(allocOrders),
-			NodeOrders:             decodeAllocOrders(nodeOrders),
 			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
 			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
 			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),

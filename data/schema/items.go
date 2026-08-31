@@ -34,7 +34,7 @@ func (MasterCrafts) isDocument() {}
 type MasterCraft struct {
 	Type       string    `json:"type"` // "Prefix", "Suffix" or ""
 	Affix      string    `json:"affix"`
-	ModTags    string    `json:"modTags"` // described tag list, pre-joined
+	ModTags    []string  `json:"modTags"` // described tag ids
 	Lines      []string  `json:"lines"`
 	StatOrders []float64 `json:"statOrders"`
 	Level      int64     `json:"level"`
@@ -63,5 +63,5 @@ type CrucibleNode struct {
 	WeightMultiplierKey []string  `json:"weightMultiplierKey"` // nil when absent
 	WeightMultiplierVal []int64   `json:"weightMultiplierVal"`
 	Tags                []string  `json:"tags"`
-	ModTags             string    `json:"modTags"`
+	ModTags             []string  `json:"modTags"`
 }

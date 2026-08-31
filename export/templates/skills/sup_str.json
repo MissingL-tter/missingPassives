@@ -23,7 +23,7 @@
 		{"directive":"skill","granted":"SupportBloodsoakedBanner"},
 		{"directive":"baseMod","mods":[{"flags":0,"keywordFlags":0,"name":"SkillData","tags":[],"type":"LIST","value":{"key":"debuff","kind":"data","value":true}}]},
 		{"directive":"baseMod","mods":[{"flags":0,"keywordFlags":0,"name":"dotIsCorruptingBlood","tags":[],"type":"FLAG","value":true}]},
-		{"directive":"baseMod","mods":[{"arr":[],"kind":"mixed","kv":{"flags":{"div":8,"type":"Multiplier","var":"ValourStacks"},"keywordFlags":0,"name":"Multiplier:BloodsoakedBannerMaxStages","type":"BASE","value":1}}]},
+		{"directive":"baseMod","mods":[{"kind":"typo","name":"Multiplier:BloodsoakedBannerMaxStages","type":"BASE","value":1,"keywordFlags":0,"flagsTag":{"kind":"Multiplier","div":8,"var":"ValourStacks"}}]},
 		{"directive":"baseMod","mods":[{"flags":0,"keywordFlags":16777216,"name":"Damage","tags":[{"kind":"Multiplier","var":"BloodsoakedBannerStageAfterFirst"}],"type":"MORE","value":100}]},
 		{"directive":"mods"},
 		{"directive":"skill","granted":"SupportBloodthirst"},

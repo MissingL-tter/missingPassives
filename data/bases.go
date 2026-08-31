@@ -181,7 +181,7 @@ func loadItemBase(b schema.ItemBase) *ItemBase {
 	}
 	e.ImplicitModTypes = [][]string{}
 	for _, t := range b.ImplicitModTypes {
-		e.ImplicitModTypes = append(e.ImplicitModTypes, splitModTags(t))
+		e.ImplicitModTypes = append(e.ImplicitModTypes, emptyIfNil(t))
 	}
 	if len(b.Implicit) > 0 {
 		s := strings.Join(b.Implicit, "\n")
@@ -194,7 +194,7 @@ func loadItemBase(b schema.ItemBase) *ItemBase {
 		e.EnchantIds = b.EnchantIds
 		e.EnchantModTypes = [][]string{}
 		for _, t := range b.EnchantModTypes {
-			e.EnchantModTypes = append(e.EnchantModTypes, splitModTags(t))
+			e.EnchantModTypes = append(e.EnchantModTypes, emptyIfNil(t))
 		}
 	}
 	e.CannotBeAnointed = b.CannotBeAnointed

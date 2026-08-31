@@ -198,16 +198,13 @@ func (LinkedSupportRef) isParamValue()  {}
 func (Conqueror) isParamValue()         {}
 func (*Mod) isParamValue()              {}
 
-// NumOf reads a value in an arithmetic context the way Lua does: numbers
-// pass, numeric text converts, anything else fails.
+// NumOf reads a value in an arithmetic context: numbers only. The
+// reference's string→number arithmetic coercion is retired — every
+// numeric capture parses to Num at parse time, and the archive decoder
+// converts the fixtures' text (lua-residue.md T3).
 func NumOf(v Value) (float64, bool) {
-	switch t := v.(type) {
-	case Num:
-		return float64(t), true
-	case Str:
-		return util.Tonumber(string(t))
-	}
-	return 0, false
+	n, ok := v.(Num)
+	return float64(n), ok
 }
 
 // Truthy is Lua truthiness over a value: nil and false are the only falsy
