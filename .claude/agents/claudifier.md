@@ -28,24 +28,15 @@ Hard limits:
 
 - First line contains `GENERATED` -> never edit; shrink it by changing its generator and
   regenerating.
-- `.lua`: never change code semantics. Comments may be tightened but every comment fact must
-  survive somewhere (they encode debugging sessions). After any .lua edit
-  `luajit -bl <file> > /dev/null` must pass; if tools were touched, copy any
-  `src/Builds/*.xml` to the scratchpad, then from `src/` (cwd matters - pob.lua resolves
-  `../.claude/...`) run
-  `luajit ../.claude/skills/cook/tools/validate.lua <abs path to scratchpad copy>` - same
-  problem count as the baseline run taken before editing. Never aim a tool at `src/Builds`
-  itself.
+- `skills/cook/tools/`, `skills/cook/data/` and `skills/cook/recipes/` are out of scope
+  entirely: never edit, never open. `.lua` files are never edited, wherever they sit.
 - Frontmatter (`name`, `description`, `disable-model-invocation`, `tools`, ...) is harness
   config: keep keys intact; descriptions may be tightened.
-- `skills/cook/recipes/` is user-authored: never edit, never open. Exception: `template.txt`
-  (the blank form) is in scope.
 - Never delete a file or `.gitkeep`; never rename or move anything.
 - Never run a git write (commit, stash, checkout, restore, add); reads are fine.
 
 Method: read every file first. Per file: list atomic facts, rewrite from the list, diff the
 result against the list before writing - a fact with no home is a bug.
 
-Report per file: bytes before -> after; pass or skip for each verification run; any fact
-knowingly dropped. Nothing else - no rationale, no list of what was cut or kept, no
-justification. Never report a file minimized without verification passing.
+Report per file: bytes before -> after; any fact knowingly dropped. Nothing else - no
+rationale, no list of what was cut or kept, no justification.

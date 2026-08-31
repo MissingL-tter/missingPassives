@@ -20,13 +20,12 @@ Then snapshot mtimes across scope-dir; the agent reports only files it believes 
 
 Launch the `claudifier` subagent (Agent tool, `subagent_type: claudifier`,
 `run_in_background: false`). Do not restate its rules in the launch prompt - it reads its
-own spec (`GENERATED` files, `recipes/`, no git writes, verification method). Pass scope
-plus anything unusual about this run, nothing else.
+own spec (`GENERATED` files, the excluded cook dirs, no git writes). Pass scope plus
+anything unusual about this run, nothing else.
 
-On return, diff mtimes to confirm nothing out of scope was written. Do not re-run its
-`luajit -bl` / `validate.lua` checks - its spec requires both before it reports. Re-run only
-if it reports a failure, says it skipped one, or edited `.lua` without mentioning them.
+On return, diff mtimes to confirm nothing out of scope was written -
+`skills/cook/{tools,data,recipes}/` above all: any change there is a violation; restore it
+from git and say so.
 
 Relay: bytes before -> after per file, the mtime diff, any fact it reports dropping. Nothing
-else - it gives no rationale and you add none. Its pass/skip lines are yours to act on, not
-to relay.
+else - it gives no rationale and you add none.
