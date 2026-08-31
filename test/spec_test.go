@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/MissingL-tter/missingPassives/build"
 	"github.com/MissingL-tter/missingPassives/calc"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/modparser"
@@ -337,21 +338,17 @@ func TestSpecAgainstReference(t *testing.T) {
 		if err := json.Unmarshal([]byte(grantedPassives), &gp); err != nil {
 			t.Fatal(err)
 		}
+		passives := build.Passives{Spec: spec}
 		for name, refVal := range gp {
-			node := spec.Tree.NotableMap[name]
-			if node == nil {
-				node = spec.Tree.AscendancyMap[name]
-			}
+			node := passives.GrantedPassive(name)
 			if node == nil {
 				t.Errorf("%s: granted passive %q unresolved", buildKey, name)
 				continue
 			}
-			var got string
-			if specNode := spec.Nodes[node.ID]; specNode != nil {
-				got = luacanon.EncodeExact(specNodeFixtureOf(specNode))
-			} else {
-				got = luacanon.EncodeExact(treeNodeFixtureOf(node))
+			if specNode := spec.Nodes[int64(node.ID)]; specNode != nil {
+				node.ModList = referenceOrderModList(specNode)
 			}
+			got := luacanon.EncodeExact(node)
 			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
 			if got != want {
 				t.Errorf("%s granted passive %q diverged\n%s", buildKey, name, diffWindow(got, want))
@@ -363,12 +360,12 @@ func TestSpecAgainstReference(t *testing.T) {
 			t.Fatal(err)
 		}
 		for name, refVal := range ga {
-			node := spec.Tree.AscendancyMap[name]
+			node := passives.GrantedAscendancyNode(name)
 			if node == nil {
 				t.Errorf("%s: granted ascendancy node %q unresolved", buildKey, name)
 				continue
 			}
-			got := luacanon.EncodeExact(treeNodeFixtureOf(node))
+			got := luacanon.EncodeExact(node)
 			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
 			if got != want {
 				t.Errorf("%s granted ascendancy %q diverged\n%s", buildKey, name, diffWindow(got, want))

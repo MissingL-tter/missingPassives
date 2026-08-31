@@ -296,6 +296,38 @@ type SpecInput struct {
 	AllocatedMasteryTypeCount float64                     `lua:"allocatedMasteryTypeCount"`
 	AllocatedMasteryTypes     map[string]float64          `lua:"allocatedMasteryTypes"`
 	AllocatedTattooTypes      map[string]float64          `lua:"allocatedTattooTypes"`
+
+	// Passives resolves the nodes two item mechanics name instead of
+	// referencing by id. Untagged: the resolution is a tree lookup, not
+	// part of the dumped fixture.
+	Passives PassiveLookup
+}
+
+// PassiveLookup resolves passive nodes by display name. Anointed passives
+// ("GrantedPassive") and the Forbidden Flame/Flesh pair
+// ("GrantedAscendancyNode") both name their node in item text, so the
+// items stage has to look the name up in the tree the spec was built on.
+// BuildInput carries the spec's allocated nodes, not the whole tree, so
+// the assembler supplies the lookup.
+type PassiveLookup interface {
+	// GrantedPassive resolves an anointable passive: the spec tree's
+	// notables, then its ascendancy nodes, preferring the spec's own
+	// instance of the node (which carries conquered-jewel data) when it
+	// has one, and falling back to the latest tree's ascendancy names.
+	GrantedPassive(name string) *NodeInput
+	// GrantedAscendancyNode resolves a Forbidden Flame/Flesh node name
+	// against the spec tree's ascendancy nodes, then the latest tree's.
+	GrantedAscendancyNode(name string) *NodeInput
+}
+
+// passiveLookup reports the spec's lookup, failing loudly when a build
+// carries a name-addressed passive and nothing can resolve it: silently
+// dropping the node would cost the build an anoint or an ascendancy.
+func (s *SpecInput) passiveLookup() PassiveLookup {
+	if s == nil || s.Passives == nil {
+		panic("calc: build names a passive to grant but Spec.Passives is unset")
+	}
+	return s.Passives
 }
 
 // NodeInput carries the allocated-node fields buildModListForNodeList

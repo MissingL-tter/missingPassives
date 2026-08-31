@@ -574,21 +574,15 @@ func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []Ex
 	return modList, explodeSources
 }
 
-// ReplayInput carries the dump-captured reference state a byte-exact
-// replay needs beyond the build fixture itself.
+// ReplayInput is what a stage needs beyond the build itself when it is
+// started mid-run rather than by the driver. A program that computes a
+// build passes an empty one; the differential's checkpoint replay fills
+// it from the dump.
 type ReplayInput struct {
-	// GrantedPassiveNodes: resolved notable/ascendancy nodes by the
-	// GrantedPassive value (anoints etc.).
-	GrantedPassiveNodes map[string]*NodeInput
-	// GrantedAscendancyNodes: resolved nodes by GrantedAscendancyNode name
-	// (Forbidden Flame/Flesh).
-	GrantedAscendancyNodes map[string]*NodeInput
-	// EnergyBladeItems: the synthesized Energy Blade weapons by slot name
-	// (the reference constructs them via the Item machinery on re-entry).
-	EnergyBladeItems map[string]*ItemInput
 	// GlobalCache: GlobalCache.cachedData[mode] as the trigger stage finds
-	// it. Filled by Calcs.lua's buildOutput driver, which is not one of the
-	// stages ported here (see calc/globalcache.go).
+	// it. A driver run fills it as it goes (see calc/globalcache.go); the
+	// differential's checkpoint replay starts a stage from the dumped
+	// contents instead.
 	GlobalCache map[string]*CachedSkill
 	// StubHandoff makes nested performs body-only, mirroring the archive
 	// dump's checkpoint phase where calcs.defence/offence are stubbed out
@@ -861,7 +855,7 @@ func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, overrideCon
 			continue
 		}
 		passive := string(passiveStr)
-		node := replay.GrantedPassiveNodes[passive]
+		node := in.Spec.passiveLookup().GrantedPassive(passive)
 		if node == nil {
 			// name resolved through none of the tree maps
 			continue
@@ -884,7 +878,7 @@ func initEnvPass(in *BuildInput, mode CalcMode, replay *ReplayInput, overrideCon
 		name := ascTbl.Name
 		if m := matchedName[name]; m != nil && m.side != ascTbl.Side && !m.matched {
 			m.matched = true
-			node := replay.GrantedAscendancyNodes[name]
+			node := in.Spec.passiveLookup().GrantedAscendancyNode(name)
 			if node != nil {
 				if condClass(env.ItemModDB.Conditions, "ForbiddenFlesh") == in.CurClassName &&
 					condClass(env.ItemModDB.Conditions, "ForbiddenFlame") == in.CurClassName {

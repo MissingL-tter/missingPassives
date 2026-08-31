@@ -32,7 +32,7 @@ func TestProfileRecalc(t *testing.T) {
 		t.Fatalf("no dump for %q: %v", build, err)
 	}
 	variant := build + ".full"
-	var fixture, grantedNodes, grantedAsc, ebItems string
+	var fixture, grantedNodes, grantedAsc string
 	forEachCalcRecord(t, path, func(k, c string) {
 		switch k {
 		case variant + ".fixture":
@@ -41,18 +41,16 @@ func TestProfileRecalc(t *testing.T) {
 			grantedNodes = c
 		case variant + ".grantedAscendancyNodes":
 			grantedAsc = c
-		case variant + ".energyBladeItems":
-			ebItems = c
 		}
 	})
 	var m map[string]any
 	if err := json.Unmarshal([]byte(fixture), &m); err != nil {
 		t.Fatal(err)
 	}
-	replay := &calc.ReplayInput{
-		GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
-		GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
-		EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
+	replay := &calc.ReplayInput{}
+	passives := &fixturePassives{
+		passive:    decodeGrantedPassiveNodes(grantedNodes),
+		ascendancy: decodeGrantedPassiveNodes(grantedAsc),
 	}
 
 	const iters = 30
@@ -61,6 +59,7 @@ func TestProfileRecalc(t *testing.T) {
 	// One live build input, reused across recalcs — the app's shape (PoB
 	// mutates one build object in place per edit).
 	in := decodeCalcFixture(m)
+	in.Spec.Passives = passives
 	coldStart := time.Now()
 	var lastEnv *calc.Env
 	for i := 0; i < iters; i++ {

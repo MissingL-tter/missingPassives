@@ -635,6 +635,49 @@ func assertOrdersSorted(t *testing.T, label string, allocOrders, nodeOrders [][]
 	}
 }
 
+// fixturePassives resolves granted passives from the dumped name->node
+// maps, for a replay that is not reading a native spec.
+type fixturePassives struct {
+	passive    map[string]*calc.NodeInput
+	ascendancy map[string]*calc.NodeInput
+}
+
+func (f *fixturePassives) GrantedPassive(name string) *calc.NodeInput {
+	return f.passive[name]
+}
+
+func (f *fixturePassives) GrantedAscendancyNode(name string) *calc.NodeInput {
+	return f.ascendancy[name]
+}
+
+// assertEnergyBlades compares the weapons calc synthesized for an Energy
+// Blade build against the ones the archive recorded. The dump captured
+// them because the port used to take them from the fixture; calc builds
+// them through the item machinery now, so this is the check that the
+// construction agrees.
+func assertEnergyBlades(t *testing.T, variant string, env *calc.Env, want map[string]*calc.ItemInput) {
+	t.Helper()
+	for _, slot := range []string{"Weapon 1", "Weapon 2"} {
+		refItem := want[slot]
+		var gotItem *calc.ItemInput
+		if it, ok := env.Player.ItemList[slot].(*calc.Item); ok && it != nil &&
+			strings.HasPrefix(it.In.Name, "Energy Blade") {
+			gotItem = it.In
+		}
+		switch {
+		case refItem == nil && gotItem == nil:
+		case refItem == nil:
+			t.Errorf("%s %s: synthesized an Energy Blade the archive has none of", variant, slot)
+		case gotItem == nil:
+			t.Errorf("%s %s: archive has an Energy Blade, calc synthesized none", variant, slot)
+		default:
+			if got, wantCanon := luacanon.EncodeExact(gotItem), luacanon.EncodeExact(refItem); got != wantCanon {
+				t.Errorf("%s %s Energy Blade diverged\n%s", variant, slot, diffWindow(got, wantCanon))
+			}
+		}
+	}
+}
+
 func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 	var m map[string]map[string]any
 	if err := json.Unmarshal([]byte(c), &m); err != nil {
@@ -953,12 +996,14 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		// against every dump instead.
 		assertOrdersSorted(t, variant, decodeAllocOrders(allocOrders), decodeAllocOrders(nodeOrders))
 		assertOrdersSorted(t, variant+" (mirage)", decodeAllocOrders(mirageAllocOrders), decodeAllocOrders(mirageNodeOrders))
-		replay := &calc.ReplayInput{
-			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
-			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
-			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
-		}
+		replay := &calc.ReplayInput{}
 		in := decodeCalcFixture(m)
+		// The dumped name->node maps back the lookup for a pure fixture
+		// replay; the native bridge below installs the derived one.
+		in.Spec.Passives = &fixturePassives{
+			passive:    decodeGrantedPassiveNodes(grantedNodes),
+			ascendancy: decodeGrantedPassiveNodes(grantedAsc),
+		}
 		// The native bridge: spec and item pool come from the natively
 		// parsed build (MP_FIXTURE=1 reverts to the pure fixture replay
 		// while diagnosing whether a divergence is native- or calc-side).
@@ -979,6 +1024,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		// body-only exactly as the dump's did.
 		replay.StubHandoff = true
 		env := calc.InitEnv(in, "MAIN", replay)
+		assertEnergyBlades(t, variant, env, decodeEnergyBladeItems(ebItems))
 		got := luacanon.Encode(dbsShadow{
 			Mod:   shadowOf(env.ModDB),
 			Enemy: shadowOf(env.EnemyDB),
@@ -1179,11 +1225,11 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		// Negative control: a corrupted input must stop matching.
 		bad := decodeCalcFixture(m)
 		bad.ConfigModList = bad.ConfigModList[1:]
-		badEnv := calc.InitEnv(bad, "MAIN", &calc.ReplayInput{
-			GrantedPassiveNodes:    decodeGrantedPassiveNodes(grantedNodes),
-			GrantedAscendancyNodes: decodeGrantedPassiveNodes(grantedAsc),
-			EnergyBladeItems:       decodeEnergyBladeItems(ebItems),
-		})
+		bad.Spec.Passives = &fixturePassives{
+			passive:    decodeGrantedPassiveNodes(grantedNodes),
+			ascendancy: decodeGrantedPassiveNodes(grantedAsc),
+		}
+		badEnv := calc.InitEnv(bad, "MAIN", &calc.ReplayInput{})
 		badGot := luacanon.Encode(dbsShadow{
 			Mod:   shadowOf(badEnv.ModDB),
 			Enemy: shadowOf(badEnv.EnemyDB),

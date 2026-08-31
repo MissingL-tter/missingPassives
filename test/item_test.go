@@ -17,9 +17,7 @@ import (
 	"testing"
 
 	"github.com/MissingL-tter/missingPassives/calc"
-	"github.com/MissingL-tter/missingPassives/internal/util"
 	"github.com/MissingL-tter/missingPassives/item"
-	"github.com/MissingL-tter/missingPassives/modparser"
 	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
@@ -92,120 +90,6 @@ func loadCorpusItems(t *testing.T, xmlPath string) map[int]*item.Item {
 	return out
 }
 
-func strPtrOrNil(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func truePtrOrNil(b bool) *bool {
-	if !b {
-		return nil
-	}
-	return &b
-}
-
-func f64Ptr(v float64) *float64 { return &v }
-
-// itemInputOf projects a parsed item into the fixture's ItemInput shape,
-// mirroring dump_calc.lua's itemFixture().
-func itemInputOf(it *item.Item) *calc.ItemInput {
-	in := &calc.ItemInput{
-		Name:             it.Name,
-		ModSource:        strPtrOrNil(it.ModSource),
-		Title:            strPtrOrNil(it.Title),
-		BaseName:         strPtrOrNil(it.BaseName),
-		Type:             it.Type,
-		Rarity:           it.Rarity,
-		Corrupted:        truePtrOrNil(it.Corrupted),
-		Shaper:           truePtrOrNil(it.Influence["shaper"]),
-		Elder:            truePtrOrNil(it.Influence["elder"]),
-		Adjudicator:      truePtrOrNil(it.Influence["adjudicator"]),
-		Basilisk:         truePtrOrNil(it.Influence["basilisk"]),
-		Crusader:         truePtrOrNil(it.Influence["crusader"]),
-		Eyrie:            truePtrOrNil(it.Influence["eyrie"]),
-		Foulborn:         &it.Foulborn,
-		ClassRestriction: strPtrOrNil(it.ClassRestriction),
-		Limit:            it.Limit,
-		Quality:          it.Quality,
-	}
-	if it.Base != nil {
-		base := &calc.ItemBaseInput{Type: strPtrOrNil(it.Base.Type), SubType: strPtrOrNil(it.Base.SubType)}
-		if it.Base.Flask != nil {
-			fb := &calc.FlaskBaseInput{}
-			if it.Base.Flask.Life != nil {
-				fb.Life = util.Some(*it.Base.Flask.Life)
-			}
-			if it.Base.Flask.Mana != nil {
-				fb.Mana = util.Some(*it.Base.Flask.Mana)
-			}
-			base.Flask = fb
-		}
-		in.Base = base
-	}
-	if it.ModList != nil {
-		in.ModList = it.ModList
-	}
-	if it.SlotModList != nil {
-		in.SlotModList = it.SlotModList
-	}
-	if it.BaseModList != nil {
-		in.BaseModList = it.BaseModList
-	}
-	if it.BuffModList != nil {
-		in.BuffModList = it.BuffModList
-	} else if it.BuffModListInit {
-		in.BuffModList = []*modparser.Mod{}
-	}
-	in.GrantedSkills = it.GrantedSkills
-	in.Requirements = &it.Requirements
-	sockets := make([]calc.SocketInput, 0, len(it.Sockets))
-	for _, s := range it.Sockets {
-		sockets = append(sockets, calc.SocketInput{Color: s.Color, Group: s.Group})
-	}
-	in.Sockets = sockets
-	in.AbyssalSocketCount = f64Ptr(it.AbyssalSocketCount)
-	in.SocketedJewelEffectModifier = f64Ptr(it.SocketedJewelEffectModifier)
-	if it.JewelRadiusIndex != nil {
-		in.JewelRadiusIndex = f64Ptr(float64(*it.JewelRadiusIndex))
-	}
-	if it.JewelData != nil {
-		for _, fn := range it.JewelData.FuncList {
-			in.FuncTypes = append(in.FuncTypes, fn.Type)
-		}
-	}
-	in.JewelData = it.JewelData
-	in.FlaskData = it.FlaskData
-	in.TinctureData = it.TinctureData
-	in.ArmourData = it.ArmourData
-	if it.WeaponData != nil {
-		wd := map[int]*item.WeaponData{}
-		for i := 1; i <= 2; i++ {
-			if side, ok := it.WeaponData[i]; ok {
-				wd[i] = side
-			}
-		}
-		in.WeaponData = wd
-	}
-	expl, other := []string{}, []string{}
-	collect := func(lines []*item.ModLine, dst *[]string) {
-		for _, v := range lines {
-			if !v.Flag("disabled") && it.CheckModLineVariant(v) {
-				*dst = append(*dst, v.Line)
-			}
-		}
-	}
-	collect(it.ExplicitModLines, &expl)
-	collect(it.EnchantModLines, &other)
-	collect(it.ScourgeModLines, &other)
-	collect(it.ImplicitModLines, &other)
-	collect(it.CrucibleModLines, &other)
-	in.ExplicitLines = expl
-	in.OtherLines = other
-	return in
-}
-
 // TestItemParseAgainstReference is the item-model differential.
 func TestItemParseAgainstReference(t *testing.T) {
 	loadData(t)
@@ -273,7 +157,7 @@ func TestItemParseAgainstReference(t *testing.T) {
 		}
 		for _, id := range refIDs {
 			want := luacanon.EncodeExact(ref.ItemsTab.Items[id])
-			gotCanon := luacanon.EncodeExact(itemInputOf(got[id]))
+			gotCanon := luacanon.EncodeExact(calc.ItemInputOf(got[id]))
 			if want != gotCanon {
 				t.Errorf("%s item %d (%s): parse diverged\n%s", buildKey, id, got[id].Name, diffWindow(gotCanon, want))
 			}

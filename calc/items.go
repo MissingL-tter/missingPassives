@@ -348,11 +348,11 @@ func (env *Env) buildItems() {
 				}
 			}
 		} else if (slotName == "Weapon 1" || slotName == "Weapon 2") && env.ModDB.Conditions.Get("AffectedByEnergyBlade") {
-			// The reference synthesizes an Energy Blade weapon here through
-			// the Item machinery; the dump captured the result. No fixture
-			// entry means the info-nil/Bow fallthrough (mods merge normally).
-			if ebIn := env.Replay.EnergyBladeItems[slotName]; ebIn != nil {
-				env.Player.ItemList[slotName] = &Item{In: ebIn}
+			// Energy Blade replaces the weapon with a synthesized base of
+			// the matching hand count. A slot holding something with no
+			// weapon data, or a bow, keeps its own mods.
+			if eb := energyBladeFor(item); eb != nil {
+				env.Player.ItemList[slotName] = eb
 			} else {
 				env.ItemModDB.ScaleAddList(srcList, scale, false)
 			}
