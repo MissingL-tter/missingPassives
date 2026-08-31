@@ -105,6 +105,7 @@ Syntax-check Lua with `luajit -e "assert(loadfile('<file>'))"`.
 | `tree` | `PassiveTree.lua`, `PassiveSpec.lua`, timeless/abyss jewel generation | 3.9k |
 | `skills` | `SkillsTab.lua` logic half | 0.7k |
 | `build` | `Build.lua`'s load half + `ItemsTab.lua`'s slot table — build XML → `calc.BuildInput` | 0.5k |
+| `config` | `ConfigTab.lua`'s load half + `ConfigOptions.lua`'s option table | 1.0k |
 | `export` | `src/Export/` — GGPK dat reader, stat-description engine, 21 script builders | 9.2k |
 | `internal/util` | kept reference numeric/text semantics + `Opt[T]` | 0.2k |
 | `internal/modcachegen` | regenerates `data/raw/modcache.jsonl` from the Go parser | 0.1k |
@@ -114,7 +115,8 @@ Syntax-check Lua with `luajit -e "assert(loadfile('<file>'))"`.
 Import graph (production): `modparser → internal/util`; `modstore →
 modparser`; `item → data, modparser`; `data → data/schema, modparser`;
 `tree → data, item, modparser`; `skills → data, item`; `calc → data, item,
-modparser, modstore, skills`; `build → calc, data, item, skills, tree`;
+modparser, modstore, skills`; `config → data, internal/util, modparser, modstore`;
+`build → calc, config, data, item, skills, tree`;
 `export → data, data/schema, modparser`. **No production package imports
 `test/…`.** `build` is the composition root: it is the only package that
 imports `calc`, and nothing imports it but the tests.
@@ -886,17 +888,30 @@ Two things in that construction are **not** reproduced, deliberately:
   and **assigned nowhere in the reference**. It is always nil, so the
   corrupted-jewel-effect branch that tests it always takes the true arm.
 
-**The config tab is the gap.** `Classes/ConfigTab.lua` +
-`Modules/ConfigOptions.lua` (4,179 lines, 580 options, 524 apply closures)
+Three traps in the config port, all from the option table reaching through
+the tab's widgets: `SetPlaceholder(v, true)` hands the value to the
+control, which stringifies it and parses it back, so a stored placeholder
+is quantized to `%.14g`; `SetPlaceholder("", true)` parses to nil and
+therefore DELETES the key; and a string-valued `<Placeholder>` element is
+stored as an *input*, not a placeholder.
+
+**The config tab is the remaining gap.** `Classes/ConfigTab.lua` +
+`Modules/ConfigOptions.lua` (4,179 lines, 580 options, 532 apply closures)
 produce `configInput`, `configPlaceholder`, `configModList` and
-`configEnemyModList`. Those are not optional extras: every corpus build
-carries 31–48 Config-sourced mods, and a build whose XML sets only two
-options still gets ~32, because each option's apply closure runs on its
-*default* as well as on a user selection. The placeholder half is computed
-too — enemy armour, evasion, resistances and damage scaled to the enemy
-level. So `build.Load` leaves all four unset and the calc falls back to its
-own defaults. Run that way, a build agrees with the application on
-everything config does not touch — on `Ugninga.xml`: Life 4919, Mana 893,
+`configEnemyModList`. Package `config` now ports the load half and
+`BuildModList`; 36 of the 532 apply bodies are written, which covers 2,294
+of the corpus's 2,347 config modifiers because those 36 are the options
+carrying defaults.
+
+Why the defaults dominate: an option's apply closure runs on its *default*
+as much as on a user selection, so a build whose XML sets two options still
+draws ~32 Config-sourced modifiers (corpus range 31–48). The placeholder
+half is computed as well — enemy armour, evasion, resistances and damage
+scaled to the enemy level, all written by the `enemyIsBoss` preset as it
+applies. `build.Load` does not yet hand any of it to `calc.BuildInput`:
+the four fields stay unset until the remaining bodies land, and the calc
+falls back to its own defaults. Run that way, a build agrees with the
+application on everything config does not touch — on `Ugninga.xml`: Life 4919, Mana 893,
 Armour 20348, Str/Dex/Int 362/94/145, Speed 1.15668, CritChance 95.2014, all
 equal to the stats Path of Building wrote into the file — and runs high on
 damage, the enemy's resistances being among the missing mods.
@@ -1006,7 +1021,7 @@ only written on a full run.
 | variable | effect |
 |---|---|
 | `MP_EXPORT=1` | enables the export differential (off by default: needs the GGPK, ~97s) |
-| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD` | narrow to one build/prefix |
+| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD`, `MP_ONLY_CONFIG` | narrow to one build/prefix |
 | `MP_FIXTURE=1` | revert the calc to pure fixture replay (bypass the native bridge) |
 | `MP_NODRIVER=1` | skip filling the global cache via the `BuildOutput` driver |
 | `MP_GUARDS` | turn an unported-branch panic into a reported failure and carry on, so one run enumerates the whole guard surface |

@@ -3,6 +3,7 @@ package build
 import (
 	"encoding/xml"
 
+	"github.com/MissingL-tter/missingPassives/config"
 	"github.com/MissingL-tter/missingPassives/skills"
 )
 
@@ -15,7 +16,7 @@ type Doc struct {
 	Items  itemsElem        `xml:"Items"`
 	Tree   treeElem         `xml:"Tree"`
 	Skills skills.XMLSkills `xml:"Skills"`
-	Config configElem       `xml:"Config"`
+	Config config.XMLConfig `xml:"Config"`
 }
 
 type buildElem struct {
@@ -98,25 +99,6 @@ type specElem struct {
 			ActiveEffectImage string `xml:"activeEffectImage,attr"`
 		} `xml:"Override"`
 	} `xml:"Overrides"`
-}
-
-type configElem struct {
-	ActiveConfigSet string `xml:"activeConfigSet,attr"`
-	Sets            []struct {
-		ID     string      `xml:"id,attr"`
-		Title  string      `xml:"title,attr"`
-		Inputs []configVal `xml:"Input"`
-	} `xml:"ConfigSet"`
-	Inputs []configVal `xml:"Input"`
-}
-
-// configVal is one <Input>: exactly one of the value attributes is set,
-// by the option's type.
-type configVal struct {
-	Name    string `xml:"name,attr"`
-	String  string `xml:"string,attr"`
-	Number  string `xml:"number,attr"`
-	Boolean string `xml:"boolean,attr"`
 }
 
 // Decode parses a saved build file.

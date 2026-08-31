@@ -50,5 +50,8 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | `ItemsTab.slots` / `orderedSlots` (built by `ItemsTabClass` ctor) | `build.slotTable` -> `[]*calc.SlotInput` |
 | `spec.tree.notableMap` / `ascendancyMap` lookups in CalcSetup | `calc.PassiveLookup`, implemented by `build.Passives` |
 | the Energy Blade weapon CalcSetup synthesizes inline | `calc.energyBladeFor` (calc/energyblade.go) |
+| `ConfigOptions.lua` varList | `config.Options` (converted once from the booted reference) + `config/apply*.go` bodies |
+| `varControls[var]:SetPlaceholder(v, true)` | `(*config.Tab).SetPlaceholder` / `.ClearPlaceholder` |
+| `HeadlessWrapper.lua` `StripEscapes` | `util.StripEscapes` (internal/util/text.go) |
 | `%.14g` / `tostring(number)` helpers (`luaNumStr`, `luaNum`, `luaTostring`…) | `util.FormatG14` / `util.FormatIntOrG14` (`internal/util`, with `Quantize14`, `RoundHalfUp`, `Tonumber`) |
 | Export/spec.lua | `export/spec.go` (transformed once, Go-maintained) |

@@ -1,6 +1,9 @@
 package util
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // FoldText is Common.lua sanitiseText: strip <...> spans, fold the unicode
 // hyphen family to "-" and a-/o-umlaut to ascii (UTF-8 and cp1252 forms;
@@ -59,4 +62,22 @@ func StripBalanced(s string, open, close byte) string {
 		i++
 	}
 	return sb.String()
+}
+
+// The two colour escapes the application's text carries: "^" plus one
+// digit for a palette index, and "^x" plus six hex digits for a literal
+// colour (HeadlessWrapper.lua's StripEscapes).
+var (
+	escapeIndex = regexp.MustCompile(`\^[0-9]`)
+	escapeHex   = regexp.MustCompile(`\^x[0-9A-Fa-f]{6}`)
+)
+
+// StripEscapes removes those colour escapes, leaving the text itself. The
+// two passes run in the reference's order, which matters where removing
+// an index escape completes a hex one.
+func StripEscapes(text string) string {
+	if !strings.ContainsRune(text, '^') {
+		return text
+	}
+	return escapeHex.ReplaceAllString(escapeIndex.ReplaceAllString(text, ""), "")
 }

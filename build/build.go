@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/MissingL-tter/missingPassives/calc"
+	"github.com/MissingL-tter/missingPassives/config"
 	"github.com/MissingL-tter/missingPassives/data"
 	"github.com/MissingL-tter/missingPassives/item"
 	"github.com/MissingL-tter/missingPassives/skills"
@@ -33,6 +34,10 @@ type Build struct {
 	Spec   *tree.Spec
 	Items  map[int]*item.Item
 	Skills *skills.Tab
+	// Config is the loaded configuration tab. Its modifier lists do not
+	// reach Input yet: the option table's apply functions are still
+	// being ported (see the package comment).
+	Config *config.Tab
 }
 
 // Load assembles a build file against an already-loaded tree. The tree's
@@ -92,7 +97,7 @@ func Load(blob []byte, tr *tree.Tree) (*Build, error) {
 			BaseInt: class.BaseInt,
 		}
 	}
-	return &Build{Input: in, Spec: spec, Items: items, Skills: tab}, nil
+	return &Build{Input: in, Spec: spec, Items: items, Skills: tab, Config: config.Load(&doc.Config, level)}, nil
 }
 
 // activeSpec is the <Spec> the build has selected, defaulting to the
