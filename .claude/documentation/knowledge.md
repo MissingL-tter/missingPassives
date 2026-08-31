@@ -973,7 +973,7 @@ the GGPK: `TestModCacheGeneration`, `TestTreeArtifactMatchesGGGSource`,
 49 are calc dumps. `test/corpus/` is 97 files / 4.6 MB — 48 build XMLs (10 of
 them `authored_*`) plus `manifest.tsv` (48 rows) and some `.json`/`.pobcode`
 import originals. The calc differential runs **145 variants over those 49 dump
-files** (`parity.md` says 147 — that row is stale).
+files**.
 
 ### Repo skills (`.claude/skills/`)
 
@@ -1011,7 +1011,7 @@ Historical names that appear in memories, commit messages and the README but
 | old | current |
 |---|---|
 | `internal/luacanon`, `internal/luarender`, `internal/luapat` | `test/luacanon`, `test/luarender`, `test/luapat` |
-| `gamedata/` | `data/schema` (package `schema`; its doc comment still opens "Package gamedata") |
+| `gamedata/` | `data/schema` (package `schema`) |
 | `export/luaprng.go`, `export/luatab.go` | `test/luarender/luaprng.go`, `luatab.go` |
 | `modparser/canon.go`, `modparser.Canon` | `test/luacanon` |
 | `data/*_gen.go`, `modparser/vocab_gen.go` | `data/skills_custom.go`, `mapmods.go`, `timeless.go`, `skillstatmap.go`, `modparser/vocab.go` |
@@ -1024,8 +1024,11 @@ Historical names that appear in memories, commit messages and the README but
 
 Drift corrected 2026-08-31 (recorded so the fix is not re-litigated):
 `README.md` (Parse's three-value signature, `data/schema`, `test/luarender`,
-`test/luapat`, 21 of 24 export scripts), `parity.md` (145 calc variants, not
-147), `later.md` (every `#EVAL` and helper citation re-pointed at its current
+`test/luapat`, 21 of 24 export scripts), `parity.md` (145 calc variants not
+147, 145 not 75, the retired `UnportedFn` marker, the native bridge, and the
+mod-cache generator), `poe-data-model.md` and `lua-go-map.md` (`data/schema`),
+`calc-core-plan.md` (a superseded-by-luagtfo table at its head),
+`later.md` (every `#EVAL` and helper citation re-pointed at its current
 line), `data/schema/gamedata.go` (the package comment said "Package
 gamedata"), and `cmd/treegen/main.go` (its header claimed to reproduce PoB's
 `jsonToLua` mangling; `export/treegen.go` is authoritative and says that stage

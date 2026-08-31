@@ -23,7 +23,7 @@ for the replacement passives (dat tables AlternatePassiveSkills etc.).
 | `data.readLUT` (DataLegionLookUpTableHelper) | `tree.TimelessPassive` (computes; no LUT ships) |
 | `data.readAbyssJewelLUT` | `tree.AbyssPassive` (computes; no LUT ships) |
 | the LUT bins' generation inputs (dat AlternatePassive* tables) | `data/raw/conquertables.json` (export.BuildConquerTables, from the GGPK dats; guarded in test/export_test.go) |
-| `/gamedata`-shaped export documents | package `data/schema` |
+| the reference exporter's `Data/*.lua` output | typed JSON documents, package `data/schema` (the Lua text is reproduced only by `test/luarender`) |
 | fix_ascendancy_positions.py + Common.lua jsonToLua + TreeData/tree.lua | `export.BuildTreeDoc` / `cmd/treegen` (source: GGG skilltree-export tag) |
 | REGENERATE_MOD_CACHE startup + Main:SaveModCache → Data/ModCache.lua | `internal/modcachegen.Build` → `data/raw/modcache.jsonl` (guard: test/modcachegen_test.go) |
 | `ItemClass:BuildRaw` / `:BuildAndParseRaw` / `:Craft` | `item.(*Item).BuildRaw/BuildAndParseRaw/Craft` (item/buildraw.go) |

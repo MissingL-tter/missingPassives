@@ -5,7 +5,7 @@ differential test against the archive (see parity.md for which test). Go
 packages named are the authoritative, typed form; `.archive/src` paths are
 the Lua originals.
 
-Pipeline: GGPK dats → `export/` builders → `gamedata/` JSON documents →
+Pipeline: GGPK dats → `export/` builders → `data/schema` JSON documents →
 `data.Load` → the runtime `data.Data` (= Lua's global `data`). Calc consumes
 `data` + `modstore` + `modparser`.
 

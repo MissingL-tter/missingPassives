@@ -1,5 +1,21 @@
 # calc-core port plan (working notes)
 
+**Superseded in parts by the luagtfo work (`deprecated/`, 2026-08-29/30/31).**
+The reasoning and the reference findings below stand; these mechanisms named
+throughout the document do not, and `knowledge.md` carries the current form:
+
+| this document says | current |
+|---|---|
+| the dump's `allocOrders`/`nodeOrders`/`mirage*Orders` are replayed because LuaJIT hash order is not derivable in Go | false premise: `dump_calc.lua` installs `pairs = sortedPairs` before the Calc modules load, so every recorded order is ascending node ids. The whole replay machinery is deleted; production calls `sortedIntKeys` and the test asserts each recorded order is ascending |
+| `modstore.Externals` (GemIsType, GetGameIdFromGemName) wired by InitEnv | `modstore.Resolver`, an interface on the actor |
+| `modstore.Conditions` widened to `map[string]any` for class-name strings | typed `Conditions map[string]CondValue` (bool or class name) |
+| `Cfg.SkillStats` widened to `map[string]any` | typed `modstore.Output` (absent / false / value are three states) |
+| `internal/luapat` is build-time only | now `test/luapat`, test-only |
+| GlobalCache is a dump fixture | computed by the ported `buildOutput` driver and compared |
+| 147 variants | 145 |
+| skill callbacks counted as `UnportedFn` markers (97 of 131) | the marker type is gone; the data declares `SkillCustom.Callbacks` and calc registers bodies by (effect id, kind) — 34 of 134 declared pairs ported |
+| statMap `_grantedEffect` is settled in sorted id order | still true, and modelled as `GrantedEffect.StatMapOwner` |
+
 Target: `Modules/Calcs.lua` + `CalcSetup.lua` + `CalcPerform.lua` + `CalcTools.lua` +
 `CalcFormat.lua`, PLUS `CalcActiveSkill.lua` (tracker files it under calc-offence, but
 initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc spine).
