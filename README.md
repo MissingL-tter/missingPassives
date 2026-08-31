@@ -36,21 +36,23 @@ disagreements.**
 A Go rewrite of `.archive/src/Export/` — the tool that reads the game's
 `.dat64` tables out of the GGPK and produces the game data the application
 consumes. Its output is **structured JSON documents** (one per script, typed
-by the `gamedata` package) — no Lua anywhere in the pipeline. `export/` holds
-the dat64 reader, column schemas, the stat-description engine and 23 of the
-24 export scripts as document builders (`legionSprites`, a GIMP sprite-sheet
-pipeline, is excluded by decision); `cmd/pobexport` is the CLI:
+by the `data/schema` package) — no Lua anywhere in the pipeline. `export/`
+holds the dat64 reader, column schemas, the stat-description engine and 21 of
+the 24 export scripts as document builders (`enums.lua` becomes
+`export.WriteEnumFiles`; `legionSprites`, a GIMP sprite-sheet pipeline, is
+excluded by decision; `uTextToMods` is a no-op in the reference, its itemTypes
+list fully commented out); `cmd/pobexport` is the CLI:
 
 ```sh
 # extraction stays with bun_extract_file.exe — see .archive/src/Export/ggpk/README.md
 go run ./cmd/pobexport -src .archive/src/Export/ggpk -out <dir> [script ...]
 ```
 
-**`gamedata/`** defines the documents: typed, JSON-tagged structs (costs,
+**`data/schema/`** defines the documents: typed, JSON-tagged structs (costs,
 mods, bases, skills, minions, uniques, stat descriptions, ...). This is the
 data model the calculation engine will consume.
 
-**`internal/luarender/`** turns those documents back into the byte-exact
+**`test/luarender/`** turns those documents back into the byte-exact
 `Data/*.lua` files the reference Lua exporter produced. It exists only for
 the differential test and is imported by nothing else; the serialisation
 quirks of the reference (`%.14g` text, `pairs()` layouts, template
@@ -58,19 +60,19 @@ interleaving) live here, and the package is deleted whole when the archive
 comparison stops being the contract.
 
 **`TestExportAgainstReference`** builds every document over the extracted
-GGPK, round-trips it through JSON, renders it back to Lua with luarender and
+GGPK, round-trips it through JSON, renders it back to Lua with test/luarender and
 byte-compares all 123 files against the checked-in copies the Lua exporter
 produced from the same game version. **123 / 123 agree.** Where the reference
 leaks LuaJIT internals into its *data*, the builders replicate them exactly:
-the default-seeded `math.random` stream (`export/luaprng.go`, baked into
+the default-seeded `math.random` stream (`test/luarender/luaprng.go`, baked into
 LegionPassives layout offsets) and number-keyed `pairs()` iteration order
-(`export/luatab.go`, baked into tradeHashes entry order; verified against
+(`test/luarender/luatab.go`, baked into tradeHashes entry order; verified against
 LuaJIT over 3,000 randomized tables).
 
 ## data
 
 The runtime data set — the Go port of `.archive/src/Modules/Data.lua`.
-`data.Load` assembles a typed `Data` value from the gamedata documents plus
+`data.Load` assembles the package-level game data from the schema documents plus
 the tables Data.lua defines inline, including everything the Lua computes at
 load: combined mod pools, per-weapon-type enchant expansion, cluster-notable
 lookups, boss stat means, item base lists, the full skill database (granted
@@ -104,7 +106,7 @@ Two differential tests, both of which **fail on any disagreement**:
   across 20 tables) compared canonically against the reference's own tables:
   data entries byte for byte, closure entries as agreeing that both sides hold
   a function there. Reference keys (Lua patterns) are mapped onto the regex
-  keys via `internal/luapat`. This covers the entries no corpus line reaches.
+  keys via `test/luapat`. This covers the entries no corpus line reaches.
   **8,800 / 8,800 agree.**
 - **`TestModToolsAgainstReference`** — the rest of modLib (the formatting
   family, `parseTags`, `parseFormattedSourceMod`, `compareModParams`,
@@ -146,13 +148,14 @@ luajit ../../tools/dump_modtables.lua   # -> test/testdata/tables_archive.jsonl
 ## Public API
 
 ```go
-mods, extra := modparser.Parse(line)
+mods, extra, recognised := modparser.Parse(line)
 ```
 
-`mods` is nil when the line is not understood, an empty slice when it is
-recognised but grants nothing, else a list of `*Mod` (and wrapper mods whose
-values embed further mods). `extra` is the unconsumed remainder, "" when the
-whole line parsed. Two-pass skill-name resolution and all reference semantics
+`recognised` is false when the line is not understood (an expected state for
+garbage item text); `mods` is then nil. A recognised line that grants nothing
+yields an empty slice, else a list of `*Mod` (and wrapper mods whose values
+embed further mods). `extra` is the unconsumed remainder, "" when the whole
+line parsed. Two-pass skill-name resolution and all reference semantics
 included.
 
 ## Scan semantics

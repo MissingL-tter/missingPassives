@@ -1,3 +1,16 @@
+# Required reading
+
+Read `.claude/documentation/knowledge.md` once per session, before the first
+substantive change to code, artifacts or docs. It is the consolidated record
+of how Path of Building works, how the differential method verifies the port,
+and every trap that has already cost time — the traps are cross-cutting (one
+float or iteration-order rule bites in calc and export alike), so scoping the
+read per task means re-reading it per task.
+
+Re-read the relevant section when entering a subsystem for the first time in a
+session (§8 per package, §6 for the trap classes, §4 before touching a
+harness). It is a reference to consult, not a checklist to recite.
+
 # No Lua-shaped Go
 
 The disease three remodel passes cured (go-remodel-plan.md, lua-gtfo.md,

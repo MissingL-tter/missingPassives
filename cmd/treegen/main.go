@@ -1,27 +1,14 @@
-// treegen converts GGG's published passive-tree JSON
-// (github.com/grindinggear/skilltree-export, per-version tags) into the
-// canon tree document the tree package consumes (data/raw/tree_<v>.json),
-// replacing the retired luajit dump of PoB's TreeData/<v>/tree.lua.
+// treegen is the CLI over export.BuildTreeDoc: it converts GGG's published
+// passive-tree JSON (github.com/grindinggear/skilltree-export, per-version
+// tags) into the conventional-JSON tree document the tree package consumes
+// (data/raw/tree_<v>.json), replacing the retired luajit dump of PoB's
+// TreeData/<v>/tree.lua.
 //
-// It reproduces PoB's whole ingestion pipeline byte-for-byte:
-//
-//  1. fix_ascendancy_positions.py (upstream repo root, 3.29.1 state):
-//     GGG keyword-tag stripping on node stats/reminderText, ascendancy
-//     group repositioning to fixed board slots, the extra legacy notables,
-//     and dropping extraImages/sprites/imageZoomLevels (sprites are view
-//     data; the sprites.json split is not emitted here).
-//  2. Common.lua jsonToLua + Lua load: a REGEX pipeline over the fixed
-//     JSON text. Structurally that means numeric-looking object keys
-//     become Lua number keys and arrays become 1-based tables; textually
-//     it swaps every '['/']' for '{'/'}' INSIDE string values too, and
-//     its `{(%w+)}` -> `{[0]=%1}` quirk can only fire inside strings
-//     (the python serializer's indent puts real single-element arrays on
-//     multiple lines, so the pattern never matches structure).
-//  3. conventional JSON out (the Lua-table shape lives only in tests).
-//
-// The canon-format equivalence to the retired luajit dump was proven when
-// the port landed; test/treegen_test.go pins the current output to the
-// committed artifact and the GGG source.
+// export/treegen.go carries the authoritative description of what is and
+// is not reproduced — in particular that PoB's Common.lua jsonToLua regex
+// stage is deliberately NOT reproduced, because this port has no Lua load
+// step and the mangling never applied to 3.29 data. Read that comment, not
+// this one, before changing the conversion.
 package main
 
 import (

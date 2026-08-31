@@ -108,14 +108,14 @@ Sites: `item/buildraw.go` (the whole `{range:…}` / `Selected Variant` /
 `Item Level` / stat-line reconstruction), `item/applyrange.go` (range
 application and the precision search), `data/uniques_watcherseye.go` and
 `data/uniques_treedep.go` (generated unique text blobs and `{variant:N}`
-prefixes), `data/data.go:489,498` (boss penetration description),
+prefixes), `data/data.go:484,493` (boss penetration description),
 `tree/conquer.go:28,31` (substituting rolls into conquered stat text).
 
 Naming question only — nothing to move.
 
 ### 1.4 Display text
 
-`internal/util.FormatG14` in `calc/mirages.go:188,249,333` builds
+`internal/util.FormatG14` in `calc/mirages.go:173,234,318` builds
 `InfoMessage` (`"3 Mirage Archers using …"`). Nothing parses it. Keeping
 Lua's number spelling is a free choice, not a constraint.
 
@@ -128,7 +128,7 @@ was retired 2026-08-30: every infinity now encodes as the tagged
 `modparser.Quantize14`, applied by `internal/modcachegen.BuildFrom` when it
 writes `data/raw/modcache.jsonl`, sends every number in a parsed mod through
 `%.14g` text and back (`internal/util.Quantize14` is the scalar half;
-`modparser/modcache.go:371` walks the typed mod tree).
+`modparser/modcache.go:445` walks the typed mod tree).
 
 **Why it exists**: PoB cached parsed mod lines in `Data/ModCache.lua`, a Lua
 *source* file. Writing it formatted every number as text and loading it
@@ -188,20 +188,20 @@ list; this is a snapshot with the reason each one exists.
 | `calc/ehp.go:333` | assigns `false` in both branches ("this needs a rework as well"), so `AnyTakenReflect` never becomes true |
 | `calc/ehpmaxhit.go:84` | `a or 0 + b or 0` parses as `a or (0+b) or 0`, so only the shared value is read when non-nil |
 | `calc/ehpstun.go:58` | the second branch is `elseif ~= "Melee"`, which only runs when the category IS "Average", so the Melee multiplier can never apply to a non-melee category |
-| `calc/items.go:221` | `{ slot = true }` keys the literal string `"slot"`, so the chain start is never in the cycle set |
-| `calc/mirages.go:294` | also checks `SkillType.Totem`, which `Global.lua` never defines — the nil index reads nil, so that arm is dead |
+| `calc/items.go:211` | `{ slot = true }` keys the literal string `"slot"`, so the chain start is never in the cycle set |
+| `calc/mirages.go:279` | also checks `SkillType.Totem`, which `Global.lua` never defines — the nil index reads nil, so that arm is dead |
 | `calc/offenceailments.go:179` | `(Flag and 100 or 0) + Sum(...)` parses as `Flag and 100 or (0 + Sum(...))`, so an immune enemy yields exactly 100 and the avoid sum is dropped |
 | `calc/offencecrit.go:231` | `Sum(...) or 0 + X + Y` parses as `Sum(...) or (0+X+Y)`; `Sum` always returns a number, so the enemy and on-crit terms are dead |
 | `calc/offencedamage.go:150` | `dotCfg` is an undeclared global here, so the hit resist is looked up with a nil cfg |
 | `calc/offenceduration.go:94` | `"reserveDuration"` is lowercase in the reference's list while the output key is `"ReserveDuration"`, so that entry never finds a duration |
 | `calc/offencehitrate.go:40` | `More("MORE", cfg, "Accuracy")` — the `"MORE"` string lands in the cfg slot and the real cfg becomes a never-matching modifier name, making this a cfg-less `More` |
 | `calc/offencemisc.go:78` | `cfg` is not the pass cfg (that local died with the loop above) but an undeclared global, i.e. nil |
-| `calc/offenceselfhit.go:182` | the Forbidden Rite block iterates `ipairs({["FRDamageTaken"]=...})` — only a string key, so `ipairs` yields nothing and the block never runs |
+| `calc/offenceselfhit.go:188` | the Forbidden Rite block iterates `ipairs({["FRDamageTaken"]=...})` — only a string key, so `ipairs` yields nothing and the block never runs |
 | `calc/offenceskilldata.go:336` | `Sum(...) or 100` — `Sum` always returns a number, so the fallback is dead and an absent mod means a 0% multiplier |
 | `calc/perform.go:217` | the trailing `and Sum(...,"MaxDoom")` is a bare number, always truthy, gating nothing |
 | `calc/performbuffs.go:384` | merges the UNSCALED list here |
-| `calc/performbuffs.go:1076` | `env.player.Gloves` is never set, so this branch always marks Unencumbered |
-| `calc/performbuffs.go:1180` | the first clause `Val > 0 or Sum(...)` is always truthy: `Sum` returns a number and 0 is truthy in Lua |
+| `calc/performbuffs.go:1091` | `env.player.Gloves` is never set, so this branch always marks Unencumbered |
+| `calc/performbuffs.go:1195` | the first clause `Val > 0 or Sum(...)` is always truthy: `Sum` returns a number and 0 is truthy in Lua |
 | `calc/performmisc.go:282` | `m_max(Sum, Override) or default` — `Override` returns NO VALUES when unset, collapsing to one-argument `m_max`, and the `or default` tail is dead because 0 is truthy |
 | `calc/performmisc.go:325` | same shape for Shock |
 | `calc/skills.go:92` | indexes `gemForSkill` (keyed by granted-effect TABLE) with the skillId STRING, which never matches, so item-granted skills never resolve a gem |
@@ -213,7 +213,7 @@ list; this is a snapshot with the reason each one exists.
 
 Two `#EVAL`s in calc are **not** reference quirks but decisions recorded
 2026-08-29: `calc/performbuffs.go:89` (`performBuffs`, ~1,000 lines) and
-`calc/skillmods.go:197` (`buildActiveSkillModList`, ~800 lines) are straight
+`calc/skillmods.go:200` (`buildActiveSkillModList`, ~800 lines) are straight
 transliterations of the reference bodies, left unsplit.
 
 ### modstore — aggregation and aliasing quirks
@@ -223,18 +223,18 @@ transliterations of the reference bodies, left unsplit.
 | `modstore/db.go:23` | only `ModDB.SumInternal` guards source-less mods (its extra `mod.source and` check); every other aggregation errors on them, so `guardNil=false` panics |
 | `modstore/db.go:223`, `list.go:174` | `or nullValue` reads an undefined global (nil), so failed evaluations are dropped silently |
 | `modstore/db.go:288` | see `HasMod` |
-| `modstore/eval.go:247,294` | writes the computed `div` back into the SHARED tag, visible to every later evaluation of that mod |
-| `modstore/eval.go:360` | the reference shadows its accumulator with the loop variable and adds a stat NAME to a number, which errors |
+| `modstore/eval.go:256,303` | writes the computed `div` back into the SHARED tag, visible to every later evaluation of that mod |
+| `modstore/eval.go:369` | the reference shadows its accumulator with the loop variable and adds a stat NAME to a number, which errors |
 | `modstore/keystones.go:20` | mutates the keystone map's own mods through `setSource`, so the tree's shared modList carries the last granter's source |
 | `modstore/list.go:55` | `copyTable(self[i], true)` is SHALLOW, so the merged copy shares tag tables (and their mutations) with the original |
-| `modstore/store.go:343` | `val > (max or 0)` means all-negative candidates never register (`Max` of {−5,−2} is nil, not −2) |
-| `modstore/store.go:377` | only `ModDB` implements `HasModInternal`; calling it on a `ModList` errors in the reference, so this panics |
+| `modstore/store.go:346` | `val > (max or 0)` means all-negative candidates never register (`Max` of {−5,−2} is nil, not −2) |
+| `modstore/store.go:380` | only `ModDB` implements `HasModInternal`; calling it on a `ModList` errors in the reference, so this panics |
 
 ### data / modparser
 
 | site | quirk |
 |---|---|
-| `data/minions.go:72` | see `Misc.EnergyShieldRechargeBase` |
+| `data/minions.go:66` | see `Misc.EnergyShieldRechargeBase` |
 | `data/mods.go:78` | the exporter wraps joined lines in quotes, so zero described lines load as `{ "" }`, not `{ }` |
 | `data/schema/mods.go:32` | entry order is a LuaJIT hash-table artifact preserved for archive parity — sort by hash once the format is Go-owned |
 | `data/tables.go:108` | `Data.lua` writes this key twice in one table constructor (the derived value, then 0.33); under LuaJIT the derived value survives |
@@ -246,9 +246,9 @@ transliterations of the reference bodies, left unsplit.
 | site | quirk |
 |---|---|
 | `export/script_bases.go:83` | a `remove_tag` for an absent tag is `table.remove(tags, nil)`, which pops the LAST element |
-| `export/script_bossdata.go:542` | the Lua adds to `base.count` instead of `uber.count` (a bug it keeps) |
+| `export/script_bossdata.go:541` | the Lua adds to `base.count` instead of `uber.count` (a bug it keeps) |
 | `export/script_enchant.go:269` | compares `SkillTypes` ROWS against the number 39, always false; only the id substring check can set `isVaal` |
-| `export/script_skills.go:121` | `statInterpolation` cells are aliased and mutated across levels sharing a stat row |
+| `export/script_skills.go:120` | `statInterpolation` cells are aliased and mutated across levels sharing a stat row |
 | `export/statdesc.go:270` | adjusts the cached copy's order a second time, leaving the per-file cache with skewed orders |
 | `export/statdesc.go:539` | `ItemClasses` is never defined in the Lua either; reaching this errored there too |
 

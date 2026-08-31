@@ -1,4 +1,4 @@
-// Package gamedata defines the structured output of the export pipeline:
+// Package schema defines the structured output of the export pipeline:
 // typed, JSON-serialisable game data, one document per export script.
 //
 // This is the exporter's real product. The Lua Data/*.lua text the reference
