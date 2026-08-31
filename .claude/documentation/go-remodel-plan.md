@@ -2,7 +2,7 @@
 
 Audit date 2026-08-28, HEAD `dfee58f04` + the uncommitted working tree
 (structured-mods conversion, calc renames, `maxLevel`). Plan only; no code
-changed. Filename proposed here (see Open Questions §8.1).
+changed.
 
 Verdict vocabulary used throughout:
 
@@ -758,4 +758,4 @@ Decided 2026-08-29, second round:
   — an unrecognised line is an expected state (garbage item text), not an
   error.
 
-Nothing remains open. Step 1 is ready to start on your word.
+Nothing remains open.

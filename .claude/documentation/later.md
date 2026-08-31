@@ -49,12 +49,11 @@ violation.
 `internal/util.RoundHalfUp(v, dec)` = `floor(v*10^dec + 0.5) / 10^dec`, a port
 of `Common.lua round` ([Common.lua:647](../../.archive/src/Modules/Common.lua)).
 
-**This is not a Lua-ism.** Lua has no `round` — that is precisely why
-`Common.lua` defines one. `floor(x+0.5)` is the textbook round-half-up, a
-language-neutral choice PoB's author made. It takes a float64 and returns a
-float64: no shape, no text, nothing Lua-defined about the representation. Its
-result *is* the product's computed answer, so changing it would compute a
-different life total, not remove a Lua-ism.
+**Not a Lua-ism.** Lua has no `round` — that is why `Common.lua` defines one;
+`floor(x+0.5)` is the textbook round-half-up, a language-neutral choice.
+float64 in, float64 out, nothing Lua-defined in the representation; its result
+*is* the product's computed answer, so changing it computes a different life
+total, not fewer Lua-isms.
 
 Measured differences from `math.Round(v*p)/p` — three classes, not one:
 
@@ -137,12 +136,11 @@ parsed the text back, so the values PoB actually fed to its calcs were the
 round-tripped ones. Our regenerated artifact reproduces that, and the runtime
 decodes those numbers rather than parsing the 13,173 lines fresh.
 
-**Why it is a PoB-ism, not a Lua-ism**: the precision loss is a property of
-PoB's decision to cache parsed data in a serialized file, not of Lua's
-semantics. Any language writing a text cache would lose the same digits; the
-`%.14g` width is PoB's choice of format. It also differs in direction from the
-Go→Lua converters the remodel removed — it does not reshape data into Lua
-form, it reproduces a value the reference's pipeline produced.
+**PoB-ism, not Lua-ism**: the precision loss comes from PoB caching parsed
+data in a serialized file, not from Lua semantics — any language's text cache
+drops the same digits; `%.14g` is PoB's format choice. Direction also differs
+from the removed Go→Lua converters: it reshapes nothing into Lua form, it
+reproduces a value the reference's pipeline produced.
 
 **Why kept for now**: those quantized values *are* the product's numbers.
 Dropping the quantization would give full-precision parse results, shifting

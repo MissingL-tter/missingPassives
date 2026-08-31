@@ -5,9 +5,6 @@ cured the core (`Tag`, `Value`, `Output`, the transcribed tables); this file
 lists what a post-remodel review found still standing, with the concrete fix
 for each. Written 2026-08-30 against `a71948fe6`.
 
-Placed here beside `go-remodel-plan.md` and `later.md` because those are the
-two documents it continues; nothing else about the location is intended.
-
 ## Baseline observed before the review
 
 | command | result |
@@ -197,9 +194,9 @@ Sockets []SocketInput `lua:"sockets"`
 The three colour reads become `socket.Color`. At the two keystone sites:
 `if s, ok := v.(modparser.Str); ok { … }`. `str` deletes.
 
-**`Group` is required even though nothing reads it.** The first draft of this
-item specified `Color` alone, on the evidence that `"color"` is the only key
-any code reads — which is true, and which was checked. It was still wrong:
+**`Group` is required even though nothing reads it.** A first draft specified
+`Color` alone — `"color"` is indeed the only key any code reads — and was
+still wrong:
 `TestCalcFixtureEcho` re-encodes each decoded fixture and compares it to the
 archive dump byte for byte, so a key that is never read still has to survive
 the round trip. Every socket entry in the fixtures is
@@ -365,12 +362,10 @@ through to `a.Others[actorType]`. `Actor.Others` (`:69`, commented
 *"any other actor types"*) is never written anywhere — it exists only to mirror
 the reference's open table lookup.
 
-**Revised 2026-08-30 — the enum half of this item is withdrawn.**
-
-The original fix was an `ActorType uint8` enum over `player`/`enemy`/`parent`,
-and it asserted that `go-remodel-plan.md`'s recorded deviation ("`Actor` stays
-a string") was superseded. That was wrong. The archive fixtures carry a
-**fourth** actor value:
+**Revised 2026-08-30 — the enum half is withdrawn.** The proposed `ActorType
+uint8` enum over `player`/`enemy`/`parent` claimed `go-remodel-plan.md`'s
+recorded deviation ("`Actor` stays a string") was superseded; wrong — the
+archive fixtures carry a **fourth** actor value:
 
 | value | count in `test/testdata/*.jsonl` |
 |---|---|
@@ -383,9 +378,8 @@ a string") was superseded. That was wrong. The archive fixtures carry a
 exercise the actor-not-found path. It round-trips through `Tag.Params()` into
 `TestModStoreAgainstReference`, so the exact text must survive. An enum would
 have to carry the original string alongside the tag to reproduce it, which
-defeats the purpose. The actor name is a genuinely open string, and the first
-remodel's deviation was correct — it simply did not record why. This is that
-reason.
+defeats the purpose. The actor name is a genuinely open string; the first
+remodel's deviation was correct — this is its unrecorded reason.
 
 **Fix (the part that stands).** Delete `Actor.Others` — it is written nowhere
 in the repository, so the fallthrough is unreachable — and make `byType` a
@@ -603,9 +597,8 @@ replacing the regex DSL, both `#EVAL` size tags present, and the two Lua
 generators `tools/gen_skilldata.lua` / `tools/gen_datatables.lua` gone.
 (`tools/` itself remains and must: it holds the nine sanctioned dump
 harnesses — `dump_parse.lua`, `dump_modstore.lua`, `dump_calc.lua`,
-`canon.lua` and the rest — that produce the archive fixtures. An earlier
-draft of this file said "`tools/` deleted", which was a misreading of a
-`find tools -name '*.go'` returning nothing.)
+`canon.lua` and the rest — that produce the archive fixtures; an earlier
+draft misread an empty `find tools -name '*.go'` as "`tools/` deleted".)
 Undocumented drift, all of which should be added to `go-remodel-plan.md` §7.1's
 Deviations list whether or not the fix is taken:
 
