@@ -3,9 +3,9 @@
 Durable reference for the Go rebuild of Path of Building: how the reference
 application works, how the conversion is verified, and every trap that cost
 real time. Not a plan and not a status board — those are `parity.md` (module
-tracker, current status) and the three remodel documents. Facts here should
-stay true as the port advances; anything time-bound is marked *(as of
-2026-08-31)*.
+tracker, current status) and the finished stage documents under
+`deprecated/`. Facts here should stay true as the port advances; anything
+time-bound is marked *(as of 2026-08-31)*.
 
 Companion documents, and what each owns:
 
@@ -14,7 +14,7 @@ Companion documents, and what each owns:
 | `parity.md` | per-module status, the two-axis completion rule, differential inventory |
 | `poe-data-model.md` | Path of Exile domain semantics (modifiers, pools, skills, jewels, bases) |
 | `later.md` | Lua-derived code kept by decision + the `#EVAL` quirk inventory |
-| `go-remodel-plan.md`, `lua-gtfo.md`, `lua-residue.md` | the three Lua-eradication stages (2026-08-29/30/31) |
+| `deprecated/go-remodel-plan.md`, `deprecated/lua-gtfo.md`, `deprecated/lua-residue.md` | the three Lua-eradication stages (2026-08-29/30/31) — finished work, kept for their reasoning and precedents; only lua-residue.md's opportunistic list is still live |
 | `calc-core-plan.md` | calc porting notes (statuses drift; reasoning is sound) |
 | `lua-go-map.md` | every deliberate reference→Go name divergence |
 | `CLAUDE.md` (repo root) | the standing rules the stages produced |
@@ -592,8 +592,11 @@ of it deliberately:
 
 Three explicit stages removed Lua-shaped Go from the product, each planned in
 its own document and executed with the whole suite green at every boundary:
-`go-remodel-plan.md` (15 steps, 2026-08-29), `lua-gtfo.md` (7 waves,
-2026-08-30), `lua-residue.md` (4 tiers, 2026-08-31).
+`deprecated/go-remodel-plan.md` (15 steps, 2026-08-29),
+`deprecated/lua-gtfo.md` (7 waves, 2026-08-30) and
+`deprecated/lua-residue.md` (4 tiers, 2026-08-31). They are finished work;
+what they still carry is the reasoning, the precedents and — in
+lua-residue.md — an opportunistic list nobody has scheduled.
 
 **Adjudication vocabulary**, reused across all three — use it instead of a
 binary "is this ugly" judgement:

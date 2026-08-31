@@ -13,10 +13,10 @@ harness). It is a reference to consult, not a checklist to recite.
 
 # No Lua-shaped Go
 
-The disease three remodel passes cured (go-remodel-plan.md, lua-gtfo.md,
-lua-residue.md — adjudication vocabulary and precedents live there). Any new
-code, port work included, follows these; a deliberate exception cites its
-guarding differential at the site.
+The disease three remodel passes cured (`.claude/documentation/deprecated/`:
+go-remodel-plan.md, lua-gtfo.md, lua-residue.md — adjudication vocabulary and
+precedents live there). Any new code, port work included, follows these; a
+deliberate exception cites its guarding differential at the site.
 
 - Port behaviour, never shape. `map[string]any` / `[]any` / `any` exist only
   at a true I/O decode edge (external JSON before it becomes typed). Closed

@@ -1,7 +1,7 @@
 # Later — deferred items and reference quirks
 
 Two lists that outlive the 2026-08-29 Lua remodel
-(`.claude/documentation/go-remodel-plan.md`):
+(`.claude/documentation/deprecated/go-remodel-plan.md`):
 
 1. **Kept Lua-derived code** — production code that reproduces the
    reference's behaviour and survived the remodel by decision, with the

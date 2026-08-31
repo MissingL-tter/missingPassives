@@ -20,11 +20,12 @@ Then snapshot mtimes across scope-dir; the agent reports only files it believes 
 
 Launch the `claudifier` subagent (Agent tool, `subagent_type: claudifier`,
 `run_in_background: false`). Do not restate its rules in the launch prompt - it reads its
-own spec (`GENERATED` files, the excluded cook dirs, no git writes). Pass scope plus
+own spec (`GENERATED` files, the excluded dirs, no git writes). Pass scope plus
 anything unusual about this run, nothing else.
 
 On return, diff mtimes to confirm nothing out of scope was written -
-`skills/cook/{tools,data,recipes}/` above all: any change there is a violation; restore it
+`skills/cook/{tools,data,recipes}/` and `documentation/deprecated/` above all: any change
+there is a violation; restore it
 from git and say so.
 
 Relay: bytes before -> after per file, the mtime diff, any fact it reports dropping. Nothing

@@ -28,8 +28,9 @@ Hard limits:
 
 - First line contains `GENERATED` -> never edit; shrink it by changing its generator and
   regenerating.
-- `skills/cook/tools/`, `skills/cook/data/` and `skills/cook/recipes/` are out of scope
-  entirely: never edit, never open. `.lua` files are never edited, wherever they sit.
+- `skills/cook/tools/`, `skills/cook/data/`, `skills/cook/recipes/` and
+  `documentation/deprecated/` are out of scope entirely: never edit, never open. `.lua`
+  files are never edited, wherever they sit.
 - Frontmatter (`name`, `description`, `disable-model-invocation`, `tools`, ...) is harness
   config: keep keys intact; descriptions may be tightened.
 - Never delete a file or `.gitkeep`; never rename or move anything.
