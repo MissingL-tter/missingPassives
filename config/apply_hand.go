@@ -179,12 +179,13 @@ func sortedKeys[V any](m map[string]V) []string {
 	return out
 }
 
-// Four map affixes carry an apply body the reference left empty, one of
-// them with the note "SHOULD THIS BE SUPPORTED?". Registering them keeps
-// the dispatch total and records that doing nothing is the reference's
+// Five map affixes carry an apply body the reference left empty - three
+// of them keep their previous modifier commented out above nothing, and
+// one asks "SHOULD THIS BE SUPPORTED?". Registering them keeps the
+// dispatch total and records that doing nothing is the reference's
 // behaviour, not a gap here.
 func init() {
-	for _, name := range []string{"Punishing", "Mirrored", "of Transience", "of Blinding"} {
+	for _, name := range []string{"Punishing", "Mirrored", "of Balance", "of Transience", "of Blinding"} {
 		if mapAffixApplies[name] != nil {
 			panic("config: " + name + " has an applier; the reference's is empty")
 		}

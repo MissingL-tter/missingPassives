@@ -134,10 +134,6 @@ var mapAffixApplies = map[string]func(a mapAffixArgs, t *Tab){
 		t.EnemyMods.AddMod(modparser.NewModFull("Damage", modparser.Inc, modparser.Num(a.v1(1)*a.Effect), "Map mod Overlord's", true, modparser.FlagNone, modparser.KeywordNone, &modparser.CondTag{Var: "RareOrUnique"}))
 		t.EnemyMods.AddMod(modparser.NewModFull("Speed", modparser.Inc, modparser.Num(a.v1(2)*a.Effect), "Map mod Overlord's", true, modparser.FlagNone, modparser.KeywordNone, &modparser.CondTag{Var: "RareOrUnique"}))
 	},
-	// Data/ModMap.lua L208
-	"of Balance": func(a mapAffixArgs, t *Tab) {
-		t.Mods.AddMod(modparser.NewModFull("Keystone", modparser.List, modparser.Str("Elemental Equilibrium"), "Map mod of Balance", true, modparser.FlagNone, modparser.KeywordNone))
-	},
 	// Data/ModMap.lua L217
 	"of Congealment": func(a mapAffixArgs, t *Tab) {
 		t.EnemyMods.AddMod(modparser.NewModFull("CannotLeechLifeFromSelf", modparser.Flag, modparser.Bool(true), "Map mod of Congealment", true, modparser.FlagNone, modparser.KeywordNone))
@@ -165,7 +161,6 @@ var mapAffixApplies = map[string]func(a mapAffixArgs, t *Tab){
 	},
 	// Data/ModMap.lua L271
 	"of Miring": func(a mapAffixArgs, t *Tab) {
-		t.Mods.AddMod(modparser.NewModFull("DodgeChanceIsUnlucky", modparser.Flag, modparser.Bool(true), "Map mod of Miring", true, modparser.FlagNone, modparser.KeywordNone))
 		t.Mods.AddMod(modparser.NewModFull("SpellSuppressionEffect", modparser.Base, modparser.Num(-a.v1(1)*a.Effect), "Map mod of Miring", true, modparser.FlagNone, modparser.KeywordNone))
 		t.EnemyMods.AddMod(modparser.NewModFull("Accuracy", modparser.Inc, modparser.Num(a.v1(2)*a.Effect), "Map mod of Miring", true, modparser.FlagNone, modparser.KeywordNone))
 	},
@@ -195,7 +190,7 @@ var mapAffixApplies = map[string]func(a mapAffixArgs, t *Tab){
 	},
 	// Data/ModMap.lua L334
 	"of Doubt": func(a mapAffixArgs, t *Tab) {
-		t.Mods.AddMod(modparser.NewModFull("AuraEffect", modparser.Inc, modparser.Num(-a.v()*a.Effect), "Map mod of Doubt", true, modparser.FlagNone, modparser.KeywordNone, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAura}, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAppliesCurse}))
+		t.Mods.AddMod(modparser.NewModFull("AuraEffect", modparser.Inc, modparser.Num(-a.v()*a.Effect), "Map mod of Doubt", true, modparser.FlagNone, modparser.KeywordNone, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAura}, &modparser.SkillTypeTag{SkillType: modparser.SkillTypeAppliesCurse, Neg: true}))
 	},
 	// Data/ModMap.lua L342
 	"of Imprecision": func(a mapAffixArgs, t *Tab) {

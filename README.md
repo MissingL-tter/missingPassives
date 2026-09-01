@@ -90,8 +90,8 @@ round-trip through Lua string literals are unescaped at load; `[[...]]` long
 brackets are raw. Where the reference's pairs() order decides a winner
 (shared skill tables' mod sources, gem lookups), both sides re-derive in
 sorted order — documented divergences. Lua functions carried by the data
-(139 skill callbacks, 41 map-mod appliers) are `UnportedFn` markers whose
-bodies land with the calc/config modules; the four tree-dependent generated
+(139 skill callbacks, 41 map-mod appliers) land with the module that consumes
+them — the map-mod appliers are ported, in package `config`; the four tree-dependent generated
 uniques land with tree-data.
 
 ## build
@@ -114,8 +114,11 @@ The configuration tab comes through package `config`, which ports
 compares the loaded option state against the archive — 2,667 values across
 47 builds — and **`TestConfigModListCoverage`** compares the modifiers it
 produces: **2,347 of 2,347 byte-identical, none produced that the archive
-lacks**. The corpus reaches about 32 of the 580 options, so the remainder
-are written against the reference text and not yet exercised by a build.
+lacks**. The build corpus only sets about 32 of the 580 options, so
+**`TestConfigOptionsAgainstReference`** drives the archive directly instead:
+`tools/dump_config.lua` sets every option in turn on an otherwise-default
+build and records what it produced. **1,254 cases, 73,824 comparisons, all
+580 options, 0 disagreements.**
 
 ## Verification
 

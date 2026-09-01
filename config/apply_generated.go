@@ -135,7 +135,7 @@ var generatedApplies = map[Var]func(Value, *Tab){
 	// ConfigOptions.lua L281
 	"aspectOfTheSpiderWebStacks": func(v Value, t *Tab) {
 		n, _ := NumOf(v)
-		t.mod("ExtraSkillMod", modparser.List, modparser.ModRef{Mod: modparser.NewModFull("Multiplier:SpiderWebApplyStack", modparser.Base, modparser.Num(n), "Config", true, modparser.FlagNone, modparser.KeywordNone)}, &modparser.SkillNameTag{SkillName: "Aspect of the Spider"})
+		t.mod("ExtraSkillMod", modparser.List, modparser.ModRef{Mod: modparser.NewMod("Multiplier:SpiderWebApplyStack", modparser.Base, modparser.Num(n))}, &modparser.SkillNameTag{SkillName: "Aspect of the Spider"})
 		if n > 0 {
 			t.mod("Condition:AspectOfTheSpiderActive", modparser.Flag, modparser.Bool(true))
 		}

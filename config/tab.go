@@ -51,9 +51,10 @@ type Tab struct {
 	Mods      *modstore.List
 	EnemyMods *modstore.List
 
-	// disabled records options an apply function switched off for this
-	// pass (the reference sets `varControls[x].enabled = false`, which a
-	// later option reads back).
+	// disabled records options an apply function switched off. The
+	// reference keeps this on the widget, so it survives across
+	// BuildModList calls rather than resetting per pass; a freshly loaded
+	// tab starts with none.
 	disabled map[Var]bool
 }
 
@@ -206,7 +207,6 @@ func (t *Tab) Enabled(v Var) bool { return !t.disabled[v] }
 func (t *Tab) BuildModList() {
 	t.Mods = modstore.NewList(nil)
 	t.EnemyMods = modstore.NewList(nil)
-	t.disabled = map[Var]bool{}
 	t.UpdateLevel()
 	for i := range Options {
 		opt := &Options[i]

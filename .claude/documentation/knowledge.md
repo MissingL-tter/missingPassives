@@ -911,9 +911,17 @@ applies, and rewritten by `presetBossSkills` when a boss skill is named.
 
 With config in, `build.Load` fills every field of `calc.BuildInput`, and
 the calc differential runs on it: 145 variants agree with the archive from
-a build XML alone. The corpus only reaches about 32 of the 580 options, so
-the rest are code-complete and archive-unverified — the `code`/`archive`
-split parity.md tracks.
+a build XML alone.
+
+The build corpus only sets about 32 of the 580 options, which would have
+left the rest unverified. `tools/dump_config.lua` closes that: it drives
+the archive itself, setting every option in turn on an otherwise-default
+build — each value of a list option, four of a numeric one — and records
+what `BuildModList` produced. 1,254 cases, 73,824 comparisons, all 580
+options, zero disagreements. **The corpus is not the limit of what the
+differential can reach; it is only the inputs that happened to be lying
+around.** The same move is available anywhere a port's inputs are
+enumerable (`modstore_test.go`'s 59 synthetic mods were the first).
 
 ### 8.8 Export and data
 
@@ -1003,6 +1011,7 @@ MP_EXPORT=1 go test ./test -run TestExportAgainstReference # 123 files, needs th
 go run ./cmd/pobexport -src .archive/src/Export/ggpk -out data/raw [script ...]
 go run ./cmd/sourceupdate [-treetag 3.29.1]              # full league/data update
 go run ./cmd/sourceupdate -modcache-only                 # just modcache.jsonl
+luajit ../../tools/dump_config.lua                        # from .archive/src: the per-option config dump
 go run ./cmd/treegen                                     # tree_<version>.json from GGG's published JSON
 ```
 
@@ -1020,7 +1029,7 @@ only written on a full run.
 | variable | effect |
 |---|---|
 | `MP_EXPORT=1` | enables the export differential (off by default: needs the GGPK, ~97s) |
-| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD`, `MP_ONLY_CONFIG` | narrow to one build/prefix |
+| `MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD`, `MP_ONLY_CONFIG`, `MP_ONLY_OPTION` | narrow to one build/option/prefix |
 | `MP_FIXTURE=1` | revert the calc to pure fixture replay (bypass the native bridge) |
 | `MP_NODRIVER=1` | skip filling the global cache via the `BuildOutput` driver |
 | `MP_GUARDS` | turn an unported-branch panic into a reported failure and carry on, so one run enumerates the whole guard surface |
