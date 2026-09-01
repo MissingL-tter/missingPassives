@@ -268,13 +268,86 @@ Glorious Vanity node's mod list into the reference's `pairs()` order.
 Production merges timeless additions in first-seen order; the archive's order
 is a LuaJIT hash walk, and the emulation of it stays test-side (§6.4).
 
-### 4.6 Known blind spots
+### 4.6 Ordering, sorting, and never editing the referee
 
-- **The precision floor.** Compared canons are `%.14g` on both sides, so no
-  disagreement below the 14th significant digit is visible. Every `archive
-  [x]` means "agrees to 14 significant digits at each checkpoint", not "is the
-  same double". A real bug lived exactly there (§6.1). Re-running the corpus
-  at `%.17g` on both sides is an outstanding post-parity review.
+This is the mistake this port keeps making, in several disguises. It always
+starts the same way: a comparison serialises a collection into an ordered
+array and byte-compares it, the two sides disagree only on order, and the
+repair goes into the wrong place.
+
+**A comparison that fails only on order is a defect in the comparison.**
+Ask whether the *behaviour* depends on order or only the *check* does.
+Byte-comparing a serialised array makes every check order-sensitive
+whatever the programs do. When only membership and counts carry meaning,
+compare as a multiset and the question disappears. Reach for an imposed
+order only after the multiset comparison has failed.
+
+**Order changes a result only where the operation does not commute.**
+Increased sums, more multiplies; both commute, so for most modifier work
+the order is irrelevant to every number. The places worth suspecting are
+winner-takes-one modifiers (an override, a max) and float summation showing
+in the last digits. If order matters somewhere, demonstrate that case -
+do not sort everything on the suspicion.
+
+**Never install semantics into a dump to make a comparison pass.** The
+archive is the referee for every judgement here: whether a behaviour is
+load-bearing, whether a quirk must be reproduced, whether a module is done.
+That only holds while the reference side is untouched. A dump script that
+changes what the application does turns the differential from a test into a
+mirror - it reports agreement on precisely the thing that was in question,
+and once the dump is editable any claim can be made to come out either way.
+
+**`tools/dump_calc.lua` runs under a sorted `pairs`. That is a fact about
+that file, not a requirement on the port and not a convention to extend.**
+It means the orders that dump recorded are sorted, so replaying them was
+pointless. It does not mean the Go side must sort, and it does not license
+a new dump to sort. Both of those have been assumed here and both are
+wrong.
+
+Whether a given sort is needed at all is decidable only above the
+precision floor: summing the same terms in two orders differs around the
+16th digit, which `%.14g` hides. Reversing a sort and watching a
+differential therefore proves only that the *serialisation* is
+order-sensitive - a positional byte-compare fails on any reordering
+whatever the numbers do. Settle these once the compared canon carries full
+precision (§4.7).
+
+### 4.7 Known blind spots
+
+- **The precision floor, and what it hides — measured 2026-09-01.** Compared
+  canons are `%.14g` on both sides, so no disagreement below the 14th
+  significant digit is visible. Every `archive [x]` means "agrees to 14
+  significant digits at each checkpoint", not "is the same double". A real
+  bug lived exactly there (§6.1). Raising both sides to `%.17g` - one
+  constant in `tools/canon.lua`, `floatDigits` in `luacanon.go`, `formatG14`
+  in `modcanon.go` - and re-dumping the corpus leaves **32 divergences across
+  15 of 145 calc variants**, every one at the 15th to 17th digit. Dominant
+  cause, named: Go's `math.Pow` is not correctly rounded where the C library
+  `pow` behind LuaJIT's `^` is. For x=0.65, LuaJIT's `x^3` is
+  0.27462500000000001; `x*x*x` and Go's `math.Pow(x,3)` are both
+  0.27462500000000006, one ULP out. It reaches `EffectiveSpellBlockChance`,
+  the suppression family, the PvP damage chain and the ignite chances - 19
+  `math.Pow` sites in calc. Left at 14 for now: closing it needs a
+  correctly-rounded power for small integer exponents, not a reversion.
+- **The number models are identical, so a 17-digit comparison is
+  meaningful.** Established 2026-09-01: the dumps run under LuaJIT 2.1 x64,
+  which is SSE2 - no x87 80-bit intermediates. `(1e16 + 1) - 1e16` is 0 on
+  both sides, and a battery of six cases agrees digit for digit at 17
+  between LuaJIT's interpreter, its JIT traces, `jit.off()`, and Go. A
+  failure at digits 15-17 is therefore a real difference in what was
+  computed, never a difference in how numbers are represented.
+- **Two tooling defects found while measuring, both fixed.**
+  `canon.encodeExact` restored `floatFormat` to a *hardcoded* `"%.14g"`
+  instead of to its previous value, so every compared record emitted after
+  the first fixture was silently forced back to 14 - the floor could not be
+  raised at all until that was repaired, and the first attempt to raise it
+  looked like a clean pass. And `authored_triggers4.xml` had no line in
+  `test/corpus/manifest.tsv`, so `calc_trig4.jsonl` could not be regenerated
+  by the documented command and went stale.
+- **Still outstanding:** the constant-folding half. Go folds untyped
+  constant expressions at arbitrary precision at compile time where Lua
+  divides at runtime in double; the current check is a seven-candidate regex
+  rather than a proof.
 - **Shared-path bugs are invisible.** A defect in code both sides pass through
   compares equal to itself. `quantizeTag` once dropped a tag and agreed with
   itself; the mitigation is to make shared normalisers *loud* (panic) rather

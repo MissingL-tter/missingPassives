@@ -31,7 +31,13 @@ deliberate exception cites its guarding differential at the site.
   differential proves them load-bearing, evidence cited at the site.
   Otherwise parse/coerce at the edge and delete the helper. Before replaying
   anything a dump recorded, check whether the dump derived it (dump_calc ran
-  under sortedPairs; "LuaJIT order" is usually just sorted).
+  under sortedPairs; "LuaJIT order" is usually just sorted) — a fact about
+  that file, not a requirement on the port and not a convention to extend.
+- Never change a dump to make a comparison pass; the archive is the referee
+  and an edited referee tests nothing. A comparison failing only on order is
+  a defect in the comparison: compare as a multiset. Order changes a result
+  only where the operation does not commute — increased sums, more
+  multiplies; show the specific case before imposing an order (§4.6).
 - Lua-shape understanding lives in test/luacanon, test/luapat,
   test/luarender only. Artifacts (data/raw, export/templates) carry typed
   conventional JSON — no Lua source fragments, pre-joined list text,
