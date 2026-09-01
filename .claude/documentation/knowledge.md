@@ -365,11 +365,27 @@ precision (§4.7).
   them under the right names all along, and they had never once been
   compared. All three share a shape: a check that looked like it was
   running and was not.
-- **Still outstanding:** the constant-folding half. Go folds untyped
-  constant expressions at arbitrary precision at compile time where Lua
-  divides at runtime in double; the current check is a seven-candidate regex
-  rather than a proof. And the `math.Pow` divergence above is measured but
-  not closed.
+- **Constant folding: swept, clean.** Go evaluates an expression made only
+  of untyped constants exactly and rounds once at the end; the reference
+  rounds each literal to a double first and rounds again at every
+  operation. Where a literal is not exactly representable the two part
+  company - `1 / 0.033` folds to 30.303030303030305 where the reference
+  computes 30.303030303030301. The fix at a site is to give the literal a
+  type (`const d float64 = 0.033`), which rounds it before the operation.
+  `TestNoUnsafeConstantFolding` replaces the old seven-candidate regex: it
+  evaluates every fractional constant expression in production source both
+  ways, using `go/constant` - the same exact arithmetic the compiler uses -
+  and resolves untyped named constants as well as literals. **35
+  expressions examined, 0 unsafe.** Both paths carry a positive control
+  (an injected `1 / 0.033`, and one behind a named constant, are each
+  caught), and the test fails outright if it examines nothing, because a
+  sweep that reaches no source passes for the wrong reason.
+- **Still outstanding:** the `math.Pow` divergence above is measured and
+  named but not closed. A related trap the sweep does NOT cover: Go's
+  `1/3` over untyped INTEGER constants is 0, where Lua gives 0.333 - a
+  semantic difference, not a rounding one. Telling a deliberate integer
+  division from an accidental one needs type context the sweep does not
+  carry.
 - **Shared-path bugs are invisible.** A defect in code both sides pass through
   compares equal to itself. `quantizeTag` once dropped a tag and agreed with
   itself; the mitigation is to make shared normalisers *loud* (panic) rather

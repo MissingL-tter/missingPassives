@@ -63,10 +63,12 @@ a POST-PARITY REVIEW item, done once the modules are written, not per-gap:
    `buildOutput` driver computes it and the differential compares it —
    which removes the input channel the trigger-sim bug came through.
 3. The sweep for Go's arbitrary-precision constant folding (`1 / 0.033` as a
-   constant is one ulp off the reference's runtime division) was a regex over
-   `data/` and `calc/` that checked seven candidates — not a proof: a
-   constant expression with non-representable operands can hide in any
-   `const` block or literal table entry.
+   constant is one ulp off the reference's runtime division) is now
+   `TestNoUnsafeConstantFolding`, which evaluates every fractional constant
+   expression in production source both ways through `go/constant` and
+   resolves untyped named constants: 35 examined, 0 unsafe, with a positive
+   control on each path. It replaced a seven-candidate regex that could not
+   see into a `const` block or a literal table entry.
 
 **Kind** — how the module divides, the axis decoupling runs along:
 
