@@ -72,9 +72,10 @@ end
 -- encodeExact is canon.encode with round-trippable floats, for dump values
 -- the replay consumes as input rather than compares.
 function canon.encodeExact(v)
+	local prev = floatFormat
 	floatFormat = "%.17g"
 	local ok, res = pcall(canon.encode, v)
-	floatFormat = "%.14g"
+	floatFormat = prev
 	if not ok then
 		error(res)
 	end

@@ -43,6 +43,7 @@ toad	../../test/corpus/SkymindAllflame.xml
 trig1	../../test/corpus/authored_triggers1.xml
 trig2	../../test/corpus/authored_triggers2.xml
 trig3	../../test/corpus/authored_triggers3.xml
+trig4	../../test/corpus/authored_triggers4.xml
 mjolner	../../test/corpus/mjolner.xml
 stages	../../test/corpus/authored_stages.xml
 doomexp	../../test/corpus/authored_doomexp.xml

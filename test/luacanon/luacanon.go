@@ -43,8 +43,9 @@ func Encode(v any) string {
 // canon.lua's encodeExact -- for fixture records, which are replay input
 // rather than compared canon. Not safe concurrently with Encode.
 func EncodeExact(v any) string {
+	prev := floatDigits
 	floatDigits = 17
-	defer func() { floatDigits = 14 }()
+	defer func() { floatDigits = prev }()
 	return Encode(v)
 }
 
