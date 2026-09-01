@@ -93,7 +93,9 @@ func TestNoUnsafeConstantFolding(t *testing.T) {
 }
 
 func formatFinding(file string, line int, exact, stepwise float64) string {
-	return fmt.Sprintf("%s:%d: constant folded to %s where rounding each operand first gives %s (give the literal a float64 type)",
+	return fmt.Sprintf("%s:%d: constant folded to %s where rounding each operand first gives %s"+
+		" (round the OPERAND: give the non-representable literal a float64 type, or compute at runtime."+
+		" Typing the RESULT does not help - the fold has already happened by then)",
 		filepath.ToSlash(file), line,
 		strconv.FormatFloat(exact, 'g', 17, 64), strconv.FormatFloat(stepwise, 'g', 17, 64))
 }
