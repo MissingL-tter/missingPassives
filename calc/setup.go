@@ -537,9 +537,10 @@ func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, ExplodeSou
 }
 
 // buildModListForNodeList ports calcs.buildModListForNodeList. Node maps
-// iterate in ascending id order: the archive dump ran the Calc modules
-// under a sorted pairs() (tools/dump_calc.lua:131), so ascending ids ARE
-// the reference order, derived instead of replayed (lua-residue.md T1).
+// iterate in ascending id order, which is what the archive dump recorded
+// (dump_calc ran under sortedPairs, tools/dump_calc.lua:131). That fixes an
+// order Go would otherwise randomise; it is not a claim that node order
+// changes any result - reversing it does not (knowledge.md 4.6).
 func (env *Env) buildModListForNodeList(finishJewels bool) (*modstore.List, []ExplodeSource) {
 	// Initialise radius jewels
 	for _, rad := range env.RadiusJewelList {

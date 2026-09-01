@@ -566,7 +566,8 @@ func (env *Env) performBody() {
 				}
 				activeSkill.SkillData.Del("ManaReservationPercentForced")
 			}
-			for _, name := range []string{"Life", "Mana"} { // sorted pairs
+			// Literal order, matching what the dump recorded for this pair.
+			for _, name := range []string{"Life", "Mana"} {
 				values := pool[name]
 				more := skillModList.More(skillCfg, name+"Reserved", "Reserved")
 				inc := skillModList.Sum(modparser.Inc, skillCfg, name+"Reserved", "Reserved")

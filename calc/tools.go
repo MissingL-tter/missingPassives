@@ -348,9 +348,12 @@ func firstTag(m *modparser.Mod) []modparser.Tag {
 	return nil
 }
 
-// sortedNumKeys is the key order dump_calc's sortedPairs gives a table with
-// only numeric keys: ascending. Float sums over such a table are not
-// associative, so the replay has to walk them the same way.
+// sortedNumKeys walks a numeric-keyed table in ascending order. Float sums
+// over it are not associative, so SOME fixed order is required or the
+// result drifts; ascending is the order the archive DUMP recorded, because
+// dump_calc ran under sortedPairs (tools/dump_calc.lua:131). That is a
+// property of the harness, not of Path of Building - unmodified LuaJIT
+// would walk these in hash order. The port matches the dump.
 func sortedNumKeys(m map[float64]float64) []float64 {
 	keys := make([]float64, 0, len(m))
 	for k := range m {
@@ -360,10 +363,13 @@ func sortedNumKeys(m map[float64]float64) []float64 {
 	return keys
 }
 
-// sortedIntKeys is ascending map-key order — the calc's node iteration
-// order. The archive dump ran the Calc modules under a sorted pairs()
-// (tools/dump_calc.lua:131), so ascending ids reproduce the reference's
-// iteration wherever it walks a node table.
+// sortedIntKeys is ascending map-key order, used wherever the calc walks a
+// node table. It buys determinism: Go's map order is randomised, so without
+// it the recorded order changes run to run. Ascending matches what the
+// archive dump recorded (dump_calc ran under sortedPairs,
+// tools/dump_calc.lua:131) - a fact about that file, NOT evidence that node
+// order is load-bearing. Reversing every determinism sort moves no computed
+// output (knowledge.md 4.6).
 func sortedIntKeys[V any](m map[int]V) []int {
 	keys := make([]int, 0, len(m))
 	for k := range m {
