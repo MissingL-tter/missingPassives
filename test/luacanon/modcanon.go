@@ -378,7 +378,7 @@ func canonNumber(f float64) string {
 // formatG14 mimics C's %.14g, which Lua's string.format uses. Go writes
 // exponents as e+06, as C does, for the magnitudes mod values take.
 func formatG14(f float64) string {
-	return strconv.FormatFloat(f, 'g', 14, 64)
+	return strconv.FormatFloat(f, 'g', 17, 64)
 }
 
 var canonEscapes = map[byte]string{

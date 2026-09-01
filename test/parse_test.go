@@ -107,9 +107,15 @@ func TestAgainstReference(t *testing.T) {
 			wantExtra = *rec.Extra
 		}
 
-		if gotMods == wantMods && gotExtra == wantExtra {
-			agree++
-			continue
+		if gotExtra == wantExtra {
+			// Numbers the archive reached through its own %.14g text -
+			// its ModCache above all - carry 14 significant digits and
+			// no more, so compare the values, not the rendering.
+			if diffs, tol, err := luacanon.EqualWithin(gotMods, wantMods); err == nil && len(diffs) == 0 {
+				agree++
+				toleratedValues += tol
+				continue
+			}
 		}
 		disagree++
 		if *diffGrep != "" && !contains(rec.Line, *diffGrep) {

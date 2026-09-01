@@ -281,15 +281,22 @@ func TestGameDataAgainstReference(t *testing.T) {
 		checked++
 		got := luacanon.Encode(check())
 		if rec.H != "" {
-			if msHash(got) != rec.H {
+			if msHash(luacanon.Encode14(check())) != rec.H {
 				disagree++
 				t.Errorf("%s differs from the archive (canon hash mismatch, %d bytes)", rec.K, len(got))
 			}
 			continue
 		}
-		if got != rec.C {
+		if diffs, tol, err := luacanon.EqualWithin(got, rec.C); err != nil || len(diffs) > 0 {
 			disagree++
-			t.Errorf("%s differs from the archive\n  got:  %s\n  want: %s", rec.K, diffWindow(got, rec.C), diffWindow(rec.C, got))
+			if err != nil {
+				t.Errorf("%s differs from the archive and its canon would not parse (%v)\n  got:  %s\n  want: %s",
+					rec.K, err, diffWindow(got, rec.C), diffWindow(rec.C, got))
+			} else {
+				t.Errorf("%s differs from the archive:%s", rec.K, luacanon.FormatDiffs(diffs, 8))
+			}
+		} else {
+			toleratedValues += tol
 		}
 	}
 	if err := sc.Err(); err != nil {

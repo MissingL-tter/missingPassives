@@ -846,6 +846,7 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 	checked := 0
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
 	// divergence, so an unrelated variant's guard panic cannot pre-empt it.
+	toleratedValues = 0
 	only := os.Getenv("MP_ONLY")
 	// MP_GUARDS=1 turns an unported-branch panic into a reported failure and
 	// carries on to the next variant, so one run enumerates the whole guard
@@ -874,7 +875,12 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 	if only != "" && checked == 0 {
 		t.Fatalf("MP_ONLY=%q matched no variants", only)
 	}
-	t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
+	if toleratedValues > 0 {
+		t.Logf("calc initEnv vs archive: %d variants agree, %d values only within %g (last-digit drift, see 4.7)",
+			checked, toleratedValues, luacanon.Tolerance)
+	} else {
+		t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
+	}
 }
 
 func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
@@ -1031,9 +1037,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			Item:  shadowOf(env.ItemModDB),
 		})
 		checked++
-		if got != dbs {
-			t.Errorf("%s dbs diverged:\n%s", variant, diffWindow(got, dbs))
-		}
+		canonDiverged(t, variant+" dbs", got, dbs)
 		type skillShadow struct {
 			Name    string  `lua:"name"`
 			Id      string  `lua:"id"`
@@ -1051,16 +1055,12 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 				IsMain:  env.PlayerMainSkill == as,
 			}
 		}
-		if got := luacanon.Encode(summaries); got != skills {
-			t.Errorf("%s skills diverged:\n%s", variant, diffWindow(got, skills))
-		}
+		canonDiverged(t, variant+" skills", luacanon.Encode(summaries), skills)
 		shadows := make([]skillListShadow, len(env.PlayerActiveSkills))
 		for i, as := range env.PlayerActiveSkills {
 			shadows[i] = skillListShadowOf(env, as)
 		}
-		if got := luacanon.Encode(shadows); got != skillLists {
-			t.Errorf("%s skillLists diverged:\n%s", variant, diffWindow(got, skillLists))
-		}
+		canonDiverged(t, variant+" skillLists", luacanon.Encode(shadows), skillLists)
 		// Perform runs on the same env (mirroring the dump) and the
 		// post-perform-body state is compared against the archive.
 		env.Perform()
@@ -1069,22 +1069,14 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			Enemy: shadowOf(env.EnemyDB),
 			Item:  shadowOf(env.ItemModDB),
 		})
-		if gotPerform != performDbs {
-			t.Errorf("%s performDbs diverged:\n%s", variant, diffWindow(gotPerform, performDbs))
-		}
-		if got := luacanon.Encode(env.Player.Output); got != performOutput {
-			t.Errorf("%s performOutput diverged:\n%s", variant, diffWindow(got, performOutput))
-		}
+		canonDiverged(t, variant+" performDbs", gotPerform, performDbs)
+		canonDiverged(t, variant+" performOutput", luacanon.Encode(env.Player.Output), performOutput)
 		if env.Minion != nil {
 			if performMinionDb == "" || performMinionOutput == "" {
 				t.Errorf("%s: Go perform produced a minion but the archive has no minion records", variant)
 			} else {
-				if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != performMinionDb {
-					t.Errorf("%s performMinionDb diverged:\n%s", variant, diffWindow(got, performMinionDb))
-				}
-				if got := luacanon.Encode(env.Minion.Output); got != performMinionOutput {
-					t.Errorf("%s performMinionOutput diverged:\n%s", variant, diffWindow(got, performMinionOutput))
-				}
+				canonDiverged(t, variant+" performMinionDb", luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}), performMinionDb)
+				canonDiverged(t, variant+" performMinionOutput", luacanon.Encode(env.Minion.Output), performMinionOutput)
 			}
 		} else if performMinionDb != "" {
 			t.Errorf("%s: archive has minion perform records but Go produced no minion", variant)
@@ -1101,19 +1093,11 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			Enemy: shadowOf(env.EnemyDB),
 			Item:  shadowOf(env.ItemModDB),
 		})
-		if gotDefence != defenceDbs {
-			t.Errorf("%s defenceDbs diverged:\n%s", variant, diffWindow(gotDefence, defenceDbs))
-		}
-		if got := luacanon.Encode(env.Player.Output); got != defenceOutput {
-			t.Errorf("%s defenceOutput diverged:\n%s", variant, diffWindow(got, defenceOutput))
-		}
+		canonDiverged(t, variant+" defenceDbs", gotDefence, defenceDbs)
+		canonDiverged(t, variant+" defenceOutput", luacanon.Encode(env.Player.Output), defenceOutput)
 		if env.Minion != nil {
-			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != defenceMinionDb {
-				t.Errorf("%s defenceMinionDb diverged:\n%s", variant, diffWindow(got, defenceMinionDb))
-			}
-			if got := luacanon.Encode(env.Minion.Output); got != defenceMinionOutput {
-				t.Errorf("%s defenceMinionOutput diverged:\n%s", variant, diffWindow(got, defenceMinionOutput))
-			}
+			canonDiverged(t, variant+" defenceMinionDb", luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}), defenceMinionDb)
+			canonDiverged(t, variant+" defenceMinionOutput", luacanon.Encode(env.Minion.Output), defenceMinionOutput)
 		}
 		// EHP stage, on the post-defence state, player then minion.
 		env.RunEHP()
@@ -1122,28 +1106,18 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			Enemy: shadowOf(env.EnemyDB),
 			Item:  shadowOf(env.ItemModDB),
 		})
-		if gotEHP != ehpDbs {
-			t.Errorf("%s ehpDbs diverged:\n%s", variant, diffWindow(gotEHP, ehpDbs))
-		}
-		if got := luacanon.Encode(env.Player.Output); got != ehpOutput {
-			t.Errorf("%s ehpOutput diverged:\n%s", variant, diffWindow(got, ehpOutput))
-		}
+		canonDiverged(t, variant+" ehpDbs", gotEHP, ehpDbs)
+		canonDiverged(t, variant+" ehpOutput", luacanon.Encode(env.Player.Output), ehpOutput)
 		if env.Minion != nil {
-			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != ehpMinionDb {
-				t.Errorf("%s ehpMinionDb diverged:\n%s", variant, diffWindow(got, ehpMinionDb))
-			}
-			if got := luacanon.Encode(env.Minion.Output); got != ehpMinionOutput {
-				t.Errorf("%s ehpMinionOutput diverged:\n%s", variant, diffWindow(got, ehpMinionOutput))
-			}
+			canonDiverged(t, variant+" ehpMinionDb", luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}), ehpMinionDb)
+			canonDiverged(t, variant+" ehpMinionOutput", luacanon.Encode(env.Minion.Output), ehpMinionOutput)
 		}
 		// The cache the driver built, at the point the dump snapshots it.
 		if out := os.Getenv("MP_DUMPGC"); out != "" {
 			os.WriteFile(out, []byte(luacanon.Encode(cacheShadowOf(env.GlobalCache))), 0644)
 			os.WriteFile(out+".want", []byte(globalCache), 0644)
 		}
-		if got := luacanon.Encode(cacheShadowOf(env.GlobalCache)); got != globalCache {
-			t.Errorf("%s globalCache diverged:\n%s", variant, diffWindow(got, globalCache))
-		}
+		canonDiverged(t, variant+" globalCache", luacanon.Encode(cacheShadowOf(env.GlobalCache)), globalCache)
 		// Trigger stage, then the mirage gate and offence — the same
 		// sequence and the same interleaving of checkpoints the dump uses
 		// (CalcPerform L3726-3729).
@@ -1153,45 +1127,25 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 			Enemy: shadowOf(env.EnemyDB),
 			Item:  shadowOf(env.ItemModDB),
 		})
-		if gotTrig != triggersDbs {
-			t.Errorf("%s triggersDbs diverged:\n%s", variant, diffWindow(gotTrig, triggersDbs))
-		}
-		if got := luacanon.Encode(env.Player.Output); got != triggersOutput {
-			t.Errorf("%s triggersOutput diverged:\n%s", variant, diffWindow(got, triggersOutput))
-		}
-		if got := luacanon.Encode(env.PlayerMainSkill.SkillData); got != triggersSkillData {
-			t.Errorf("%s triggersSkillData diverged:\n%s", variant, diffWindow(got, triggersSkillData))
-		}
+		canonDiverged(t, variant+" triggersDbs", gotTrig, triggersDbs)
+		canonDiverged(t, variant+" triggersOutput", luacanon.Encode(env.Player.Output), triggersOutput)
+		canonDiverged(t, variant+" triggersSkillData", luacanon.Encode(env.PlayerMainSkill.SkillData), triggersSkillData)
 		env.RunOffencePlayer()
 		gotOffence := luacanon.Encode(dbsShadow{
 			Mod:   shadowOf(env.ModDB),
 			Enemy: shadowOf(env.EnemyDB),
 			Item:  shadowOf(env.ItemModDB),
 		})
-		if gotOffence != offenceDbs {
-			t.Errorf("%s offenceDbs diverged:\n%s", variant, diffWindow(gotOffence, offenceDbs))
-		}
-		if got := luacanon.Encode(env.Player.Output); got != offenceOutput {
-			t.Errorf("%s offenceOutput diverged:\n%s", variant, diffWindow(got, offenceOutput))
-		}
-		if got := luacanon.Encode(env.PlayerMainSkill.SkillData); got != offenceSkillOutput {
-			t.Errorf("%s offenceSkillOutput diverged:\n%s", variant, diffWindow(got, offenceSkillOutput))
-		}
+		canonDiverged(t, variant+" offenceDbs", gotOffence, offenceDbs)
+		canonDiverged(t, variant+" offenceOutput", luacanon.Encode(env.Player.Output), offenceOutput)
+		canonDiverged(t, variant+" offenceSkillOutput", luacanon.Encode(env.PlayerMainSkill.SkillData), offenceSkillOutput)
 		if env.Minion != nil {
 			env.RunTriggersMinion()
-			if got := luacanon.Encode(env.Minion.Output); got != triggersMinionOutput {
-				t.Errorf("%s triggersMinionOutput diverged:\n%s", variant, diffWindow(got, triggersMinionOutput))
-			}
-			if got := luacanon.Encode(env.Minion.MainSkill.SkillData); got != triggersMinionSkillData {
-				t.Errorf("%s triggersMinionSkillData diverged:\n%s", variant, diffWindow(got, triggersMinionSkillData))
-			}
+			canonDiverged(t, variant+" triggersMinionOutput", luacanon.Encode(env.Minion.Output), triggersMinionOutput)
+			canonDiverged(t, variant+" triggersMinionSkillData", luacanon.Encode(env.Minion.MainSkill.SkillData), triggersMinionSkillData)
 			env.RunOffenceMinion()
-			if got := luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}); got != offenceMinionDb {
-				t.Errorf("%s offenceMinionDb diverged:\n%s", variant, diffWindow(got, offenceMinionDb))
-			}
-			if got := luacanon.Encode(env.Minion.Output); got != offenceMinionOutput {
-				t.Errorf("%s offenceMinionOutput diverged:\n%s", variant, diffWindow(got, offenceMinionOutput))
-			}
+			canonDiverged(t, variant+" offenceMinionDb", luacanon.Encode(dbShadow{Mods: env.Minion.DB.Mods, Conditions: env.Minion.DB.Conditions, Multipliers: env.Minion.DB.Multipliers}), offenceMinionDb)
+			canonDiverged(t, variant+" offenceMinionOutput", luacanon.Encode(env.Minion.Output), offenceMinionOutput)
 		}
 		// Mirage stage: the sub-environment CalcMirages builds. RunMirages
 		// runs inside RunOffencePlayer, at the same point the dump emits
@@ -1212,12 +1166,8 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 				if m.SkillPartName != "" {
 					shadow["skillPartName"] = m.SkillPartName
 				}
-				if got := luacanon.Encode(shadow); got != mirage {
-					t.Errorf("%s mirage diverged:\n%s", variant, diffWindow(got, mirage))
-				}
-				if got := luacanon.Encode(m.Output); got != mirageOutput {
-					t.Errorf("%s mirageOutput diverged:\n%s", variant, diffWindow(got, mirageOutput))
-				}
+				canonDiverged(t, variant+" mirage", luacanon.Encode(shadow), mirage)
+				canonDiverged(t, variant+" mirageOutput", luacanon.Encode(m.Output), mirageOutput)
 			}
 		} else if env.PlayerMainSkill.Mirage != nil {
 			t.Errorf("%s built a mirage the archive has none of", variant)
@@ -1342,4 +1292,31 @@ func cacheShadowOf(cache map[string]*calc.CachedSkill) map[string]*cacheShadow {
 		out[uuid] = sh
 	}
 	return out
+}
+
+// toleratedValues counts numeric leaves that agreed only within
+// luacanon.Tolerance across a differential run, so a pass reports how much
+// last-digit drift it absorbed rather than hiding it.
+var toleratedValues int
+
+// canonDiverged compares one checkpoint's canonical encoding against the
+// archive's. Identical text passes outright; otherwise the two are walked
+// leaf by leaf, numbers agreeing within luacanon.Tolerance and everything
+// else exactly. Reports true when it logged a failure.
+func canonDiverged(t *testing.T, label, got, want string) bool {
+	t.Helper()
+	if got == want {
+		return false
+	}
+	diffs, tolerated, err := luacanon.EqualWithin(got, want)
+	if err != nil {
+		t.Errorf("%s diverged, and the canon would not parse (%v):\n%s", label, err, diffWindow(got, want))
+		return true
+	}
+	if len(diffs) > 0 {
+		t.Errorf("%s diverged:%s", label, luacanon.FormatDiffs(diffs, 8))
+		return true
+	}
+	toleratedValues += tolerated
+	return false
 }

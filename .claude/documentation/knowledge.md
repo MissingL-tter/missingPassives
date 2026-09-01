@@ -158,13 +158,19 @@ without this distinction removes error-parity behaviour.
 
 ### 4.2 The canonical encoding
 
-`tools/canon.lua` and `test/luacanon` produce the same text from either side;
-comparison is byte equality of strings, never structural re-serialisation.
+`tools/canon.lua` and `test/luacanon` produce the same text from either side.
+Comparison is byte equality first; when the text differs, `EqualWithin` walks
+both parses leaf by leaf, numbers agreeing within `luacanon.Tolerance` and
+everything else exactly (§4.7). Never structural re-serialisation.
 
 - every table → JSON object, keys stringified and **sorted as strings** (so a
   10-element array emits `"1","10","2",…` on both sides)
 - Lua's 1-based arrays → Go slice index `i` emits under key `i+1`
-- whole numbers |v|<1e15 print via `%d`; other numbers via `%.14g`
+- whole numbers |v|<1e15 print via `%d`; other numbers via `%.17g`, so a
+  double is emitted whole and nothing is discarded before comparison
+- `canon.encode14` / `luacanon.Encode14` re-render at `%.14g` for the
+  **hashed** subtrees only: a hash cannot absorb a last-digit difference, so
+  both sides quantize to the reference's own data precision before hashing
 - functions → `{"__fn":true}`; NaN/±inf → quoted `tostring`
 - `canon.encode` reads values with `rawget`, so `__index` metamethods cannot
   materialise values the table does not hold
@@ -314,21 +320,30 @@ precision (§4.7).
 
 ### 4.7 Known blind spots
 
-- **The precision floor, and what it hides — measured 2026-09-01.** Compared
-  canons are `%.14g` on both sides, so no disagreement below the 14th
-  significant digit is visible. Every `archive [x]` means "agrees to 14
-  significant digits at each checkpoint", not "is the same double". A real
-  bug lived exactly there (§6.1). Raising both sides to `%.17g` - one
-  constant in `tools/canon.lua`, `floatDigits` in `luacanon.go`, `formatG14`
-  in `modcanon.go` - and re-dumping the corpus leaves **32 divergences across
-  15 of 145 calc variants**, every one at the 15th to 17th digit. Dominant
-  cause, named: Go's `math.Pow` is not correctly rounded where the C library
-  `pow` behind LuaJIT's `^` is. For x=0.65, LuaJIT's `x^3` is
-  0.27462500000000001; `x*x*x` and Go's `math.Pow(x,3)` are both
-  0.27462500000000006, one ULP out. It reaches `EffectiveSpellBlockChance`,
-  the suppression family, the PvP damage chain and the ignite chances - 19
-  `math.Pow` sites in calc. Left at 14 for now: closing it needs a
-  correctly-rounded power for small integer exponents, not a reversion.
+- **The precision floor is gone; what it was hiding is now visible and
+  tolerated.** Compared canons are `%.17g` on both sides, and a text
+  mismatch falls through to `luacanon.EqualWithin`, which compares numeric
+  leaves within a **relative** 5e-14 and everything else exactly. The
+  tolerance is set by the reference, not chosen: PoB writes its data files
+  and its ModCache as `%.14g` text and reads them back, so wherever a number
+  reaches the archive that way it carries 14 significant digits and no more.
+  Rounding to 14 significant digits moves a value by at most half a unit in
+  the last one, worst case 5e-14 relative when the leading digit is 1. The
+  largest such difference in the corpus is 3.7e-14, in `monsterDamageTable`.
+  Arithmetic the two sides actually perform agrees far better - widest drift
+  measured 1.6e-15 - so a failure is a real disagreement. The calc
+  differential reports what it absorbs: **145 variants agree, 105 values
+  only within tolerance**. Negative control: a 1e-9 perturbation fails 10
+  checkpoints.
+- **The drift has a named cause.** Go's `math.Pow` is not correctly rounded
+  where the C library `pow` behind LuaJIT's `^` is. For x=0.65 LuaJIT's
+  `x^3` is 0.27462500000000001; `x*x*x` and `math.Pow(x,3)` are both
+  0.27462500000000006. It reaches `EffectiveSpellBlockChance`, the
+  suppression family, the PvP damage chain and the ignite chances, across 19
+  `math.Pow` sites in calc. `math/big` closes the integer-exponent half
+  exactly (verified against the reference); the fractional half - evade
+  chance's `^0.9`, ignite stacks, hit rate, the PvP exponents - has no
+  `math/big` answer, since it offers no power for a real exponent.
 - **The number models are identical, so a 17-digit comparison is
   meaningful.** Established 2026-09-01: the dumps run under LuaJIT 2.1 x64,
   which is SSE2 - no x87 80-bit intermediates. `(1e16 + 1) - 1e16` is 0 on
@@ -336,18 +351,25 @@ precision (§4.7).
   between LuaJIT's interpreter, its JIT traces, `jit.off()`, and Go. A
   failure at digits 15-17 is therefore a real difference in what was
   computed, never a difference in how numbers are represented.
-- **Two tooling defects found while measuring, both fixed.**
+- **Three tooling defects found while measuring, all fixed.**
   `canon.encodeExact` restored `floatFormat` to a *hardcoded* `"%.14g"`
   instead of to its previous value, so every compared record emitted after
   the first fixture was silently forced back to 14 - the floor could not be
   raised at all until that was repaired, and the first attempt to raise it
   looked like a clean pass. And `authored_triggers4.xml` had no line in
   `test/corpus/manifest.tsv`, so `calc_trig4.jsonl` could not be regenerated
-  by the documented command and went stale.
+  by the documented command and went stale. Third: `dump_gamedata.lua`
+  listed two subtrees as `modscalability` and `flavourtext` where the
+  reference's table spells them `modScalability` and `flavourText`, so
+  `data[key]` read nil and both dumped as `null` - the port had checks for
+  them under the right names all along, and they had never once been
+  compared. All three share a shape: a check that looked like it was
+  running and was not.
 - **Still outstanding:** the constant-folding half. Go folds untyped
   constant expressions at arbitrary precision at compile time where Lua
   divides at runtime in double; the current check is a seven-candidate regex
-  rather than a proof.
+  rather than a proof. And the `math.Pow` divergence above is measured but
+  not closed.
 - **Shared-path bugs are invisible.** A defect in code both sides pass through
   compares equal to itself. `quantizeTag` once dropped a tag and agreed with
   itself; the mitigation is to make shared normalisers *loud* (panic) rather

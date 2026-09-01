@@ -15,7 +15,7 @@ local function emit(key, value)
 end
 -- Big subtrees compare by double murmur hash of their canon instead.
 local function emitHash(key, value)
-	local s = canon.encode(value)
+	local s = canon.encode14(value)
 	local h = string.format("%d.%d", murmurHash2(s, 0x9747b28c), murmurHash2(s, 0x2312233))
 	out:write('{"k":', canon.quote(key), ',"h":', canon.quote(h), "}\n")
 end
@@ -36,7 +36,7 @@ local keys = {
 	"ailmentTypeList", "elementalAilmentTypeList",
 	"nonDamagingAilmentTypeList", "nonElementalAilmentTypeList",
 	"nonDamagingAilment",
-	"defaultHighPrecision", "highPrecisionMods", "modscalability",
+	"defaultHighPrecision", "highPrecisionMods", "modScalability",
 	"weaponTypeInfo", "unarmedWeaponData",
 	"jewelRadii", "jewelRadius", "maxJewelRadius",
 	"enchantmentSource",
@@ -50,7 +50,7 @@ local keys = {
 	"describeStats", "readLUT", "repairLUTs", "readAbyssJewelLUT",
 	"resolveAbyssJewelComponent", "getAbyssJewelComponentRoll",
 	"bosses", "bossStats", "enemyIsBossTooltip",
-	"essences", "pantheons", "crucible", "masterMods", "flavourtext",
+	"essences", "pantheons", "crucible", "masterMods", "flavourText",
 	"enchantments",
 }
 
