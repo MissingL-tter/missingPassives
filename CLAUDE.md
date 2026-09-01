@@ -1,3 +1,10 @@
+# First action, every prompt
+
+Before anything else, read CLAUDE.md — this file and the global one. Every
+prompt, no exceptions, including one-word replies and mid-task continuations.
+Already having the rules in context is not the point; re-reading is the
+checkpoint.
+
 # Required reading
 
 Read `.claude/documentation/knowledge.md` once per session, before the first
@@ -10,6 +17,14 @@ read per task means re-reading it per task.
 Re-read the relevant section when entering a subsystem for the first time in a
 session (§8 per package, §6 for the trap classes, §4 before touching a
 harness). It is a reference to consult, not a checklist to recite.
+
+Closing is a documentation event. What parity.md or knowledge.md records as
+outstanding gets rewritten in the same turn it stops being outstanding — a
+status written at discovery and never revised is read back later as fact,
+including by you. later.md is an inventory of deliberate decisions, not a
+queue: it goes stale when an entry is deleted, not when one completes.
+calc-core-plan.md's statuses drift by design; parity.md and the tests are
+current truth.
 
 # No Lua-shaped Go
 

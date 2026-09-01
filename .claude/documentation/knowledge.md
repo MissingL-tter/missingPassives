@@ -380,12 +380,19 @@ precision (§4.7).
   (an injected `1 / 0.033`, and one behind a named constant, are each
   caught), and the test fails outright if it examines nothing, because a
   sweep that reaches no source passes for the wrong reason.
-- **Still outstanding:** the `math.Pow` divergence above is measured and
-  named but not closed. A related trap the sweep does NOT cover: Go's
-  `1/3` over untyped INTEGER constants is 0, where Lua gives 0.333 - a
-  semantic difference, not a rounding one. Telling a deliberate integer
-  division from an accidental one needs type context the sweep does not
-  carry.
+- **The `math.Pow` divergence is settled, not pending.** It is a known,
+  quantified, tolerated difference: 105 values across the corpus, all at the
+  16th digit, absorbed because the comparison asks for agreement to 14
+  significant figures - which is all the precision the reference itself
+  carries. Nothing needs fixing for the differential to hold, and the count
+  is printed on every run, so the day it grows past 14 digits the run fails.
+  Writing a correctly-rounded power would only close the integer-exponent
+  half anyway; the fractional sites (evade chance, ignite stacks, hit rate,
+  the PvP exponents) have no clean answer in the standard library.
+- **A trap the folding sweep does NOT cover:** Go's `1/3` over untyped
+  INTEGER constants is 0, where Lua gives 0.333 - a semantic difference,
+  not a rounding one. Telling a deliberate integer division from an
+  accidental one needs type context the sweep does not carry.
 - **Shared-path bugs are invisible.** A defect in code both sides pass through
   compares equal to itself. `quantizeTag` once dropped a tag and agreed with
   itself; the mitigation is to make shared normalisers *loud* (panic) rather
@@ -486,8 +493,13 @@ differential.
 - **By decision (2026-08-27) that emulation stays out of production.** Glorious
   Vanity's addition merge runs in first-seen order and records the blocks
   (`SpecNode.TimelessAdditions`); the differential permutes into reference
-  order before comparing (disabling it fails 4 nodes). The difference is
-  display-only. Revisit only if calc output ever surfaces mod order.
+  order before comparing (disabling it fails 4 nodes). The difference was
+  judged display-only. **That judgement is now testable and untested**
+  (2026-09-01): reordering a sum moves it around the 16th digit, which the
+  comparison can see since it went to full precision, so whether this order
+  reaches a computed output can be answered instead of assumed. Failing a
+  differential does not answer it - a positional comparison fails on any
+  reordering whatever the numbers do (4.6). Compare the computed outputs.
 - **A last-writer-wins assignment inside a `pairs()` loop over a shared table
   is process-random.** `Data.lua:1039` stamps
   `grantedEffect.statMap._grantedEffect` while iterating `data.skills`, and two
@@ -1185,7 +1197,7 @@ command/agent for compressing `.claude/` instruction files.
 | **Party tab deferred** | 2026-08-26 | its calc guards are not gaps; do not propose party work |
 | **`legionSprites.lua` excluded** | — | GIMP sprite pipeline; checked-in PNGs stay |
 | **Timeless/abyss LUTs computed, not shipped** | 2026-08-27 | the bins live only in `.archive` |
-| **LuaJIT pairs emulation stays test-side** | 2026-08-27 | revisit only if calc output surfaces mod order |
+| **LuaJIT pairs emulation stays test-side** | 2026-08-27 | the revisit condition (calc output surfacing mod order) is now testable and untested — see 6.2 |
 | **`%.14g` mod-cache quantization kept** | — | match PoB now, true precision later; one-call switch |
 | **Lua data generators deleted** | 2026-08-29 | emitted Go converted once to typed form, no regeneration path |
 | **`lua:"…"` tags kept** | 2026-08-29 | cost recorded; the alternative is a test-side field-name table |
