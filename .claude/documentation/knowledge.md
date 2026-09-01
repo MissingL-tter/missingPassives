@@ -183,15 +183,24 @@ contract. Typed domain values reach the encoder through a global adapter
 registry (`luacanon.RegisterAdapter`); a new typed shape without an adapter
 encodes by raw reflection and diverges.
 
-**Two precisions, two jobs.** Compared values encode at `%.14g` on both sides
-(symmetric). Replay *input* encodes at `%.17g` (`canon.encodeExact` /
-`luacanon.EncodeExact`) so every bit of a double survives. Mixing them caused
-a real bug — see §6.1.
+**One precision now.** Everything encodes at `%.17g` on both sides, so no
+bit of a double is discarded before anything looks at it, and comparison
+absorbs last-digit drift numerically (`luacanon.EqualWithin` quantizes to
+`CompareDigits = 14`) rather than by truncating the text. `canon.encodeExact`
+/ `luacanon.EncodeExact` remain as the explicit spelling for replay *input*.
+The old split — compared values at `%.14g`, input at `%.17g` — caused a real
+bug (§6.1) and existed only because hashed records could not tolerate a
+last-digit difference.
 
-Large subtrees compare by hash instead of text: `{"k":…,"h":"<h1>.<h2>"}`
-where the two numbers are `murmurHash2` (a PoB global, `Common.lua:294`, ported
-identically) with seeds `0x9747b28c` and `0x2312233`. A hashed record can only
-ever report "differs", never where.
+Nothing is recorded as a hash any more. The game-data dump used to store its
+13 largest subtrees as `{"k":…,"h":"<h1>.<h2>"}` (double `murmurHash2`, seeds
+`0x9747b28c`/`0x2312233`), which kept the file at 4.2 MB but meant the dump
+never held the reference's data — only a fingerprint of it. A mismatch could
+report "differs" and never where, arrays inside those records could not be
+compared as multisets, and both sides were forced to `%.14g`. All 136 records
+now store canon text (37.9 MB). Recording the evidence beats saving the
+bytes; if size ever forces the question again, compress the file rather than
+digest the data.
 
 The one sanctioned semantic normalisation of the reference side is
 `luacanon.NormalizeArchiveMods`: the archive's parser stored numeric captures
@@ -296,6 +305,20 @@ winner-takes-one modifiers (an override, a max) and float summation showing
 in the last digits. If order matters somewhere, demonstrate that case -
 do not sort everything on the suspicion.
 
+**Worked example, and the worst one so far.** `tools/dump_gamedata.lua`
+sorted `clusterJewelInfoForNotable`'s `jewelTypes` arrays before recording
+them, with a comment calling it "a documented deliberate divergence", and
+`data/cluster.go:141` sorted the same list in PRODUCTION so the two would
+agree. Every layer of that was wrong except the last: the reference builds
+the list in Lua hash order and the dump had never once recorded it; the
+"documented divergence" documented a convenience; and shipped code carried a
+shape that existed to satisfy a harness. The repair is the shape every case
+of this takes - the harness records what the reference does (55 notables
+turn out to have a non-sorted order), the comparison stops caring about
+order, and the production sort stays but is now labelled as what it is: a
+fix for Go's randomised map iteration, not parity with the reference. If a
+sort in production cannot say which of those two it is, that is the bug.
+
 **Never install semantics into a dump to make a comparison pass.** The
 archive is the referee for every judgement here: whether a behaviour is
 load-bearing, whether a quirk must be reproduced, whether a module is done.
@@ -311,13 +334,79 @@ pointless. It does not mean the Go side must sort, and it does not license
 a new dump to sort. Both of those have been assumed here and both are
 wrong.
 
-Whether a given sort is needed at all is decidable only above the
-precision floor: summing the same terms in two orders differs around the
-16th digit, which `%.14g` hides. Reversing a sort and watching a
-differential therefore proves only that the *serialisation* is
-order-sensitive - a positional byte-compare fails on any reordering
-whatever the numbers do. Settle these once the compared canon carries full
-precision (§4.7).
+**Measured 2026-09-01 across every sort in production, at full precision,
+comparing computed outputs rather than serialised structures.** All 75
+`sort.X` calls were reversed through the AST and the suite re-run; then the
+population was split and each half retested.
+
+| category | count | effect of reversing it |
+|---|---|---|
+| **Algorithmic** - the order IS the computation | 18 | changes the answer, by construction |
+| Cluster notable ordering (`tree/cluster.go:367`) | 1 | changes computed outputs |
+| **Everything else** | 56 | nothing observable |
+
+The split is what makes the question answerable. An algorithmic sort ranks
+or picks: `calc/performutil.go` does `sort.Float64s(stats)` then reads
+`stats[0]` as `LowestAttribute`, so reversing it returns the highest -
+`LowestAttribute: 167 vs archive 74`. Those 18 are load-bearing by
+definition and were never the question.
+
+A determinism sort only replaces Go's arbitrary map-iteration order with a
+fixed one. Reversing all 56 of them at once moves **no computed output at
+all** - 0 output divergences against 797 structural ones, those being dumps
+compared position by position. The single exception is
+`tree/cluster.go:367`, the cluster-notable ordering, which alone accounts
+for every output divergence in the group (17 on its own); §4.4 already
+carries it as a negative control ("reversing cluster-notable sort fails
+77").
+
+The flask sort looked like a counter-example and is not one. `mergeBuff`
+(`calc/performutil.go:69`, `CalcPerform.lua:44`) keeps the HIGHER of two
+mods with the same parameters - the game's rule, strictly-greater on both
+sides - so a bigger flask wins whatever the order. Order reaches only an
+exact TIE, and a tie means the values are equal, so the sole difference is
+which item's name lands in the winner's `source` string. Two "of the
+Pangolin" flasks both granting `Armour INC 105` is exactly that. Nothing
+reads that string as data: the calc's only decisions on `source` are
+`!= "Base"` (`calc/defence.go:44,65`, `calc/offenceailments.go:121`),
+`Contains("ElementalHit")` (`calc/offencecrit.go:302`) and the
+`itemDisablers` key (`calc/items.go:178`, which walks item and tree mod
+lists, never a buff list); every other use copies it onto a derived mod.
+Two flask sources are indistinguishable to all of them.
+
+So: outside the 18 that rank and the 1 that decides cluster notables,
+sorting in this port buys determinism and nothing else. The determinism is
+real - without a sort the credited item changes run to run - but it is a
+property of the recorded dump, not of the program's answers. That does NOT mean
+the 55 can be deleted - reversal is still a deterministic order, while
+deletion gives Go's randomised order.
+
+The comparison side of that is now done for the calc differential:
+`EqualWithin` detects a Lua array (an object keyed "1".."n") and compares
+it as a multiset, so a reordering is no longer a failure. Reversing the 56
+non-cluster determinism sorts takes it from **797 structural divergences
+to 10**. Those 10 are not a residue to chase. They are the flask tie above,
+and it is not an ordering difference at all - the two runs record different
+TEXT (`Item:11: Dabbler's Sapphire Flask` vs `Item:14: Dabbler's Quicksilver
+Flask`), so a multiset of the same elements cannot absorb them and should
+not. Suppressing them would mean excluding `source` from comparison, which
+is a decision about which fields are evidence, not about order. With the
+sorts in place - the shipping state - the differential is clean.
+`test/luacanon/equal_test.go` pins both directions: reorderings pass, a
+changed element, a duplicate standing in for a distinct value, a differing
+length and a keyed object with swapped values all still fail.
+
+Not yet converted: the tree, build, game-data, config-option and mod-cache
+differentials still compare strings positionally. One of them should stay
+that way - `modtools` checks formatted mod TEXT, where term order is part
+of the thing under test.
+
+Cost, for the record: `sortedIntKeys` is 2.05% of a recalc in the CPU
+profile (8.3ms cold, 7.7ms warm), most of it building the key slice rather
+than `sort.Ints` at 0.68%. No other helper reaches the sampling floor.
+Sorting can only cost, never gain - but computing one ordering per pass
+instead of three would recover nearly the same time without touching
+determinism.
 
 ### 4.7 Known blind spots
 
