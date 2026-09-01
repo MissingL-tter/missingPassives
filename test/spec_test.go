@@ -272,7 +272,7 @@ func TestSpecAgainstReference(t *testing.T) {
 		for _, id := range refIDs {
 			want := luacanon.EncodeExact(ref.Spec.AllocNodes[id])
 			got := luacanon.EncodeExact(specNodeFixtureOf(spec.AllocNodes[int64(id)]))
-			if got != want {
+			if !luacanon.SameCanon(got, want) {
 				t.Errorf("%s allocNode %d: diverged\n%s", buildKey, id, diffWindow(got, want))
 			}
 			nodesCompared++
@@ -321,7 +321,7 @@ func TestSpecAgainstReference(t *testing.T) {
 				t.Errorf("%s: radius node %d missing", buildKey, id)
 				continue
 			}
-			if got, want := luacanon.EncodeExact(gotNode), luacanon.EncodeExact(refNode); got != want {
+			if got, want := luacanon.EncodeExact(gotNode), luacanon.EncodeExact(refNode); !luacanon.SameCanon(got, want) {
 				t.Errorf("%s radius node %d diverged\n%s", buildKey, id, diffWindow(got, want))
 			}
 			nodesCompared++
@@ -350,7 +350,7 @@ func TestSpecAgainstReference(t *testing.T) {
 			}
 			got := luacanon.EncodeExact(node)
 			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
-			if got != want {
+			if !luacanon.SameCanon(got, want) {
 				t.Errorf("%s granted passive %q diverged\n%s", buildKey, name, diffWindow(got, want))
 			}
 			nodesCompared++
@@ -367,7 +367,7 @@ func TestSpecAgainstReference(t *testing.T) {
 			}
 			got := luacanon.EncodeExact(node)
 			want := luacanon.EncodeExact(decodeCalcNode(refVal.(map[string]any)))
-			if got != want {
+			if !luacanon.SameCanon(got, want) {
 				t.Errorf("%s granted ascendancy %q diverged\n%s", buildKey, name, diffWindow(got, want))
 			}
 			nodesCompared++

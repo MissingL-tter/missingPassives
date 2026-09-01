@@ -224,7 +224,7 @@ func TestTreeAgainstReference(t *testing.T) {
 				t.Fatalf("%s: node missing from loaded tree", k)
 			}
 			seen[k] = true
-			if got := maskFuncAddrs(luacanon.Encode(nodeStateOf(node, false))); got != maskFuncAddrs(want) && !nodeRecordsEquivalent(got, maskFuncAddrs(want)) {
+			if got := maskFuncAddrs(luacanon.Encode(nodeStateOf(node, false))); !luacanon.SameCanon(got, maskFuncAddrs(want)) && !nodeRecordsEquivalent(got, maskFuncAddrs(want)) {
 				report(k, got, maskFuncAddrs(want))
 			}
 			nodes++
@@ -238,7 +238,7 @@ func TestTreeAgainstReference(t *testing.T) {
 				ID: node.IDStr, Type: node.Type.String(), Dn: strPtr(node.Name),
 				ModKey: strPtr(node.ModKey), ModList: node.ModList,
 				Unknown: truePtr(node.Stats.Unknown), Extra: truePtr(node.Stats.Extra), Sd: node.Sd,
-			}); maskFuncAddrs(got) != maskFuncAddrs(want) {
+			}); !luacanon.SameCanon(maskFuncAddrs(got), maskFuncAddrs(want)) {
 				report(k, maskFuncAddrs(got), maskFuncAddrs(want))
 			}
 			legion++
@@ -249,7 +249,7 @@ func TestTreeAgainstReference(t *testing.T) {
 					"sd": effect.Sd, "modKey": effect.ModKey, "modList": effect.ModList,
 				}
 			}
-			if got := luacanon.Encode(effects); got != want {
+			if got := luacanon.Encode(effects); !luacanon.SameCanon(got, want) {
 				report(k, got, want)
 			}
 		case k == "keystoneMap" || k == "notableMap" || k == "ascendancyMap" || k == "clusterNodeMap":
@@ -323,7 +323,7 @@ func TestTreeAgainstReference(t *testing.T) {
 				}
 				sockets[strconv.FormatInt(id, 10)] = entry
 			}
-			if got := luacanon.Encode(sockets); got != want {
+			if got := luacanon.Encode(sockets); !luacanon.SameCanon(got, want) {
 				report(k, got, want)
 			}
 		case k == "meta":

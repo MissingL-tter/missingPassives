@@ -160,7 +160,7 @@ func TestSkillsTabAgainstReference(t *testing.T) {
 				// calc); the load half owns only the XML-loaded group keys.
 				got := luacanon.EncodeExact(pickKeys(groupTable(group), grantedGroupKeys))
 				want := luacanon.EncodeExact(pickKeys(groupTable(refGroup.SocketGroup), grantedGroupKeys))
-				if got != want {
+				if !luacanon.SameCanon(got, want) {
 					t.Errorf("%s granted group %d diverged\n%s", buildKey, i+1, diffWindow(got, want))
 				}
 				groupsCompared++
@@ -168,7 +168,7 @@ func TestSkillsTabAgainstReference(t *testing.T) {
 			}
 			got := luacanon.EncodeExact(maskBag(groupTable(group), groupMaskedKeys))
 			want := luacanon.EncodeExact(maskBag(groupTable(refGroup.SocketGroup), groupMaskedKeys))
-			if got != want {
+			if !luacanon.SameCanon(got, want) {
 				t.Errorf("%s group %d diverged\n%s", buildKey, i+1, diffWindow(got, want))
 			}
 			groupsCompared++

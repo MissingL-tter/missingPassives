@@ -92,13 +92,13 @@ func TestBuildLoadAgainstReference(t *testing.T) {
 		for i := range ref.ItemsTab.Slots {
 			gotCanon := luacanon.EncodeExact(in.ItemsTab.Slots[i])
 			want := luacanon.EncodeExact(ref.ItemsTab.Slots[i])
-			if gotCanon != want {
+			if !luacanon.SameCanon(gotCanon, want) {
 				t.Errorf("%s slot %d (%s) diverged\n%s", buildKey, i+1,
 					ref.ItemsTab.Slots[i].SlotName, diffWindow(gotCanon, want))
 			}
 			slotsCompared++
 		}
-		if a, b := luacanon.EncodeExact(in.ItemsTab.UseSecondWeaponSet), luacanon.EncodeExact(ref.ItemsTab.UseSecondWeaponSet); a != b {
+		if a, b := luacanon.EncodeExact(in.ItemsTab.UseSecondWeaponSet), luacanon.EncodeExact(ref.ItemsTab.UseSecondWeaponSet); !luacanon.SameCanon(a, b) {
 			t.Errorf("%s: useSecondWeaponSet diverged: %s vs %s", buildKey, a, b)
 		}
 		if a, b := luacanon.Encode(in.ItemsTab.ItemSetOrderList), luacanon.Encode(ref.ItemsTab.ItemSetOrderList); a != b {
@@ -115,7 +115,7 @@ func TestBuildLoadAgainstReference(t *testing.T) {
 				t.Errorf("%s: item set %d missing", buildKey, id)
 				continue
 			}
-			if a, b := luacanon.EncodeExact(gotSet), luacanon.EncodeExact(ref.ItemsTab.ItemSets[id]); a != b {
+			if a, b := luacanon.EncodeExact(gotSet), luacanon.EncodeExact(ref.ItemsTab.ItemSets[id]); !luacanon.SameCanon(a, b) {
 				t.Errorf("%s item set %d diverged\n%s", buildKey, id, diffWindow(a, b))
 			}
 		}

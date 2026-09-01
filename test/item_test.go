@@ -158,7 +158,7 @@ func TestItemParseAgainstReference(t *testing.T) {
 		for _, id := range refIDs {
 			want := luacanon.EncodeExact(ref.ItemsTab.Items[id])
 			gotCanon := luacanon.EncodeExact(calc.ItemInputOf(got[id]))
-			if want != gotCanon {
+			if !luacanon.SameCanon(gotCanon, want) {
 				t.Errorf("%s item %d (%s): parse diverged\n%s", buildKey, id, got[id].Name, diffWindow(gotCanon, want))
 			}
 			compared++

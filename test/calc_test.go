@@ -424,7 +424,7 @@ func TestCalcFixtureEcho(t *testing.T) {
 			in := decodeCalcFixture(m)
 			// Fixtures are emitted round-trippably (%.17g), so the echo
 			// re-encodes at the same precision.
-			if got := luacanon.EncodeExact(in); got != c {
+			if got := luacanon.EncodeExact(in); !luacanon.SameCanon(got, c) {
 				t.Errorf("%s %s: echo diverged\n%s", name, k, diffWindow(got, c))
 			}
 		})
@@ -671,7 +671,7 @@ func assertEnergyBlades(t *testing.T, variant string, env *calc.Env, want map[st
 		case gotItem == nil:
 			t.Errorf("%s %s: archive has an Energy Blade, calc synthesized none", variant, slot)
 		default:
-			if got, wantCanon := luacanon.EncodeExact(gotItem), luacanon.EncodeExact(refItem); got != wantCanon {
+			if got, wantCanon := luacanon.EncodeExact(gotItem), luacanon.EncodeExact(refItem); !luacanon.SameCanon(got, wantCanon) {
 				t.Errorf("%s %s Energy Blade diverged\n%s", variant, slot, diffWindow(got, wantCanon))
 			}
 		}

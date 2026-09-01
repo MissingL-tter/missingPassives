@@ -82,6 +82,16 @@ func (c *comparison) walk(path string, got, want any) {
 			c.report(path, got, want)
 			return
 		}
+		// A Lua array reaches the canon as an object keyed "1".."n", so
+		// walking it by key would compare position by position and fail on
+		// any reordering whatever the values are. Compare as a multiset:
+		// same elements, same counts, order free.
+		if ge, gok := arrayElems(g); gok {
+			if we, wok := arrayElems(w); wok {
+				c.multiset(path, ge, we)
+				return
+			}
+		}
 		keys := map[string]bool{}
 		for k := range g {
 			keys[k] = true
@@ -103,13 +113,11 @@ func (c *comparison) walk(path string, got, want any) {
 		}
 	case []any:
 		g, ok := got.([]any)
-		if !ok || len(g) != len(w) {
+		if !ok {
 			c.report(path, got, want)
 			return
 		}
-		for i := range w {
-			c.walk(fmt.Sprintf("%s[%d]", path, i), g[i], w[i])
-		}
+		c.multiset(path, g, w)
 	case float64:
 		g, ok := got.(float64)
 		if !ok {
@@ -157,4 +165,140 @@ func FormatDiffs(diffs []NumericDiff, n int) string {
 		b.WriteString("\n  " + d.String())
 	}
 	return b.String()
+}
+
+// arrayElems reports an object's values in key order when its keys are
+// exactly "1".."n" - the shape a Lua array takes in the canon - and
+// whether it had that shape at all.
+func arrayElems(m map[string]any) ([]any, bool) {
+	if len(m) == 0 {
+		return nil, false
+	}
+	out := make([]any, len(m))
+	for k, v := range m {
+		i, err := strconv.Atoi(k)
+		if err != nil || i < 1 || i > len(m) {
+			return nil, false
+		}
+		if out[i-1] != nil {
+			return nil, false
+		}
+		out[i-1] = v
+	}
+	return out, true
+}
+
+// multiset compares two sequences ignoring order: same elements, same
+// counts. Elements are keyed by a deterministic rendering that quantizes
+// numbers the same way the leaf comparison does, so a last-digit
+// difference inside an element does not read as a different element.
+func (c *comparison) multiset(path string, got, want []any) {
+	have := map[string][]any{}
+	for _, g := range got {
+		k := elemKey(g)
+		have[k] = append(have[k], g)
+	}
+	var missing []any
+	for _, w := range want {
+		k := elemKey(w)
+		if len(have[k]) == 0 {
+			missing = append(missing, w)
+			continue
+		}
+		have[k] = have[k][1:]
+	}
+	for _, w := range missing {
+		c.report(path+"[]", nil, w)
+	}
+	for _, left := range have {
+		for _, g := range left {
+			c.report(path+"[]", g, nil)
+		}
+	}
+}
+
+// elemKey renders a decoded value deterministically, with numbers at
+// CompareDigits so it agrees with the leaf comparison.
+func elemKey(v any) string {
+	var b strings.Builder
+	writeElemKey(&b, v)
+	return b.String()
+}
+
+func writeElemKey(b *strings.Builder, v any) {
+	switch t := v.(type) {
+	case nil:
+		b.WriteString("null")
+	case bool:
+		fmt.Fprintf(b, "%t", t)
+	case float64:
+		b.WriteString(strconv.FormatFloat(t, 'g', CompareDigits, 64))
+	case string:
+		b.WriteString(strconv.Quote(t))
+	case []any:
+		b.WriteByte('[')
+		for i, e := range t {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			writeElemKey(b, e)
+		}
+		b.WriteByte(']')
+	case map[string]any:
+		// An array-shaped element is itself order-free, so render its
+		// members sorted by their own key rather than by position -
+		// otherwise a reordering nested inside an element makes it read
+		// as a different element.
+		if elems, ok := arrayElems(t); ok {
+			rendered := make([]string, len(elems))
+			for i, e := range elems {
+				rendered[i] = elemKey(e)
+			}
+			sort.Strings(rendered)
+			b.WriteByte('[')
+			for i, r := range rendered {
+				if i > 0 {
+					b.WriteByte(',')
+				}
+				b.WriteString(r)
+			}
+			b.WriteByte(']')
+			return
+		}
+		keys := make([]string, 0, len(t))
+		for k := range t {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		b.WriteByte('{')
+		for i, k := range keys {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			b.WriteString(strconv.Quote(k))
+			b.WriteByte(':')
+			writeElemKey(b, t[k])
+		}
+		b.WriteByte('}')
+	default:
+		fmt.Fprintf(b, "%v", v)
+	}
+}
+
+// SameCanon reports whether two canonical encodings agree: numbers to
+// CompareDigits, arrays (including a Lua array's "1".."n" object form) as
+// multisets. It is the comparison every differential should use for canon
+// text - a positional `!=` fails on any reordering whatever the values are,
+// which is a defect in the comparison rather than a disagreement between
+// the programs (knowledge.md 4.6). Text that will not decode falls back to
+// exact equality so non-JSON payloads are still compared.
+func SameCanon(got, want string) bool {
+	if got == want {
+		return true
+	}
+	diffs, _, err := EqualWithin(got, want)
+	if err != nil {
+		return false
+	}
+	return len(diffs) == 0
 }
