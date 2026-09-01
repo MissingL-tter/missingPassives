@@ -108,16 +108,14 @@ alone and byte-compares the result against the archive's fixture: **6,157
 slots across 47 builds**, plus header scalars, class stats, spectre list and
 item sets. The calc differential runs on the same assembler.
 
-**Not yet the application's numbers.** The config tab
-(`Classes/ConfigTab.lua` + `Modules/ConfigOptions.lua`: 580 options, 524
-apply closures) is unported, so `configInput`, `configPlaceholder`,
-`configModList` and `configEnemyModList` are unset. Those closures run on
-their defaults as well as on user selections — every corpus build carries
-31–48 modifiers from them, including the enemy's resistances. Run without
-them, `Ugninga.xml` reproduces exactly what Path of Building wrote into its
-own file for everything config does not touch (Life 4919, Mana 893, Armour
-20348, Str/Dex/Int 362/94/145, Speed 1.15668, CritChance 95.2014) and runs
-high on damage.
+The configuration tab comes through package `config`, which ports
+`ConfigOptions.lua`'s 580 options and all 532 of their apply bodies, plus
+`ModMap.lua`'s 41 map-affix appliers. **`TestConfigStateAgainstReference`**
+compares the loaded option state against the archive — 2,667 values across
+47 builds — and **`TestConfigModListCoverage`** compares the modifiers it
+produces: **2,347 of 2,347 byte-identical, none produced that the archive
+lacks**. The corpus reaches about 32 of the 580 options, so the remainder
+are written against the reference text and not yet exercised by a build.
 
 ## Verification
 

@@ -13,6 +13,16 @@ import (
 var applyFuncs = map[Var]func(Value, *Tab){
 	"conditionEnemyRareOrUnique": applyEnemyRareOrUnique,
 	"enemyIsBoss":                applyEnemyIsBoss,
+	"conditionStationary":        applyConditionStationary,
+	"presetBossSkills":           applyPresetBossSkills,
+	"MapPrefix1":                 applyMapAffix,
+	"MapPrefix2":                 applyMapAffix,
+	"MapPrefix3":                 applyMapAffix,
+	"MapPrefix4":                 applyMapAffix,
+	"MapSuffix1":                 applyMapAffix,
+	"MapSuffix2":                 applyMapAffix,
+	"MapSuffix3":                 applyMapAffix,
+	"MapSuffix4":                 applyMapAffix,
 
 	"resourceGainMode":                            applyResourceGainMode,
 	"bloodsoakedBannerStages":                     applyBloodsoakedBannerStages,
@@ -50,13 +60,20 @@ var applyFuncs = map[Var]func(Value, *Tab){
 }
 
 func init() {
-	for v, fn := range applyFuncs {
-		opt := byVar[v]
-		if opt == nil {
-			panic("config: apply function for unknown option " + string(v))
+	install := func(m map[Var]func(Value, *Tab)) {
+		for v, fn := range m {
+			opt := byVar[v]
+			if opt == nil {
+				panic("config: apply function for unknown option " + string(v))
+			}
+			if opt.Apply != nil {
+				panic("config: two apply functions for option " + string(v))
+			}
+			opt.Apply = fn
 		}
-		opt.Apply = fn
 	}
+	install(generatedApplies)
+	install(applyFuncs)
 }
 
 // mod adds one Config-sourced modifier to the player's list.
@@ -83,4 +100,24 @@ func (t *Tab) bossEnemyMod(name string, typ modparser.ModType, v modparser.Value
 // presets attach, so their modifiers apply only to effective-DPS passes.
 func effective() modparser.Tag {
 	return &modparser.CondTag{Var: "Effective"}
+}
+
+// modSrc and enemyModSrc are the same with a source the option chooses.
+func (t *Tab) modSrc(name string, typ modparser.ModType, v modparser.Value, source string, tags ...modparser.Tag) {
+	t.Mods.AddMod(modparser.NewModFull(name, typ, v, source, true, modparser.FlagNone, modparser.KeywordNone, tags...))
+}
+
+func (t *Tab) enemyModSrc(name string, typ modparser.ModType, v modparser.Value, source string, tags ...modparser.Tag) {
+	t.EnemyMods.AddMod(modparser.NewModFull(name, typ, v, source, true, modparser.FlagNone, modparser.KeywordNone, tags...))
+}
+
+// modNS and enemyModNS add a modifier with NO source: the reference's
+// NewMod calls that pass only name, type and value leave createMod's
+// source nil, and several stages read that absence.
+func (t *Tab) modNS(name string, typ modparser.ModType, v modparser.Value, tags ...modparser.Tag) {
+	t.Mods.AddMod(modparser.NewMod(name, typ, v, tags...))
+}
+
+func (t *Tab) enemyModNS(name string, typ modparser.ModType, v modparser.Value, tags ...modparser.Tag) {
+	t.EnemyMods.AddMod(modparser.NewMod(name, typ, v, tags...))
 }

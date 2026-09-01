@@ -46,8 +46,8 @@ into `.archive/` and the Go module lives at the repository root.
 
 The rebuild is engine-first: calculation, parsing, game data and the data
 pipeline are ported; no presentation code exists and there is no runnable Go
-application. Since 2026-08-31 a saved build does compute end to end
-(`build.Load` -> `calc.BuildOutput`), short of the unported config tab, but
+application. Since 2026-08-31 a saved build computes end to end from its
+XML alone (`build.Load` -> `calc.BuildOutput`, config included), but
 nothing drives that outside the tests. *(as of 2026-08-31)* ~65,800 lines of production Go, 10,700
 of test Go, **zero third-party dependencies**, Go 1.26, no CI, no Makefile, no
 `go:generate`.
@@ -105,7 +105,7 @@ Syntax-check Lua with `luajit -e "assert(loadfile('<file>'))"`.
 | `tree` | `PassiveTree.lua`, `PassiveSpec.lua`, timeless/abyss jewel generation | 3.9k |
 | `skills` | `SkillsTab.lua` logic half | 0.7k |
 | `build` | `Build.lua`'s load half + `ItemsTab.lua`'s slot table — build XML → `calc.BuildInput` | 0.5k |
-| `config` | `ConfigTab.lua`'s load half + `ConfigOptions.lua`'s option table | 1.0k |
+| `config` | `ConfigTab.lua`'s load half + `ConfigOptions.lua`'s 580 options and 532 apply bodies | 3.4k |
 | `export` | `src/Export/` — GGPK dat reader, stat-description engine, 21 script builders | 9.2k |
 | `internal/util` | kept reference numeric/text semantics + `Opt[T]` | 0.2k |
 | `internal/modcachegen` | regenerates `data/raw/modcache.jsonl` from the Go parser | 0.1k |
@@ -256,10 +256,9 @@ if `treeonly` agrees and `full` does not, the problem is items or skills.
 The **native bridge** replaces fixture-fed inputs with natively built ones as
 each upstream module lands. It now calls `build.Load` on the corpus build's
 XML and substitutes everything package `build` assembles: spec, item pool,
-slot table, item sets and skills tab, plus the header scalars. Only the four
-config fields (`ConfigInput`, `ConfigPlaceholder`, `ConfigModList`,
-`ConfigEnemyModList`) are still fixture-fed, because the config tab is not
-ported. One test therefore exercises five ports transitively. `MP_FIXTURE=1`
+slot table, item sets, skills tab, config and the header scalars. Nothing
+in the calc differential's input comes from the dump any more. One test
+therefore exercises six ports transitively. `MP_FIXTURE=1`
 reverts to pure fixture replay — the switch that separates "native parser
 bug" from "calc bug". Mods are deep-copied at the seam because the calc
 stamps sources in place and the test process shares one cached tree.
@@ -895,26 +894,26 @@ is quantized to `%.14g`; `SetPlaceholder("", true)` parses to nil and
 therefore DELETES the key; and a string-valued `<Placeholder>` element is
 stored as an *input*, not a placeholder.
 
-**The config tab is the remaining gap.** `Classes/ConfigTab.lua` +
-`Modules/ConfigOptions.lua` (4,179 lines, 580 options, 532 apply closures)
-produce `configInput`, `configPlaceholder`, `configModList` and
-`configEnemyModList`. Package `config` now ports the load half and
-`BuildModList`; 36 of the 532 apply bodies are written, which covers 2,294
-of the corpus's 2,347 config modifiers because those 36 are the options
-carrying defaults.
+**The config tab.** `Classes/ConfigTab.lua` + `Modules/ConfigOptions.lua`
+(4,179 lines, 580 options, 532 apply closures) produce `configInput`,
+`configPlaceholder`, `configModList` and `configEnemyModList`. Package
+`config` ports the load half, `BuildModList` and all 532 apply bodies —
+487 converted mechanically from the reference text, the rest hand-ported —
+plus `Data/ModMap.lua`'s 41 map-affix appliers, which the eight map
+dropdowns dispatch into (4 of those are empty in the reference).
 
 Why the defaults dominate: an option's apply closure runs on its *default*
 as much as on a user selection, so a build whose XML sets two options still
 draws ~32 Config-sourced modifiers (corpus range 31–48). The placeholder
 half is computed as well — enemy armour, evasion, resistances and damage
 scaled to the enemy level, all written by the `enemyIsBoss` preset as it
-applies. `build.Load` does not yet hand any of it to `calc.BuildInput`:
-the four fields stay unset until the remaining bodies land, and the calc
-falls back to its own defaults. Run that way, a build agrees with the
-application on everything config does not touch — on `Ugninga.xml`: Life 4919, Mana 893,
-Armour 20348, Str/Dex/Int 362/94/145, Speed 1.15668, CritChance 95.2014, all
-equal to the stats Path of Building wrote into the file — and runs high on
-damage, the enemy's resistances being among the missing mods.
+applies, and rewritten by `presetBossSkills` when a boss skill is named.
+
+With config in, `build.Load` fills every field of `calc.BuildInput`, and
+the calc differential runs on it: 145 variants agree with the archive from
+a build XML alone. The corpus only reaches about 32 of the 580 options, so
+the rest are code-complete and archive-unverified — the `code`/`archive`
+split parity.md tracks.
 
 ### 8.8 Export and data
 

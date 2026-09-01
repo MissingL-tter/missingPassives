@@ -2,15 +2,8 @@
 // build file: the item pool and its slot table, the passive spec, and the
 // skills tab, each loaded through the package that owns it.
 //
-// What it does not cover is the config tab (Classes/ConfigTab.lua and
-// Modules/ConfigOptions.lua: 580 options carrying 524 apply closures,
-// none of them ported). Load leaves ConfigInput, ConfigPlaceholder,
-// ConfigModList and ConfigEnemyModList unset, and the calc falls back to
-// its own documented defaults. Every build in the corpus draws 31 to 48
-// modifiers from those closures - option defaults as much as user
-// selections - so a build assembled here computes without them, not
-// around them. Until the config tab is ported, use this to drive the
-// engine, not to reproduce the application's numbers.
+// The configuration tab comes through package config, so a build
+// assembled here carries its four config fields too.
 package build
 
 import (
@@ -97,7 +90,13 @@ func Load(blob []byte, tr *tree.Tree) (*Build, error) {
 			BaseInt: class.BaseInt,
 		}
 	}
-	return &Build{Input: in, Spec: spec, Items: items, Skills: tab, Config: config.Load(&doc.Config, level)}, nil
+	cfg := config.Load(&doc.Config, level)
+	cfg.BuildModList()
+	in.ConfigInput = cfg.ConfigInput()
+	in.ConfigPlaceholder = cfg.ConfigPlaceholder()
+	in.ConfigModList = cfg.Mods.Mods
+	in.ConfigEnemyModList = cfg.EnemyMods.Mods
+	return &Build{Input: in, Spec: spec, Items: items, Skills: tab, Config: cfg}, nil
 }
 
 // activeSpec is the <Spec> the build has selected, defaulting to the

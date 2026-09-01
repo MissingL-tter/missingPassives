@@ -86,6 +86,10 @@ func applyNativeBuild(t *testing.T, buildKey, variant string, in *calc.BuildInpu
 		}
 		in.ItemsTab = got
 	}
+	in.ConfigInput = native.Input.ConfigInput
+	in.ConfigPlaceholder = native.Input.ConfigPlaceholder
+	in.ConfigModList = native.Input.ConfigModList
+	in.ConfigEnemyModList = native.Input.ConfigEnemyModList
 	// The wipe leaves the imbued map stale, so the reduced variants keep
 	// the full load's map over an empty group list.
 	if in.SkillsTab != nil {
