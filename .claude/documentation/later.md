@@ -1,6 +1,6 @@
 # Later — deferred items and reference quirks
 
-Two lists that outlive the 2026-08-29 Lua remodel
+Three lists that outlive the 2026-08-29 Lua remodel
 (`.claude/documentation/deprecated/go-remodel-plan.md`):
 
 1. **Kept Lua-derived code** — production code that reproduces the
@@ -9,8 +9,10 @@ Two lists that outlive the 2026-08-29 Lua remodel
 2. **`#EVAL` inventory** — every reference quirk reproduced deliberately.
    Per `README.md`, each is a candidate to fix or delete once the archive
    comparison stops being the contract.
+3. **Order enforced but unproven** — sorts a comparison pins without anyone
+   having shown the order matters.
 
-Neither list is work queued. Both are things to revisit when the archive
+None of these is work queued. All are things to revisit when the archive
 is deleted, or when a behaviour here turns out to matter.
 
 ---
@@ -270,3 +272,32 @@ lines 88, 156-157, 202, 243-255, 303-307 discuss specific quirks in narrative
 form (that document's statuses drift — the tests and `parity.md` are current
 truth); `modstore/store.go:5` is the package-level note that its quirks are
 tagged.
+
+---
+
+## 3. Order enforced but unproven (2026-09-01)
+
+Every production sort was reversed one at a time against the full suite
+(export, timeless and tattoo differentials enabled). 34 changed nothing any
+test observes; 20 failed for a demonstrable reason and are load-bearing.
+These three failed for neither reason — their comparison is positional, so
+reversing them breaks the check without telling us whether the order matters.
+The sorts stay; what is unproven is the necessity, not the correctness.
+
+| site | what order it fixes | why the check cannot answer it |
+|---|---|---|
+| `build/project.go:231` | the jewel-socket entries in the slot table | `test/build_test.go` walks `ItemsTab.Slots` by index, so a reorder and a wrong slot are indistinguishable |
+| `config/apply_hand.go:178` | the sequence mods land in a config mod list | mod-list sequences stay on a positional comparison by decision: `ReplaceModInternal`/`ConvertModInternal` (`modstore/list.go:22,36`) take match #1 on name+type+flags+source and never compare value, so order there CAN move numbers - just not demonstrably here |
+| `calc/performflasks.go:27` | which of two tied flask mods is credited | `mergeBuff` keeps the higher value and first-on-tie; a tie means the values are equal, so only the `source` string differs and no number can (knowledge.md 4.6) |
+
+To settle any of them, make its comparison order-insensitive (the flask one
+already is - it fails on a text difference, not an ordering) and re-run the
+reversal. Until then, do not cite these as evidence that order matters.
+
+**Deliberately not closed:** `TestExportAgainstReference` skips unless
+`MP_EXPORT=1`, so the 8 export sorts among the 20 load-bearing ones are
+unguarded in a default `go test ./...`. That gate is intentional - the test
+regenerates from the GGPK and costs ~98s, and it only means anything when
+the exporter or the game files change. The consequence to remember: a CLEAN
+result for anything in `export/` from a default run is not evidence. Run
+with `MP_EXPORT=1` before drawing a conclusion about export ordering.

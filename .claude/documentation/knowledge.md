@@ -334,16 +334,35 @@ pointless. It does not mean the Go side must sort, and it does not license
 a new dump to sort. Both of those have been assumed here and both are
 wrong.
 
-**Measured 2026-09-01 across every sort in production, at full precision,
-comparing computed outputs rather than serialised structures.** All 75
-`sort.X` calls were reversed through the AST and the suite re-run; then the
-population was split and each half retested.
+**Measured 2026-09-01, per site.** Every one of the 57 non-algorithmic
+sorts was reversed INDIVIDUALLY and the full suite re-run, with the export,
+timeless and tattoo differentials enabled. The experiment ran on a copy of
+the tree in the scratchpad, so production was never edited. Run it that way
+again: it needs no permission and cannot leave the repo dirty.
 
 | category | count | effect of reversing it |
 |---|---|---|
 | **Algorithmic** - the order IS the computation | 18 | changes the answer, by construction |
-| Cluster notable ordering (`tree/cluster.go:367`) | 1 | changes computed outputs |
-| **Everything else** | 56 | nothing observable |
+| **Eligible for removal** - nothing any test observes | 34 | nothing at all |
+| **Load-bearing** - a differential fails, for a reason | 20 | see below |
+| **Order enforced, necessity unproven** | 3 | `later.md` section 3 |
+
+The 20 that fail do so for demonstrable reasons: 9 `data/uniques_*` sorts
+assign VARIANT NUMBERS (`"{variant:"+itoa(i+1)+"}"`), so reversing renames
+which notable is variant 1 and saved builds reference variants by number;
+8 export sorts set the byte order of generated `Data/*.lua` (78 files
+differ); `modparser/modtools.go:153,272` join sorted names into formatted
+mod text; `tree/cluster.go:367` moves computed outputs.
+
+**Two methodological traps this run walked into, both worth remembering.**
+First, a static reading of the consuming loop is weaker evidence than the
+experiment: `calc/items.go:205` (a `visited` guard) and `calc/perform.go:349`
+(a `+=`) were both called not-eligible from reading the code, and both are
+in the eligible 34. Second, and worse - `TestExportAgainstReference` skips
+unless `MP_EXPORT=1`, so 12 export sorts came back CLEAN from a suite that
+never ran them. A CLEAN result from a skipped test is not evidence. Check
+what actually ran (`go test ./... -v | grep SKIP`) before believing a
+negative result.
 
 The split is what makes the question answerable. An algorithmic sort ranks
 or picks: `calc/performutil.go` does `sort.Float64s(stats)` then reads
@@ -352,13 +371,11 @@ or picks: `calc/performutil.go` does `sort.Float64s(stats)` then reads
 definition and were never the question.
 
 A determinism sort only replaces Go's arbitrary map-iteration order with a
-fixed one. Reversing all 56 of them at once moves **no computed output at
-all** - 0 output divergences against 797 structural ones, those being dumps
-compared position by position. The single exception is
-`tree/cluster.go:367`, the cluster-notable ordering, which alone accounts
-for every output divergence in the group (17 on its own); §4.4 already
-carries it as a negative control ("reversing cluster-notable sort fails
-77").
+fixed one. Reversing all 34 eligible ones at once passes the entire suite.
+Note what that does NOT license: reversal is still a fixed order, while
+DELETION gives Go's randomised order, so a regenerated dump would differ run
+to run even where nothing is wrong. Eligible means "the order is arbitrary",
+not "the determinism is free".
 
 The flask sort looked like a counter-example and is not one. `mergeBuff`
 (`calc/performutil.go:69`, `CalcPerform.lua:44`) keeps the HIGHER of two
@@ -378,14 +395,16 @@ So: outside the 18 that rank and the 1 that decides cluster notables,
 sorting in this port buys determinism and nothing else. The determinism is
 real - without a sort the credited item changes run to run - but it is a
 property of the recorded dump, not of the program's answers. That does NOT mean
-the 55 can be deleted - reversal is still a deterministic order, while
-deletion gives Go's randomised order.
+the 34 eligible ones can be deleted - reversal is still a deterministic
+order, while deletion gives Go's randomised order.
 
-The comparison side of that is now done for the calc differential:
-`EqualWithin` detects a Lua array (an object keyed "1".."n") and compares
-it as a multiset, so a reordering is no longer a failure. Reversing the 56
-non-cluster determinism sorts takes it from **797 structural divergences
-to 10**. Those 10 are not a residue to chase. They are the flask tie above,
+The comparison side of that is done: `EqualWithin` detects a Lua array (an
+object keyed "1".."n") and compares it as a multiset, so a reordering is no
+longer a failure, and `SameCanon` is what the differentials call. Applying
+it took the calc differential from **797 structural divergences to 10**
+under blanket reversal. It is applied where order cannot reach a number and
+deliberately NOT to mod-list sequences (see 4.6's boundary note and
+`test/luacanon/equal_test.go`). Those 10 are not a residue to chase. They are the flask tie above,
 and it is not an ordering difference at all - the two runs record different
 TEXT (`Item:11: Dabbler's Sapphire Flask` vs `Item:14: Dabbler's Quicksilver
 Flask`), so a multiset of the same elements cannot absorb them and should
