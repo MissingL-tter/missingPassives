@@ -266,7 +266,6 @@ func TestGameDataAgainstReference(t *testing.T) {
 		var rec struct {
 			K string `json:"k"`
 			C string `json:"c"`
-			H string `json:"h"`
 		}
 		if err := json.Unmarshal(sc.Bytes(), &rec); err != nil {
 			t.Fatalf("bad dump line: %v", err)
@@ -279,14 +278,11 @@ func TestGameDataAgainstReference(t *testing.T) {
 			continue
 		}
 		checked++
+		// Every subtree records its canon text. The big ones used to record
+		// a murmur fingerprint instead, which kept the file small and made a
+		// mismatch unreadable ("hash mismatch") - and forced %.14g on both
+		// sides, since a hash cannot absorb a last-digit difference.
 		got := luacanon.Encode(check())
-		if rec.H != "" {
-			if msHash(luacanon.Encode14(check())) != rec.H {
-				disagree++
-				t.Errorf("%s differs from the archive (canon hash mismatch, %d bytes)", rec.K, len(got))
-			}
-			continue
-		}
 		if diffs, tol, err := luacanon.EqualWithin(got, rec.C); err != nil || len(diffs) > 0 {
 			disagree++
 			if err != nil {

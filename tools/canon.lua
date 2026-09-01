@@ -71,21 +71,6 @@ end
 
 -- encodeExact is canon.encode with round-trippable floats, for dump values
 -- the replay consumes as input rather than compares.
--- encode14 is canon.encode at the precision the reference's own data files
--- carry (they are written as %.14g text and read back). A hashed subtree
--- cannot be compared with a tolerance -- one differing bit changes the
--- hash -- so both sides quantize to that precision before hashing.
-function canon.encode14(v)
-	local prev = floatFormat
-	floatFormat = "%.14g"
-	local ok, res = pcall(canon.encode, v)
-	floatFormat = prev
-	if not ok then
-		error(res)
-	end
-	return res
-end
-
 function canon.encodeExact(v)
 	local prev = floatFormat
 	floatFormat = "%.17g"

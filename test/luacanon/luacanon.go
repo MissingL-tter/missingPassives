@@ -39,17 +39,6 @@ func Encode(v any) string {
 	return b.String()
 }
 
-// Encode14 is Encode at the precision the reference's own data files carry
-// (written as %.14g text and read back). A hashed comparison cannot absorb
-// a last-digit difference the way EqualWithin does, so both sides quantize
-// to that precision before hashing.
-func Encode14(v any) string {
-	prev := floatDigits
-	floatDigits = 14
-	defer func() { floatDigits = prev }()
-	return Encode(v)
-}
-
 // EncodeExact is Encode with round-trippable floats (%.17g), matching
 // canon.lua's encodeExact -- for fixture records, which are replay input
 // rather than compared canon. Not safe concurrently with Encode.

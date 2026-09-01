@@ -13,12 +13,6 @@ local out = assert(io.open("../../test/testdata/gamedata_archive.jsonl", "w"))
 local function emit(key, value)
 	out:write('{"k":', canon.quote(key), ',"c":', canon.quote(canon.encode(value)), "}\n")
 end
--- Big subtrees compare by double murmur hash of their canon instead.
-local function emitHash(key, value)
-	local s = canon.encode14(value)
-	local h = string.format("%d.%d", murmurHash2(s, 0x9747b28c), murmurHash2(s, 0x2312233))
-	out:write('{"k":', canon.quote(key), ',"h":', canon.quote(h), "}\n")
-end
 
 -- The subtrees ported so far; grows with the port. Order is the file order.
 local keys = {
@@ -58,30 +52,32 @@ for _, key in ipairs(keys) do
 	emit(key, data[key])
 end
 
--- The mod pools, hashed per pool.
+-- The mod pools, one record per pool.
 local poolKeys = {}
 for key in pairs(data.itemMods) do
 	poolKeys[#poolKeys + 1] = key
 end
 table.sort(poolKeys)
 for _, key in ipairs(poolKeys) do
-	emitHash("itemMods." .. key, data.itemMods[key])
+	emit("itemMods." .. key, data.itemMods[key])
 end
-emitHash("veiledMods", data.veiledMods)
+emit("veiledMods", data.veiledMods)
 emit("beastCraft", data.beastCraft)
 emit("necropolisMods", data.necropolisMods)
 emit("uniqueMods", data.uniqueMods)
 emit("clusterJewels", data.clusterJewels)
--- clusterJewelInfoForNotable's jewelTypes arrays are built in Lua
--- hash-iteration order; both sides compare them sorted (a documented
--- deliberate divergence).
+-- clusterJewelInfoForNotable: jewelTypes is recorded in the order the
+-- reference actually builds it. It used to be sorted here so a positional
+-- compare would pass, which meant the dump never held what PoB produces;
+-- the Go side compares arrays as multisets now, so no normalisation is
+-- needed. The {jewelTypes, size} projection stays - those are the ported
+-- fields.
 local normInfo = {}
 for name, info in pairs(data.clusterJewelInfoForNotable) do
 	local types = {}
 	for i, v in ipairs(info.jewelTypes) do
 		types[i] = v
 	end
-	table.sort(types)
 	normInfo[name] = { jewelTypes = types, size = info.size }
 end
 emit("clusterJewelInfoForNotable", normInfo)
@@ -99,7 +95,7 @@ for k in pairs(data.uniques) do
 end
 table.sort(uqKeys)
 for _, k in ipairs(uqKeys) do
-	emitHash("uniques." .. k, data.uniques[k])
+	emit("uniques." .. k, data.uniques[k])
 end
 do
 	local generated = {}
@@ -110,7 +106,7 @@ do
 			generated[#generated + 1] = blob
 		end
 	end
-	emitHash("uniques.generated", generated)
+	emit("uniques.generated", generated)
 end
 -- skills: the templates alias tables across skills, so shared mods' final
 -- source is last-writer-wins under pairs() — whose order varies per process
@@ -184,8 +180,8 @@ for id, ge in pairs(data.skills) do
 	skillsNorm[id] = copy
 end
 emit("skills.statMapKeys", statMapKeys)
-emitHash("skills", skillsNorm)
-emitHash("skillStatMap", data.skillStatMap)
+emit("skills", skillsNorm)
+emit("skillStatMap", data.skillStatMap)
 -- gems: skill tables appear as "\27skill:<id>" markers (both sides), and
 -- the pairs-dependent lookups are rebuilt in sorted gem-id order (a
 -- documented deliberate divergence for collision/first-match cases).
@@ -217,7 +213,7 @@ do
 		end
 		gemsNorm[id] = copy
 	end
-	emitHash("gems", gemsNorm)
+	emit("gems", gemsNorm)
 
 	local gemForSkill, gemForBaseName = {}, {}
 	for _, id in ipairs(gemIds) do
@@ -272,11 +268,11 @@ do
 	emit("gemGrantedEffectIdForVaalGemId", gemGranted)
 	emit("gemVaalGemIdForBaseGemId", gemVaal)
 end
-emitHash("minions", data.minions)
-emitHash("spectres", data.spectres)
-emitHash("rareLikeUniques", data.rareLikeUniques)
-emitHash("itemBases", data.itemBases)
-emitHash("itemBaseLists", data.itemBaseLists)
+emit("minions", data.minions)
+emit("spectres", data.spectres)
+emit("rareLikeUniques", data.rareLikeUniques)
+emit("itemBases", data.itemBases)
+emit("itemBaseLists", data.itemBaseLists)
 emit("itemBaseTypeList", data.itemBaseTypeList)
 emit("rares", data.rares)
 

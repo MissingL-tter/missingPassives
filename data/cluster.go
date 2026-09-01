@@ -137,6 +137,12 @@ func computeClusterJewelInfo(jewelClusterMods map[string]ItemModData, jewels clu
 			}
 		}
 	}
+	// JewelTypes is appended while ranging a Go map, so without a fixed
+	// order it changes run to run. Sorting buys that determinism and
+	// nothing else: the reference builds this list in Lua hash order, the
+	// dump now records that order as-is, and the comparison treats arrays
+	// as multisets (knowledge.md 4.6). This is NOT parity with the
+	// reference and must not be described as such.
 	for _, info := range out {
 		sort.Strings(info.JewelTypes)
 	}
