@@ -160,8 +160,9 @@ without this distinction removes error-parity behaviour.
 
 `tools/canon.lua` and `test/luacanon` produce the same text from either side.
 Comparison is byte equality first; when the text differs, `EqualWithin` walks
-both parses leaf by leaf, numbers agreeing within `luacanon.Tolerance` and
-everything else exactly (§4.7). Never structural re-serialisation.
+both parses leaf by leaf, numbers agreeing once quantized to
+`luacanon.CompareDigits` significant figures and everything else exactly
+(§4.7). Never structural re-serialisation.
 
 - every table → JSON object, keys stringified and **sorted as strings** (so a
   10-element array emits `"1","10","2",…` on both sides)
@@ -321,20 +322,19 @@ precision (§4.7).
 ### 4.7 Known blind spots
 
 - **The precision floor is gone; what it was hiding is now visible and
-  tolerated.** Compared canons are `%.17g` on both sides, and a text
-  mismatch falls through to `luacanon.EqualWithin`, which compares numeric
-  leaves within a **relative** 5e-14 and everything else exactly. The
-  tolerance is set by the reference, not chosen: PoB writes its data files
-  and its ModCache as `%.14g` text and reads them back, so wherever a number
-  reaches the archive that way it carries 14 significant digits and no more.
-  Rounding to 14 significant digits moves a value by at most half a unit in
-  the last one, worst case 5e-14 relative when the leading digit is 1. The
-  largest such difference in the corpus is 3.7e-14, in `monsterDamageTable`.
-  Arithmetic the two sides actually perform agrees far better - widest drift
-  measured 1.6e-15 - so a failure is a real disagreement. The calc
-  differential reports what it absorbs: **145 variants agree, 105 values
-  only within tolerance**. Negative control: a 1e-9 perturbation fails 10
-  checkpoints.
+  reported.** Compared canons are `%.17g` on both sides, so the dumps record
+  every double whole and nothing is discarded before anything looks at it.
+  When the text differs, `luacanon.EqualWithin` walks both parses leaf by
+  leaf: numbers must agree once each is rendered to `CompareDigits` (14)
+  significant figures, everything else exactly. That is the same question
+  the old `%.14g` string comparison asked - "the same number, as precisely
+  as the reference knows it" - but asked of the values rather than of their
+  rendering, and it reports what it absorbed instead of hiding it. Fourteen
+  is set by the reference, not chosen: PoB writes its data files and its
+  ModCache as `%.14g` text and reads them back, so a number arriving that
+  way carries 14 significant digits and no more. The calc differential
+  reports **145 variants agree, 105 values only once quantized**. Negative
+  control: a 1e-9 perturbation fails 10 checkpoints.
 - **The drift has a named cause.** Go's `math.Pow` is not correctly rounded
   where the C library `pow` behind LuaJIT's `^` is. For x=0.65 LuaJIT's
   `x^3` is 0.27462500000000001; `x*x*x` and `math.Pow(x,3)` are both

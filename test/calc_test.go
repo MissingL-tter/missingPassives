@@ -876,8 +876,8 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		t.Fatalf("MP_ONLY=%q matched no variants", only)
 	}
 	if toleratedValues > 0 {
-		t.Logf("calc initEnv vs archive: %d variants agree, %d values only within %g (last-digit drift, see 4.7)",
-			checked, toleratedValues, luacanon.Tolerance)
+		t.Logf("calc initEnv vs archive: %d variants agree, %d values only once quantized to %d significant figures (see 4.7)",
+			checked, toleratedValues, luacanon.CompareDigits)
 	} else {
 		t.Logf("calc initEnv vs archive: %d variants byte-identical", checked)
 	}
@@ -1294,15 +1294,16 @@ func cacheShadowOf(cache map[string]*calc.CachedSkill) map[string]*cacheShadow {
 	return out
 }
 
-// toleratedValues counts numeric leaves that agreed only within
-// luacanon.Tolerance across a differential run, so a pass reports how much
-// last-digit drift it absorbed rather than hiding it.
+// toleratedValues counts numeric leaves that matched only once quantized
+// to luacanon.CompareDigits, so a pass reports how much last-digit drift it
+// absorbed rather than hiding it.
 var toleratedValues int
 
 // canonDiverged compares one checkpoint's canonical encoding against the
 // archive's. Identical text passes outright; otherwise the two are walked
-// leaf by leaf, numbers agreeing within luacanon.Tolerance and everything
-// else exactly. Reports true when it logged a failure.
+// leaf by leaf, numbers agreeing to luacanon.CompareDigits significant
+// figures and everything else exactly. Reports true when it logged a
+// failure.
 func canonDiverged(t *testing.T, label, got, want string) bool {
 	t.Helper()
 	if got == want {
