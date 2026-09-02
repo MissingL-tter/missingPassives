@@ -11,9 +11,12 @@ Four lists that outlive the 2026-08-29 Lua remodel
    comparison stops being the contract.
 3. **Order enforced but unproven** — sorts a comparison pins without anyone
    having shown the order matters.
-4. **A harness normalisation whose cause is not pinned** — the one place
-   the dump still reorders a numeric-keyed table, on measurement rather
-   than understanding, with the experiment that would settle it.
+4. **The one harness normalisation of a numeric-keyed table** — forced,
+   cause pinned to a string key in the tree file's node constructor; the
+   alternative of normalising at the source is recorded and not taken.
+5. **Synthetic mod-store records that agree on nothing** — 11 tag branches
+   whose synthetic record returns 0 in every config and which the corpus
+   does not cover either; the other 4 the corpus covers.
 
 None of these is work queued. All are things to revisit when the archive
 is deleted, or when a behaviour here turns out to matter.
@@ -305,14 +308,33 @@ the exporter or the game files change. The consequence to remember: a CLEAN
 result for anything in `export/` from a default run is not evidence. Run
 with `MP_EXPORT=1` before drawing a conclusion about export ordering.
 
-## 4. A harness normalisation whose cause is not pinned (2026-09-01)
+## 4. The one harness normalisation of a numeric-keyed table (2026-09-01)
 
 `tools/dump_build.lua:306` rebuilds `env.extraRadiusNodeList` with its keys
 inserted ascending before the real perform's node walk. It is the only
-numeric-keyed table the harness still normalises, and it is normalised on
-measurement rather than on understanding.
+numeric-keyed table the harness normalises. **Cause pinned the same day:**
+`TreeData/<ver>/tree.lua` carries one string key, `["root"]`, inside the
+numeric-keyed `nodes` constructor. LuaJIT seeds string hashes per process,
+so that key's slot moves between runs and displaces colliding numeric keys;
+`PassiveTree.lua:487` deletes it but the layout stays perturbed. Measured:
+`pairs(tree.nodes)` (3,352 keys) differs per process from index 27; a toy
+with 3,000 numeric keys is stable until one string key is added and
+deleted. `nodesInRadius` is filled by walking that table
+(`PassiveTree.lua:645`), `extraRadiusNodeList` by walking `nodesInRadius`
+(`CalcSetup.lua:796`), so the reference's own extra-radius walk order is
+per-process and the normalisation is forced, not a convenience.
 
-**What is known.** With the harness's numeric-key sort removed, two full
+**The alternative, recorded and not taken.** Rebuild `tree.nodes` in the
+harness right after load, numeric keys re-inserted ascending, so
+`nodesInRadius` and everything downstream come out deterministic and the
+`extraRadiusNodeList` rebuild becomes unnecessary. Not taken because it
+reorders every `pairs(self.nodes)` consumer in the app (spec, tree drawing,
+jewel functions), which is a larger change to the referee for the same
+recorded result; the current rebuild sits exactly where the dump reads.
+Revisit if a second numeric-keyed table downstream of `tree.nodes` ever
+fails to reproduce - then the source fix is the smaller one.
+
+**What was known before the cause was found.** With the harness's numeric-key sort removed, two full
 regenerations of all 49 dumps agreed on every `allocOrders` (98 of 98) and
 disagreed on 44 `nodeOrders` - always the second walk (`finishJewels`), the
 alloc prefix intact, the extra-radius tail the same set, the two runs
@@ -324,17 +346,55 @@ identically across plain-luajit processes; the slot loop feeding it is
 the same shape. All 60 downstream `*Dbs` differences were permutations, and
 the differential passed against either regeneration.
 
-**What is not known.** Why the layout differs. Candidates not yet tested:
-the table is reused across walks via `wipeTable` (`CalcSetup.lua:256,433`),
-so its capacity and tombstone history come from the load-time walk, which
-runs under the app's own `calcs` instance - loaded by HeadlessWrapper before
-the harness's override - and may see a per-process string-keyed iteration
-somewhere the Calc-scoped `sortedPairs` never reaches.
+**How it was settled.** The wipeTable-reuse hypothesis was wrong: 21
+distinct table addresses in one run, no reuse. Hooking the walk showed the
+INSERTION sequence differing across processes (common prefix 4 of 68), which
+sent the search upstream to `nodesInRadius`, then to `pairs(tree.nodes)`,
+then to the string key in the constructor.
 
-**How to settle it.** Hook the population sites, print the insertion
-sequence and the resulting `rawPairs` order across two processes for one of
-the 22 builds (`arctotem`, `toad`, `cocuser`...). If the insertion sequence
-is identical and only the layout differs, the reuse/tombstone hypothesis is
-right and the rebuild is the correct fix. If the insertion sequence differs,
-find the string-keyed iteration upstream and normalise THAT instead - it
-would be a smaller and more honest modification of the referee.
+## 5. Synthetic mod-store records that agree on nothing (2026-09-02)
+
+`tools/dump_modstore.lua`'s synthetic world exists for tag branches the
+corpus does not reach. Pulling the `SynthGlobalLimitPair` skip showed that
+record - and its two singles - had returned 0 / `{}` in all 12 configs since
+the file was written: the Multiplier variable they read was never set. That
+is fixed (a `Multiplier:<var>` BASE 1.5 mod feeds it; the pair now proves
+the shared cap at 30+20=50). After the fix, 20 of 61 synthetic records are
+still all-zero across all 12 configs.
+
+Five are negatives by construction and stay: `SynthMonsterTag4`,
+`SynthSkillPart3`, `SynthMult7`, `SynthMT4`, `SynthCondNeg2` (`neg = true`,
+`actor = "nonexistent"`, `threshold = 99`). Fifteen are not:
+
+Measured against the corpus once Tabulate was text (every tag on every
+non-zero tabulated mod across all 12 configs of the 1,033 `q` records):
+
+| record | tag branch | corpus |
+|---|---|---|
+| `SynthMonsterTag2` | `MonsterTag` (positive match) | **type never on a non-zero mod** |
+| `SynthSkillPart2` | `SkillPart` via `skillPartList` | **type never on a non-zero mod** |
+| `SynthSock3` | `SocketedIn` with `sockets = "all"` | **type never on a non-zero mod** |
+| `SynthMult2` | `Multiplier` with `noFloor`, `limit`, `actor = "enemy"` | type yes (2,607), these attributes no |
+| `SynthMult3` | `Multiplier` with `limitVar`/`limitActor`/`limitTotal` | type yes, these attributes no |
+| `SynthMT5` | `MultiplierThreshold` with `thresholdActor`/`thresholdVar` | type yes (553), these attributes no |
+| `SynthPCS1` | `PercentStat` with `percentVar`, `floor` | type yes (279), these attributes no |
+| `SynthST2` | `StatThreshold` with `statList` + negative threshold | type yes (371), these attributes no |
+| `SynthST3` | `StatThreshold` with `thresholdPercentVar` | type yes, these attributes no |
+| `SynthItem3` | `ItemCondition` with `allSlots`, `excludeSelf` | type yes (10), these attributes no |
+| `SynthSkillName1` | `SkillName` with `summonSkill` | type yes (22), this attribute no |
+| `SynthMT1` | `MultiplierThreshold`, plain `threshold` | **covered** - harmless |
+| `SynthPS1`, `SynthPS2` | `PerStat`, with and without `div` | **covered** (712) - harmless |
+| `SynthST1` | `StatThreshold` with `thresholdStat` | **covered** - harmless |
+
+Eleven are real blind spots: three tag types the port has never been checked
+on with a non-zero result, eight attribute branches of types it has.
+
+Each needs what the global-limit case needed: the input its tag reads
+(an actor output, an enemy actor, an item in the right slot, a socket group)
+set in at least one of the 12 configs so the record produces a number, then
+the dump regenerated and the port checked against it.
+
+The corpus column above was unreadable until 2026-09-02: the `q` records
+stored List and Tabulate as murmur digests, so which tags sat on which
+non-zero mods was not recorded. They are text now (knowledge.md 4.2), which
+is what made the measurement possible.

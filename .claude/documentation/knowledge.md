@@ -221,12 +221,13 @@ with the reason it is there and whether that reason is forced:
 |---|---|---|
 | `dump_build.lua:49` | `pairs` override sorting STRING keys | yes - LuaJIT randomises string hashing per process; nothing stable exists to record |
 | `dump_build.lua:49` | ~~sorting NUMERIC keys~~ | **no - removed 2026-09-01.** LuaJIT's numeric-key order is a function of the table's history, not of a per-process seed; where the history is deterministic the order is real reference behaviour and the dump records it (`allocNodes`: identical in all 98 recordings across two regenerations) |
-| `dump_build.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes, on measurement: 44 of 98 such walks differed between two full regenerations with the same key set and the alloc prefix intact - the table's hash LAYOUT is per-process here, its membership is not. Cause is upstream of the Calc modules and not pinned (later.md 4). Normalises layout only |
+| `dump_build.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes - the reference's own walk order is per-process. Cause pinned 2026-09-01: `TreeData/<ver>/tree.lua` puts one string key, `["root"]`, in the numeric-keyed `nodes` constructor; its seeded hash slot perturbs the whole table's layout, the perturbation survives `self.nodes.root = nil`, and `pairs(tree.nodes)` (3,352 keys, measured) differs per process from index 27. `nodesInRadius` is filled from that walk (PassiveTree.lua:645), `extraRadiusNodeList` from `nodesInRadius` (CalcSetup.lua:796). Normalises layout only, at the point the dump records (later.md 4 has the alternative) |
 | `dump_build.lua:71` | table-keyed sets (`env.flasks`) ordered by item id / socket-group position | yes - keys are addresses, random per process |
-| `dump_build.lua:203` | `mergeSkillInstanceMods` replaced by a sorted-stats replica | reason yes (string-keyed `pairs`), method heavy: a copied body that can drift from `CalcActiveSkill.lua` |
+| ~~`dump_build.lua:203`~~ | ~~`mergeSkillInstanceMods` replaced by a sorted-stats replica~~ | **deleted 2026-09-01 - it was redundant.** CalcActiveSkill is a Calc module, so its own `pairs(stats)` already runs under the string-key-sorting override above; all 49 dumps are byte-identical without the copied body. A referee modification that changes nothing is still a referee modification |
 | `dump_build.lua:618` | `scrubPerformResidue` strips `warcryPowerBonus` before capture | perform-owned state, recomputed each run |
 | `dump_gamedata.lua:117,187` | skill sources and gem lookups rebuilt in sorted id order | yes in kind (per-process random); note it decides which entry WINS a collision |
-| `dump_modstore.lua:728` | 12 records emit `"ta":"skip"`, honoured by `modstore_test.go:798` | **no reason recorded** |
+| ~~`dump_modstore.lua:728`~~ | ~~12 records emit `"ta":"skip"`~~ | **removed 2026-09-02.** It hid an empty test: the synthetic global-limit mods read a Multiplier variable no config ever set, so both sides returned 0 in all 12 configs and the shared limit was never reached. Now fed (`Multiplier:<var>` BASE 1.5): singles 30, pair 50 - the shared cap bites at 30+20 - port agrees. `modstore_test.go` now FAILS on any `"skip"` in the dump |
+| ~~`dump_modstore.lua:474`~~ | ~~`li`/`ta` of the 1,033 `q` and 39 `eq` records as murmur digests~~ | **removed 2026-09-02** ("if PoB doesn't hash, we shouldn't"). List and Tabulate are canon text for every config; the dump is 19.2 MB (was 5.7); the port matches EXACTLY - not by hash - in all 12 configs of all 1,033 records. The cfg-1-only text fields, the `coercedRecords` allow-list and the test-side murmur went with it. With the text readable, the corpus answered which synthetic branches it already covers (later.md 5) |
 
 A new row here needs a "forced?" answer before it lands. "It makes the dump
 byte-stable" is the reason for every row and is not by itself a yes.
@@ -530,14 +531,32 @@ determinism.
   Writing a correctly-rounded power would only close the integer-exponent
   half anyway; the fractional sites (evade chance, ignite stacks, hit rate,
   the PvP exponents) have no clean answer in the standard library.
-- **A trap the folding sweep does NOT cover:** Go's `1/3` over untyped
-  INTEGER constants is 0, where Lua gives 0.333 - a semantic difference,
-  not a rounding one. Telling a deliberate integer division from an
-  accidental one needs type context the sweep does not carry.
+- **Integer division - swept 2026-09-01, clean.** Go's `1/3` over untyped
+  INTEGER constants is 0 where Lua gives 0.333 - a semantic difference, not
+  a rounding one - and the folding sweep cannot see it. A `go/types` pass
+  over every non-test package (0 type errors, all 1,262 `/` expressions
+  typed) found 10 `int/int` sites and 0 constant-folded ones. Eight are
+  bytes, offsets, regex match pairs and RNG range reduction - integer by
+  nature. Two are game-adjacent and proven: `tree/cluster.go:233` ports an
+  explicit `m_floor` (PassiveSpec.lua:1846), and `tree/historic.go:345`'s
+  `seed / 20` is Elder seeds, multiples of 20 by game rule, under the 33M-
+  cell differential. Re-run the pass (a 90-line stdlib program: parse each
+  package, type-check with the source importer, report `QUO` whose operands
+  are both `IsInteger`) when new arithmetic lands.
 - **Shared-path bugs are invisible.** A defect in code both sides pass through
   compares equal to itself. `quantizeTag` once dropped a tag and agreed with
   itself; the mitigation is to make shared normalisers *loud* (panic) rather
   than lossy.
+- **A check that agrees on nothing is not a check.** The synthetic
+  `SynthGlobalLimit1/2/Pair` records were 0 / `{}` on both sides in all 12
+  configs from 2026-08-20 to 2026-09-02 - the Multiplier variable they read
+  was never given a value - and the differential reported them green the
+  whole time. Found only because their `"skip"` came out. After feeding the
+  variable, 20 of 61 synthetic records are STILL all-zero; 5 are negatives by
+  construction, 15 are tag branches the synthetic world was built to cover
+  and does not (later.md 5). When a record exists to exercise a branch, look
+  at its values at least once; "both sides agree" is compatible with "both
+  sides did nothing".
 - **A partial canon is a blind canon.** `data.ModCanon` drove the whole calc
   port while omitting `mod.replaced`/`mod.converted`; a divergence there would
   have compared equal at every stage. Audit what a canon emits, not just that
@@ -667,6 +686,18 @@ differential.
   dump holds PoB's real order, and `assertOrdersConsistent` checks only the
   recording's shape. Production still walks ascending; the two orders differ
   and their state is compared as a multiset.
+- **One string key in a numeric-keyed table makes its `pairs()` order
+  per-process, and deleting the key does not undo it.** LuaJIT seeds string
+  hashes per process; numeric hashes are unseeded. A string key's slot
+  therefore moves between runs, displacing whichever numeric keys collide
+  with it, and the displaced layout persists after the key is set to nil.
+  Measured: 3,000 numeric keys iterate identically across processes; add
+  one string key mid-way and delete it, and three runs give three orders.
+  This is why `pairs(tree.nodes)` is per-process (`["root"]` in the
+  constructor) while `allocNodes`, filled from the build XML with numeric
+  keys only, is not - and why a 6-key table looked stable in a probe: no
+  collisions to displace. "All the keys are numbers" is not enough; the
+  question is whether a string key was EVER in the table.
 - **Genuine LuaJIT order does leak into shipped data** in a few places where
   sorting is not an option: `tradeHashes` entry order in the mods export, and
   `LegionPassives.lua`'s per-node `oidx` (drawn from an unseeded `math.random`
@@ -829,10 +860,13 @@ of it deliberately:
 - The archive leaves perform residue on shared skill tables
   (`warcryBuff[1].warcryPowerBonus`); the dump scrubs it before and after each
   variant, or variant N's dump depends on variant N−1 having run.
-- `dump_build.lua` replaces `mergeSkillInstanceMods` wholesale with a
+- `dump_build.lua` used to replace `mergeSkillInstanceMods` wholesale with a
   sorted-stats replica, because the original iterates `pairs(stats)` over
-  string keys (randomised per process). That replica must be re-synced by hand
-  if the archive's body changes.
+  string keys (randomised per process). Deleted 2026-09-01: the `pairs`
+  override installed before the Calc modules load already sorts string keys
+  inside CalcActiveSkill, so the 62-line copy did nothing - proven by
+  regenerating all 49 dumps without it, byte-identical. The lesson: before
+  adding a normalisation, check whether one already in force covers it.
 - `dump_modtables.lua` reaches module-local tables by reading `ModParser.lua`
   as text, rewriting its trailing `return` with a gsub, and `loadstring`ing the
   result — a reusable way to observe module-locals without editing the

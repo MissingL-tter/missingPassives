@@ -426,10 +426,6 @@ do
 end
 
 -- --------------------------------------------------------------- queries --
-local h32 = function(s)
-	return string.format("%d.%d", murmurHash2(s, 0x9747b28c), murmurHash2(s, 0x2312233))
-end
-
 local nameList = sortedKeys(modNames)
 local records = 0
 for ni, name in ipairs(nameList) do
@@ -471,12 +467,11 @@ for ni, name in ipairs(nameList) do
 			'{"sb":', sumB, ',"si":', sumI, ',"mo":', more,
 			',"fl":', okF and tostring(flag == true) or '"!"',
 			',"ov":', okO and canon.encode(ovr) or '"!"',
-			',"li":"', h32(listC),
-			'","ta":"', h32(tabC),
-			'","ha":', tostring(hasB),
+			',"li":', canon.quote(listC),
+			',"ta":', canon.quote(tabC),
+			',"ha":', tostring(hasB),
 			',"mx":', (not okX) and '"!"' or maxV and ('"' .. f17(maxV) .. '"') or "null",
 			',"mn":', (not okN) and '"!"' or minV and ('"' .. f17(minV) .. '"') or "null",
-			ci == 1 and (',"liC":' .. canon.quote(listC) .. ',"taC":' .. canon.quote(tabC)) or "",
 			"}",
 		})
 	end
@@ -518,7 +513,7 @@ for ni, name in ipairs(nameList) do
 		local okM, more = pcall(function() return enemyDB:More(cfgs[9], name) end)
 		local okT, tab = pcall(function() return canon.encode(enemyDB:Tabulate(nil, cfgs[2], name)) end)
 		if not okT then tab = "!" end
-		emit({ '{"k":"eq","name":', canon.quote(name), ',"sb":', okS and ('"' .. f17(sumB) .. '"') or '"!"', ',"mo":', okM and ('"' .. f17(more) .. '"') or '"!"', ',"ta":"', h32(tab), '"}' })
+		emit({ '{"k":"eq","name":', canon.quote(name), ',"sb":', okS and ('"' .. f17(sumB) .. '"') or '"!"', ',"mo":', okM and ('"' .. f17(more) .. '"') or '"!"', ',"ta":', canon.quote(tab), '}' })
 	end
 end
 
@@ -632,6 +627,12 @@ do
 	local sn = sortedKeys(statNames)
 	local mkm = modLib.createMod
 	local synthList = {
+		-- Feeds the Multiplier variable the synthetic Multiplier/GlobalLimit mods
+		-- read. Without it every plain var = vn[2] reader summed to 0 and the
+		-- shared global limit was never reached (found 2026-09-02 when the
+		-- SynthGlobalLimitPair skip came out). 1.5 so floor (1) and noFloor
+		-- (1.5) differ.
+		mkm("Multiplier:" .. vn[2], "BASE", 1.5, "Synth"),
 		mkm("SynthMonsterTag1", "INC", 10, "Synth", { type = "MonsterTag", monsterTag = "Demon" }),
 		mkm("SynthMonsterTag2", "INC", 10, "Synth", { type = "MonsterTag", monsterTag = "Beast" }),
 		mkm("SynthMonsterTag3", "INC", 10, "Synth", { type = "MonsterTag", monsterTagList = { "beast", "HUMANOID" } }),
@@ -719,13 +720,20 @@ do
 		parts[#parts + 1] = "]}"
 		emit(parts)
 	end
-	-- shared global limit across both mods in one Sum
+	-- shared global limit across both mods in one Sum: the same three
+	-- checks as every other synthetic record. Until 2026-09-02 this block
+	-- hardcoded si to 0 and ta to "skip" with no reason recorded; the
+	-- port's two-name Tabulate under a shared limit was unverified.
 	do
 		local parts = { '{"k":"sq","name":"SynthGlobalLimitPair","res":[' }
 		for ci = 1, 12 do
+			local cfg = cfgs[ci]
 			if ci > 1 then parts[#parts + 1] = "," end
-			local sb = tryNum2(function() return synthDB:Sum("BASE", cfgs[ci], "SynthGlobalLimit1", "SynthGlobalLimit2") end)
-			parts[#parts + 1] = '{"sb":' .. sb .. ',"si":"0","ta":"\\"skip\\""}'
+			local sb = tryNum2(function() return synthDB:Sum("BASE", cfg, "SynthGlobalLimit1", "SynthGlobalLimit2") end)
+			local si = tryNum2(function() return synthDB:Sum("INC", cfg, "SynthGlobalLimit1", "SynthGlobalLimit2") end)
+			local okT, tabC = pcall(function() return canon.encode(synthDB:Tabulate(nil, cfg, "SynthGlobalLimit1", "SynthGlobalLimit2")) end)
+			if not okT then tabC = "!" end
+			parts[#parts + 1] = table.concat({ '{"sb":', sb, ',"si":', si, ',"ta":', canon.quote(tabC), "}" })
 		end
 		parts[#parts + 1] = "]}"
 		emit(parts)

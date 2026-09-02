@@ -201,76 +201,6 @@ pairs = rawPairs
 -- per table state but not derivable in Go — and the table GROWS mid-initEnv
 -- (granted passives), so each call sees its own order. Wrap the function to
 -- record the order per call.
--- mergeSkillInstanceMods iterates pairs(stats): string keys, so LuaJIT
--- hash-randomised PER PROCESS - the resulting skillModList order would
--- differ between dump runs and be underivable in Go. Replace it with a
--- sorted-stats replica (body from CalcActiveSkill.lua, including the
--- mergeLevelMod cache) so both sides derive the same deterministic order.
--- Documented divergence from the vanilla app (same technique as the
--- game-data dump's sorted re-passes).
-do
-	local mergeLevelCache = {}
-	local function mergeLevelMod(modList, mod, value)
-		if not value then
-			modList:AddMod(mod)
-			return
-		end
-		if not mergeLevelCache[mod] then
-			mergeLevelCache[mod] = {}
-		end
-		if mergeLevelCache[mod][value] then
-			modList:AddMod(mergeLevelCache[mod][value])
-		elseif value then
-			local newMod = copyTable(mod, true)
-			if type(newMod.value) == "table" then
-				newMod.value = copyTable(newMod.value, true)
-				if newMod.value.mod then
-					newMod.value.mod = copyTable(newMod.value.mod, true)
-					newMod.value.mod.value = value
-				else
-					newMod.value.value = value
-				end
-			else
-				newMod.value = value
-			end
-			mergeLevelCache[mod][value] = newMod
-			modList:AddMod(newMod)
-		else
-			modList:AddMod(mod)
-		end
-	end
-	calcs.mergeSkillInstanceMods = function(env, modList, skillEffect, extraStats)
-		calcLib.validateGemLevel(skillEffect)
-		local grantedEffect = skillEffect.grantedEffect
-		local stats = calcLib.buildSkillInstanceStats(skillEffect, grantedEffect)
-		if extraStats and extraStats[1] then
-			for _, stat in pairs(extraStats) do
-				stats[stat.key] = (stats[stat.key] or 0) + stat.value
-			end
-		end
-		local statKeys = {}
-		for stat in pairs(stats) do
-			statKeys[#statKeys + 1] = stat
-		end
-		table.sort(statKeys)
-		for _, stat in ipairs(statKeys) do
-			local statValue = stats[stat]
-			local map = grantedEffect.statMap[stat]
-			if map then
-				for _, modOrGroup in ipairs(map) do
-					if modOrGroup.name then
-						mergeLevelMod(modList, modOrGroup, map.value or statValue * (map.mult or 1) / (map.div or 1) + (map.base or 0))
-					else
-						for _, mod in ipairs(modOrGroup) do
-							mergeLevelMod(modList, mod, modOrGroup.value or statValue * (modOrGroup.mult or 1) / (modOrGroup.div or 1) + (modOrGroup.base or 0))
-						end
-					end
-				end
-			end
-		end
-		modList:AddList(grantedEffect.baseMods)
-	end
-end
 
 -- The perform checkpoint covers the perform BODY only: the final
 -- defence/offence handoff (CalcPerform L3721+) is stubbed out so the
@@ -309,12 +239,16 @@ calcs.buildModListForNodeList = function(env, nodeList, finishJewels)
 	-- order is NOT reproducible across processes under this harness
 	-- (measured 2026-09-01: 44 of 98 finishJewels walks differed between two
 	-- full regenerations - same key set, alloc prefix intact, order diverging
-	-- part-way through the tail, i.e. the table's hash layout differs, not
-	-- its contents). allocNodes, by contrast, was identical in all 98. The
-	-- cause is upstream of the Calc modules and is not pinned (later.md).
-	-- Rebuild it with keys inserted ascending so LuaJIT lays it out the same
-	-- way every run. This is a referee modification and is listed as such
-	-- in knowledge.md 4.2; it normalises layout, not membership.
+	-- part-way through the tail). allocNodes, by contrast, was identical in
+	-- all 98. Cause: TreeData/<ver>/tree.lua puts one string key, ["root"],
+	-- in the numeric-keyed nodes constructor; LuaJIT seeds string hashes per
+	-- process, so its slot displaces colliding numeric keys and the layout
+	-- stays perturbed after PassiveTree deletes it. pairs(tree.nodes) is
+	-- therefore per-process, nodesInRadius is filled from that walk, and
+	-- this table from nodesInRadius - the reference's own order here is
+	-- random. Rebuild it with keys inserted ascending so LuaJIT lays it out
+	-- the same way every run. A referee modification, listed in knowledge.md
+	-- 4.2 with the alternative in later.md 4; it normalises layout only.
 	if finishJewels and env.extraRadiusNodeList and next(env.extraRadiusNodeList) then
 		local ids = {}
 		for id in rawPairs(env.extraRadiusNodeList) do

@@ -2,7 +2,6 @@ package test
 
 import (
 	"bufio"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -79,35 +78,6 @@ func (r *msResolver) GetGameIdFromGemName(name string, includeTransfigured bool)
 	return id, ok
 }
 
-// msMurmur is Common.lua's murmurHash2 (verified against the archive by
-// the export archive dump's tradeHashes).
-func msMurmur(key []byte, seed uint32) uint32 {
-	const m = 0x5bd1e995
-	h := seed ^ uint32(len(key))
-	for ; len(key) >= 4; key = key[4:] {
-		k := binary.LittleEndian.Uint32(key)
-		k *= m
-		k ^= k >> 24
-		k *= m
-		h *= m
-		h ^= k
-	}
-	if len(key) > 0 {
-		var buf [4]byte
-		copy(buf[:], key)
-		h ^= binary.LittleEndian.Uint32(buf[:])
-		h *= m
-	}
-	h ^= h >> 13
-	h *= m
-	h ^= h >> 15
-	return h
-}
-
-func msHash(s string) string {
-	return fmt.Sprintf("%d.%d", msMurmur([]byte(s), 0x9747b28c), msMurmur([]byte(s), 0x2312233))
-}
-
 func f17(v float64) string {
 	return strconv.FormatFloat(v, 'g', 17, 64)
 }
@@ -167,18 +137,16 @@ type msCfgRec struct {
 }
 
 type msQRes struct {
-	Sb  string          `json:"sb"`
-	Si  string          `json:"si"`
-	Mo  string          `json:"mo"`
-	Fl  json.RawMessage `json:"fl"`
-	Ov  json.RawMessage `json:"ov"`
-	Li  string          `json:"li"`
-	Ta  string          `json:"ta"`
-	Ha  bool            `json:"ha"`
-	Mx  json.RawMessage `json:"mx"`
-	Mn  json.RawMessage `json:"mn"`
-	LiC *string         `json:"liC"`
-	TaC *string         `json:"taC"`
+	Sb string          `json:"sb"`
+	Si string          `json:"si"`
+	Mo string          `json:"mo"`
+	Fl json.RawMessage `json:"fl"`
+	Ov json.RawMessage `json:"ov"`
+	Li string          `json:"li"`
+	Ta string          `json:"ta"`
+	Ha bool            `json:"ha"`
+	Mx json.RawMessage `json:"mx"`
+	Mn json.RawMessage `json:"mn"`
 }
 
 func TestModStoreAgainstReference(t *testing.T) {
@@ -332,10 +300,6 @@ func TestModStoreAgainstReference(t *testing.T) {
 	}
 
 	var corpusLines []string
-	// q records whose reference canon carries coerced numeric-string tag
-	// fields (cfg1's full canon reveals it; the other cfgs only hash).
-	coercedRecords := map[string]bool{}
-	recKey := func(names []string) string { return strings.Join(names, ",") }
 	var synthDB *modstore.DB
 	var synthMods []*modparser.Mod
 	var checked, disagree, shown int
@@ -511,22 +475,12 @@ func TestModStoreAgainstReference(t *testing.T) {
 				if !listPanic {
 					listC = gotList.(string)
 				}
-				// The archive hashed its own canon text; where cfg1's full
-				// canon shows the reference kept a numeric tag field as
-				// text (luacanon.NormalizeArchiveMods), every cfg's hash is
-				// over that text and cannot be normalised, so cfg1's full
-				// canon comparison is the check for the record.
-				if want.LiC != nil {
-					wantLiC := luacanon.NormalizeArchiveMods(*want.LiC)
-					if wantLiC != *want.LiC {
-						coercedRecords[recKey(rec.Names)+"|li"] = true
-					}
-					if listC != wantLiC {
-						fail("q listC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantLiC, listC))
-					}
-				}
-				if msHash(listC) != want.Li && !coercedRecords[recKey(rec.Names)+"|li"] {
-					fail("q list", fmt.Sprintf("%v cfg%d: hash mismatch (got %s)", rec.Names, ci+1, listC))
+				// List and Tabulate are recorded as canon text for every cfg
+				// (until 2026-09-02 cfgs 2-12 were murmur digests). The
+				// reference kept some numeric tag fields as text, so the
+				// archive side is normalised before the exact comparison.
+				if wantLi := luacanon.NormalizeArchiveMods(want.Li); listC != wantLi {
+					fail("q list", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantLi, listC))
 				}
 
 				gotTab, tabPanic := tryAny(func() any { return tabCanon(leafDB.TabulateAll(cfg, rec.Names...)) })
@@ -534,17 +488,8 @@ func TestModStoreAgainstReference(t *testing.T) {
 				if !tabPanic {
 					tabC = gotTab.(string)
 				}
-				if want.TaC != nil {
-					wantTaC := luacanon.NormalizeArchiveMods(*want.TaC)
-					if wantTaC != *want.TaC {
-						coercedRecords[recKey(rec.Names)+"|ta"] = true
-					}
-					if tabC != wantTaC {
-						fail("q tabC", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantTaC, tabC))
-					}
-				}
-				if msHash(tabC) != want.Ta && !coercedRecords[recKey(rec.Names)+"|ta"] {
-					fail("q tab", fmt.Sprintf("%v cfg%d: hash mismatch (got %s)", rec.Names, ci+1, tabC))
+				if wantTa := luacanon.NormalizeArchiveMods(want.Ta); tabC != wantTa {
+					fail("q tab", fmt.Sprintf("%v cfg%d:\n  want %s\n  got  %s", rec.Names, ci+1, wantTa, tabC))
 				}
 
 				if got := rootDB.HasMod(modparser.Base, cfg, rec.Names...); got != want.Ha {
@@ -644,8 +589,8 @@ func TestModStoreAgainstReference(t *testing.T) {
 			if !tabPanic {
 				tabC = gotTab.(string)
 			}
-			if msHash(tabC) != rec.Ta {
-				fail("eq tab", fmt.Sprintf("%s: hash mismatch (got %s)", rec.Name, tabC))
+			if wantTa := luacanon.NormalizeArchiveMods(rec.Ta); tabC != wantTa {
+				fail("eq tab", fmt.Sprintf("%s:\n  want %s\n  got  %s", rec.Name, wantTa, tabC))
 			}
 		case "scale":
 			var rec struct {
@@ -795,7 +740,10 @@ func TestModStoreAgainstReference(t *testing.T) {
 				checkSyn("sum BASE", want.Sb, func() float64 { return synthDB.Sum(modparser.Base, cfg, names...) })
 				checkSyn("sum INC", want.Si, func() float64 { return synthDB.Sum(modparser.Inc, cfg, names...) })
 				want.Ta = strings.ReplaceAll(want.Ta, `"other":"x",`, "") // see the synth case
-				if want.Ta != "skip" && want.Ta != "\"skip\"" {
+				if want.Ta == "skip" || want.Ta == "\"skip\"" {
+					fail("sq tab", rec.Name+": the archive carries a \"skip\"; a dump must not disable a check")
+				}
+				{
 					gotTab, tabPanic := tryAny(func() any { return tabCanon(synthDB.TabulateAll(cfg, names...)) })
 					tabC := "!"
 					if !tabPanic {

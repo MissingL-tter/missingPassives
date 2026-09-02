@@ -157,8 +157,13 @@ their code still has guarded branches. Open code gaps, largest first:
 |---|---|
 | skill callbacks (declared in `data.SkillCustom.Callbacks`, bodies in `calc/skillfuncs.go`) | 100 of 134 declared (effect, kind) pairs unported |
 | trigger configs (`CalcTriggers.lua` configTable) | 1 of 81 — `"avenging flame"` is an explicit nil that panics on match; the other 80 are written, roughly half verified and the rest await an authored build |
-| map-mod `apply` closures (`Data/ModMap.lua`, marked `MapModApplyUnported`) | 42 |
 | guard panics across `calc/` | 1 real (the per-skill callback gate) + party-tab crit (**deferred — see `party`**) + 3 defensive assertions |
+
+Closed 2026-09-01 and removed from the table above: the 41 map-mod `apply`
+closures of `Data/ModMap.lua`. They live in `config/mapaffix_generated.go`
+(36 bodies) plus five registered empty in `config/apply_hand.go` because the
+reference's own bodies are empty; `data/mapmods.go`'s `MapModApplyUnported`
+is now only the marker that an applier exists, one per affix, 41 for 41.
 
 ---
 

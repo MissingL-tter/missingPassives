@@ -80,9 +80,10 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
 - `calc/skillmods.go`: buildActiveSkillModList — weapon flags, skill mod/keyword flag
   sets, skillCfg construction, support-level merges, gem/quality mods, stage/mine
   multipliers, SkillData extraction, GlobalEffect→buffList separation — plus
-  mergeSkillInstanceMods/mergeLevelMod with SORTED stat iteration (dump_build.lua
-  replaces the Lua function with a sorted-stats replica because pairs(stats) is
-  string-hash-random per process; documented divergence).
+  mergeSkillInstanceMods/mergeLevelMod with SORTED stat iteration (the dump's
+  Calc-scoped pairs override sorts string keys, so the reference iterates
+  stats sorted too; the separate sorted-stats replica the harness once carried
+  was redundant and is gone - 2026-09-01).
 - statMap lookups go through env.statMapLookup: the skillStatMapMeta lazy copy via
   data.LazyStatMapCopy, memoized PER ENV, never into the shared skill tables (keeps
   the game-data canon pristine; same values).
