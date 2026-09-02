@@ -202,13 +202,34 @@ now store canon text (37.9 MB). Recording the evidence beats saving the
 bytes; if size ever forces the question again, compress the file rather than
 digest the data.
 
-The one sanctioned semantic normalisation of the reference side is
+Test-side, the only normalisation of the reference's recorded text is
 `luacanon.NormalizeArchiveMods`: the archive's parser stored numeric captures
 as text (`"div":"5"`, `"value":"2"`) where the port parses them at parse time,
 so a closed field set (div, limit, percent, base, threshold, thresholdPercent,
 globalLimit, value) is rewritten to bare numbers before comparison. Every
-fixture read routes through `forEachCalcRecord`, which applies it. Any other
-normalisation of the reference side would be a way to hide a divergence.
+fixture read routes through `forEachCalcRecord`, which applies it. Nobody
+"sanctioned" it - it was introduced with the port and is listed here so it
+is not mistaken for a second one. Any further normalisation of the recorded
+text is a way to hide a divergence.
+
+That covers the test side only. The HARNESSES also intervene, and every such
+intervention is a modification of the referee - a place the differential
+compares Go against a changed PoB rather than PoB. The current list, each
+with the reason it is there and whether that reason is forced:
+
+| harness | intervention | forced? |
+|---|---|---|
+| `dump_calc.lua:49` | `pairs` override sorting STRING keys | yes - LuaJIT randomises string hashing per process; nothing stable exists to record |
+| `dump_calc.lua:49` | ~~sorting NUMERIC keys~~ | **no - removed 2026-09-01.** LuaJIT's numeric-key order is a function of the table's history, not of a per-process seed; where the history is deterministic the order is real reference behaviour and the dump records it (`allocNodes`: identical in all 98 recordings across two regenerations) |
+| `dump_calc.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes, on measurement: 44 of 98 such walks differed between two full regenerations with the same key set and the alloc prefix intact - the table's hash LAYOUT is per-process here, its membership is not. Cause is upstream of the Calc modules and not pinned (later.md 4). Normalises layout only |
+| `dump_calc.lua:71` | table-keyed sets (`env.flasks`) ordered by item id / socket-group position | yes - keys are addresses, random per process |
+| `dump_calc.lua:203` | `mergeSkillInstanceMods` replaced by a sorted-stats replica | reason yes (string-keyed `pairs`), method heavy: a copied body that can drift from `CalcActiveSkill.lua` |
+| `dump_calc.lua:618` | `scrubPerformResidue` strips `warcryPowerBonus` before capture | perform-owned state, recomputed each run |
+| `dump_gamedata.lua:117,187` | skill sources and gem lookups rebuilt in sorted id order | yes in kind (per-process random); note it decides which entry WINS a collision |
+| `dump_modstore.lua:728` | 12 records emit `"ta":"skip"`, honoured by `modstore_test.go:798` | **no reason recorded** |
+
+A new row here needs a "forced?" answer before it lands. "It makes the dump
+byte-stable" is the reason for every row and is not by itself a yes.
 
 ### 4.3 Fixtures as data
 
@@ -327,12 +348,24 @@ changes what the application does turns the differential from a test into a
 mirror - it reports agreement on precisely the thing that was in question,
 and once the dump is editable any claim can be made to come out either way.
 
-**`tools/dump_calc.lua` runs under a sorted `pairs`. That is a fact about
-that file, not a requirement on the port and not a convention to extend.**
-It means the orders that dump recorded are sorted, so replaying them was
-pointless. It does not mean the Go side must sort, and it does not license
-a new dump to sort. Both of those have been assumed here and both are
-wrong.
+**`tools/dump_calc.lua` runs under a `pairs` that sorts STRING keys and
+nothing else (since 2026-09-01).** It used to sort numeric keys too, on the
+stated ground that "hash order is random per process anyway" - which is
+true of strings and false of numbers. Measured: LuaJIT iterates a sparse
+numeric-keyed table in an order that is stable across processes and not
+ascending (`{57560,12925,3936,...}` walks as `57560,7960,3936,41263,...`
+every run), so PoB's real node order was a recordable fact the harness was
+discarding. It is recorded now. Regenerating all 49 calc dumps changed only
+the order recordings and the mod-list sequences (972 of 3,574 records);
+every `fixture` and every `*Output` - the computed numbers - is
+byte-identical, and two full regenerations of all 49 are byte-identical to
+each other (with `extraRadiusNodeList` rebuilt deterministically - the one
+table that was not, see 4.2's intervention table and later.md 4). The Go
+side still walks ascending (`sortedIntKeys`) because SOME
+fixed order is needed and none observable depends on which; the two orders
+differ and the state they produce is compared as a multiset. So: the port
+does not sort to match the dump, the dump no longer sorts to be matchable,
+and neither is a licence for a new dump to sort.
 
 **Measured 2026-09-01, per site.** Every one of the 57 non-algorithmic
 sorts was reversed INDIVIDUALLY and the full suite re-run, with the export,
@@ -622,12 +655,18 @@ differential.
   when every key has one, else by the group's position in the socket-group
   list.
 - **Before replaying anything a dump recorded, check whether the dump derived
-  it.** `dump_calc.lua` installs `pairs = sortedPairs` *before* the Calc
-  modules load (they localise `pairs` at load time), so every recorded node
-  order is simply ascending ids. The belief that these were captured LuaJIT
-  hash order survived two remodel stages and cost a whole replay machinery,
-  deleted 2026-08-31 in favour of `sortedIntKeys`. The test now asserts every
-  recorded order is ascending.
+  it - and before normalising, check whether the reference is actually
+  unstable.** `dump_calc.lua` installs `pairs = sortedPairs` *before* the
+  Calc modules load (they localise `pairs` at load time). Until 2026-09-01
+  it sorted numeric keys as well as strings, so every recorded node order
+  was ascending ids - an invention. The belief that these were captured
+  LuaJIT hash order survived two remodel stages and cost a whole replay
+  machinery, deleted 2026-08-31 in favour of `sortedIntKeys`; the belief
+  that they COULD NOT be captured then cost the record itself. Numeric-key
+  order is stable per process (4.6), the harness now leaves it alone, the
+  dump holds PoB's real order, and `assertOrdersConsistent` checks only the
+  recording's shape. Production still walks ascending; the two orders differ
+  and their state is compared as a multiset.
 - **Genuine LuaJIT order does leak into shipped data** in a few places where
   sorting is not an option: `tradeHashes` entry order in the mods export, and
   `LegionPassives.lua`'s per-node `oidx` (drawn from an unseeded `math.random`

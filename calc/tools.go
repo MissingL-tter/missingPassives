@@ -350,10 +350,11 @@ func firstTag(m *modparser.Mod) []modparser.Tag {
 
 // sortedNumKeys walks a numeric-keyed table in ascending order. Float sums
 // over it are not associative, so SOME fixed order is required or the
-// result drifts; ascending is the order the archive DUMP recorded, because
-// dump_calc ran under sortedPairs (tools/dump_calc.lua:131). That is a
-// property of the harness, not of Path of Building - unmodified LuaJIT
-// would walk these in hash order. The port matches the dump.
+// result drifts run to run. Ascending is NOT the reference's order: LuaJIT
+// walks numeric keys in its own stable, non-ascending order, and the dump
+// records that as-is (tools/dump_calc.lua:49; it used to sort them, which
+// is where "ascending matches the dump" came from). The two sums can differ
+// in the last bits and are compared at CompareDigits, which absorbs it.
 func sortedNumKeys(m map[float64]float64) []float64 {
 	keys := make([]float64, 0, len(m))
 	for k := range m {
@@ -364,12 +365,13 @@ func sortedNumKeys(m map[float64]float64) []float64 {
 }
 
 // sortedIntKeys is ascending map-key order, used wherever the calc walks a
-// node table. It buys determinism: Go's map order is randomised, so without
-// it the recorded order changes run to run. Ascending matches what the
-// archive dump recorded (dump_calc ran under sortedPairs,
-// tools/dump_calc.lua:131) - a fact about that file, NOT evidence that node
-// order is load-bearing. Reversing every determinism sort moves no computed
-// output (knowledge.md 4.6).
+// node table. It buys determinism and nothing else: Go's map order is
+// randomised, so without it the produced order changes run to run. It is
+// NOT the reference's order - LuaJIT walks numeric keys in its own stable,
+// non-ascending order and the dump records that as-is (tools/dump_calc.lua:49).
+// The recorded and derived orders differ; the state they produce is
+// compared as a multiset, and reversing this walk moves no computed output
+// (knowledge.md 4.6).
 func sortedIntKeys[V any](m map[int]V) []int {
 	keys := make([]int, 0, len(m))
 	for k := range m {

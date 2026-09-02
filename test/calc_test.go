@@ -596,26 +596,16 @@ func decodeAllocOrders(c string) [][]int {
 	return out
 }
 
-// assertOrdersSorted proves the dump's recorded pairs() orders are what
-// production now derives: ascending ids per buildModListForNodeList call
-// (the dump ran the Calc modules under sortedPairs — tools/dump_calc.lua:131),
-// each nodeOrders sequence being its alloc order plus an ascending
-// extra-radius tail.
-func assertOrdersSorted(t *testing.T, label string, allocOrders, nodeOrders [][]int) {
+// assertOrdersConsistent checks the shape of the dump's recorded pairs()
+// orders: each nodeOrders sequence begins with its allocOrders walk and
+// continues with the extra-radius nodes. It says nothing about the order
+// WITHIN a walk. The dump records the reference's real numeric-key order
+// (LuaJIT's, which is stable per process and not ascending - it used to be
+// sorted by the harness, tools/dump_calc.lua:49); production walks ascending
+// because some fixed order is needed and none observable depends on which
+// (knowledge.md 4.6). The two orders differ and are compared as multisets.
+func assertOrdersConsistent(t *testing.T, label string, allocOrders, nodeOrders [][]int) {
 	t.Helper()
-	ascending := func(s []int) bool {
-		for i := 1; i < len(s); i++ {
-			if s[i-1] >= s[i] {
-				return false
-			}
-		}
-		return true
-	}
-	for i, order := range allocOrders {
-		if !ascending(order) {
-			t.Fatalf("%s: allocOrders[%d] not ascending: %v", label, i, order)
-		}
-	}
 	for i, seq := range nodeOrders {
 		if i >= len(allocOrders) {
 			break
@@ -628,9 +618,6 @@ func assertOrdersSorted(t *testing.T, label string, allocOrders, nodeOrders [][]
 			if seq[j] != id {
 				t.Fatalf("%s: nodeOrders[%d][%d]=%d != allocOrders' %d", label, i, j, seq[j], id)
 			}
-		}
-		if !ascending(seq[len(alloc):]) {
-			t.Fatalf("%s: nodeOrders[%d] extra tail not ascending: %v", label, i, seq[len(alloc):])
 		}
 	}
 }
@@ -997,11 +984,12 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		if err := json.Unmarshal([]byte(fixture), &m); err != nil {
 			t.Fatal(err)
 		}
-		// The recorded orders are no longer replayed: production iterates
-		// ascending ids (lua-residue.md T1). Prove the derivation faithful
-		// against every dump instead.
-		assertOrdersSorted(t, variant, decodeAllocOrders(allocOrders), decodeAllocOrders(nodeOrders))
-		assertOrdersSorted(t, variant+" (mirage)", decodeAllocOrders(mirageAllocOrders), decodeAllocOrders(mirageNodeOrders))
+		// The recorded orders are not replayed: production walks ascending
+		// ids, the dump holds the reference's own order, and the state they
+		// produce is compared as a multiset. Only the recording's shape is
+		// checked here.
+		assertOrdersConsistent(t, variant, decodeAllocOrders(allocOrders), decodeAllocOrders(nodeOrders))
+		assertOrdersConsistent(t, variant+" (mirage)", decodeAllocOrders(mirageAllocOrders), decodeAllocOrders(mirageNodeOrders))
 		replay := &calc.ReplayInput{}
 		in := decodeCalcFixture(m)
 		// The dumped name->node maps back the lookup for a pure fixture

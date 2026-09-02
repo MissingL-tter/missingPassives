@@ -1,6 +1,6 @@
 # Later — deferred items and reference quirks
 
-Three lists that outlive the 2026-08-29 Lua remodel
+Four lists that outlive the 2026-08-29 Lua remodel
 (`.claude/documentation/deprecated/go-remodel-plan.md`):
 
 1. **Kept Lua-derived code** — production code that reproduces the
@@ -11,6 +11,9 @@ Three lists that outlive the 2026-08-29 Lua remodel
    comparison stops being the contract.
 3. **Order enforced but unproven** — sorts a comparison pins without anyone
    having shown the order matters.
+4. **A harness normalisation whose cause is not pinned** — the one place
+   the dump still reorders a numeric-keyed table, on measurement rather
+   than understanding, with the experiment that would settle it.
 
 None of these is work queued. All are things to revisit when the archive
 is deleted, or when a behaviour here turns out to matter.
@@ -301,3 +304,37 @@ regenerates from the GGPK and costs ~98s, and it only means anything when
 the exporter or the game files change. The consequence to remember: a CLEAN
 result for anything in `export/` from a default run is not evidence. Run
 with `MP_EXPORT=1` before drawing a conclusion about export ordering.
+
+## 4. A harness normalisation whose cause is not pinned (2026-09-01)
+
+`tools/dump_calc.lua:306` rebuilds `env.extraRadiusNodeList` with its keys
+inserted ascending before the real perform's node walk. It is the only
+numeric-keyed table the harness still normalises, and it is normalised on
+measurement rather than on understanding.
+
+**What is known.** With the harness's numeric-key sort removed, two full
+regenerations of all 49 dumps agreed on every `allocOrders` (98 of 98) and
+disagreed on 44 `nodeOrders` - always the second walk (`finishJewels`), the
+alloc prefix intact, the extra-radius tail the same set, the two runs
+agreeing for the first ~13 tail entries and diverging after. That is a
+table whose hash layout differs per process while its contents do not. Ruled
+out: `tree.nodes` is number-keyed and a socket's `nodesInRadius` iterates
+identically across plain-luajit processes; the slot loop feeding it is
+`ipairs` over an array; the second populating site (`CalcSetup.lua:823`) is
+the same shape. All 60 downstream `*Dbs` differences were permutations, and
+the differential passed against either regeneration.
+
+**What is not known.** Why the layout differs. Candidates not yet tested:
+the table is reused across walks via `wipeTable` (`CalcSetup.lua:256,433`),
+so its capacity and tombstone history come from the load-time walk, which
+runs under the app's own `calcs` instance - loaded by HeadlessWrapper before
+the harness's override - and may see a per-process string-keyed iteration
+somewhere the Calc-scoped `sortedPairs` never reaches.
+
+**How to settle it.** Hook the population sites, print the insertion
+sequence and the resulting `rawPairs` order across two processes for one of
+the 22 builds (`arctotem`, `toad`, `cocuser`...). If the insertion sequence
+is identical and only the layout differs, the reuse/tombstone hypothesis is
+right and the rebuild is the correct fix. If the insertion sequence differs,
+find the string-keyed iteration upstream and normalise THAT instead - it
+would be a smaller and more honest modification of the referee.

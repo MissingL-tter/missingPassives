@@ -47,12 +47,20 @@ end
 local canon = dofile("../../tools/canon.lua")
 
 -- The calc modules localize `pairs` at load time, so overriding the global
--- BEFORE LoadModule scopes a deterministic iteration order to exactly the
--- Calc* modules: numeric keys ascending, then string keys ascending, then
--- other (table) keys in raw next() order. The Go replay mirrors the same
--- order wherever it iterates these maps. Documented divergence from the
--- vanilla app (whose hash order is random per process anyway); this also
--- makes the dumps byte-stable across runs.
+-- BEFORE LoadModule scopes this to exactly the Calc* modules. It exists to
+-- make the dump reproducible, and normalises ONLY what LuaJIT itself does
+-- not keep stable across processes:
+--   numeric keys : left in LuaJIT's own next() order. That order is stable
+--                  per process (measured 2026-09-01: identical across runs,
+--                  and not ascending), so it is real reference behaviour
+--                  and is recorded as-is. It used to be sorted here, which
+--                  meant the dump never held PoB's actual node order.
+--   string keys  : sorted ascending. LuaJIT randomises string hashing per
+--                  process, so there is no stable order to record.
+--   table keys   : see below.
+-- Numeric keys come first, then strings, then tables; real pairs() would
+-- interleave hash-part numerics with strings, but string order is already
+-- invented, so that boundary carries no information either way.
 local rawPairs = pairs
 local function sortedPairs(t)
 	local numKeys, strKeys, otherKeys = {}, {}, {}
@@ -66,7 +74,6 @@ local function sortedPairs(t)
 			otherKeys[#otherKeys + 1] = k
 		end
 	end
-	table.sort(numKeys)
 	table.sort(strKeys)
 	-- Table keys are sets of objects (env.flasks, env.tinctures): their
 	-- pairs() order is LuaJIT hash order over addresses, i.e. random per
@@ -295,6 +302,28 @@ calcs.buildModListForNodeList = function(env, nodeList, finishJewels)
 	end
 	if recordedNodeSeqs then
 		recordedNodeSeqs[#recordedNodeSeqs + 1] = {}
+	end
+	-- env.extraRadiusNodeList is the one numeric-keyed table whose pairs()
+	-- order is NOT reproducible across processes under this harness
+	-- (measured 2026-09-01: 44 of 98 finishJewels walks differed between two
+	-- full regenerations - same key set, alloc prefix intact, order diverging
+	-- part-way through the tail, i.e. the table's hash layout differs, not
+	-- its contents). allocNodes, by contrast, was identical in all 98. The
+	-- cause is upstream of the Calc modules and is not pinned (later.md).
+	-- Rebuild it with keys inserted ascending so LuaJIT lays it out the same
+	-- way every run. This is a referee modification and is listed as such
+	-- in knowledge.md 4.2; it normalises layout, not membership.
+	if finishJewels and env.extraRadiusNodeList and next(env.extraRadiusNodeList) then
+		local ids = {}
+		for id in rawPairs(env.extraRadiusNodeList) do
+			ids[#ids + 1] = id
+		end
+		table.sort(ids)
+		local rebuilt = {}
+		for _, id in ipairs(ids) do
+			rebuilt[id] = env.extraRadiusNodeList[id]
+		end
+		env.extraRadiusNodeList = rebuilt
 	end
 	return origBuildModListForNodeList(env, nodeList, finishJewels)
 end
