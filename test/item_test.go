@@ -3,7 +3,7 @@ package test
 // The item-model differential: parse every corpus build's <Item> nodes
 // natively (item.LoadSaved over the raw text) and byte-compare each parsed
 // item's fixture projection against the archive dump's itemsTab.items
-// (tools/dump_calc.lua itemFixture). The dump is pure reference here: the
+// (tools/dump_build.lua itemFixture). The dump is pure reference here: the
 // input is the build XML itself.
 
 import (
@@ -96,14 +96,14 @@ func TestItemParseAgainstReference(t *testing.T) {
 	manifest := readManifest(t)
 	only := os.Getenv("MP_ONLY_ITEM")
 	compared, builds := 0, 0
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
 	sort.Strings(dumpPaths)
 	for _, path := range dumpPaths {
 		name := filepath.Base(path)
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(name, "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(name, "build_"), ".jsonl")
 		if only != "" && buildKey != only {
 			continue
 		}

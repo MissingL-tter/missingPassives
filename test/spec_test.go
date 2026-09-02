@@ -58,7 +58,7 @@ type xmlBuildTree struct {
 	} `xml:"Tree"`
 }
 
-// specNodeFixture mirrors dump_calc.lua's nodeFixture projection.
+// specNodeFixture mirrors dump_build.lua's nodeFixture projection.
 type specNodeFixture struct {
 	ID                   float64          `lua:"id"`
 	Type                 string           `lua:"type"`
@@ -207,7 +207,7 @@ func treeNodeFixtureOf(n *tree.Node) *specNodeFixture {
 func TestSpecAgainstReference(t *testing.T) {
 	loadData(t)
 	manifest := readManifest(t)
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
@@ -215,7 +215,7 @@ func TestSpecAgainstReference(t *testing.T) {
 	only := os.Getenv("MP_ONLY_SPEC")
 	comparedBuilds, nodesCompared := 0, 0
 	for _, path := range dumpPaths {
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "build_"), ".jsonl")
 		if only != "" && buildKey != only {
 			continue
 		}

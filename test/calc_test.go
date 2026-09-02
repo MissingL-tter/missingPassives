@@ -17,9 +17,9 @@ import (
 	"github.com/MissingL-tter/missingPassives/test/luacanon"
 )
 
-// calcDumpFiles lists the per-corpus archive dumps tools/dump_calc.lua
+// buildDumpFiles lists the per-corpus archive dumps tools/dump_build.lua
 // writes (one process per source build).
-var calcDumpFiles = []string{"calc_empty.jsonl", "calc_coc.jsonl", "calc_zombies.jsonl", "calc_lowlife.jsonl", "calc_spectre.jsonl", "calc_cyclone.jsonl", "calc_rf.jsonl", "calc_holyrelic.jsonl", "calc_eblade.jsonl"}
+var buildDumpFiles = []string{"build_empty.jsonl", "build_coc.jsonl", "build_zombies.jsonl", "build_lowlife.jsonl", "build_spectre.jsonl", "build_cyclone.jsonl", "build_rf.jsonl", "build_holyrelic.jsonl", "build_eblade.jsonl"}
 
 func decodeCalcModList(v any) []*modparser.Mod {
 	m := v.(map[string]any)
@@ -407,7 +407,7 @@ func forEachCalcRecord(t *testing.T, path string, fn func(k, c string)) {
 // initEnv stages depend on fails here, before any calc logic runs.
 func TestCalcFixtureEcho(t *testing.T) {
 	fixtures := 0
-	for _, name := range calcDumpFiles {
+	for _, name := range buildDumpFiles {
 		path := filepath.Join("testdata", name)
 		if _, err := os.Stat(path); err != nil {
 			t.Skipf("archive dump not present: %v", err)
@@ -435,7 +435,7 @@ func TestCalcFixtureEcho(t *testing.T) {
 	t.Logf("calc fixture echo: %d fixtures byte-identical", fixtures)
 }
 
-// dbShadow re-canonicalises one DB the way dump_calc.lua's dbState does.
+// dbShadow re-canonicalises one DB the way dump_build.lua's dbState does.
 type dbShadow struct {
 	Mods        map[string][]*modparser.Mod `lua:"mods"`
 	Conditions  modstore.Conditions         `lua:"conditions"`
@@ -452,7 +452,7 @@ func shadowOf(db *modstore.DB) dbShadow {
 	return dbShadow{Mods: db.Mods, Conditions: db.Conditions, Multipliers: db.Multipliers}
 }
 
-// cfgScalars mirrors dump_calc.lua's scalars() over a skill Cfg.
+// cfgScalars mirrors dump_build.lua's scalars() over a skill Cfg.
 func cfgScalars(cfg *modstore.Cfg) map[string]any {
 	m := map[string]any{}
 	if cfg.Flags != nil {
@@ -601,7 +601,7 @@ func decodeAllocOrders(c string) [][]int {
 // continues with the extra-radius nodes. It says nothing about the order
 // WITHIN a walk. The dump records the reference's real numeric-key order
 // (LuaJIT's, which is stable per process and not ascending - it used to be
-// sorted by the harness, tools/dump_calc.lua:49); production walks ascending
+// sorted by the harness, tools/dump_build.lua:49); production walks ascending
 // because some fixed order is needed and none observable depends on which
 // (knowledge.md 4.6). The two orders differ and are compared as multisets.
 func assertOrdersConsistent(t *testing.T, label string, allocOrders, nodeOrders [][]int) {
@@ -684,151 +684,151 @@ func decodeGrantedPassiveNodes(c string) map[string]*calc.NodeInput {
 func TestCalcInitEnvAgainstReference(t *testing.T) {
 	loadData(t)
 	variants := map[string]string{ // variant -> dump file
-		"empty":                 "calc_empty.jsonl",
-		"coc.treeonly":          "calc_coc.jsonl",
-		"coc.noskills":          "calc_coc.jsonl",
-		"coc.full":              "calc_coc.jsonl",
-		"zombies.treeonly":      "calc_zombies.jsonl",
-		"zombies.noskills":      "calc_zombies.jsonl",
-		"zombies.full":          "calc_zombies.jsonl",
-		"lowlife.treeonly":      "calc_lowlife.jsonl",
-		"lowlife.noskills":      "calc_lowlife.jsonl",
-		"lowlife.full":          "calc_lowlife.jsonl",
-		"spectre.treeonly":      "calc_spectre.jsonl",
-		"spectre.noskills":      "calc_spectre.jsonl",
-		"spectre.full":          "calc_spectre.jsonl",
-		"cyclone.treeonly":      "calc_cyclone.jsonl",
-		"cyclone.noskills":      "calc_cyclone.jsonl",
-		"cyclone.full":          "calc_cyclone.jsonl",
-		"rf.treeonly":           "calc_rf.jsonl",
-		"rf.noskills":           "calc_rf.jsonl",
-		"rf.full":               "calc_rf.jsonl",
-		"holyrelic.treeonly":    "calc_holyrelic.jsonl",
-		"holyrelic.noskills":    "calc_holyrelic.jsonl",
-		"holyrelic.full":        "calc_holyrelic.jsonl",
-		"eblade.treeonly":       "calc_eblade.jsonl",
-		"eblade.noskills":       "calc_eblade.jsonl",
-		"eblade.full":           "calc_eblade.jsonl",
-		"cocuser.treeonly":      "calc_cocuser.jsonl",
-		"cocuser.noskills":      "calc_cocuser.jsonl",
-		"cocuser.full":          "calc_cocuser.jsonl",
-		"dualstrike.treeonly":   "calc_dualstrike.jsonl",
-		"dualstrike.noskills":   "calc_dualstrike.jsonl",
-		"dualstrike.full":       "calc_dualstrike.jsonl",
-		"bfbb.treeonly":         "calc_bfbb.jsonl",
-		"bfbb.noskills":         "calc_bfbb.jsonl",
-		"bfbb.full":             "calc_bfbb.jsonl",
-		"ballista.treeonly":     "calc_ballista.jsonl",
-		"ballista.noskills":     "calc_ballista.jsonl",
-		"ballista.full":         "calc_ballista.jsonl",
-		"trap.treeonly":         "calc_trap.jsonl",
-		"trap.noskills":         "calc_trap.jsonl",
-		"trap.full":             "calc_trap.jsonl",
-		"mirage.treeonly":       "calc_mirage.jsonl",
-		"mirage.noskills":       "calc_mirage.jsonl",
-		"mirage.full":           "calc_mirage.jsonl",
-		"exparrow.treeonly":     "calc_exparrow.jsonl",
-		"exparrow.noskills":     "calc_exparrow.jsonl",
-		"exparrow.full":         "calc_exparrow.jsonl",
-		"blight.treeonly":       "calc_blight.jsonl",
-		"blight.noskills":       "calc_blight.jsonl",
-		"blight.full":           "calc_blight.jsonl",
-		"cwc.treeonly":          "calc_cwc.jsonl",
-		"cwc.noskills":          "calc_cwc.jsonl",
-		"cwc.full":              "calc_cwc.jsonl",
-		"poetpen.treeonly":      "calc_poetpen.jsonl",
-		"poetpen.noskills":      "calc_poetpen.jsonl",
-		"poetpen.full":          "calc_poetpen.jsonl",
-		"cospri.treeonly":       "calc_cospri.jsonl",
-		"cospri.noskills":       "calc_cospri.jsonl",
-		"cospri.full":           "calc_cospri.jsonl",
-		"saviour.treeonly":      "calc_saviour.jsonl",
-		"saviour.noskills":      "calc_saviour.jsonl",
-		"saviour.full":          "calc_saviour.jsonl",
-		"slinger.treeonly":      "calc_slinger.jsonl",
-		"slinger.noskills":      "calc_slinger.jsonl",
-		"slinger.full":          "calc_slinger.jsonl",
-		"mine.treeonly":         "calc_mine.jsonl",
-		"mine.noskills":         "calc_mine.jsonl",
-		"mine.full":             "calc_mine.jsonl",
-		"brand.treeonly":        "calc_brand.jsonl",
-		"brand.noskills":        "calc_brand.jsonl",
-		"brand.full":            "calc_brand.jsonl",
-		"absolution.treeonly":   "calc_absolution.jsonl",
-		"absolution.noskills":   "calc_absolution.jsonl",
-		"absolution.full":       "calc_absolution.jsonl",
-		"corrupting.treeonly":   "calc_corrupting.jsonl",
-		"corrupting.noskills":   "calc_corrupting.jsonl",
-		"corrupting.full":       "calc_corrupting.jsonl",
-		"fissure.treeonly":      "calc_fissure.jsonl",
-		"fissure.noskills":      "calc_fissure.jsonl",
-		"fissure.full":          "calc_fissure.jsonl",
-		"tornado.treeonly":      "calc_tornado.jsonl",
-		"tornado.noskills":      "calc_tornado.jsonl",
-		"tornado.full":          "calc_tornado.jsonl",
-		"toxicrain.treeonly":    "calc_toxicrain.jsonl",
-		"toxicrain.noskills":    "calc_toxicrain.jsonl",
-		"toxicrain.full":        "calc_toxicrain.jsonl",
-		"moltenstrike.treeonly": "calc_moltenstrike.jsonl",
-		"moltenstrike.noskills": "calc_moltenstrike.jsonl",
-		"moltenstrike.full":     "calc_moltenstrike.jsonl",
-		"earthquake.treeonly":   "calc_earthquake.jsonl",
-		"earthquake.noskills":   "calc_earthquake.jsonl",
-		"earthquake.full":       "calc_earthquake.jsonl",
-		"arctotem.treeonly":     "calc_arctotem.jsonl",
-		"arctotem.noskills":     "calc_arctotem.jsonl",
-		"arctotem.full":         "calc_arctotem.jsonl",
-		"doomblast.treeonly":    "calc_doomblast.jsonl",
-		"doomblast.noskills":    "calc_doomblast.jsonl",
-		"doomblast.full":        "calc_doomblast.jsonl",
-		"callpyre.treeonly":     "calc_callpyre.jsonl",
-		"callpyre.noskills":     "calc_callpyre.jsonl",
-		"callpyre.full":         "calc_callpyre.jsonl",
-		"tempest.treeonly":      "calc_tempest.jsonl",
-		"tempest.noskills":      "calc_tempest.jsonl",
-		"tempest.full":          "calc_tempest.jsonl",
-		"voidstorm.treeonly":    "calc_voidstorm.jsonl",
-		"voidstorm.noskills":    "calc_voidstorm.jsonl",
-		"voidstorm.full":        "calc_voidstorm.jsonl",
-		"shockwave.treeonly":    "calc_shockwave.jsonl",
-		"shockwave.noskills":    "calc_shockwave.jsonl",
-		"shockwave.full":        "calc_shockwave.jsonl",
-		"toad.treeonly":         "calc_toad.jsonl",
-		"toad.noskills":         "calc_toad.jsonl",
-		"toad.full":             "calc_toad.jsonl",
-		"trig1.treeonly":        "calc_trig1.jsonl",
-		"trig1.noskills":        "calc_trig1.jsonl",
-		"trig1.full":            "calc_trig1.jsonl",
-		"trig2.treeonly":        "calc_trig2.jsonl",
-		"trig2.noskills":        "calc_trig2.jsonl",
-		"trig2.full":            "calc_trig2.jsonl",
-		"trig3.treeonly":        "calc_trig3.jsonl",
-		"trig3.noskills":        "calc_trig3.jsonl",
-		"trig3.full":            "calc_trig3.jsonl",
-		"trig4.treeonly":        "calc_trig4.jsonl",
-		"trig4.noskills":        "calc_trig4.jsonl",
-		"trig4.full":            "calc_trig4.jsonl",
-		"mjolner.treeonly":      "calc_mjolner.jsonl",
-		"mjolner.noskills":      "calc_mjolner.jsonl",
-		"mjolner.full":          "calc_mjolner.jsonl",
-		"stages.treeonly":       "calc_stages.jsonl",
-		"stages.noskills":       "calc_stages.jsonl",
-		"stages.full":           "calc_stages.jsonl",
-		"doomexp.treeonly":      "calc_doomexp.jsonl",
-		"doomexp.noskills":      "calc_doomexp.jsonl",
-		"doomexp.full":          "calc_doomexp.jsonl",
-		"doomhex.treeonly":      "calc_doomhex.jsonl",
-		"doomhex.noskills":      "calc_doomhex.jsonl",
-		"doomhex.full":          "calc_doomhex.jsonl",
-		"misc1.treeonly":        "calc_misc1.jsonl",
-		"misc1.noskills":        "calc_misc1.jsonl",
-		"misc1.full":            "calc_misc1.jsonl",
-		"misc2.treeonly":        "calc_misc2.jsonl",
-		"misc2.noskills":        "calc_misc2.jsonl",
-		"misc2.full":            "calc_misc2.jsonl",
-		"misc3.treeonly":        "calc_misc3.jsonl",
-		"misc3.noskills":        "calc_misc3.jsonl",
-		"misc3.full":            "calc_misc3.jsonl",
+		"empty":                 "build_empty.jsonl",
+		"coc.treeonly":          "build_coc.jsonl",
+		"coc.noskills":          "build_coc.jsonl",
+		"coc.full":              "build_coc.jsonl",
+		"zombies.treeonly":      "build_zombies.jsonl",
+		"zombies.noskills":      "build_zombies.jsonl",
+		"zombies.full":          "build_zombies.jsonl",
+		"lowlife.treeonly":      "build_lowlife.jsonl",
+		"lowlife.noskills":      "build_lowlife.jsonl",
+		"lowlife.full":          "build_lowlife.jsonl",
+		"spectre.treeonly":      "build_spectre.jsonl",
+		"spectre.noskills":      "build_spectre.jsonl",
+		"spectre.full":          "build_spectre.jsonl",
+		"cyclone.treeonly":      "build_cyclone.jsonl",
+		"cyclone.noskills":      "build_cyclone.jsonl",
+		"cyclone.full":          "build_cyclone.jsonl",
+		"rf.treeonly":           "build_rf.jsonl",
+		"rf.noskills":           "build_rf.jsonl",
+		"rf.full":               "build_rf.jsonl",
+		"holyrelic.treeonly":    "build_holyrelic.jsonl",
+		"holyrelic.noskills":    "build_holyrelic.jsonl",
+		"holyrelic.full":        "build_holyrelic.jsonl",
+		"eblade.treeonly":       "build_eblade.jsonl",
+		"eblade.noskills":       "build_eblade.jsonl",
+		"eblade.full":           "build_eblade.jsonl",
+		"cocuser.treeonly":      "build_cocuser.jsonl",
+		"cocuser.noskills":      "build_cocuser.jsonl",
+		"cocuser.full":          "build_cocuser.jsonl",
+		"dualstrike.treeonly":   "build_dualstrike.jsonl",
+		"dualstrike.noskills":   "build_dualstrike.jsonl",
+		"dualstrike.full":       "build_dualstrike.jsonl",
+		"bfbb.treeonly":         "build_bfbb.jsonl",
+		"bfbb.noskills":         "build_bfbb.jsonl",
+		"bfbb.full":             "build_bfbb.jsonl",
+		"ballista.treeonly":     "build_ballista.jsonl",
+		"ballista.noskills":     "build_ballista.jsonl",
+		"ballista.full":         "build_ballista.jsonl",
+		"trap.treeonly":         "build_trap.jsonl",
+		"trap.noskills":         "build_trap.jsonl",
+		"trap.full":             "build_trap.jsonl",
+		"mirage.treeonly":       "build_mirage.jsonl",
+		"mirage.noskills":       "build_mirage.jsonl",
+		"mirage.full":           "build_mirage.jsonl",
+		"exparrow.treeonly":     "build_exparrow.jsonl",
+		"exparrow.noskills":     "build_exparrow.jsonl",
+		"exparrow.full":         "build_exparrow.jsonl",
+		"blight.treeonly":       "build_blight.jsonl",
+		"blight.noskills":       "build_blight.jsonl",
+		"blight.full":           "build_blight.jsonl",
+		"cwc.treeonly":          "build_cwc.jsonl",
+		"cwc.noskills":          "build_cwc.jsonl",
+		"cwc.full":              "build_cwc.jsonl",
+		"poetpen.treeonly":      "build_poetpen.jsonl",
+		"poetpen.noskills":      "build_poetpen.jsonl",
+		"poetpen.full":          "build_poetpen.jsonl",
+		"cospri.treeonly":       "build_cospri.jsonl",
+		"cospri.noskills":       "build_cospri.jsonl",
+		"cospri.full":           "build_cospri.jsonl",
+		"saviour.treeonly":      "build_saviour.jsonl",
+		"saviour.noskills":      "build_saviour.jsonl",
+		"saviour.full":          "build_saviour.jsonl",
+		"slinger.treeonly":      "build_slinger.jsonl",
+		"slinger.noskills":      "build_slinger.jsonl",
+		"slinger.full":          "build_slinger.jsonl",
+		"mine.treeonly":         "build_mine.jsonl",
+		"mine.noskills":         "build_mine.jsonl",
+		"mine.full":             "build_mine.jsonl",
+		"brand.treeonly":        "build_brand.jsonl",
+		"brand.noskills":        "build_brand.jsonl",
+		"brand.full":            "build_brand.jsonl",
+		"absolution.treeonly":   "build_absolution.jsonl",
+		"absolution.noskills":   "build_absolution.jsonl",
+		"absolution.full":       "build_absolution.jsonl",
+		"corrupting.treeonly":   "build_corrupting.jsonl",
+		"corrupting.noskills":   "build_corrupting.jsonl",
+		"corrupting.full":       "build_corrupting.jsonl",
+		"fissure.treeonly":      "build_fissure.jsonl",
+		"fissure.noskills":      "build_fissure.jsonl",
+		"fissure.full":          "build_fissure.jsonl",
+		"tornado.treeonly":      "build_tornado.jsonl",
+		"tornado.noskills":      "build_tornado.jsonl",
+		"tornado.full":          "build_tornado.jsonl",
+		"toxicrain.treeonly":    "build_toxicrain.jsonl",
+		"toxicrain.noskills":    "build_toxicrain.jsonl",
+		"toxicrain.full":        "build_toxicrain.jsonl",
+		"moltenstrike.treeonly": "build_moltenstrike.jsonl",
+		"moltenstrike.noskills": "build_moltenstrike.jsonl",
+		"moltenstrike.full":     "build_moltenstrike.jsonl",
+		"earthquake.treeonly":   "build_earthquake.jsonl",
+		"earthquake.noskills":   "build_earthquake.jsonl",
+		"earthquake.full":       "build_earthquake.jsonl",
+		"arctotem.treeonly":     "build_arctotem.jsonl",
+		"arctotem.noskills":     "build_arctotem.jsonl",
+		"arctotem.full":         "build_arctotem.jsonl",
+		"doomblast.treeonly":    "build_doomblast.jsonl",
+		"doomblast.noskills":    "build_doomblast.jsonl",
+		"doomblast.full":        "build_doomblast.jsonl",
+		"callpyre.treeonly":     "build_callpyre.jsonl",
+		"callpyre.noskills":     "build_callpyre.jsonl",
+		"callpyre.full":         "build_callpyre.jsonl",
+		"tempest.treeonly":      "build_tempest.jsonl",
+		"tempest.noskills":      "build_tempest.jsonl",
+		"tempest.full":          "build_tempest.jsonl",
+		"voidstorm.treeonly":    "build_voidstorm.jsonl",
+		"voidstorm.noskills":    "build_voidstorm.jsonl",
+		"voidstorm.full":        "build_voidstorm.jsonl",
+		"shockwave.treeonly":    "build_shockwave.jsonl",
+		"shockwave.noskills":    "build_shockwave.jsonl",
+		"shockwave.full":        "build_shockwave.jsonl",
+		"toad.treeonly":         "build_toad.jsonl",
+		"toad.noskills":         "build_toad.jsonl",
+		"toad.full":             "build_toad.jsonl",
+		"trig1.treeonly":        "build_trig1.jsonl",
+		"trig1.noskills":        "build_trig1.jsonl",
+		"trig1.full":            "build_trig1.jsonl",
+		"trig2.treeonly":        "build_trig2.jsonl",
+		"trig2.noskills":        "build_trig2.jsonl",
+		"trig2.full":            "build_trig2.jsonl",
+		"trig3.treeonly":        "build_trig3.jsonl",
+		"trig3.noskills":        "build_trig3.jsonl",
+		"trig3.full":            "build_trig3.jsonl",
+		"trig4.treeonly":        "build_trig4.jsonl",
+		"trig4.noskills":        "build_trig4.jsonl",
+		"trig4.full":            "build_trig4.jsonl",
+		"mjolner.treeonly":      "build_mjolner.jsonl",
+		"mjolner.noskills":      "build_mjolner.jsonl",
+		"mjolner.full":          "build_mjolner.jsonl",
+		"stages.treeonly":       "build_stages.jsonl",
+		"stages.noskills":       "build_stages.jsonl",
+		"stages.full":           "build_stages.jsonl",
+		"doomexp.treeonly":      "build_doomexp.jsonl",
+		"doomexp.noskills":      "build_doomexp.jsonl",
+		"doomexp.full":          "build_doomexp.jsonl",
+		"doomhex.treeonly":      "build_doomhex.jsonl",
+		"doomhex.noskills":      "build_doomhex.jsonl",
+		"doomhex.full":          "build_doomhex.jsonl",
+		"misc1.treeonly":        "build_misc1.jsonl",
+		"misc1.noskills":        "build_misc1.jsonl",
+		"misc1.full":            "build_misc1.jsonl",
+		"misc2.treeonly":        "build_misc2.jsonl",
+		"misc2.noskills":        "build_misc2.jsonl",
+		"misc2.full":            "build_misc2.jsonl",
+		"misc3.treeonly":        "build_misc3.jsonl",
+		"misc3.noskills":        "build_misc3.jsonl",
+		"misc3.full":            "build_misc3.jsonl",
 	}
 	checked := 0
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
@@ -1002,7 +1002,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 		// parsed build (MP_FIXTURE=1 reverts to the pure fixture replay
 		// while diagnosing whether a divergence is native- or calc-side).
 		if os.Getenv("MP_FIXTURE") == "" {
-			buildKey := strings.TrimSuffix(strings.TrimPrefix(file, "calc_"), ".jsonl")
+			buildKey := strings.TrimSuffix(strings.TrimPrefix(file, "build_"), ".jsonl")
 			applyNativeBuild(t, buildKey, variant, in)
 		}
 		// GlobalCache is computed, not fed: calcs.buildOutput runs a whole
@@ -1182,7 +1182,7 @@ func checkCalcVariant(t *testing.T, variant, file string, checkedTotal *int) {
 // TestCalcFixtureEchoDetectsCorruption is the negative control: a mutated
 // input must stop matching the archive canon.
 func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
-	path := filepath.Join("testdata", "calc_coc.jsonl")
+	path := filepath.Join("testdata", "build_coc.jsonl")
 	if _, err := os.Stat(path); err != nil {
 		t.Skipf("archive dump not present: %v", err)
 	}
@@ -1225,7 +1225,7 @@ func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
 	}
 }
 
-// cacheShadow mirrors dump_calc.lua's cacheState: the scalar headline fields
+// cacheShadow mirrors dump_build.lua's cacheState: the scalar headline fields
 // cacheData stored, plus scalar slices taken THROUGH the entry's live env at
 // snapshot time -- which is why they show stages that ran after the entry was
 // cached.

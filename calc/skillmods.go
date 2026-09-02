@@ -1,7 +1,7 @@
 // Port of CalcActiveSkill.lua buildActiveSkillModList (+ getWeaponFlags,
 // mergeSkillInstanceMods/mergeLevelMod). Stat iteration is SORTED on both
 // sides: the reference's pairs(stats) order is LuaJIT string-hash-random
-// per process, so tools/dump_calc.lua replaces mergeSkillInstanceMods with
+// per process, so tools/dump_build.lua replaces mergeSkillInstanceMods with
 // a sorted-stats replica — a documented divergence from the vanilla app.
 // Minion creation panics (needs the minion stage + a minion corpus).
 package calc

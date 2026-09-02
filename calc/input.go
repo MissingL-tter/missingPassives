@@ -1,6 +1,6 @@
 // Package calc ports Modules/Calcs + CalcSetup + CalcPerform + CalcTools
 // (and the CalcActiveSkill spine initEnv needs). The archive comparison
-// replays fixtures dumped by tools/dump_calc.lua and diffs the resulting
+// replays fixtures dumped by tools/dump_build.lua and diffs the resulting
 // mod databases and outputs checkpoint by checkpoint.
 package calc
 
@@ -14,7 +14,7 @@ import (
 )
 
 // BuildInput is the fixture boundary: everything initEnv reads from the
-// Lua `build` object, in the shapes tools/dump_calc.lua emits. The lua
+// Lua `build` object, in the shapes tools/dump_build.lua emits. The lua
 // tags make luacanon.Encode reproduce the dump's fixture canon byte for
 // byte (the input-echo check in test/calc_test.go).
 type BuildInput struct {

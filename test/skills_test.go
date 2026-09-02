@@ -85,7 +85,7 @@ func gemTable(g *skills.Gem) map[string]any {
 func TestSkillsTabAgainstReference(t *testing.T) {
 	loadData(t)
 	manifest := readManifest(t)
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
@@ -93,7 +93,7 @@ func TestSkillsTabAgainstReference(t *testing.T) {
 	only := os.Getenv("MP_ONLY_SKILLS")
 	groupsCompared, gemsCompared, builds := 0, 0, 0
 	for _, path := range dumpPaths {
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "build_"), ".jsonl")
 		if only != "" && buildKey != only {
 			continue
 		}

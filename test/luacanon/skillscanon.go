@@ -1,6 +1,6 @@
 package luacanon
 
-// Socket groups and gems render as the flat scalar tables dump_calc.lua's
+// Socket groups and gems render as the flat scalar tables dump_build.lua's
 // skillsTab fixture held (the reference's gemInstance/socketGroup keys),
 // and decode back from them. Absent fields are absent keys; a plain string
 // "" or number 0 that the reference never stores is absent too.

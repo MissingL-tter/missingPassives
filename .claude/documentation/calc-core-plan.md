@@ -6,7 +6,7 @@ throughout the document do not, and `knowledge.md` carries the current form:
 
 | this document says | current |
 |---|---|
-| the dump's `allocOrders`/`nodeOrders`/`mirage*Orders` are replayed because LuaJIT hash order is not derivable in Go | false premise: `dump_calc.lua` installs `pairs = sortedPairs` before the Calc modules load, so every recorded order is ascending node ids. The whole replay machinery is deleted; production calls `sortedIntKeys` and the test asserts each recorded order is ascending |
+| the dump's `allocOrders`/`nodeOrders`/`mirage*Orders` are replayed because LuaJIT hash order is not derivable in Go | false premise: `dump_build.lua` installs `pairs = sortedPairs` before the Calc modules load, so every recorded order is ascending node ids. The whole replay machinery is deleted; production calls `sortedIntKeys` and the test asserts each recorded order is ascending |
 | `modstore.Externals` (GemIsType, GetGameIdFromGemName) wired by InitEnv | `modstore.Resolver`, an interface on the actor |
 | `modstore.Conditions` widened to `map[string]any` for class-name strings | typed `Conditions map[string]CondValue` (bool or class name) |
 | `Cfg.SkillStats` widened to `map[string]any` | typed `modstore.Output` (absent / false / value are three states) |
@@ -52,7 +52,7 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
 
 ## Setup stage (initEnv)
 
-- `tools/dump_calc.lua`: fixture + allocOrder + dbs + per-stage records per variant
+- `tools/dump_build.lua`: fixture + allocOrder + dbs + per-stage records per variant
   (variant names: `empty` | `<key>.full/.noskills/.treeonly`). Dumps must be
   byte-stable across processes — ALWAYS verify a new or re-dump twice in separate
   processes and cmp; re-running the Go test cannot see a dump that is
@@ -80,7 +80,7 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
 - `calc/skillmods.go`: buildActiveSkillModList — weapon flags, skill mod/keyword flag
   sets, skillCfg construction, support-level merges, gem/quality mods, stage/mine
   multipliers, SkillData extraction, GlobalEffect→buffList separation — plus
-  mergeSkillInstanceMods/mergeLevelMod with SORTED stat iteration (dump_calc.lua
+  mergeSkillInstanceMods/mergeLevelMod with SORTED stat iteration (dump_build.lua
   replaces the Lua function with a sorted-stats replica because pairs(stats) is
   string-hash-random per process; documented divergence).
 - statMap lookups go through env.statMapLookup: the skillStatMapMeta lazy copy via
@@ -375,7 +375,7 @@ the cache canon):
   the granted-skill support gather iterates supportLists[slotName] keyed by GROUP
   TABLES, and shared-statMap mod SOURCES are stamped last-writer-wins under
   pairs(data.skills). Settled: the sortedPairs shim orders group keys by
-  socketGroupList position (dumpBuild global), and dump_calc re-stamps shared mod
+  socketGroupList position (dumpBuild global), and dump_build re-stamps shared mod
   sources in sorted id order, mirroring dump_gamedata's reassign.
 - Every initEnv of one build yields identical alloc orders (dump-verified), so
   sub-environments replay the top env's orders, and mirageReplay falls back to them
@@ -399,7 +399,7 @@ The {uuid} limited flag is what stops self-recursion.
 From ../missingBuild (mb: 10k real ladder chars, 5.7k with stored PoB builds;
 `mb serve --detach` first). Pull:
 `mb pob-run --char <name> --reprocess --pob <repo>/.archive --dump test/corpus`
-then `luajit tools/dump_calc.lua <key> ../../test/corpus/<name>.xml`. The dump's own
+then `luajit tools/dump_build.lua <key> ../../test/corpus/<name>.xml`. The dump's own
 asserts triage which branch a build needs. Guard-driven growth: pull a build for a
 panic (`mb search`), dump it, port until green. Synthetic overrides (config
 permutations) multiply coverage cheaply.
@@ -485,7 +485,7 @@ permutations) multiply coverage cheaply.
    so the backref is last-writer-wins over a random order — and the lazy statMap
    copies then stamp the winner as the mod source even for the other skill. Two dumps
    of the trap build differed in exactly one byte range. Fixed by settling it in
-   sorted id order in dump_calc.lua (matching dump_gamedata's reassign pass) and
+   sorted id order in dump_build.lua (matching dump_gamedata's reassign pass) and
    modelling it in Go as GrantedEffect.StatMapOwner, which LazyStatMapCopy stamps
    with.
 2. Fixtures were serialised at %.14g, which is lossy. The cospri build's trigger sim
@@ -523,7 +523,7 @@ and TestGameDataAgainstReference restores it before comparing.
 ## Dump gotchas (hard-won)
 
 - HeadlessWrapper stubs `Inflate` to "" — without binding runtime/zlib1.dll the tree
-  spec SILENTLY stays a default 1-node Scion (build codes are zlib). dump_calc.lua
+  spec SILENTLY stays a default 1-node Scion (build codes are zlib). dump_build.lua
   carries the same ffi binding as cook's pob.lua.
 - `arg` is clobbered by the HeadlessWrapper boot — read arg[1]/arg[2] BEFORE dofile.
 - ModList/ModDB objects carry actor/parent backrefs — canon their array part only
@@ -562,7 +562,7 @@ Go package `calc`. Builds on: `modstore` (ModDB/ModList; NewMod = modparser.NewM
 lines, jewels.go radius funcs keyed by mod line).
 
 **Fixture boundary** (`calc.BuildInput`): everything initEnv reads from `build`,
-dumped per build by `tools/dump_calc.lua` from the loaded XML: characterLevel,
+dumped per build by `tools/dump_build.lua` from the loaded XML: characterLevel,
 classId, configEnemyLevel, curClassName, treeVersion, mainSocketGroup, classStats,
 configInput scalars, config/party mod list canons, spec (allocNodes with
 modList/keystoneMod, keystoneMap, counts, masteryTypes/tattooTypes), itemsTab (slots

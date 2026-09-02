@@ -34,7 +34,7 @@ cheap per gap):
 1. Get an env that reaches it — `mb search` for a real ladder character with
    the mod/skill, or hand-author a throwaway build in `.archive/src/Builds/`
    with just enough on it to trip the guard.
-2. Dump it (`tools/dump_calc.lua <key> <xml>`), add it to the variant map.
+2. Dump it (`tools/dump_build.lua <key> <xml>`), add it to the variant map.
 3. Write the branch, delete the guard, confirm byte-identical.
 
 A module without a runnable Lua archive dump (pure view code) states in its

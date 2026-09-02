@@ -352,7 +352,7 @@ func firstTag(m *modparser.Mod) []modparser.Tag {
 // over it are not associative, so SOME fixed order is required or the
 // result drifts run to run. Ascending is NOT the reference's order: LuaJIT
 // walks numeric keys in its own stable, non-ascending order, and the dump
-// records that as-is (tools/dump_calc.lua:49; it used to sort them, which
+// records that as-is (tools/dump_build.lua:49; it used to sort them, which
 // is where "ascending matches the dump" came from). The two sums can differ
 // in the last bits and are compared at CompareDigits, which absorbs it.
 func sortedNumKeys(m map[float64]float64) []float64 {
@@ -368,7 +368,7 @@ func sortedNumKeys(m map[float64]float64) []float64 {
 // node table. It buys determinism and nothing else: Go's map order is
 // randomised, so without it the produced order changes run to run. It is
 // NOT the reference's order - LuaJIT walks numeric keys in its own stable,
-// non-ascending order and the dump records that as-is (tools/dump_calc.lua:49).
+// non-ascending order and the dump records that as-is (tools/dump_build.lua:49).
 // The recorded and derived orders differ; the state they produce is
 // compared as a multiset, and reversing this walk moves no computed output
 // (knowledge.md 4.6).

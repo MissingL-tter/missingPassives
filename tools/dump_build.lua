@@ -1,11 +1,13 @@
--- Dumps calc-core fixtures and checkpoints for the calc port's archive
+-- Dumps one loaded build: the fixture every port stage reads from it
+-- (build, items, skills, spec, config, calc) and the calc's per-stage
+-- checkpoints, for the archive
 -- comparison. One process per corpus source (in-process build reloads keep
 -- stale state):
 --
---   luajit ../../tools/dump_calc.lua empty
---   luajit ../../tools/dump_calc.lua coc "Builds/3.29 CoC Blazing Salvo Assassin CI.xml"
+--   luajit ../../tools/dump_build.lua empty
+--   luajit ../../tools/dump_build.lua coc "Builds/3.29 CoC Blazing Salvo Assassin CI.xml"
 --
--- Run from .archive/src/. Writes test/testdata/calc_<key>.jsonl containing,
+-- Run from .archive/src/. Writes test/testdata/build_<key>.jsonl containing,
 -- per variant (full / noskills / treeonly for builds; empty standalone):
 --   <variant>.fixture - everything initEnv reads from the build
 --   <variant>.dbs     - modDB/enemyDB/itemModDB state after initEnv
@@ -339,7 +341,7 @@ calcs.buildModListForNode = function(env, node)
 	return origBuildModListForNode(env, node)
 end
 
-local out = assert(io.open("../../test/testdata/calc_" .. key .. ".jsonl", "w"))
+local out = assert(io.open("../../test/testdata/build_" .. key .. ".jsonl", "w"))
 local function emit(name, value)
 	out:write('{"k":', canon.quote(name), ',"c":', canon.quote(canon.encode(value)), "}\n")
 end
@@ -943,7 +945,7 @@ if key == "empty" then
 	runCallback("OnFrame")
 	dumpVariant("empty", build)
 else
-	assert(buildPath, "usage: dump_calc.lua <key> <build xml path>")
+	assert(buildPath, "usage: dump_build.lua <key> <build xml path>")
 	local f = assert(io.open(buildPath, "r"))
 	local xml = f:read("*a")
 	f:close()
@@ -963,4 +965,4 @@ else
 end
 
 out:close()
-print("dumped calc fixtures: " .. key)
+print("dumped build: " .. key)

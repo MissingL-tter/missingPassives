@@ -1,7 +1,7 @@
-# dump key -> build XML, for tools/dump_calc.lua. Paths are relative to
+# dump key -> build XML, for tools/dump_build.lua. Paths are relative to
 # .archive/src, which is the cwd the dump runs from. Re-dump everything:
 #   cd .archive/src && while IFS=$'\t' read -r k f; do case $k in \#*|"") continue;; esac; \
-#     luajit ../../tools/dump_calc.lua "$k" "$f"; done < ../../test/corpus/manifest.tsv
+#     luajit ../../tools/dump_build.lua "$k" "$f"; done < ../../test/corpus/manifest.tsv
 empty	
 coc	../../test/corpus/3.29 CoC Blazing Salvo Assassin CI.xml
 cocuser	../../test/corpus/3.29 CoC Blazing Salvo Assassin CI - User Edit.xml

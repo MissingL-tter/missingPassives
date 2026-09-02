@@ -26,7 +26,7 @@ import (
 func TestConfigStateAgainstReference(t *testing.T) {
 	loadData(t)
 	manifest := readManifest(t)
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
@@ -34,7 +34,7 @@ func TestConfigStateAgainstReference(t *testing.T) {
 	only := os.Getenv("MP_ONLY_CONFIG")
 	builds, compared := 0, 0
 	for _, path := range dumpPaths {
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "build_"), ".jsonl")
 		if only != "" && buildKey != only {
 			continue
 		}
@@ -132,7 +132,7 @@ func configValueEqual(got config.Value, ref any) bool {
 func TestConfigModListCoverage(t *testing.T) {
 	loadData(t)
 	manifest := readManifest(t)
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
@@ -141,7 +141,7 @@ func TestConfigModListCoverage(t *testing.T) {
 	extra := map[string]int{}
 	var want, got int
 	for _, path := range dumpPaths {
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "build_"), ".jsonl")
 		xmlRel := manifest[buildKey]
 		if xmlRel == "" {
 			continue

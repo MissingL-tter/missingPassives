@@ -307,7 +307,7 @@ with `MP_EXPORT=1` before drawing a conclusion about export ordering.
 
 ## 4. A harness normalisation whose cause is not pinned (2026-09-01)
 
-`tools/dump_calc.lua:306` rebuilds `env.extraRadiusNodeList` with its keys
+`tools/dump_build.lua:306` rebuilds `env.extraRadiusNodeList` with its keys
 inserted ascending before the real perform's node walk. It is the only
 numeric-keyed table the harness still normalises, and it is normalised on
 measurement rather than on understanding.

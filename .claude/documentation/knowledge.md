@@ -83,7 +83,7 @@ stubs the SimpleGraphic API, loads `Launch.lua`, runs `OnInit` and one
 `wipeGlobalCache()` are live. **The wrapper stubs `Inflate`/`Deflate` to the
 empty string** — build tree specs are zlib-compressed URLs, so without an FFI
 rebind to `runtime/zlib1.dll` the spec silently degrades to a default 1-node
-Scion instead of failing. `dump_calc.lua` carries that binding.
+Scion instead of failing. `dump_build.lua` carries that binding.
 
 Running the GUI on Windows: the executable is literally
 `runtime\Path{space}of{space}Building.exe` (`{space}` is part of the
@@ -219,12 +219,12 @@ with the reason it is there and whether that reason is forced:
 
 | harness | intervention | forced? |
 |---|---|---|
-| `dump_calc.lua:49` | `pairs` override sorting STRING keys | yes - LuaJIT randomises string hashing per process; nothing stable exists to record |
-| `dump_calc.lua:49` | ~~sorting NUMERIC keys~~ | **no - removed 2026-09-01.** LuaJIT's numeric-key order is a function of the table's history, not of a per-process seed; where the history is deterministic the order is real reference behaviour and the dump records it (`allocNodes`: identical in all 98 recordings across two regenerations) |
-| `dump_calc.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes, on measurement: 44 of 98 such walks differed between two full regenerations with the same key set and the alloc prefix intact - the table's hash LAYOUT is per-process here, its membership is not. Cause is upstream of the Calc modules and not pinned (later.md 4). Normalises layout only |
-| `dump_calc.lua:71` | table-keyed sets (`env.flasks`) ordered by item id / socket-group position | yes - keys are addresses, random per process |
-| `dump_calc.lua:203` | `mergeSkillInstanceMods` replaced by a sorted-stats replica | reason yes (string-keyed `pairs`), method heavy: a copied body that can drift from `CalcActiveSkill.lua` |
-| `dump_calc.lua:618` | `scrubPerformResidue` strips `warcryPowerBonus` before capture | perform-owned state, recomputed each run |
+| `dump_build.lua:49` | `pairs` override sorting STRING keys | yes - LuaJIT randomises string hashing per process; nothing stable exists to record |
+| `dump_build.lua:49` | ~~sorting NUMERIC keys~~ | **no - removed 2026-09-01.** LuaJIT's numeric-key order is a function of the table's history, not of a per-process seed; where the history is deterministic the order is real reference behaviour and the dump records it (`allocNodes`: identical in all 98 recordings across two regenerations) |
+| `dump_build.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes, on measurement: 44 of 98 such walks differed between two full regenerations with the same key set and the alloc prefix intact - the table's hash LAYOUT is per-process here, its membership is not. Cause is upstream of the Calc modules and not pinned (later.md 4). Normalises layout only |
+| `dump_build.lua:71` | table-keyed sets (`env.flasks`) ordered by item id / socket-group position | yes - keys are addresses, random per process |
+| `dump_build.lua:203` | `mergeSkillInstanceMods` replaced by a sorted-stats replica | reason yes (string-keyed `pairs`), method heavy: a copied body that can drift from `CalcActiveSkill.lua` |
+| `dump_build.lua:618` | `scrubPerformResidue` strips `warcryPowerBonus` before capture | perform-owned state, recomputed each run |
 | `dump_gamedata.lua:117,187` | skill sources and gem lookups rebuilt in sorted id order | yes in kind (per-process random); note it decides which entry WINS a collision |
 | `dump_modstore.lua:728` | 12 records emit `"ta":"skip"`, honoured by `modstore_test.go:798` | **no reason recorded** |
 
@@ -348,7 +348,7 @@ changes what the application does turns the differential from a test into a
 mirror - it reports agreement on precisely the thing that was in question,
 and once the dump is editable any claim can be made to come out either way.
 
-**`tools/dump_calc.lua` runs under a `pairs` that sorts STRING keys and
+**`tools/dump_build.lua` runs under a `pairs` that sorts STRING keys and
 nothing else (since 2026-09-01).** It used to sort numeric keys too, on the
 stated ground that "hash order is random per process anyway" - which is
 true of strings and false of numbers. Measured: LuaJIT iterates a sparse
@@ -498,7 +498,7 @@ determinism.
   the first fixture was silently forced back to 14 - the floor could not be
   raised at all until that was repaired, and the first attempt to raise it
   looked like a clean pass. And `authored_triggers4.xml` had no line in
-  `test/corpus/manifest.tsv`, so `calc_trig4.jsonl` could not be regenerated
+  `test/corpus/manifest.tsv`, so `build_trig4.jsonl` could not be regenerated
   by the documented command and went stale. Third: `dump_gamedata.lua`
   listed two subtrees as `modscalability` and `flavourtext` where the
   reference's table spells them `modScalability` and `flavourText`, so
@@ -564,7 +564,7 @@ and hope a build turns up:
 1. get an environment that reaches it — a real ladder character (`mb search`
    in the sibling tool `E:/tools/missingBuild`, not part of this repo) or a
    hand-authored throwaway build (`test/corpus/authored_*.xml`, 10 so far);
-2. dump it (`luajit ../../tools/dump_calc.lua <key> <xml>`), add it to the
+2. dump it (`luajit ../../tools/dump_build.lua <key> <xml>`), add it to the
    variant map **and to `test/corpus/manifest.tsv`** — a dump key absent from
    the manifest silently skips the item, spec and skills differentials;
 3. write the branch, delete the guard, confirm byte-identical.
@@ -656,7 +656,7 @@ differential.
   list.
 - **Before replaying anything a dump recorded, check whether the dump derived
   it - and before normalising, check whether the reference is actually
-  unstable.** `dump_calc.lua` installs `pairs = sortedPairs` *before* the
+  unstable.** `dump_build.lua` installs `pairs = sortedPairs` *before* the
   Calc modules load (they localise `pairs` at load time). Until 2026-09-01
   it sorted numeric keys as well as strings, so every recorded node order
   was ascending ids - an invention. The belief that these were captured
@@ -829,7 +829,7 @@ of it deliberately:
 - The archive leaves perform residue on shared skill tables
   (`warcryBuff[1].warcryPowerBonus`); the dump scrubs it before and after each
   variant, or variant N's dump depends on variant N−1 having run.
-- `dump_calc.lua` replaces `mergeSkillInstanceMods` wholesale with a
+- `dump_build.lua` replaces `mergeSkillInstanceMods` wholesale with a
   sorted-stats replica, because the original iterates `pairs(stats)` over
   string keys (randomised per process). That replica must be re-synced by hand
   if the archive's body changes.
@@ -1266,12 +1266,12 @@ hard-codes that relative path.
 | `dump_modstore.lua` | `modstore_archive.jsonl` | the fixture world + 18,525 checks |
 | `dump_gamedata.lua` | `gamedata_archive.jsonl` | 136 subtrees of the booted `data` table |
 | `dump_tree.lua` | `tree_archive.jsonl` | a freshly built PassiveTree (before any calc) |
-| `dump_calc.lua` | `calc_<key>.jsonl` | per build, three variants, every stage checkpoint |
+| `dump_build.lua` | `build_<key>.jsonl` | per build, three variants, every stage checkpoint |
 | `gen_pairs_orders.lua` | `pairs_orders.txt` | 252,060 LuaJIT iteration orders |
 | `canon.lua` | — | the shared canonical serialiser |
 
 Re-dump the whole calc corpus with the loop in `test/corpus/manifest.tsv`'s
-header: `cd .archive/src && luajit ../../tools/dump_calc.lua "$k" "$f"` per row.
+header: `cd .archive/src && luajit ../../tools/dump_build.lua "$k" "$f"` per row.
 
 ### Go commands
 

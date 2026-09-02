@@ -27,7 +27,7 @@ func TestProfileRecalc(t *testing.T) {
 	}
 	loadData(t)
 
-	path := filepath.Join("testdata", "calc_"+build+".jsonl")
+	path := filepath.Join("testdata", "build_"+build+".jsonl")
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("no dump for %q: %v", build, err)
 	}

@@ -24,7 +24,7 @@ import (
 func TestBuildLoadAgainstReference(t *testing.T) {
 	tr := loadTree329(t)
 	manifest := readManifest(t)
-	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "calc_*.jsonl"))
+	dumpPaths, err := filepath.Glob(filepath.Join("testdata", "build_*.jsonl"))
 	if err != nil || len(dumpPaths) == 0 {
 		t.Skipf("archive dumps not present")
 	}
@@ -32,7 +32,7 @@ func TestBuildLoadAgainstReference(t *testing.T) {
 	only := os.Getenv("MP_ONLY_BUILD")
 	builds, slotsCompared := 0, 0
 	for _, path := range dumpPaths {
-		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "calc_"), ".jsonl")
+		buildKey := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(path), "build_"), ".jsonl")
 		if only != "" && buildKey != only {
 			continue
 		}

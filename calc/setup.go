@@ -539,7 +539,7 @@ func (env *Env) buildModListForNode(node *NodeInput) (*modstore.List, ExplodeSou
 // buildModListForNodeList ports calcs.buildModListForNodeList. Node maps
 // iterate in ascending id order. That is NOT the reference's order: LuaJIT
 // walks numeric keys in its own stable, non-ascending order, and the dump
-// records that as-is (tools/dump_calc.lua:49). Ascending here only fixes an
+// records that as-is (tools/dump_build.lua:49). Ascending here only fixes an
 // order Go would otherwise randomise; the recorded and derived orders differ
 // and the state they produce is compared as a multiset. Reversing this walk
 // changes no result (knowledge.md 4.6).

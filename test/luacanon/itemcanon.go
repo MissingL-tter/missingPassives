@@ -2,7 +2,7 @@ package luacanon
 
 // The item's typed sub-records (weaponData, armourData, flaskData,
 // tinctureData, jewelData, grantedSkills, requirements) render as the flat
-// scalar tables dump_calc.lua's itemFixture held, and decode back from
+// scalar tables dump_build.lua's itemFixture held, and decode back from
 // them. Keys are the reference's; absent fields are absent keys;
 // weaponData's Extra entries merge in (scalars only, as the fixture's
 // scalar projection kept).

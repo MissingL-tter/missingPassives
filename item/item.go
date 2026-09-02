@@ -1,7 +1,7 @@
 // Port of Classes/Item.lua (the equippable item model) and the pieces of
 // Modules/ItemTools.lua it leans on. The scope is the parse half: raw item
 // text -> parsed state -> mod lists, i.e. everything the calc consumes
-// (dump_calc.lua's itemFixture projection). The crafting half (Craft,
+// (dump_build.lua's itemFixture projection). The crafting half (Craft,
 // BuildRaw, MutateMod) and the UI helpers stay unported.
 //
 // Reference-dead or corpus-unreachable branches panic loudly instead of

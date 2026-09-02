@@ -45,7 +45,7 @@ deliberate exception cites its guarding differential at the site.
   mutation, tostring number spelling — enter production only when a named
   differential proves them load-bearing, evidence cited at the site.
   Otherwise parse/coerce at the edge and delete the helper. Before replaying
-  anything a dump recorded, check whether the dump derived it (dump_calc ran
+  anything a dump recorded, check whether the dump derived it (dump_build ran
   under sortedPairs; "LuaJIT order" is usually just sorted) — a fact about
   that file, not a requirement on the port and not a convention to extend.
 - Never change a dump to make a comparison pass; the archive is the referee

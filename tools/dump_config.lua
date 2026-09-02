@@ -20,7 +20,7 @@ dofile("HeadlessWrapper.lua")
 
 -- The option appliers walk a few data tables with pairs() -- the boss
 -- preset's damage multipliers, penetrations and additional stats -- and
--- the order reaches the emitted mod lists. tools/dump_calc.lua settles
+-- the order reaches the emitted mod lists. tools/dump_build.lua settles
 -- the same question by installing a sorted pairs before the modules load;
 -- do the same here so one convention covers both dumps and the port can
 -- iterate in sorted order.
