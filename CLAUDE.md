@@ -108,12 +108,17 @@ Do not write Go that thinks in Lua tables.
 
 # Documents
 
+- When my message states a rule this file does not cover, or one that contradicts a line in
+  it, say so in that turn: name the line it collides with, or say the file is silent,
+  propose the exact replacement text, and wait for a go before writing it.
 - When a change makes a `parity.md` row or a `knowledge.md` statement false, rewrite it in
   the same turn.
 - A `parity.md` row you change states the count that justifies its mark. Do not downgrade a
   row to `[~]` in place of correcting its number.
 - `.claude/documentation/later.md` is my inventory of deliberate decisions. Correct an
-  entry that has become false; never add your own unfinished or deferred work to it.
+  entry that has become false; never add your own unfinished or deferred work to it, and
+  never file a defect there — a defect goes in your report as `file:line`, not in a
+  document.
 - `calc-core-plan.md` statuses drift by design. Where a document and the tests disagree,
   the tests and `parity.md` are right.
 
