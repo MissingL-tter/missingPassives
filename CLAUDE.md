@@ -1,70 +1,160 @@
-# First action, every prompt
+# Authorization
 
-Before anything else, read CLAUDE.md — this file and the global one. Every
-prompt, no exceptions, including one-word replies and mid-task continuations.
-Already having the rules in context is not the point; re-reading is the
-checkpoint.
+- A question is not a task. When my message asks why, whether, what if, what would happen,
+  or how something works — "why not X" included — answer it and change no code. Reads,
+  `go test`, and the comment and documentation fixes under **Fix on sight** stay free while
+  answering.
+- Before your first change to code in a turn, quote the words from my message that told you
+  to make it. Cannot quote them: you are not authorized, so ask. When your edits reach a
+  file the quote does not describe, say so before making that edit.
+- Changing code needs an explicit go in my immediately preceding message — every statement
+  in a `.go` file and every line of a `.lua` harness in `tools/`. Comments and
+  documentation are not code; the corrections under **Fix on sight** are the only free
+  documentation edits — any other change to a document, this file included, needs a go.
+- Never write to any path under `.archive/`. Builds you author for testing go in
+  `test/corpus/` as `authored_*.xml`.
+- Deleting or truncating a committed file needs an explicit go naming that file.
+  Regenerating one in place does not.
+- `go run ./cmd/pobexport`, `go run ./cmd/sourceupdate` and `go run ./cmd/treegen` each
+  need an explicit go. Changing exporter or tree code is not a reason to run them: verify
+  that with `MP_EXPORT=1 go test ./test -run TestExportAgainstReference`.
+- Never edit `README.md`; I decide when it changes. When a change makes a count in it
+  stale, say so in your report and leave the file alone.
+- Git writes — `add`, `commit`, `push`, `checkout`, `reset`, `stash`, `submodule update` —
+  need an explicit go naming that action. Never draft or offer a commit message, and never
+  say "ready to commit", unless I ask for one.
+- Never commit anything under `Builds/`, `*.cfg`, `Settings.xml`, `inspect.lua`, or
+  `.claude/skills/cook/recipes/` other than `template.txt`. A regenerated
+  `test/testdata/*.jsonl` or `data/raw/*` goes in the same commit as the change that caused
+  it, never a separate "update fixtures" commit.
 
-# Required reading
+Free without asking: any read or search; any read-only `git` command; `go build ./...`,
+`gofmt`, `go vet`, `go test ./...` and any `-run` or `MP_*` subset; regenerating
+`test/testdata/*.jsonl` with a `tools/dump_*.lua` harness; files under the session
+scratchpad.
 
-Read `.claude/documentation/knowledge.md` once per session, before the first
-substantive change to code, artifacts or docs. It is the consolidated record
-of how Path of Building works, how the differential method verifies the port,
-and every trap that has already cost time — the traps are cross-cutting (one
-float or iteration-order rule bites in calc and export alike), so scoping the
-read per task means re-reading it per task.
+Before your first change to code in a session, read `.claude/documentation/knowledge.md`
+§6 (traps) and §11 (standing decisions).
 
-Re-read the relevant section when entering a subsystem for the first time in a
-session (§8 per package, §6 for the trap classes, §4 before touching a
-harness). It is a reference to consult, not a checklist to recite.
+# Evidence
 
-Closing is a documentation event. What parity.md or knowledge.md records as
-outstanding gets rewritten in the same turn it stops being outstanding — a
-status written at discovery and never revised is read back later as fact,
-including by you. later.md is an inventory of deliberate decisions, not a
-queue: it goes stale when an entry is deleted, not when one completes.
-calc-core-plan.md's statuses drift by design; parity.md and the tests are
-current truth.
+- Never state a cause, a count, or an absence you have not measured. A grep, a read, or a
+  plausible mechanism is not a measurement: run the check that would fail if you were
+  wrong, paste its output, then state the conclusion. Not run: write "not measured" and
+  name the check that would settle it.
+- State a measurement as a count over a scope — `93,855 calls, 0 divergences over the
+  48-build corpus`. A number without the scope it was taken over is not a measurement.
+- Before applying a fix, write which layer the defect is in and the observation that places
+  it there. A fix that makes the symptom disappear without that statement is not finished.
+- "Green" means `go test ./...` completed in this turn with no failures. Report it by
+  quoting the differential's own counts — `18,525 checks, 0 disagreements` — never the bare
+  word "passing". After a `-run` or `MP_ONLY` subset, write "subset only:" and the exact
+  command, and do not call it green.
+- When you add a fixture record, or claim one covers a branch, print its value in every
+  config and paste them. A record that is 0 or empty in every config proves nothing: feed
+  its input until it produces a non-zero result, or state in chat that it is a negative
+  control. "Both sides agree" is compatible with "both sides did nothing".
+- Cite `file:line` only for a line you read in this session. When repeating a citation from
+  `knowledge.md`, `parity.md`, `later.md` or a memory, re-locate the code by name first and
+  cite where it is now; when it has moved, correct that document in the same turn.
 
-# No Lua-shaped Go
+# When a differential fails
 
-The disease three remodel passes cured (`.claude/documentation/deprecated/`:
-go-remodel-plan.md, lua-gtfo.md, lua-residue.md — adjudication vocabulary and
-precedents live there). Any new code, port work included, follows these; a
-deliberate exception cites its guarding differential at the site.
+- Write which of three is wrong — the Go port, the comparison, or the `tools/dump_*.lua`
+  harness that recorded the reference — and the observation that places it there, before
+  editing any of them.
+- A failure only on ordering is a defect in the comparison: compare as a multiset. Impose
+  an order only after showing the specific case where the operation does not commute.
+- Never change a `tools/dump_*.lua` harness or a `test/testdata/*.jsonl` fixture to make a
+  comparison pass. Change them only to record more of what the archive does.
+- Never add a shape to product code because a harness wants it. `data/cluster.go`'s
+  `sort.Strings(info.JewelTypes)` was added for that reason and survives only because it is
+  now justified on its own.
 
-- Port behaviour, never shape. `map[string]any` / `[]any` / `any` exist only
-  at a true I/O decode edge (external JSON before it becomes typed). Closed
-  key sets are structs or enums, not string-keyed maps; value unions are
-  sealed interfaces (`modparser.Value`/`Tag` are the model); `util.Opt[T]`
-  only where the reference distinguishes absent from zero AND an archive
-  diff sees it — plain types everywhere else. Renaming, wrapping, or hiding
-  a bag behind typed accessors is laundering, not typing.
-- Lua semantics — truthiness, nil-vs-absent, string→number coercion,
-  1-based indexing, `#`/ipairs length rules, pairs() order, shared-table
-  mutation, tostring number spelling — enter production only when a named
-  differential proves them load-bearing, evidence cited at the site.
-  Otherwise parse/coerce at the edge and delete the helper. Before replaying
-  anything a dump recorded, check whether the dump derived it (dump_build ran
-  under sortedPairs; "LuaJIT order" is usually just sorted) — a fact about
-  that file, not a requirement on the port and not a convention to extend.
-- Never change a dump to make a comparison pass; the archive is the referee
-  and an edited referee tests nothing. A comparison failing only on order is
-  a defect in the comparison: compare as a multiset. Order changes a result
-  only where the operation does not commute — increased sums, more
-  multiplies; show the specific case before imposing an order (§4.6).
-- Lua-shape understanding lives in test/luacanon, test/luapat,
-  test/luarender only. Artifacts (data/raw, export/templates) carry typed
-  conventional JSON — no Lua source fragments, pre-joined list text,
-  directive strings, or raw text re-parsed at load; the exporter types at
-  its edge, luarender re-spells the Lua form test-side.
-- The producing package declares the type; consumers import it as-is — no
-  narrow interface that every consumer downcasts back out of.
-- Closed string domains get named types/consts. A type switch with a silent
-  default or a discarded `ok` on an assertion is a bug: handle it or panic
-  loudly. Panics are only reference-error mirrors ("(the Lua errors)") or
-  unported-branch guards; load/decode paths return error.
-- Production exports nothing that exists only for a test; fixture-only
-  channels are named as such.
-- A reference quirk reproduced deliberately gets `#EVAL` plus the test that
-  guards it (README.md has the convention).
+# Fix on sight
+
+- Correct any comment the code contradicts, and any line in `.claude/documentation/` the
+  code contradicts, on any turn, as long as no statement changes. List every such edit as
+  its own line in your report.
+- On finding a defect in product code outside the task, report `file:line` and what you
+  observed; do not fix it, because changing code needs a go.
+
+# Typed Go, not Lua in Go
+
+Do not write Go that thinks in Lua tables.
+
+- Decode external bytes into structs. `map[string]any` and `[]any` stay inside the decode
+  function — today `export/dat.go`, `export/treegen.go`, `modparser/modcache.go`,
+  `modparser/tag.go`, nowhere else. Adding a decode site to a file outside that list needs
+  an explicit go.
+- Closed key sets are structs or enums; value unions are sealed interfaces
+  (`modparser.Value`, `modparser.Tag` are the model). Renaming a bag, or hiding one behind
+  typed accessors, does not satisfy this.
+- A type switch with a silent default, or an assertion whose `ok` is discarded, is a bug:
+  handle the case or panic.
+- Use `util.Opt[T]` only where the reference distinguishes absent from zero and a
+  differential sees the difference; plain types everywhere else.
+- Reproduce a Lua semantic — truthiness, nil-vs-absent, string→number coercion, 1-based
+  indexing, `pairs()` order, `tostring` number spelling — in product code only with the
+  differential that proves it load-bearing cited in a comment at that site.
+- Lua-shape code lives in `test/luacanon`, `test/luapat`, `test/luarender`, nowhere else.
+  Artifacts under `data/raw/` and `export/templates/` carry conventional JSON: no Lua
+  fragments, no pre-joined list text, no strings re-parsed at load.
+- The producing package declares the type and consumers import it; do not add a narrow
+  interface that every consumer downcasts back out of.
+- Panics mirror a reference error or guard an unported branch; load and decode paths return
+  an error.
+- Export nothing from a product package that exists only for a test.
+
+# Documents
+
+- When a change makes a `parity.md` row or a `knowledge.md` statement false, rewrite it in
+  the same turn.
+- A `parity.md` row you change states the count that justifies its mark. Do not downgrade a
+  row to `[~]` in place of correcting its number.
+- `.claude/documentation/later.md` is my inventory of deliberate decisions. Correct an
+  entry that has become false; never add your own unfinished or deferred work to it.
+- `calc-core-plan.md` statuses drift by design. Where a document and the tests disagree,
+  the tests and `parity.md` are right.
+
+# Scope
+
+Continue while the extra work is plainly part of what I asked for. The moment it is not,
+stop and ask, naming the file and the change. This one is judgment: unsure whether it is
+still plainly included means it is not — ask.
+
+# Reporting a change
+
+- The verbatim command that verified it, and the differential's own counts.
+- What you did not verify — the export differential when it did not run, packages with no
+  tests, a branch no corpus build reaches — and nothing at all here when the full suite ran
+  and covers the change.
+- Each comment or documentation line you corrected on sight, one per line.
+
+# Conflicts
+
+Fix on sight covers comments and `.claude/documentation/`; where it appears to reach a
+statement in a `.go` or `.lua` file, the code gate wins. Those two exceptions override the
+global rule that production-source edits need a go — nothing else here loosens it.
+
+# Reference
+
+```sh
+go build ./...
+go test ./...                                              # ~90s, the committed-fixture differentials
+MP_EXPORT=1 go test ./test -run TestExportAgainstReference # 123 files, needs the GGPK, ~100s
+cd .archive/src && luajit ../../tools/dump_<name>.lua      # every harness hard-codes ../../tools/
+go run ./cmd/pobexport -src .archive/src/Export/ggpk -out data/raw   # gated; a partial run leaves data/raw incomplete
+go run ./cmd/sourceupdate                                  # gated; -modcache-only for just the cache
+```
+
+`MP_ONLY`, `MP_ONLY_ITEM`, `MP_ONLY_SKILLS`, `MP_ONLY_SPEC`, `MP_ONLY_BUILD`,
+`MP_ONLY_CONFIG`, `MP_ONLY_OPTION` narrow to one build or option. `MP_GUARDS` reports
+unported-branch panics instead of raising them, so one run enumerates the whole guard
+surface. `MP_FIXTURE=1` bypasses the native bridge. `MP_DUMPGC=<path>` writes the computed
+and expected global caches for diffing. `MP_NODRIVER=1` skips the cache-filling driver.
+
+`.claude/documentation/`: `parity.md` per-module port state · `knowledge.md` the
+differential method, the traps, the standing decisions · `later.md` my inventory ·
+`poe-data-model.md` PoE domain semantics, required before `.claude/skills/cook` work ·
+`lua-go-map.md` reference-file to package map · `deprecated/` the three remodel passes.
