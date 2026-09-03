@@ -110,7 +110,7 @@ func TestTablesAgainstReference(t *testing.T) {
 	}
 }
 
-// #EVAL: referenceNondeterminism lists entries where the archive itself
+// referenceNondeterminism lists entries where the archive itself
 // gives different values run to run, so the fresh-dump comparison accepts
 // any of them. The only known case: two cluster jewel sizes share this enchant text
 // with different skill ids, and Lua's pairs() order decides which survives —

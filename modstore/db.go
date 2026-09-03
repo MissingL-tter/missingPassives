@@ -20,7 +20,7 @@ func (db *DB) AddMod(mod *modparser.Mod) {
 }
 
 // sourceOK applies the `mod.source:match("[^:]+") == source` filter.
-// #EVAL: archive parity — only ModDB.SumInternal guards source-less mods
+// Archive parity: only ModDB.SumInternal guards source-less mods
 // (its extra `mod.source and` check); every other aggregation errors on
 // them, so guardNil=false panics.
 func sourceOK(mod *modparser.Mod, source string, guardNil bool) bool {
@@ -220,7 +220,7 @@ func (db *DB) listInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keyword
 		for _, mod := range db.Mods[name] {
 			if mod.Type == modparser.List && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					// #EVAL: archive parity — `or nullValue` reads an undefined
+					// Archive parity: `or nullValue` reads an undefined
 					// global (nil), so failed evaluations are dropped silently.
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
 						result = append(result, v)
@@ -285,7 +285,7 @@ func (db *DB) hasModInternal(modType modparser.ModType, flags modparser.ModFlag,
 		if parentDB, ok := db.Parent.(*DB); ok {
 			return parentDB.hasModInternal(modType, flags, keywordFlags, source, names...)
 		}
-		// #EVAL: archive parity — see HasMod.
+		// Archive parity: see HasMod.
 		panic("modstore: hasModInternal through a non-DB parent (the Lua errors)")
 	}
 	return false

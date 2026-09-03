@@ -197,7 +197,7 @@ func lvlExtra(level *data.SkillLevel, key string) (float64, bool) {
 }
 
 // buildActiveSkillModList ports calcs.buildActiveSkillModList.
-// #EVAL: ~800-line function, a straight transliteration of the reference body; left unsplit by decision (2026-08-29).
+// ~800-line function, a straight transliteration of the reference body; left unsplit by decision (2026-08-29).
 func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	skillTypes := activeSkill.SkillTypes
 	skillFlags := activeSkill.SkillFlags

@@ -3,7 +3,7 @@
 // legionPassives.lua consumes math.random() without seeding, so its output
 // depends on this exact sequence.
 //
-// #EVAL: archive parity only — once the generated data format is Go-owned,
+// Archive parity only: once the generated data format is Go-owned,
 // random layout offsets in it deserve replacing, and this file goes away.
 
 package luarender

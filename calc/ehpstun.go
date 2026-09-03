@@ -55,7 +55,7 @@ func (env *Env) ehpStun(actor *performActor, damageCategoryConfig DamageCategory
 	output.SetN("InterruptStunAvoidChance", math.Min(modDB.Sum(modparser.Base, nil, "AvoidInterruptStun"), 100))
 
 	effectiveEnemyDamage := output.N("totalTakenHit") + output.N("PhysicalTakenHit")*0.25
-	// #EVAL the reference's second branch is `elseif ~= "Melee"`, which only
+	// The reference's second branch is `elseif ~= "Melee"`, which only
 	// runs when the category IS "Average", so the Melee multiplier below can
 	// never apply to a non-melee category.
 	if damageCategoryConfig != DamageAverage {

@@ -89,7 +89,7 @@ func (env *Env) processSocketGroup(group *SocketGroupInput) {
 			}
 		case gem.SkillID != "":
 			// Specified by skill ID (skills granted by items).
-			// #EVAL: archive parity — the reference indexes gemForSkill
+			// Archive parity: the reference indexes gemForSkill
 			// (keyed by granted-effect TABLE) with the skillId STRING, which
 			// never matches, so item-granted skills never resolve a gem.
 			gem.GrantedEffect = data.Skills[gem.SkillID]

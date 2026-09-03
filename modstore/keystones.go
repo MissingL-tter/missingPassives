@@ -17,7 +17,7 @@ type KeystoneEnv struct {
 }
 
 // MergeKeystones ports modLib.mergeKeystones.
-// #EVAL: archive parity — the reference mutates the keystone map's own mods
+// Archive parity: the reference mutates the keystone map's own mods
 // through setSource when the granting mod's source is not tree-flavoured, so
 // the tree's shared modList carries the last granter's source.
 // The reference calls it on a ModDB (perform) and on the tree's ModList

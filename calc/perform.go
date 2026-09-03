@@ -214,7 +214,7 @@ func (env *Env) performBody() {
 			output.SetN("TotemsSummoned", overrideOr(modDB, "TotemsSummoned", output.N("ActiveTotemLimit")))
 			enemyDB.Multipliers["TotemsSummoned"] = math.Max(output.N("TotemsSummoned"), enemyDB.Multipliers["TotemsSummoned"])
 		}
-		// #EVAL the reference's trailing `and Sum(...,"MaxDoom")` is a bare
+		// The reference's trailing `and Sum(...,"MaxDoom")` is a bare
 		// number, so it is always truthy and gates nothing
 		if activeSkill.SkillFlags["hex"] && activeSkill.SkillFlags["curse"] &&
 			!activeSkill.SkillTypes[modparser.SkillTypeTotemCastsWhenNotDetached] {

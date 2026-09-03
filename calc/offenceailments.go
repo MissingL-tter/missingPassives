@@ -176,7 +176,7 @@ func (env *Env) offenceAilments(c *offenceCtx) {
 		// Elemental Ailment Affliction Chance | Elemental Ailment Additionals
 		for _, ailment := range data.ElementalAilmentTypeList {
 			chance := skillModList.Sum(modparser.Base, cfg, "Enemy"+ailment+"Chance") + enemyDB.Sum(modparser.Base, nil, "Self"+ailment+"Chance")
-			// #EVAL: `(Flag and 100 or 0) + Sum(...)` parses as
+			// `(Flag and 100 or 0) + Sum(...)` parses as
 			// `Flag and 100 or (0 + Sum(...))`, so an immune enemy yields
 			// exactly 100 and the avoid sum is dropped.
 			var avoidRaw float64

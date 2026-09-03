@@ -129,7 +129,7 @@ func (t *Tab) UpdateLevel() {
 
 // SetPlaceholder is the apply functions' `varControls[var]:SetPlaceholder(v,
 // true)`: the control stringifies the value and hands it back to its own
-// change handler, which stores it. #EVAL: that round trip quantizes a
+// change handler, which stores it. That round trip quantizes a
 // number to Lua's tostring precision, so the stored placeholder is not
 // always the value the caller passed.
 func (t *Tab) SetPlaceholder(v Var, value float64) {

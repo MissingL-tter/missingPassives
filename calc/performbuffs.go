@@ -86,7 +86,7 @@ func dedupExtraModList(entries []modparser.Value) []*modparser.Mod {
 }
 
 // performBuffs continues Perform at CalcPerform.lua L2141.
-// #EVAL: ~1,000-line function, a straight transliteration of the reference body; left unsplit by decision (2026-08-29).
+// ~1,000-line function, a straight transliteration of the reference body; left unsplit by decision (2026-08-29).
 func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyToMinion bool) {
 	modDB := env.ModDB
 	enemyDB := env.EnemyDB
@@ -381,7 +381,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 						if !auraDebuffFound {
 							activeSkill.DebuffSkill = true
 							extraDebuffModList := dedupExtraModList(modDB.List(skillCfg, "ExtraAuraDebuffEffect"))
-							// #EVAL the reference merges the UNSCALED list here
+							// The reference merges the UNSCALED list here
 							mergeBuff(extraDebuffModList, debuffs, buffName)
 						}
 					}
@@ -1088,7 +1088,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 	if modDB.Flag(nil, "DisableWeapons") {
 		env.Player.WeaponData1 = weaponRef(unarmedWeapon(data.UnarmedWeaponData[int(env.Build.ClassID)]))
 		modDB.Conditions.Set("Unarmed", true)
-		// #EVAL env.player.Gloves is never set in the reference, so this
+		// env.player.Gloves is never set in the reference, so this
 		// branch always marks Unencumbered
 		modDB.Conditions.Set("Unencumbered", true)
 	} else if env.WeaponModList1 != nil {
@@ -1192,7 +1192,7 @@ func (env *Env) performAilments(hasGuaranteedBonechill bool) {
 	sort.Strings(names)
 	for _, ailment := range names {
 		val := ailments[ailment]
-		// #EVAL the reference's first clause (`Val > 0 or Sum(...)`) is
+		// The reference's first clause (`Val > 0 or Sum(...)`) is
 		// always truthy: the Sum returns a number and 0 is truthy in Lua
 		if !(enemyDB.Flag(nil, "Condition:Already"+val.condition) || enemyDB.Flag(nil, ailment+"Immune", "ElementalAilmentImmune") || enemyDB.Sum(modparser.Base, nil, "Avoid"+ailment, "AvoidAilments", "AvoidElementalAilments") >= 100) {
 			override := 0.0

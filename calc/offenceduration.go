@@ -91,7 +91,7 @@ func (env *Env) offenceDuration(c *offenceCtx) {
 	// gain prevention.
 	if !activeSkill.SkillTypes[modparser.SkillTypeVaal] {
 		cooldown := output.N("Cooldown")
-		// #EVAL: "reserveDuration" is lowercase in the reference's list
+		// "reserveDuration" is lowercase in the reference's list
 		// while the output key is "ReserveDuration", so that entry never
 		// finds a duration and never writes reserveDurationUptime.
 		for _, durationType := range []string{"Duration", "DurationSecondary", "DurationTertiary", "AuraDuration", "reserveDuration"} {

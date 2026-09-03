@@ -80,7 +80,7 @@ func buildBases(x *Ctx) (schema.Document, error) {
 				if idx >= 0 {
 					tags = append(tags[:idx], tags[idx+1:]...)
 				} else if len(tags) > 0 {
-					// #EVAL: archive parity — a remove_tag for an absent tag is
+					// Archive parity: a remove_tag for an absent tag is
 					// table.remove(tags, nil), which pops the LAST element.
 					tags = tags[:len(tags)-1]
 				}

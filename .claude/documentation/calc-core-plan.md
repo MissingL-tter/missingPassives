@@ -104,7 +104,7 @@ initEnv needs createActiveSkill/buildActiveSkillModList — ported with the calc
   `.nodeOrders` (the tail beyond allocOrders = extraRadiusNodeList pairs order).
   modparser exports JewelStoreWriter/JewelNodeRef/JewelNodeFn aliases.
 - Granted-skill socket groups (skills.go): match-or-create groups from
-  env.grantedSkills + the processSocketGroup port. #EVAL: the reference's
+  env.grantedSkills + the processSocketGroup port. Reference quirk: the
   gemForSkill[skillId-string] lookup into a GE-keyed table never matches, so
   item-granted skills never resolve a gem. ProcessSocketGroup's triggered-cost wipe
   (SkillsTab.lua L1161) assigns `cost = {}`, not nil, and mutates the SHARED
@@ -172,8 +172,8 @@ Perform traps found by the differential:
 - Lua Flag() yields nil: `output.X = Flag(...)` stores no key when false
   (ChaosInoculation) — only write the key when true.
 - Hex doom guard's trailing `and Sum(...,"MaxDoom")` is a bare number, always truthy
-  (#EVAL) — HexDoomLimit/HexDoom set for every hex curse.
-- Ailment gate first clause (`Val>0 or Sum(...)`) is always truthy (#EVAL) — only the
+  (reference quirk) — HexDoomLimit/HexDoom set for every hex curse.
+- Ailment gate first clause (`Val>0 or Sum(...)`) is always truthy (reference quirk) — only the
   immune/avoid clause gates.
 - GemLevel/GemQuality output block (L3862+) runs AFTER the stubbed defence/offence
   handoff — part of the perform checkpoint.
@@ -218,7 +218,7 @@ Checkpoints `.ehpDbs`/`.ehpOutput`/`.ehpMinionDb`/`.ehpMinionOutput` — green o
 first run, verified real by perturbing overkillDamage by 1e-7 inside
 reducePoolsByDamage (fails every variant).
 
-#EVAL quirks in the EHP body:
+Reference quirks in the EHP body:
 - Max-hit pool fixup reads `shared or 0 + typed or 0`, which Lua parses as
   `shared or (0+typed) or 0` — the typed guard rate/absorb is dead whenever a shared
   value exists.
@@ -259,19 +259,19 @@ actor.weaponRange1.
 
 Offence traps found by the differential:
 - `Sum(...) or 0 + X + Y` parses as `Sum(...) or (0+X+Y)`, and Sum always returns a
-  number, so TripleDamageChance drops the enemy and on-crit terms entirely (#EVAL).
+  number, so TripleDamageChance drops the enemy and on-crit terms entirely (reference quirk).
 - `(Flag and 100 or 0) + Sum(Avoid...)` parses as `Flag and 100 or (0 + Sum(...))`:
-  an immune enemy yields exactly 100 and the avoid sum is dead (#EVAL).
+  an immune enemy yields exactly 100 and the avoid sum is dead (reference quirk).
 - `skillModList:More("MORE", cfg, "Accuracy")` puts "MORE" in the cfg slot, so the
   real cfg becomes a never-matching modifier name — that Accuracy More is cfg-less.
   Ported as More(&Cfg{}, "Accuracy"): a non-nil EMPTY cfg, because ModStore:EvalMod
-  distinguishes `not cfg` from a cfg whose fields are all nil (#EVAL).
+  distinguishes `not cfg` from a cfg whose fields are all nil (reference quirk).
 - `cfg` in the Mantra of Flames BuffOnSelf lines is an undeclared global (the pass
-  local died with the loop above), i.e. nil (#EVAL).
+  local died with the loop above), i.e. nil (reference quirk).
 - `dotCfg` in the hit-damage resistance lookup is likewise a global; only the ailment
-  sections declare a local of that name (#EVAL).
+  sections declare a local of that name (reference quirk).
 - `ipairs({["FRDamageTaken"] = ...})` iterates zero times, so the Forbidden Rite
-  self-hit block never runs (#EVAL).
+  self-hit block never runs (reference quirk).
 - ModStore:GetStat is an `or` chain: a stored FALSE in actor.output falls through to
   cfg.skillStats, a stored 0 does not. Cfg.SkillStats widened to map[string]any so the
   weapon passes can alias output.MainHand / output.OffHand live.
@@ -319,11 +319,11 @@ Trigger traps:
   absent. Cost two variants until fixed.
 - `triggeredSkills[1] == packageSkillDataForSimulation(...)` compares two freshly
   built tables, never true, so that arm reduces to
-  `ignoresTickRate and not config.triggeredSkillCond` (#EVAL).
+  `ignoresTickRate and not config.triggeredSkillCond` (reference quirk).
 - `actor.mainSkill.triggeredBy.ignoresTickRate` is dead: nothing in the archive sets
-  that field (#EVAL).
+  that field (reference quirk).
 - The triggerCD read guards on actor.mainSkill.triggeredBy but reads
-  env.player.mainSkill.triggeredBy (#EVAL; same table for the player).
+  env.player.mainSkill.triggeredBy (reference quirk; same table for the player).
 
 Skill callbacks live in calc/skillfuncs.go, keyed "<grantedEffectId>:<callbackName>",
 consulted by runSkillFunc before the UnportedFn panic. Ported include:

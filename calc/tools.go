@@ -96,7 +96,7 @@ func ValidateGemLevel(gi *ActiveEffect) {
 	if grantedEffect.LevelData(gi.Level) == nil {
 		// That failed, so just grab any level: lowest key (the reference's
 		// next() is hash-order arbitrary).
-		// #EVAL: for a table like {6, 7} this ignores levelRequirement;
+		// For a table like {6, 7} this ignores levelRequirement;
 		// shipped data only has single-entry cases.
 		first, found := 0, false
 		for lvl := range grantedEffect.Levels {

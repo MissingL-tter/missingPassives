@@ -63,7 +63,7 @@ func loadMinionDef(m schema.MinionDef) *Minion {
 		SkillList:                    emptyIfNil(m.SkillList),
 	}
 	// Duplicate constructor keys keep the FIRST value under LuaJIT
-	// (#EVAL: see Misc.EnergyShieldRechargeBase).
+	// (see Misc.EnergyShieldRechargeBase).
 	if len(m.LifeScaling) > 0 {
 		out.LifeScaling = m.LifeScaling[0]
 	}

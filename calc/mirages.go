@@ -276,7 +276,7 @@ func (env *Env) saviourConfig() *mirageConfig {
 		compareFunc: func(skill *ActiveSkill, mirageSkill *ActiveSkill) *ActiveSkill {
 			swordOneHand := modparser.FlagSword | modparser.FlagWeapon1H
 			usedByMirage := skill.SkillCfg != nil && skill.SkillCfg.SkillCond != nil && skill.SkillCfg.SkillCond["usedByMirage"]
-			// #EVAL: the reference also checks `SkillType.Totem`, which
+			// The reference also checks `SkillType.Totem`, which
 			// Global.lua never defines -- the nil index always reads nil, so
 			// that arm is dead.
 			if skill != main && skill.SkillTypes[modparser.SkillTypeAttack] &&

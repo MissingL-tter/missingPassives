@@ -35,7 +35,7 @@ func applyConditionStationary(v Value, t *Tab) {
 // each of the eight map prefix/suffix dropdowns hands its selection to the
 // affix's own applier in the map-modifier data.
 //
-// #EVAL: the check-type call passes `var`, an undeclared global, so those
+// The check-type call passes `var`, an undeclared global, so those
 // appliers receive nil. None of them reads it.
 func applyMapAffix(v Value, t *Tab) {
 	name, _ := StrOf(v)

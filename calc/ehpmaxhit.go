@@ -81,7 +81,7 @@ func (env *Env) ehpMaxHit(actor *performActor) {
 		}
 		output.SetN(damageType+"TotalHitPool", output.N(damageType+"TotalHitPool")+
 			math.Max(math.Max(output.N(damageType+"Aegis"), output.N("sharedAegis")), elementalAegis))
-		// guard skill. #EVAL Lua's `a or 0 + b or 0` parses as `a or (0+b) or
+		// guard skill. Lua's `a or 0 + b or 0` parses as `a or (0+b) or
 		// 0`, so only the shared value is read here when it is non-nil.
 		guardAbsorbRate := output.N("sharedGuardAbsorbRate")
 		if guardAbsorbRate == 0 {

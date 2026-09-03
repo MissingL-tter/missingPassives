@@ -16,7 +16,7 @@ import (
 // tableToString reproduces minions.lua's tableToString over the decoded
 // structured values: sorted keys, nested tables inlined with a dotted
 // prefix.
-// #EVAL: archive parity — the comma logic skips nested-table entries, so a
+// Archive parity: the comma logic skips nested-table entries, so a
 // nested table directly abuts its neighbour without a separator.
 func tableToString(v any, pre string) string {
 	type kv struct {

@@ -2,7 +2,7 @@
 // number keys, so pairs() iteration order over number-keyed tables can be
 // reproduced byte-for-byte (mods.lua writes tradeHashes via pairs()).
 //
-// #EVAL: archive parity only — the tradeHashes ordering is a hash-table
+// Archive parity only: the tradeHashes ordering is a hash-table
 // artifact, not meaningful data; once the format is Go-owned, sort the keys
 // and delete this file.
 //

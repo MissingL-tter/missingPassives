@@ -13,7 +13,7 @@ Companion documents, and what each owns:
 |---|---|
 | `parity.md` | per-module status, the two-axis completion rule, differential inventory |
 | `poe-data-model.md` | Path of Exile domain semantics (modifiers, pools, skills, jewels, bases) |
-| `later.md` | Lua-derived code kept by decision + the `#EVAL` quirk inventory |
+| `later.md` | Lua-derived code kept by decision + the reference-quirk inventory |
 | `deprecated/go-remodel-plan.md`, `deprecated/lua-gtfo.md`, `deprecated/lua-residue.md` | the three Lua-eradication stages (2026-08-29/30/31) — finished work, kept for their reasoning and precedents; only lua-residue.md's opportunistic list is still live |
 | `calc-core-plan.md` | calc porting notes (statuses drift; reasoning is sound) |
 | `lua-go-map.md` | every deliberate reference→Go name divergence |
@@ -945,7 +945,7 @@ missed):
   confirm themselves. Every verdict should carry its evidence pointer.
 - Citations decay fast here. Both `lua-gtfo.md` and `lua-residue.md` instruct
   readers to treat every line number as a hint and locate code by name.
-  `later.md`'s `#EVAL` line numbers have already drifted (the *set* of sites is
+  `later.md`'s quirk-inventory line numbers have already drifted (the *set* of sites is
   still exact).
 - A green suite proves the corpus only. Eight correctness fixes in the third
   stage were reference divergences no fixture reaches, found by reading the
@@ -965,11 +965,11 @@ truthiness (`modparser.Truthy`, `OutValue.Truthy`), `%.14g` number spelling
 Commit `c456df051`'s claim that no such helper survives is literally false;
 `later.md` §1 is the authoritative statement.
 
-**`#EVAL`** marks behaviour that exists only to match the archive — reproduced
-bugs, undefined globals read as nil, precedence accidents, hash-order
-artifacts, LuaJIT internals. `grep -rn '#EVAL'` is the live list (57 sites in
-Go source, 34 prose references *as of 2026-08-31*). Each is a candidate to
-delete once the archive stops being the contract.
+**Reference quirks** are behaviour that exists only to match the archive —
+reproduced bugs, undefined globals read as nil, precedence accidents,
+hash-order artifacts, LuaJIT internals. They were tagged `#EVAL` in source
+until 2026-09-03; the tag is gone and `later.md` §2 is the list (60 sites).
+Each is a candidate to delete once the archive stops being the contract.
 
 ---
 
@@ -1415,7 +1415,7 @@ Drift corrected 2026-08-31 (recorded so the fix is not re-litigated):
 147, 145 not 75, the retired `UnportedFn` marker, the native bridge, and the
 mod-cache generator), `poe-data-model.md` and `lua-go-map.md` (`data/schema`),
 `calc-core-plan.md` (a superseded-by-luagtfo table at its head),
-`later.md` (every `#EVAL` and helper citation re-pointed at its current
+`later.md` (every quirk and helper citation re-pointed at its current
 line), `data/schema/gamedata.go` (the package comment said "Package
 gamedata"), and `cmd/treegen/main.go` (its header claimed to reproduce PoB's
 `jsonToLua` mangling; `export/treegen.go` is authoritative and says that stage
@@ -1427,5 +1427,5 @@ document and its companions (durable, in-repo, versioned with the code); the
 session memory store at
 `E:/env/claude/projects/e--tools-missingPassives/memory/` (cross-session
 recall — accurate on method and traps, drifted on counts and file locations);
-and code comments plus `#EVAL` markers (authoritative at the site, and the only
+and code comments (authoritative at the site, and the only
 form that travels with a refactor).

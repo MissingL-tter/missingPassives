@@ -177,7 +177,7 @@ func (env *Env) defenceRecoup(actor *performActor) {
 		armourPct, _ := modDB.Max(nil, "SpellSuppressionAppliesToChanceToDefendWithArmourPercentArmour")
 		modDB.AddMod(newModS("ArmourDefense", modparser.Max, modparser.Num(armourPct-100), "Chance to Defend from Spell Suppression: Max Calc", &modparser.CondTag{Var: "ArmourMax"}))
 		modDB.AddMod(newModS("ArmourDefense", modparser.Max, modparser.Num(math.Min(pct*spellSuppressionChance/100, 1.0)*(armourPct-100)), "Chance to Defend from Spell Suppression: Average Calc", &modparser.CondTag{Var: "ArmourAvg"}))
-		modDB.AddMod(newModS("ArmourDefense", modparser.Max, modparser.Num(math.Min(math.Floor(pct*spellSuppressionChance/100), 1.0)*(armourPct-100)), // #EVAL the reference reads a nil global `modSource` here, so the
+		modDB.AddMod(newModS("ArmourDefense", modparser.Max, modparser.Num(math.Min(math.Floor(pct*spellSuppressionChance/100), 1.0)*(armourPct-100)), // The reference reads a nil global `modSource` here, so the
 			// fallback string is always the source
 			"Chance to Defend from Spell Suppression: Min Calc", &modparser.CondTag{Var: "ArmourMax", Neg: true}, &modparser.CondTag{Var: "ArmourAvg", Neg: true}))
 	}

@@ -330,7 +330,7 @@ func (env *Env) ehpDamageTakenAs(actor *performActor) {
 				takenMore *= modDB.More(nil, "ElementalReflectedDamageTaken")
 			}
 			output.SetN(damageType+"TakenReflect", math.Max((1+takenInc/100)*takenMore, 0))
-			// #EVAL the reference assigns false in both branches here
+			// The reference assigns false in both branches here
 			// ("this needs a rework as well"), so AnyTakenReflect never
 			// becomes true
 			if output.N(damageType+"TakenReflect") != output.N(damageType+"TakenHitMult") {

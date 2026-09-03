@@ -117,7 +117,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 	gems := map[string]bool{}
 	trueGemNames := map[string]string{}
 
-	// #EVAL: archive parity — statInterpolation cells are aliased and
+	// Archive parity: statInterpolation cells are aliased and
 	// mutated across levels sharing a stat row, exactly as the Lua does.
 	type interpHolder struct{ vals []int64 }
 	interpHolders := map[*Row]*interpHolder{}

@@ -267,7 +267,7 @@ func (x *Ctx) loadStatFile(fileName string, appendTo bool) {
 				c := *descriptor // the Lua copy is shallow
 				cp = &c
 				if cp.order > 0 {
-					// #EVAL: archive parity — the Lua adjusts the cached copy's
+					// Archive parity: the Lua adjusts the cached copy's
 					// order a second time (already-normalised input), leaving the
 					// per-file cache with skewed orders.
 					cp.order = cp.order - startOrder + 1
@@ -536,7 +536,7 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) (StatLines, error) {
 				v := vi()
 				v.min, v.max = v.min*0.3, v.max*0.3
 			case "mod_value_to_item_class":
-				// #EVAL: archive parity — ItemClasses is never defined in the
+				// Archive parity: ItemClasses is never defined in the
 				// Lua either; reaching this errored there too.
 				return out, fmt.Errorf("mod_value_to_item_class hit for %s: ItemClasses is nil in the reference", descriptor.name)
 			case "multiplicative_damage_modifier":

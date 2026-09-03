@@ -29,7 +29,7 @@ type ItemMod struct {
 }
 
 // TradeHash carries one trade-site stat id hash and its described lines.
-// #EVAL: the order of these entries is a LuaJIT hash-table artifact preserved
+// The order of these entries is a LuaJIT hash-table artifact preserved
 // for archive parity; sort by hash once the format is Go-owned.
 type TradeHash struct {
 	Hash  int64    `json:"hash"`

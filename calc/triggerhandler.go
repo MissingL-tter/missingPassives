@@ -183,7 +183,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		n := valueNum(ov)
 		cooldownOverride = &n
 	}
-	// #EVAL: the guard is on actor.mainSkill.triggeredBy but the read is on
+	// The guard is on actor.mainSkill.triggeredBy but the read is on
 	// env.player.mainSkill.triggeredBy — the same table for the player actor.
 	var triggerCD *float64
 	if main.TriggeredBy != nil {
@@ -222,7 +222,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 		triggeredCDTickRounded = triggeredCDAdjusted
 	}
 	// triggeredBy.ignoresTickRate has exactly one writer: the Arcanist
-	// Brand config (L1347). (An earlier #EVAL note claimed the field was
+	// Brand config (L1347). (An earlier note claimed the field was
 	// dead; that held only for the paths ported at the time.)
 	triggerCDTickRounded := math.Ceil(triggerCDAdjusted*data.Misc.ServerTickRate) / data.Misc.ServerTickRate
 	if main.TriggeredBy != nil && main.TriggeredBy.IgnoresTickRate {
@@ -352,7 +352,7 @@ func (env *Env) defaultTriggerHandler(config *triggerConfig) {
 			triggerChance = triggerChance * *config.triggerChance / 100
 		}
 
-		// #EVAL: the reference's second arm compares two freshly built
+		// The reference's second arm compares two freshly built
 		// tables (`triggeredSkills[1] == packageSkillDataForSimulation(...)`),
 		// which is never true in Lua, so this reduces to
 		// `ignoresTickRate and not config.triggeredSkillCond`.
@@ -545,7 +545,7 @@ func (env *Env) helmetFocusHandler() {
 }
 
 // stageOverlaps evaluates `config.stagesAreOverlaps and mainSkill.skillPart
-// == it and srcInstance.skillStageCount` (L804/L827). #EVAL: no configTable
+// == it and srcInstance.skillStageCount` (L804/L827). No configTable
 // entry in the archive ever SETS stagesAreOverlaps — the hook is
 // reference-dead — so this always reports false today; it exists so the
 // expression is the reference's rather than a guess if an entry ever grows

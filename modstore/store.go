@@ -2,8 +2,9 @@
 // containers. DB (ModDB.lua) and List (ModList.lua) embed it.
 //
 // Fidelity notes: values follow Lua truthiness (nil/false are the only falsy
-// values). Quirks preserved solely for archive parity are tagged #EVAL —
-// candidates to fix once proven non-load-bearing.
+// values). Quirks preserved solely for archive parity are inventoried in
+// .claude/documentation/later.md — candidates to fix once proven
+// non-load-bearing.
 
 package modstore
 
@@ -343,7 +344,7 @@ func (ms *ModStore) TabulateAll(cfg *Cfg, names ...string) []TabEntry {
 }
 
 // Max ports ModStore:Max; ok reports whether any value was found.
-// #EVAL: archive parity — `val > (max or 0)` means all-negative candidates
+// Archive parity: `val > (max or 0)` means all-negative candidates
 // never register (Max of {-5,-2} is nil, not -2).
 func (ms *ModStore) Max(cfg *Cfg, names ...string) (float64, bool) {
 	var max float64
@@ -377,7 +378,7 @@ func (ms *ModStore) Min(cfg *Cfg, names ...string) (float64, bool) {
 }
 
 // HasMod ports ModStore:HasMod.
-// #EVAL: archive parity — only ModDB implements HasModInternal; calling it
+// Archive parity: only ModDB implements HasModInternal; calling it
 // on (or through) a ModList errors in the reference, so this panics.
 func (ms *ModStore) HasMod(modType modparser.ModType, cfg *Cfg, names ...string) bool {
 	flags, keywordFlags, source := cfgParts(cfg)

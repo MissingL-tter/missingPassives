@@ -75,7 +75,7 @@ func loadModPool(pool []schema.ItemMod) map[string]ItemModData {
 		}
 		e.TradeHashes = map[int64][]string{}
 		for _, th := range m.TradeHashes {
-			// #EVAL: archive parity — the exporter wraps the joined lines in
+			// Archive parity: the exporter wraps the joined lines in
 			// quotes, so zero described lines load as { "" }, not { }.
 			if len(th.Lines) == 0 {
 				e.TradeHashes[th.Hash] = []string{""}

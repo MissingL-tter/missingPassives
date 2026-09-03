@@ -147,7 +147,7 @@ func (env *Env) offenceDamageTypes(c *offenceCtx, pass *damagePass) {
 							}
 						}
 					} else {
-						// #EVAL: dotCfg is an undeclared global here (the
+						// dotCfg is an undeclared global here (the
 						// ailment sections declare their own local), so the
 						// hit resist is looked up with a nil cfg.
 						resist = env.calcResistForType(c, damageType, nil)

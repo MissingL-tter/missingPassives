@@ -105,7 +105,7 @@ func miscTable(characterConstants, monsterConstants map[string]float64) misc {
 		AvoidChanceCap:                  75,
 		FortifyBaseDuration:             6,
 		ManaRegenBase:                   characterConstants["mana_regeneration_rate_per_minute_%"] / 60 / 100,
-		// #EVAL: archive parity — Data.lua writes this key twice in one table
+		// Archive parity: Data.lua writes this key twice in one table
 		// constructor (the derived value, then 0.33); under LuaJIT the
 		// derived value is the one that survives.
 		EnergyShieldRechargeBase:          characterConstants["energy_shield_recharge_rate_per_minute_%"] / 60 / 100,

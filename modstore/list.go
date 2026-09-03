@@ -52,7 +52,7 @@ func (l *List) MergeMod(mod *modparser.Mod, skipNonAdditive bool) {
 	if mod.Type == modparser.Base || mod.Type == modparser.Inc || mod.Type == modparser.More {
 		for i, curMod := range l.Mods {
 			if modparser.CompareModParams(curMod, mod) {
-				// #EVAL: archive parity — copyTable(self[i], true) is SHALLOW, so
+				// Archive parity: copyTable(self[i], true) is SHALLOW, so
 				// the merged copy shares tag tables (and their mutations) with
 				// the original.
 				cp := *curMod
@@ -171,7 +171,7 @@ func (l *List) listInternal(ctx Store, cfg *Cfg, flags modparser.ModFlag, keywor
 		for _, mod := range l.Mods {
 			if mod.Name == name && mod.Type == modparser.List && modMatches(mod, flags, keywordFlags) && sourceOK(mod, source, false) {
 				if hasTags(mod) {
-					// #EVAL: archive parity — `or nullValue` reads an undefined
+					// Archive parity: `or nullValue` reads an undefined
 					// global (nil), so failed evaluations are dropped silently.
 					if v := evalMod(ctx, mod, cfg, nil); v != nil {
 						result = append(result, v)

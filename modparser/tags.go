@@ -737,7 +737,7 @@ var modTagList = map[string]entryValue{
 	}),
 	`for each different non-instant spell you[' ]h?a?ve cast recently`: &PatternEntry{Tag: &MultiplierTag{Var: "NonInstantSpellCastRecently"}},
 	`if you[' ]h?a?ve used a warcry recently`:                          &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},
-	// #EVAL: archive parity — "when you warcry" appears twice in the
+	// Archive parity: "when you warcry" appears twice in the
 	// reference with the same value (duplicate table key).
 	`when you warcry`:                                 &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},
 	`if you[' ]h?a?ve warcried recently`:              &PatternEntry{Tag: &CondTag{Var: "UsedWarcryRecently"}},

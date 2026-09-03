@@ -253,7 +253,7 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 				b = getMultiplier(target, tag.Var, cfg, false)
 			}
 			if tag.DivVar != "" {
-				// #EVAL: archive parity — writes the computed div back into the
+				// Archive parity: writes the computed div back into the
 				// SHARED tag, visible to every later evaluation of this mod.
 				tag.Div = optOf(getMultiplier(ctx, tag.DivVar, cfg, false))
 			}
@@ -300,7 +300,7 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 					b = getStat(target, tag.Stat, cfg)
 				}
 				if tag.DivVar != "" {
-					// #EVAL: archive parity — writes the computed div back into the
+					// Archive parity: writes the computed div back into the
 					// SHARED tag, visible to every later evaluation of this mod.
 					tag.Div = optOf(getMultiplier(ctx, tag.DivVar, cfg, false))
 				}
@@ -366,7 +366,7 @@ func evalMod(ctx Store, mod *modparser.Mod, cfg *Cfg, globalLimits map[string]fl
 			case modparser.TagStatThreshold:
 				var stat float64
 				if tag.StatList != nil {
-					// #EVAL: archive parity — the reference shadows its accumulator
+					// Archive parity: the reference shadows its accumulator
 					// with the loop variable and adds a stat NAME to a number, which
 					// errors.
 					panic("modstore: StatThreshold statList arithmetic on stat name (the Lua errors)")

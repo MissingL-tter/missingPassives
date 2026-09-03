@@ -34,7 +34,7 @@ func energyBladeFor(prev *Item) *Item {
 		Rarity:   "NORMAL",
 		Quality:  &quality,
 	}
-	// #EVAL: the reference parses the base's implicit lines here, but
+	// The reference parses the base's implicit lines here, but
 	// looks them up on item.baseName - a string, where the lookup is
 	// always nil - so the block never runs and the blade has no
 	// implicits. Reproduced by omitting it.

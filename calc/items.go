@@ -208,7 +208,7 @@ func (env *Env) buildItems() {
 				continue
 			}
 			slot := start
-			// #EVAL: archive parity — the reference's `{ slot = true }` keys
+			// Archive parity: the reference's `{ slot = true }` keys
 			// the literal string "slot", so the chain start itself is never
 			// in the cycle set.
 			curChain := map[string]bool{"slot": true}

@@ -228,7 +228,7 @@ func (env *Env) offenceCrit(c *offenceCtx, pass *damagePass) {
 
 	// Calculate chance and multiplier for dealing triple damage on Normal and Crit
 	output.SetN("TripleDamageChanceOnCrit", math.Min(skillModList.Sum(modparser.Base, cfg, "TripleDamageChanceOnCrit"), 100))
-	// #EVAL: `Sum(...) or 0 + X + Y` parses as `Sum(...) or (0+X+Y)`, and Sum
+	// `Sum(...) or 0 + X + Y` parses as `Sum(...) or (0+X+Y)`, and Sum
 	// always returns a number, so the enemy and on-crit terms are dead here.
 	output.SetN("TripleDamageChance", math.Min(skillModList.Sum(modparser.Base, cfg, "TripleDamageChance"), 100))
 	output.SetN("TripleDamageEffect", 2*output.N("TripleDamageChance")/100)

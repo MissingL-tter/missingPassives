@@ -185,7 +185,7 @@ func (env *Env) offenceSelfHit(c *offenceCtx) {
 		add(env.applyDmgTakenConversion(activeSkill, output, dmgType, dmgVal))
 	}
 
-	// #EVAL: the reference's Forbidden Rite block iterates
+	// The reference's Forbidden Rite block iterates
 	// `ipairs({["FRDamageTaken"] = "Forbidden Rite"})` — a table with only a
 	// string key, so ipairs yields nothing and the block never runs.
 }

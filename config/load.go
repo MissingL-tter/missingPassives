@@ -132,7 +132,7 @@ func applyElems(s *Set, inputs, placeholders []XMLInput) {
 			}
 			continue
 		}
-		// #EVAL: a string-valued <Placeholder> is stored as an INPUT by
+		// A string-valued <Placeholder> is stored as an INPUT by
 		// the reference, not as a placeholder.
 		if ph.String != "" {
 			s.Input[Var(ph.Name)] = Str(ph.String)

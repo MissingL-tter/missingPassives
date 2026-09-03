@@ -266,7 +266,7 @@ func buildEnchant(x *Ctx) (schema.Document, error) {
 		// the Lua (no outer break).
 		findSkill := func(col string, stat *Row) {
 			for _, as := range activeSkills.RowsByRef(col, stat) {
-				// #EVAL: archive parity — the Lua compares SkillTypes ROWS
+				// Archive parity: the Lua compares SkillTypes ROWS
 				// against the number 39, which is always false; only the id
 				// substring check can set isVaal.
 				isVaal := strings.Contains(as.Str("Id"), "vaal")

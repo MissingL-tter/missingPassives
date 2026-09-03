@@ -75,7 +75,7 @@ func (env *Env) offenceMiscDPS(c *offenceCtx) {
 		output.Del("SustainableTrauma")
 	}
 	// Mantra of Flames buff count.
-	// #EVAL: `cfg` here is not the pass cfg (that local died with the loop
+	// `cfg` here is not the pass cfg (that local died with the loop
 	// above) but an undeclared global, i.e. nil.
 	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum(modparser.Base, nil, "Multiplier:TraumaStacks")
 	modDB.Multipliers["BuffOnSelf"] += skillModList.Sum(modparser.Base, nil, "Multiplier:VoltaxicWaitingStages")

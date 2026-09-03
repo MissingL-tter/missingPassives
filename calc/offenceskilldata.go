@@ -333,7 +333,7 @@ func (env *Env) offenceSkillData(c *offenceCtx) {
 
 	if skillModList.Flag(nil, "WeaponPhysAppliesToSpells") {
 		// Phys from weapon to Spells from Runegraft
-		// #EVAL: `Sum(...) or 100` — Sum always returns a number, so the
+		// `Sum(...) or 100` — Sum always returns a number, so the
 		// fallback is dead and an absent mod means a 0% multiplier.
 		mult := skillModList.Sum(modparser.Base, skillCfg, "WeaponPhysAppliesToSpellsPercent") / 100
 		if weaponOf(actor.ms.WeaponData1) != nil {

@@ -279,7 +279,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 			// Override returns NO VALUES when unset (ModDB.lua:219 falls off
 			// the end), so that collapses to the one-argument m_max — i.e.
 			// just the Sum — and the `or ailmentData.Chill.default` tail is
-			// dead, because a number (even 0) is truthy. #EVAL
+			// dead, because a number (even 0) is truthy.
 			chillValue := modDB.Sum(modparser.Base, nil, "SelfChillOverride")
 			if ov, ok := modDB.Override(nil, "ChillVal"); ok {
 				chillValue = math.Max(chillValue, valueNum(ov))
@@ -322,7 +322,7 @@ func (env *Env) doActorMisc(actor *performActor) {
 		if modDB.Flag(nil, "Shock") {
 			ail := data.NonDamagingAilment["Shock"]
 			// Same shape as chill above: the Override contributes only when
-			// it exists, and the `or default` tail is dead. #EVAL
+			// it exists, and the `or default` tail is dead.
 			shockValue := modDB.Sum(modparser.Base, nil, "SelfShockOverride")
 			if ov, ok := modDB.Override(nil, "ShockVal"); ok {
 				shockValue = math.Max(shockValue, valueNum(ov))

@@ -37,7 +37,7 @@ func (env *Env) offenceHitRate(c *offenceCtx) {
 		baseVsEnemy := skillModList.Sum(modparser.Base, cfg, "Accuracy", "AccuracyVsEnemy")
 		inc := skillModList.Sum(modparser.Inc, cfg, "Accuracy")
 		incVsEnemy := skillModList.Sum(modparser.Inc, cfg, "Accuracy", "AccuracyVsEnemy")
-		// #EVAL: the reference calls More("MORE", cfg, "Accuracy") — the
+		// The reference calls More("MORE", cfg, "Accuracy") — the
 		// "MORE" string lands in the cfg slot and the real cfg becomes a
 		// (never-matching) modifier name, so this is a cfg-less More.
 		more := skillModList.More(&modstore.Cfg{}, "Accuracy")

@@ -538,7 +538,7 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 					if level == 0 {
 						set.count += 3
 					} else {
-						// #EVAL: archive parity — the Lua adds to base.count here
+						// Archive parity: the Lua adds to base.count here
 						// instead of uber.count (a bug it keeps).
 						set.count = base.count + 3
 					}

@@ -6,8 +6,8 @@ Four lists that outlive the 2026-08-29 Lua remodel
 1. **Kept Lua-derived code** — production code that reproduces the
    reference's behaviour and survived the remodel by decision, with the
    reason each one stayed.
-2. **`#EVAL` inventory** — every reference quirk reproduced deliberately.
-   Per `README.md`, each is a candidate to fix or delete once the archive
+2. **Reference-quirk inventory** — every reference quirk reproduced
+   deliberately. Each is a candidate to fix or delete once the archive
    comparison stops being the contract.
 3. **Order enforced but unproven** — sorts a comparison pins without anyone
    having shown the order matters.
@@ -184,10 +184,11 @@ carry that without generating a key enum.
 
 ---
 
-## 2. `#EVAL` inventory
+## 2. Reference-quirk inventory
 
-Reference quirks reproduced deliberately. `grep -rn '#EVAL'` is the live
-list; this is a snapshot with the reason each one exists.
+Reference quirks reproduced deliberately. The `#EVAL` tag that marked them in
+source was removed 2026-09-03, so this table is the list, not a snapshot of
+one: 60 sites, with the reason each one exists.
 
 ### calc — Lua parse-precedence and dead-branch artifacts
 
@@ -221,7 +222,7 @@ list; this is a snapshot with the reason each one exists.
 | `calc/triggerhandler.go:355` | the second arm compares two freshly built tables, never true in Lua, so it reduces to `ignoresTickRate and not config.triggeredSkillCond` |
 | `calc/triggerhandler.go:548` | no configTable entry ever SETS `stagesAreOverlaps` — a reference-dead hook, kept so the expression is the reference's rather than a guess |
 
-Two `#EVAL`s in calc are **not** reference quirks but decisions recorded
+Two entries in calc are **not** reference quirks but decisions recorded
 2026-08-29: `calc/performbuffs.go:89` (`performBuffs`, ~1,000 lines) and
 `calc/skillmods.go:200` (`buildActiveSkillModList`, ~800 lines) are straight
 transliterations of the reference bodies, left unsplit.
@@ -239,6 +240,14 @@ transliterations of the reference bodies, left unsplit.
 | `modstore/list.go:55` | `copyTable(self[i], true)` is SHALLOW, so the merged copy shares tag tables (and their mutations) with the original |
 | `modstore/store.go:346` | `val > (max or 0)` means all-negative candidates never register (`Max` of {−5,−2} is nil, not −2) |
 | `modstore/store.go:380` | only `ModDB` implements `HasModInternal`; calling it on a `ModList` errors in the reference, so this panics |
+
+### config
+
+| site | quirk |
+|---|---|
+| `config/apply_hand.go:38` | the check-type call passes `var`, an undeclared global, so the map-affix appliers receive nil; none of them reads it |
+| `config/load.go:135` | a string-valued `<Placeholder>` is stored as an INPUT by the reference, not as a placeholder |
+| `config/tab.go:132` | `SetPlaceholder` hands the value to the control's own change handler, and that round trip quantizes the number to Lua's `tostring` precision, so the stored placeholder is not always the value the caller passed |
 
 ### data / modparser
 
@@ -271,14 +280,13 @@ transliterations of the reference bodies, left unsplit.
 | `test/luarender/minions.go:19` | the reference's comma logic skips nested-table entries, so a nested table abuts its neighbour without a separator |
 | `test/modtables_test.go:113` | `referenceNondeterminism` lists entries where the archive itself differs run to run (two cluster-jewel sizes sharing enchant text with different values) |
 
-### Prose `#EVAL` references (not sites)
+### Prose references (not sites)
 
-`README.md:188-194` documents the convention; `.claude/documentation/parity.md:11`
-states that reproduced bugs get tagged; `.claude/documentation/calc-core-plan.md`
-lines 88, 156-157, 202, 243-255, 303-307 discuss specific quirks in narrative
-form (that document's statuses drift — the tests and `parity.md` are current
-truth); `modstore/store.go:5` is the package-level note that its quirks are
-tagged.
+`parity.md:11` states that reproduced bugs are inventoried here;
+`calc-core-plan.md` discusses specific quirks in narrative form at lines 107,
+175-176, 221, 262-274 and 322-326 (that document's statuses drift — the tests
+and `parity.md` are current truth); `modstore/store.go:5` is the package-level
+note pointing at this section.
 
 ---
 
