@@ -179,7 +179,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 	parentActor.DB = parentDB
 	playerActor.WeaponData1 = &msWeapon{all1H: true, added: map[string]bool{"Sword": true, "Axe": false}}
 	playerActor.WeaponData2 = &msWeapon{}
-	playerActor.MinionData = &modstore.MinionData{MonsterTags: []string{"demon", "humanoid"}}
+	playerActor.MinionData = &modstore.MinionData{MonsterTags: []string{"demon", "humanoid", "beast"}}
 	playerActor.ManaEfficiency = 20
 	playerActor.ActiveSkillList = []modstore.ActiveSkill{
 		&fixtureActiveSkill{hasRes: true, skillData: map[string]float64{"ManaReservedBase": 300, "LifeReservedBase": 960}, buffNames: []string{"Hatred"}},

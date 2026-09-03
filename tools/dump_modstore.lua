@@ -123,12 +123,21 @@ for i, v in ipairs(sortedKeys(varNames)) do
 	if i % 5 == 0 then multFix.enemy[v] = (i % 6) + 1 end
 	if i % 6 == 0 then multFix.parentDB[v] = (i % 4) * 3 end
 end
+-- Cross-actor multipliers the synthetic Multiplier/MultiplierThreshold
+-- records read (SynthMult2 off the enemy; SynthMult3's limit and SynthMT5's
+-- threshold off the parent). They go through multFix because that is the
+-- one channel both sides see: the stores take it below and the "mult"
+-- record hands it to the Go test. A direct enemyDB:AddMod here is invisible
+-- to the port and fails the differential (2026-09-02, later.md 5).
+multFix.enemy.AbyssJewelType = 2.5
+multFix.parentDB.ActiveHolyStrikeMinionLimitDoubled = 4
+multFix.parentDB.SynthMTThr = 2
 for i, v in ipairs(sortedKeys(condNames)) do
 	if i % 3 == 0 then condFix.leaf[v] = true end
 	if i % 5 == 0 then condFix.root[v] = true end
 	if i % 4 == 0 then condFix.enemy[v] = true end
 end
-local outputFix = { player = {}, enemy = {}, parentA = {} }
+local outputFix = { player = { SynthPercentStatBase = 100 }, enemy = {}, parentA = {} }
 for i, s in ipairs(sortedKeys(statNames)) do
 	if i % 3 ~= 0 then outputFix.player[s] = (i % 13) * 7 + (i % 2) * 0.25 end
 	if i % 4 == 0 then outputFix.enemy[s] = (i % 9) * 3 end
@@ -141,8 +150,8 @@ outputFix.enemy.Mana = 300
 
 local itemsFix = {
 	item1 = { name = "Voidheart", type = "Ring", rarity = "UNIQUE", corrupted = true, shaper = false, elder = false,
-		fms = { ["increased fire damage|ring 1"] = true, ["life|ring 1"] = true } },
-	item2 = { name = "Kalandra's Touch", type = "Ring", rarity = "UNIQUE", corrupted = false, shaper = false, elder = true, fms = {} },
+		fms = { ["increased fire damage|ring 1"] = true, ["life|ring 1"] = true, ["intelligence|ring 1"] = true } },
+	item2 = { name = "Kalandra's Touch", type = "Ring", rarity = "UNIQUE", corrupted = false, shaper = false, elder = true, fms = { ["intelligence|ring 2"] = true } },
 	item3 = { name = "Hubris Circlet", type = "Helmet", rarity = "RARE", corrupted = false, shaper = true, elder = false,
 		fms = { ["intelligence|helmet"] = true } },
 	item4 = { name = "Cobalt Jewel", type = "Jewel", rarity = "RARE", corrupted = false, shaper = false, elder = false, fms = {} },
@@ -203,7 +212,7 @@ local playerActor = {
 		{ skillTypes = { [SkillType.HasReservation] = true }, skillFlags = { disable = true }, skillData = { ManaReservedBase = 500 },
 			buffList = { { name = "Wrath" } } },
 	},
-	minionData = { monsterTags = { "demon", "humanoid" } },
+	minionData = { monsterTags = { "demon", "humanoid", "beast" } },
 	ManaEfficiency = 20,
 }
 local enemyActor = { output = outputFix.enemy, modDB = enemyDB }
@@ -358,14 +367,14 @@ local cfgs = {
 	{ keywordFlags = KeywordFlag.Aura + KeywordFlag.MatchAll },
 	{ source = "Item" },
 	{ source = "Tree", flags = ModFlag.Projectile },
-	{ skillName = sknList[1] or "Fireball", summonSkillName = sknList[2], skillTypes = pickTypes(2), skillPart = spList[1],
+	{ skillName = sknList[1] or "Fireball", summonSkillName = "SynthSummonName", skillTypes = pickTypes(2), skillPart = spList[1],
 	  slotName = snList[1], skillDist = 22, skillCond = pickConds(2),
 	  skillGrantedEffect = { id = sidList[1] or "None", baseFlags = { [bfList[1] or "none"] = true } } },
-	{ skillName = sknList[3] or "", skillTypes = pickTypes(3), skillPart = spList[2], slotName = snList[2],
+	{ skillName = sknList[3] or "", skillTypes = pickTypes(3), skillPart = 2, slotName = snList[2],
 	  skillDist = 8, actor = "enemy", skillCond = pickConds(3), item = makeItem(itemsFix.item3) },
 	{ skillDist = 55, skillTypes = pickTypes(5), baseFlags = { [bfList[2] or "none"] = true },
 	  skillGem = gemsFix.gem1, slotName = "Weapon 1", socketColor = "R", socketNum = 2,
-	  strengthGems = 2, dexterityGems = 1, intelligenceGems = 0 },
+	  strengthGems = 2, dexterityGems = 0, intelligenceGems = 0 },
 	{ flags = ModFlag.Claw + ModFlag.Hit + ModFlag.Attack + ModFlag.Weapon1H + ModFlag.WeaponMelee,
 	  keywordFlags = KeywordFlag.Hit + KeywordFlag.Attack, skillName = sknList[4],
 	  skillGem = gemsFix.gem2, socketColor = "B", socketNum = 1, strengthGems = 0, dexterityGems = 0, intelligenceGems = 3,
@@ -633,15 +642,19 @@ do
 		-- SynthGlobalLimitPair skip came out). 1.5 so floor (1) and noFloor
 		-- (1.5) differ.
 		mkm("Multiplier:" .. vn[2], "BASE", 1.5, "Synth"),
+		-- feed the other Multiplier vars the still-inert synthetic records read,
+		-- so their tag branch actually evaluates (2026-09-02, later.md 5).
+		mkm("Multiplier:ActiveGolemLimitDoubled", "BASE", 3, "Synth"),
+		mkm("Multiplier:SynthMTMult", "BASE", 5, "Synth"),
 		mkm("SynthMonsterTag1", "INC", 10, "Synth", { type = "MonsterTag", monsterTag = "Demon" }),
 		mkm("SynthMonsterTag2", "INC", 10, "Synth", { type = "MonsterTag", monsterTag = "Beast" }),
 		mkm("SynthMonsterTag3", "INC", 10, "Synth", { type = "MonsterTag", monsterTagList = { "beast", "HUMANOID" } }),
 		mkm("SynthMonsterTag4", "INC", 10, "Synth", { type = "MonsterTag", monsterTag = "Demon", neg = true }),
 		mkm("SynthBaseFlag1", "INC", 10, "Synth", { type = "BaseFlag", baseFlag = bfList[2] or "none" }),
 		mkm("SynthBaseFlag2", "INC", 10, "Synth", { type = "BaseFlag", baseFlag = "absent", neg = true }),
-		mkm("SynthSkillPart1", "INC", 10, "Synth", { type = "SkillPart", skillPart = spList[1] }),
-		mkm("SynthSkillPart2", "INC", 10, "Synth", { type = "SkillPart", skillPartList = { spList[2], spList[3] } }),
-		mkm("SynthSkillPart3", "INC", 10, "Synth", { type = "SkillPart", skillPart = spList[1], neg = true }),
+		mkm("SynthSkillPart1", "INC", 10, "Synth", { type = "SkillPart", skillPart = 2 }),
+		mkm("SynthSkillPart2", "INC", 10, "Synth", { type = "SkillPart", skillPartList = { 2, 3 } }),
+		mkm("SynthSkillPart3", "INC", 10, "Synth", { type = "SkillPart", skillPart = 2, neg = true }),
 		mkm("SynthLimit1", "BASE", 500, "Synth", { type = "Limit", limit = 42 }),
 		mkm("SynthLimit2", "BASE", 500, "Synth", { type = "Limit", limitVar = vn[3] }),
 		mkm("SynthMult1", "BASE", 2, "Synth", { type = "Multiplier", var = vn[2], div = 2, base = 5, invert = true }),
@@ -657,18 +670,18 @@ do
 		mkm("SynthMT2", "BASE", 4, "Synth", { type = "MultiplierThreshold", var = vn[2], threshold = 2, upper = true }),
 		mkm("SynthMT3", "BASE", 4, "Synth", { type = "MultiplierThreshold", var = vn[2], thresholdVar = vn[5] }),
 		mkm("SynthMT4", "BASE", 4, "Synth", { type = "MultiplierThreshold", var = vn[2], threshold = 99, equals = true }),
-		mkm("SynthMT5", "BASE", 4, "Synth", { type = "MultiplierThreshold", var = vn[2], thresholdActor = "parent", thresholdVar = vn[6] }),
+		mkm("SynthMT5", "BASE", 4, "Synth", { type = "MultiplierThreshold", var = "SynthMTMult", thresholdActor = "parent", thresholdVar = "SynthMTThr" }),
 		mkm("SynthPS1", "BASE", 1, "Synth", { type = "PerStat", stat = "ManaReservedPercent" }),
 		mkm("SynthPS2", "BASE", 1, "Synth", { type = "PerStat", stat = "LifeReservedPercent", div = 5 }),
 		mkm("SynthPS3", "BASE", 1, "Synth", { type = "PerStat", stat = "ManaUnreserved" }),
 		mkm("SynthPS4", "BASE", 1, "Synth", { type = "PerStat", stat = "ManaUnreserved", actor = "parent" }),
 		mkm("SynthPS5", "BASE", 1, "Synth", { type = "PerStat", statList = { sn[2], sn[4] }, limitVar = vn[3], limitTotal = true }),
 		mkm("SynthPS6", "BASE", 1, "Synth", { type = "PerStat", stat = sn[2], divVar = vn[9], base = 2 }),
-		mkm("SynthPCS1", "BASE", 3, "Synth", { type = "PercentStat", stat = sn[2], percentVar = vn[2], floor = true }),
+		mkm("SynthPCS1", "BASE", 3, "Synth", { type = "PercentStat", stat = "SynthPercentStatBase", percentVar = vn[2], floor = true }),
 		mkm("SynthPCS2", "BASE", 3, "Synth", { type = "PercentStat", statList = { sn[2], sn[4] }, percent = 50, limit = 9, actor = "enemy" }),
 		mkm("SynthST1", "BASE", 6, "Synth", { type = "StatThreshold", stat = sn[2], thresholdStat = sn[4] }),
 		mkm("SynthST2", "BASE", 6, "Synth", { type = "StatThreshold", statList = { sn[2] }, threshold = -1 }),
-		mkm("SynthST3", "BASE", 6, "Synth", { type = "StatThreshold", stat = sn[2], threshold = 5, thresholdPercentVar = vn[2], upper = true }),
+		mkm("SynthST3", "BASE", 6, "Synth", { type = "StatThreshold", stat = "SynthUnsetStat", threshold = 5, thresholdPercentVar = vn[2], upper = true }),
 		mkm("SynthCondNeg1", "INC", 10, "Synth", { type = "Condition", var = "Sword", neg = true }),
 		mkm("SynthCondNeg2", "INC", 10, "Synth", { type = "Condition", var = "Axe", neg = true }),
 		mkm("SynthCondNeg3", "INC", 10, "Synth", { type = "Condition", varList = { "Sword", condList[3] }, neg = true }),
@@ -686,7 +699,7 @@ do
 		mkm("SynthSock3", "INC", 10, "Synth", { type = "SocketedIn", socketColor = "R", sockets = "all" }),
 		mkm("SynthSock4", "INC", 10, "Synth", { type = "SocketedIn", socketColor = "B", sockets = { 1, 3 } }),
 		mkm("SynthSock5", "INC", 10, "Synth", { type = "SocketedIn", socketColor = "R", sockets = 3 }),
-		mkm("SynthSkillName1", "INC", 10, "Synth", { type = "SkillName", skillName = sknList[1], summonSkill = true }),
+		mkm("SynthSkillName1", "INC", 10, "Synth", { type = "SkillName", skillName = "SynthSummonName", summonSkill = true }),
 		mkm("SynthSkillName2", "INC", 10, "Synth", { type = "SkillName", skillNameList = { sknList[2], sknList[4] }, includeTransfigured = true }),
 		mkm("SynthSkillId1", "INC", 10, "Synth", { type = "SkillId", skillId = sidList[1] }),
 		mkm("SynthGlobalLimit1", "BASE", 30, "Synth", { type = "Multiplier", var = vn[2], globalLimit = 50, globalLimitKey = "SynthGL" }),

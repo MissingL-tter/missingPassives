@@ -551,12 +551,15 @@ determinism.
   `SynthGlobalLimit1/2/Pair` records were 0 / `{}` on both sides in all 12
   configs from 2026-08-20 to 2026-09-02 - the Multiplier variable they read
   was never given a value - and the differential reported them green the
-  whole time. Found only because their `"skip"` came out. After feeding the
-  variable, 20 of 61 synthetic records are STILL all-zero; 5 are negatives by
-  construction, 15 are tag branches the synthetic world was built to cover
-  and does not (later.md 5). When a record exists to exercise a branch, look
-  at its values at least once; "both sides agree" is compatible with "both
-  sides did nothing".
+  whole time. Found only because their `"skip"` came out. A census then found
+  20 of 61 synthetic records in that state; 11 were real blind spots and all
+  are fed now, the port matching each (later.md 5 has what each needed).
+  When a record exists to exercise a branch, look at its values at least
+  once; "both sides agree" is compatible with "both sides did nothing".
+  Feeding them exposed that the synthetic world is built on TWO sides: the
+  actor's minion tags are hardcoded in both the harness and the Go test, and
+  a mod added straight to a store in the harness never reaches the dump -
+  cross-actor multipliers go through `multFix`, which both sides read.
 - **A partial canon is a blind canon.** `data.ModCanon` drove the whole calc
   port while omitting `mod.replaced`/`mod.converted`; a divergence there would
   have compared equal at every stage. Audit what a canon emits, not just that
@@ -1297,7 +1300,7 @@ hard-codes that relative path.
 | `dump_parse.lua` | `parse_archive.jsonl` | 13,173 records, one per corpus line |
 | `dump_modtables.lua` | `tables_archive.jsonl` | 8,800 pattern-table entries across 20 tables |
 | `dump_modtools.lua` | `modtools_archive.jsonl` | 10,752 records × 7 modLib behaviours |
-| `dump_modstore.lua` | `modstore_archive.jsonl` | the fixture world + 18,525 checks |
+| `dump_modstore.lua` | `modstore_archive.jsonl` | the fixture world + 18,561 checks |
 | `dump_gamedata.lua` | `gamedata_archive.jsonl` | 136 subtrees of the booted `data` table |
 | `dump_tree.lua` | `tree_archive.jsonl` | a freshly built PassiveTree (before any calc) |
 | `dump_build.lua` | `build_<key>.jsonl` | per build, three variants, every stage checkpoint |
@@ -1362,8 +1365,7 @@ files**.
 
 `bump` (rebase `.archive` onto a newer PoB release), `cook` (build a PoE
 character to a written recipe inside the headless reference — required to read
-`poe-data-model.md` first), `dev` (toggle PoB dev mode), plus the `claudify`
-command/agent for compressing `.claude/` instruction files.
+`poe-data-model.md` first), `dev` (toggle PoB dev mode).
 
 ---
 

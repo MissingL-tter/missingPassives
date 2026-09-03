@@ -14,9 +14,10 @@ Four lists that outlive the 2026-08-29 Lua remodel
 4. **The one harness normalisation of a numeric-keyed table** — forced,
    cause pinned to a string key in the tree file's node constructor; the
    alternative of normalising at the source is recorded and not taken.
-5. **Synthetic mod-store records that agree on nothing** — 11 tag branches
-   whose synthetic record returns 0 in every config and which the corpus
-   does not cover either; the other 4 the corpus covers.
+5. **Synthetic mod-store records that agree on nothing** — resolved
+   2026-09-02: all 11 now produce a value the port matches; what each
+   needed, the two harness seams it exposed, and the 4 left inert on
+   purpose.
 
 None of these is work queued. All are things to revisit when the archive
 is deleted, or when a behaviour here turns out to matter.
@@ -352,49 +353,56 @@ INSERTION sequence differing across processes (common prefix 4 of 68), which
 sent the search upstream to `nodesInRadius`, then to `pairs(tree.nodes)`,
 then to the string key in the constructor.
 
-## 5. Synthetic mod-store records that agree on nothing (2026-09-02)
+## 5. Synthetic mod-store records that agree on nothing (2026-09-02, resolved same day)
 
 `tools/dump_modstore.lua`'s synthetic world exists for tag branches the
 corpus does not reach. Pulling the `SynthGlobalLimitPair` skip showed that
-record - and its two singles - had returned 0 / `{}` in all 12 configs since
-the file was written: the Multiplier variable they read was never set. That
-is fixed (a `Multiplier:<var>` BASE 1.5 mod feeds it; the pair now proves
-the shared cap at 30+20=50). After the fix, 20 of 61 synthetic records are
-still all-zero across all 12 configs.
+record had returned 0 in all 12 configs since the file was written; a census
+then found 20 of 61 synthetic records in the same state. Five were negatives
+by construction. Of the other 15, four were tag shapes the corpus already
+exercises on non-zero mods (`SynthMT1`, `SynthPS1`, `SynthPS2`, `SynthST1`)
+and are left as they are: feeding them would test what 553, 712 and 371
+corpus mods already test. The remaining 11 were real blind spots and are all
+closed - each now produces a non-zero result in at least one config and the
+port matches every one. Final census: 63 synthetic records, 8 all-zero (the
+4 negatives and the 4 corpus-covered).
 
-Five are negatives by construction and stay: `SynthMonsterTag4`,
-`SynthSkillPart3`, `SynthMult7`, `SynthMT4`, `SynthCondNeg2` (`neg = true`,
-`actor = "nonexistent"`, `threshold = 99`). Fifteen are not:
+| record | what it needed |
+|---|---|
+| `SynthMult2` | the ENEMY's `Multiplier:AbyssJewelType` (2.5): `noFloor`, `limit`, `actor` all evaluate |
+| `SynthMult3` | player `Multiplier:ActiveGolemLimitDoubled` (3) and the parent's `ActiveHolyStrikeMinionLimitDoubled` (4) for `limitVar`/`limitActor`/`limitTotal` |
+| `SynthMT5` | its own pair: self `SynthMTMult` (5) vs parent `SynthMTThr` (2); on the shared var it was 1.5 against the fixture's 7 and always excluded |
+| `SynthPCS1` | its own stat `SynthPercentStatBase` (100): `floor(100 * 1.5/100)` = 1; on the shared stat `floor(14 * 1.5/100)` = 0 |
+| `SynthST3` | its own UNSET stat, so 0 < 0.075 passes the `upper` gate; the shared stat's 14 tripped it |
+| `SynthMonsterTag2` | `"beast"` in the actor's minion tags - on BOTH sides, see seam 1 |
+| `SynthItem3` | `"intelligence"` on both scanned rings: `ItemCondition` ANDs every scanned item, and Kalandra's Touch returned false |
+| `SynthSock3` | one config with all sockets red (dex 1 -> 0 in the str-2 config): `sockets = "all"` needs total == the colour count |
+| `SynthSkillName1` | literal `SynthSummonName` on the record and on the one config with a `summonSkillName` |
+| `SynthSkillPart2` | numeric parts `{ 2, 3 }` and a config with `skillPart = 2`; the pool it indexed was empty |
+| `SynthST2` | nothing - it was never blind. Its `statList` hits a reference bug (`stat = stat + GetStat(self, stat, cfg)` with `stat` as the loop variable, string + number) and records `!`; the port panics in the same place. Error parity is a check |
 
-Measured against the corpus once Tabulate was text (every tag on every
-non-zero tabulated mod across all 12 configs of the 1,033 `q` records):
+Also fixed on the way: `SynthSkillPart1` had been "alive" only because its
+part was `nil` from the empty pool and `nil == cfg.skillPart` held in every
+config without a part - a vacuous match. Records 1 and 3 use part 2 now.
 
-| record | tag branch | corpus |
-|---|---|---|
-| `SynthMonsterTag2` | `MonsterTag` (positive match) | **type never on a non-zero mod** |
-| `SynthSkillPart2` | `SkillPart` via `skillPartList` | **type never on a non-zero mod** |
-| `SynthSock3` | `SocketedIn` with `sockets = "all"` | **type never on a non-zero mod** |
-| `SynthMult2` | `Multiplier` with `noFloor`, `limit`, `actor = "enemy"` | type yes (2,607), these attributes no |
-| `SynthMult3` | `Multiplier` with `limitVar`/`limitActor`/`limitTotal` | type yes, these attributes no |
-| `SynthMT5` | `MultiplierThreshold` with `thresholdActor`/`thresholdVar` | type yes (553), these attributes no |
-| `SynthPCS1` | `PercentStat` with `percentVar`, `floor` | type yes (279), these attributes no |
-| `SynthST2` | `StatThreshold` with `statList` + negative threshold | type yes (371), these attributes no |
-| `SynthST3` | `StatThreshold` with `thresholdPercentVar` | type yes, these attributes no |
-| `SynthItem3` | `ItemCondition` with `allSlots`, `excludeSelf` | type yes (10), these attributes no |
-| `SynthSkillName1` | `SkillName` with `summonSkill` | type yes (22), this attribute no |
-| `SynthMT1` | `MultiplierThreshold`, plain `threshold` | **covered** - harmless |
-| `SynthPS1`, `SynthPS2` | `PerStat`, with and without `div` | **covered** (712) - harmless |
-| `SynthST1` | `StatThreshold` with `thresholdStat` | **covered** - harmless |
+**Two seams the work exposed - both are how the synthetic world is built
+on two sides, and both are recorded so the next fed input goes through the
+right door:**
 
-Eleven are real blind spots: three tag types the port has never been checked
-on with a non-zero result, eight attribute branches of types it has.
+1. **`minionData` is hardcoded on both sides and not dump-driven.** Configs,
+   items, gems, multipliers, conditions and outputs all travel as dump
+   records the Go test replays, so a change on the Lua side mirrors itself.
+   The actor's minion tags do not: `dump_modstore.lua:206` and
+   `modstore_test.go:182` each hold the list. Feeding `"beast"` on one side
+   failed the differential until the other was edited by hand.
+2. **A direct `enemyDB:AddMod` / `parentDB:AddMod` in the harness is
+   invisible to the port.** Per-store multipliers reach Go through the
+   `multFix` table (the `"mult"` record); a mod added straight to a store
+   after placement is never emitted. `SynthMult2` failed on exactly this
+   and `SynthMult3`/`SynthMT5` only passed because their values happened not
+   to depend on the missing feed. All cross-actor feeds go through `multFix`.
 
-Each needs what the global-limit case needed: the input its tag reads
-(an actor output, an enemy actor, an item in the right slot, a socket group)
-set in at least one of the 12 configs so the record produces a number, then
-the dump regenerated and the port checked against it.
-
-The corpus column above was unreadable until 2026-09-02: the `q` records
-stored List and Tabulate as murmur digests, so which tags sat on which
-non-zero mods was not recorded. They are text now (knowledge.md 4.2), which
-is what made the measurement possible.
+And one thing the port caught: skill parts are numbers (part 1, 2, 3 of a
+skill), and Go's config models them as such. A literal string part on the
+Lua side was rejected with "the config models numeric parts only" - the
+right answer, and the fixture was wrong.

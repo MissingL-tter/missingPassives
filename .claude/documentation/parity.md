@@ -32,8 +32,9 @@ hope a build turns up later" (this method grew the corpus 9 → 12 builds,
 cheap per gap):
 
 1. Get an env that reaches it — `mb search` for a real ladder character with
-   the mod/skill, or hand-author a throwaway build in `.archive/src/Builds/`
-   with just enough on it to trip the guard.
+   the mod/skill, or hand-author a throwaway build in `test/corpus/` as
+   `authored_*.xml` with just enough on it to trip the guard. Never author a
+   build under `.archive/`.
 2. Dump it (`tools/dump_build.lua <key> <xml>`), add it to the variant map.
 3. Write the branch, delete the guard, confirm byte-identical.
 
@@ -176,7 +177,7 @@ is now only the marker that an applier exists, one per affix, 41 for 41.
 | `[~]` | `[~]` | `calc-defence` | `Modules/CalcDefence.lua` | 3,828 | **code**: `resistances`, `defence` and `buildDefenceEstimations` written in full — resistance conversion/caps, block, primary defences, evade, suppression, dodge, regen, recharge, recoup, damage reduction, avoidance, self-ailment duration, then the EHP half (pool drains, `numberOfHitsToDie`, max hit taken, EHP vs dots, degens). PvP scaling written. The 4 party-tab branches (block/max-block/max-life-leech equal-to-party, `MovementSpeedEqualHighestLinkedPlayers`) and `TakenFromPartyMemberESBeforeYou` stay guarded — **party is deferred by decision** (2026-08-26). **archive**: `test/calc_test.go` — 145 variants byte-identical on `.defence*` and `.ehp*` (mod/enemy/item DBs plus player and minion output, 506 output keys incl. `TotalEHP` to 13 significant digits). Negative controls: a 1e-7 perturbation inside `reducePoolsByDamage` and a one-value change in the defence tail each fail every variant |
 | `[ ]` | `[ ]` | `calc-breakdown` | `Modules/CalcBreakdown.lua` | 251 | |
 | `[x]` | `[x]` | `mod-parser` | `Modules/ModParser.lua` `ModTools.lua` | 7,193 | `test/parse_test.go` 13,173/13,173 · `test/tables_test.go` 8,800/8,800 · `test/modtools_test.go` 12,736 mods x 7 behaviours, 0 disagreements (format*/parseTags/parseFormattedSourceMod/compareModParams/setSource + the deep-copying parse cache). `mergeKeystones` reassigned to `mod-store` — it operates on a live ModDB and the tree keystone map. **code** `[x]`: its 3 panics are all error parity (the reference errors on the same input) |
-| `[x]` | `[x]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `test/modstore_test.go` 18,525 checks, 0 disagreements: the parsed corpus distributed over a store tree with fixture actors/configs, every aggregation (Sum/More/Flag/Override/List/Tabulate/HasMod/Max/Min/GetMultiplier/GetCondition), construction behaviours (ScaleAdd/Merge/Replace/Convert), `mergeKeystones`, plus 59 synthetic mods covering the tag branches the corpus never produces. Reference crashes are part of the contract (recorded as error sentinels, the port fails identically). **code** `[x]`: all 9 panics are error parity — every one is a shape the reference itself errors on |
+| `[x]` | `[x]` | `mod-store` | `Classes/ModStore.lua` `ModDB.lua` `ModList.lua` | 1,530 | `test/modstore_test.go` 18,561 checks, 0 disagreements: the parsed corpus distributed over a store tree with fixture actors/configs, every aggregation (Sum/More/Flag/Override/List/Tabulate/HasMod/Max/Min/GetMultiplier/GetCondition), construction behaviours (ScaleAdd/Merge/Replace/Convert), `mergeKeystones`, plus 59 synthetic mods covering the tag branches the corpus never produces. Reference crashes are part of the contract (recorded as error sentinels, the port fails identically). **code** `[x]`: all 9 panics are error parity — every one is a shape the reference itself errors on |
 | `[ ]` | `[ ]` | `stat-describer` | `Modules/StatDescriber.lua` | 292 | |
 
 `mod-parser` converts the game's English mod text into structured modifiers:
