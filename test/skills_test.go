@@ -5,7 +5,9 @@ package test
 // gem's reference table (the typed fields rendered by luacanon) against the
 // calc fixture's skillsTab dump. Runtime keys the calc stamps after load
 // (and view-only keys the port skips) are masked on the fixture side, each
-// with its owner noted.
+// with its owner noted. The bool keys in luacanon.FalseIsAbsent render only
+// when true on both sides: the reference stored false or nothing for them
+// interchangeably.
 
 import (
 	"encoding/json"

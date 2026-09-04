@@ -92,8 +92,11 @@ Do not write Go that thinks in Lua tables.
   typed accessors, does not satisfy this.
 - A type switch with a silent default, or an assertion whose `ok` is discarded, is a bug:
   handle the case or panic.
-- Use `util.Opt[T]` only where the reference distinguishes absent from zero and a
-  differential sees the difference; plain types everywhere else.
+- `util.Opt` wraps a number only where the input itself has an empty state (an empty
+  config box, an item line without `{range:}`, no item in the slot) and a reader answers
+  differently for empty than for zero; never a bool — a missing bool key compares as
+  false (`luacanon.FalseIsAbsent`). A differential seeing a missing key is not by itself
+  a reason.
 - Reproduce a Lua semantic — truthiness, nil-vs-absent, string→number coercion, 1-based
   indexing, `pairs()` order, `tostring` number spelling — in product code only with the
   differential that proves it load-bearing cited in a comment at that site.

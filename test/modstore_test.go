@@ -705,7 +705,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 			}
 			synthDB.AddMod(mod)
 			synthMods = append(synthMods, mod)
-			if got := luacanon.CanonMods(mod); got != luacanon.NormalizeArchiveMods(rec.Spec) {
+			if got := luacanon.CanonMods(mod); !luacanon.SameCanon(got, luacanon.NormalizeArchiveMods(rec.Spec)) {
 				fail("synth spec", fmt.Sprintf("decode round-trip:\n  want %s\n  got  %s", rec.Spec, got))
 			}
 		case "sq":
@@ -749,7 +749,7 @@ func TestModStoreAgainstReference(t *testing.T) {
 					if !tabPanic {
 						tabC = gotTab.(string)
 					}
-					if tabC != want.Ta {
+					if !luacanon.SameCanon(tabC, want.Ta) {
 						fail("sq tab", fmt.Sprintf("%s cfg%d:\n  want %s\n  got  %s", rec.Name, ci+1, want.Ta, tabC))
 					}
 				}

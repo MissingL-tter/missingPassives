@@ -92,7 +92,7 @@ func (env *Env) canGrantedEffectSupportActiveSkill(grantedEffect *data.GrantedEf
 	// support item-granted skills
 	if env.geFromItem(grantedEffect) && grantedEffect.Support {
 		ae := activeSkill.ActiveEffect
-		srcFromItem := ae.SrcInstance != nil && ae.SrcInstance.FromItem.V
+		srcFromItem := ae.SrcInstance != nil && ae.SrcInstance.FromItem
 		if env.geFromItem(ae.GrantedEffect) || len(ae.GrantedEffect.ModSource) >= 4 && ae.GrantedEffect.ModSource[:4] == "Item" || srcFromItem {
 			return false
 		}

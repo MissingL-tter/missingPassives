@@ -1,7 +1,5 @@
 package modparser
 
-import "github.com/MissingL-tter/missingPassives/internal/util"
-
 // List of modifier tags — ModParser.lua:1319.
 var modTagList = map[string]entryValue{
 	`on enemies`:                               &PatternEntry{},
@@ -471,8 +469,8 @@ var modTagList = map[string]entryValue{
 	`w?i?t?h? main hand`:    &PatternEntry{TagList: []Tag{&CondTag{Var: "MainHandAttack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
 	`w?i?t?h? off ?hand`:    &PatternEntry{TagList: []Tag{&CondTag{Var: "OffHandAttack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
 	`[fi]?[rn]?[of]?[ml]?[ i]?[hc]?[it]?[te]?[sd]? ? with this weapon`: &PatternEntry{TagList: []Tag{&CondTag{Var: "{Hand}Attack"}, &SkillTypeTag{SkillType: SkillTypeAttack}}},
-	`if your o[tp][hp][eo][rs]i?t?e? ring is a shaper item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ShaperCond: util.Some(true)}},
-	`if your o[tp][hp][eo][rs]i?t?e? ring is an elder item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ElderCond: util.Some(true)}},
+	`if your o[tp][hp][eo][rs]i?t?e? ring is a shaper item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ShaperCond: true}},
+	`if your o[tp][hp][eo][rs]i?t?e? ring is an elder item`:            &PatternEntry{Tag: &ItemCondTag{ItemSlot: "Ring {OtherSlotNum}", ElderCond: true}},
 	`of skills supported by spellslinger`:                              &PatternEntry{Tag: &CondTag{Var: "SupportedBySpellslinger"}},
 	// Equipment conditions
 	`while holding a fishing rod`:               &PatternEntry{Tag: &CondTag{Var: "UsingFishing"}},
@@ -511,7 +509,7 @@ var modTagList = map[string]entryValue{
 	`if there are no ([a-zA-Z]+) modifiers on other equipped items`: entryFn(func(c caps) *PatternEntry {
 		return &PatternEntry{Tag: &ItemCondTag{SearchCond: c.s(1), ItemSlot: "{SlotName}", AllSlots: true, ExcludeSelf: true, Neg: true}}
 	}),
-	`if corrupted`:                        &PatternEntry{Tag: &ItemCondTag{ItemSlot: "{SlotName}", CorruptedCond: util.Some(true)}},
+	`if corrupted`:                        &PatternEntry{Tag: &ItemCondTag{ItemSlot: "{SlotName}", CorruptedCond: true}},
 	`with a normal item equipped`:         &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "NormalItem", Threshold: opt(1)}},
 	`with a magic item equipped`:          &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "MagicItem", Threshold: opt(1)}},
 	`with a rare item equipped`:           &PatternEntry{Tag: &MultiplierTag{IsThreshold: true, Var: "RareItem", Threshold: opt(1)}},

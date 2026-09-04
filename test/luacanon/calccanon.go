@@ -133,10 +133,7 @@ func ConfigInputFromTable(m map[string]any, placeholder bool) *calc.ConfigInput 
 	flag("EEIgnoreHitDamage", &c.EEIgnoreHitDamage)
 	flag("ignoreJewelLimits", &c.IgnoreJewelLimits)
 	flag("ignoreItemDisablers", &c.IgnoreItemDisablers)
-	if v, ok := m["conditionLowEnergyShield"]; ok {
-		c.ConditionLowEnergyShield = util.Some(configTruthy(v))
-		used["conditionLowEnergyShield"] = true
-	}
+	flag("conditionLowEnergyShield", &c.ConditionLowEnergyShield)
 	opt("EHPUnluckyWorstOf", &c.EHPUnluckyWorstOf)
 	opt("enemyCritChance", &c.EnemyCritChance)
 	opt("enemyCritDamage", &c.EnemyCritDamage)
@@ -201,7 +198,7 @@ func ConfigInputTable(c *calc.ConfigInput) map[string]any {
 	t.flag("EEIgnoreHitDamage", c.EEIgnoreHitDamage)
 	t.flag("ignoreJewelLimits", c.IgnoreJewelLimits)
 	t.flag("ignoreItemDisablers", c.IgnoreItemDisablers)
-	t.optBool("conditionLowEnergyShield", c.ConditionLowEnergyShield)
+	t.flag("conditionLowEnergyShield", c.ConditionLowEnergyShield)
 	t.opt("EHPUnluckyWorstOf", c.EHPUnluckyWorstOf)
 	t.opt("enemyCritChance", c.EnemyCritChance)
 	t.opt("enemyCritDamage", c.EnemyCritDamage)
@@ -241,10 +238,10 @@ func ConfigInputTable(c *calc.ConfigInput) map[string]any {
 func BuffTable(b *calc.Buff) map[string]any {
 	t := table{"type": b.Type, "name": b.Name}
 	t.flag("activeSkillBuff", b.ActiveSkillBuff)
-	t.optBool("applyNotPlayer", b.ApplyNotPlayer)
-	t.optBool("applyMinions", b.ApplyMinions)
-	t.optBool("applyAllies", b.ApplyAllies)
-	t.optBool("allowTotemBuff", b.AllowTotemBuff)
+	t.flag("applyNotPlayer", b.ApplyNotPlayer)
+	t.flag("applyMinions", b.ApplyMinions)
+	t.flag("applyAllies", b.ApplyAllies)
+	t.flag("allowTotemBuff", b.AllowTotemBuff)
 	t.str("cond", b.Cond)
 	t.str("stackVar", b.StackVar)
 	t.opt("stackLimit", b.StackLimit)

@@ -157,14 +157,14 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 			} else if buffType == "GlobalDB" {
 				modDB.AddList(buff.ModList)
 			} else if buffType == "Buff" {
-				if env.ModeBuffs && (!activeSkill.SkillFlags["totem"] || buff.AllowTotemBuff.Or(false)) {
+				if env.ModeBuffs && (!activeSkill.SkillFlags["totem"] || buff.AllowTotemBuff) {
 					var buffCfg *modstore.Cfg
 					var modStore modstore.Store = modDB
 					if buff.ActiveSkillBuff {
 						buffCfg = skillCfg
 						modStore = skillModList
 					}
-					if !buff.ApplyNotPlayer.Or(false) {
+					if !buff.ApplyNotPlayer {
 						activeSkill.BuffSkill = true
 						modDB.Conditions.Set("AffectedBy"+noSpace(buffName), true)
 						srcList := modstore.NewList(nil)
@@ -176,7 +176,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 							notBuff[buffName] = true
 						}
 					}
-					if env.Minion != nil && !env.Minion.Hostile && (buff.ApplyMinions.Or(false) || buff.ApplyAllies.Or(false) || skillModList.Flag(nil, "BuffAppliesToAllies")) {
+					if env.Minion != nil && !env.Minion.Hostile && (buff.ApplyMinions || buff.ApplyAllies || skillModList.Flag(nil, "BuffAppliesToAllies")) {
 						activeSkill.MinionBuffSkill = true
 						env.Minion.DB.Conditions.Set("AffectedBy"+noSpace(buffName), true)
 						srcList := modstore.NewList(nil)
@@ -187,14 +187,14 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 					}
 				}
 			} else if buffType == "Guard" {
-				if env.ModeBuffs && (!activeSkill.SkillFlags["totem"] || buff.AllowTotemBuff.Or(false)) {
+				if env.ModeBuffs && (!activeSkill.SkillFlags["totem"] || buff.AllowTotemBuff) {
 					var buffCfg *modstore.Cfg
 					var modStore modstore.Store = modDB
 					if buff.ActiveSkillBuff {
 						buffCfg = skillCfg
 						modStore = skillModList
 					}
-					if !buff.ApplyNotPlayer.Or(false) {
+					if !buff.ApplyNotPlayer {
 						activeSkill.BuffSkill = true
 						srcList := modstore.NewList(nil)
 						inc := modStore.Sum(modparser.Inc, buffCfg, "BuffEffect", "BuffEffectOnSelf", "BuffEffectOnPlayer")
@@ -264,7 +264,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 							return 1
 						}
 						if !modDB.Flag(nil, "CannotGainWarcryBuffs") {
-							if !buff.ApplyNotPlayer.Or(false) {
+							if !buff.ApplyNotPlayer {
 								activeSkill.BuffSkill = true
 								modDB.Conditions.Set("AffectedBy"+warcryName, true)
 								srcList := modstore.NewList(nil)
@@ -579,7 +579,7 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 								buffCfg = minionSkillCfg
 								modStore = minionSkillModList
 							}
-							if buff.ApplyAllies.Or(false) {
+							if buff.ApplyAllies {
 								activeMinionSkill.BuffSkill = true
 								modDB.Conditions.Set("AffectedBy"+noSpace(buffName), true)
 								srcList := modstore.NewList(nil)
@@ -592,8 +592,8 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 									notBuff[buffName] = true
 								}
 							}
-							envMinionCheck := env.Minion != nil && (env.Minion == castingMinion || buff.ApplyAllies.Or(false))
-							if buff.ApplyMinions.Or(false) || envMinionCheck {
+							envMinionCheck := env.Minion != nil && (env.Minion == castingMinion || buff.ApplyAllies)
+							if buff.ApplyMinions || envMinionCheck {
 								activeMinionSkill.MinionBuffSkill = true
 								if envMinionCheck {
 									env.Minion.DB.Conditions.Set("AffectedBy"+noSpace(buffName), true)

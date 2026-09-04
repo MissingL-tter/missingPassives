@@ -41,10 +41,30 @@ func (d NumericDiff) String() string {
 	return fmt.Sprintf("%s: %v vs archive %v", d.Path, d.Got, d.Want)
 }
 
+// FalseIsAbsent lists the keys the product holds as a plain bool where the
+// reference left either false or no key at all. Every reference reader
+// tests them for truthiness, so the two states are one: a missing key on
+// either side compares as false. `enabled` is deliberately not here - a
+// gem saved disabled is a stored false the port renders as one.
+var FalseIsAbsent = map[string]bool{
+	// skills.Gem / skills.SocketGroup
+	"enableGlobal1": true, "enableGlobal2": true, "matchesSocket": true,
+	"fromItem": true, "includeInFullDPS": true, "slotEnabled": true,
+	// calc.Buff
+	"applyNotPlayer": true, "applyMinions": true, "applyAllies": true,
+	"allowTotemBuff": true,
+	// calc.ConfigInput and the defence output it feeds
+	"conditionLowEnergyShield": true, "CappingES": true,
+	// modparser.ItemCondTag
+	"corruptedCond": true, "shaperCond": true, "elderCond": true,
+}
+
 // EqualWithin compares two canonical encodings. Identical text is equal.
 // Otherwise both are parsed and walked leaf by leaf: numbers agree once
 // quantized to CompareDigits, everything else - strings, booleans, the
-// shape itself - must match exactly.
+// shape itself - must match exactly, except that a FalseIsAbsent key
+// present as false on one side and missing on the other is not a
+// difference.
 //
 // It returns the leaves that disagreed and, separately, how many numbers
 // agreed only after quantizing, so a caller can report what it let through
@@ -104,9 +124,13 @@ func (c *comparison) walk(path string, got, want any) {
 			wv, inWant := w[k]
 			switch {
 			case !inGot:
-				c.report(join(path, k), nil, wv)
+				if !(FalseIsAbsent[k] && wv == false) {
+					c.report(join(path, k), nil, wv)
+				}
 			case !inWant:
-				c.report(join(path, k), gv, nil)
+				if !(FalseIsAbsent[k] && gv == false) {
+					c.report(join(path, k), gv, nil)
+				}
 			default:
 				c.walk(join(path, k), gv, wv)
 			}
@@ -266,7 +290,10 @@ func writeElemKey(b *strings.Builder, v any) {
 			return
 		}
 		keys := make([]string, 0, len(t))
-		for k := range t {
+		for k, v := range t {
+			if FalseIsAbsent[k] && v == false {
+				continue
+			}
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)

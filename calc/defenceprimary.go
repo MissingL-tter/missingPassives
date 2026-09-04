@@ -160,20 +160,12 @@ func (env *Env) defencePrimary(actor *performActor) {
 
 	armourCap := modDB.Flag(nil, "ArmourESRecoveryCap")
 	evasionCap := modDB.Flag(nil, "EvasionESRecoveryCap")
-	lowESConfig := env.ConfigInput.ConditionLowEnergyShield.Or(false)
-	// Lua `A and B or C and D or configInput[...]`: when both guards fail the
-	// chain yields the raw config value, which is nil (no key) when unset.
-	cappingESValue := env.ConfigInput.ConditionLowEnergyShield
-	switch {
-	case armourCap && output.N("Armour") < output.N("EnergyShield"):
-		cappingESValue = util.Some(true)
-	case evasionCap && output.N("Evasion") < output.N("EnergyShield"):
-		cappingESValue = util.Some(true)
-	}
-	if cappingESValue.Set {
-		output.SetFlag("CappingES", cappingESValue.V)
-	}
-	if cappingES := cappingESValue.Or(false); cappingES {
+	lowESConfig := env.ConfigInput.ConditionLowEnergyShield
+	cappingES := armourCap && output.N("Armour") < output.N("EnergyShield") ||
+		evasionCap && output.N("Evasion") < output.N("EnergyShield") ||
+		lowESConfig
+	output.SetFlag("CappingES", cappingES)
+	if cappingES {
 		var cap float64
 		switch {
 		case armourCap && evasionCap:

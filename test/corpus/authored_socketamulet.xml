@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Witch" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="3" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Amulet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemOrbOfStorms" variantId="OrbOfStorms" enableGlobal1="true" level="20" nameSpec="Orb of Storms" skillId="OrbOfStorms" quality="0" count="nil"/>
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SupportGemFasterCast" variantId="SupportFasterCasting" enableGlobal1="true" level="20" nameSpec="Faster Casting" skillId="SupportFasterCasting" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Ring 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemOrbOfStorms" variantId="OrbOfStorms" enableGlobal1="true" level="20" nameSpec="Orb of Storms" skillId="OrbOfStorms" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: RARE
+Socket Amulet
+Unset Amulet
+Item Level: 84
+Sockets: B
+Implicits: 1
+Has 1 Socket
+</Item>
+		<Item id="2">Rarity: RARE
+Socket Ring
+Unset Ring
+Item Level: 84
+Sockets: R
+Implicits: 1
+Has 1 Socket
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Amulet" itemPbURL="" itemId="1"/>
+			<Slot name="Ring 1" itemPbURL="" itemId="2"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

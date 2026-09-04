@@ -51,3 +51,15 @@ doomhex	../../test/corpus/authored_doomhex.xml
 misc1	../../test/corpus/authored_misc1.xml
 misc2	../../test/corpus/authored_misc2.xml
 misc3	../../test/corpus/authored_misc3.xml
+hittime	../../test/corpus/authored_hittime.xml
+bow	../../test/corpus/authored_bow.xml
+melee	../../test/corpus/authored_melee.xml
+minion1	../../test/corpus/authored_minion1.xml
+minion2	../../test/corpus/authored_minion2.xml
+stagemult	../../test/corpus/authored_stagemult.xml
+wand	../../test/corpus/authored_wand.xml
+spellmods	../../test/corpus/authored_spellmods.xml
+melee2	../../test/corpus/authored_melee2.xml
+unarmed	../../test/corpus/authored_unarmed.xml
+socketless	../../test/corpus/authored_socketless.xml
+socketamulet	../../test/corpus/authored_socketamulet.xml

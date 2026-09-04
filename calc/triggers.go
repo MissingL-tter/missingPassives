@@ -83,10 +83,10 @@ func (env *Env) slotMatch(skill *ActiveSkill) bool {
 	main := env.PlayerMainSkill
 	fromItem := env.geFromItem(main.ActiveEffect.GrantedEffect) || env.geFromItem(skill.ActiveEffect.GrantedEffect)
 	if !fromItem {
-		if main.ActiveEffect.SrcInstance != nil && main.ActiveEffect.SrcInstance.FromItem.V {
+		if main.ActiveEffect.SrcInstance != nil && main.ActiveEffect.SrcInstance.FromItem {
 			fromItem = true
 		}
-		if skill.ActiveEffect.SrcInstance != nil && skill.ActiveEffect.SrcInstance.FromItem.V {
+		if skill.ActiveEffect.SrcInstance != nil && skill.ActiveEffect.SrcInstance.FromItem {
 			fromItem = true
 		}
 	}

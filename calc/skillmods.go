@@ -42,16 +42,14 @@ type Minion struct {
 	MainSkill       *ActiveSkill
 }
 
-// Buff is one activeSkill.buffList entry. The Opt flags are plain Lua
-// assignments from skillData, so absent, false and true are all distinct
-// (the archive comparison sees the key set).
+// Buff is one activeSkill.buffList entry.
 type Buff struct {
 	Type, Name      string
 	ActiveSkillBuff bool
-	ApplyNotPlayer  util.Opt[bool]
-	ApplyMinions    util.Opt[bool]
-	ApplyAllies     util.Opt[bool]
-	AllowTotemBuff  util.Opt[bool]
+	ApplyNotPlayer  bool
+	ApplyMinions    bool
+	ApplyAllies     bool
+	AllowTotemBuff  bool
 	Cond            string
 	StackVar        string
 	StackLimit      util.Opt[float64]
@@ -565,7 +563,7 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	}
 	skillModList.AddMod(newModS("GemLevel", modparser.Base, modparser.Num(gemLevel), "Max Level"))
 	skillModList.AddMod(newModS("GemQuality", modparser.Base, modparser.Num(gemQuality), "Max Quality"))
-	socketMatches := activeEffect.SrcInstance != nil && activeEffect.SrcInstance.MatchesSocket.V
+	socketMatches := activeEffect.SrcInstance != nil && activeEffect.SrcInstance.MatchesSocket
 	if socketMatches {
 		skillModList.AddMod(newModS("GemSocketQuality", modparser.Base, modparser.Num(data.Misc.MatchingSocketQualityBonus), "Socket Quality"))
 	}
@@ -955,35 +953,24 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 					StackVar:   effectTag.EffectStackVar,
 					StackLimit: effectTag.EffectStackLimit,
 				}
-				if effectTag.AllowTotemBuff {
-					buff.AllowTotemBuff = util.Some(true)
-				}
-				if effectTag.ApplyNotPlayer {
-					buff.ApplyNotPlayer = util.Some(true)
-				}
-				if effectTag.ApplyMinions {
-					buff.ApplyMinions = util.Some(true)
-				}
+				buff.AllowTotemBuff = effectTag.AllowTotemBuff
+				buff.ApplyNotPlayer = effectTag.ApplyNotPlayer
+				buff.ApplyMinions = effectTag.ApplyMinions
 				if mod.Source == activeGrantedEffect.ModSource {
 					// Inherit buff configuration from the active skill.
-					// These are plain assignments in the reference, so a nil
-					// on the right clears whatever the effect tag put there
-					// -- notably allowTotemBuff.
-					sd := func(key string) util.Opt[bool] {
-						if !activeSkill.SkillData.Has(key) {
-							return util.Opt[bool]{}
-						}
-						return util.Some(activeSkill.SkillData.Flag(key))
-					}
+					// These are plain assignments in the reference, so a
+					// skillData key that is unset clears whatever the effect
+					// tag put there -- notably allowTotemBuff.
+					sd := activeSkill.SkillData
 					buff.ActiveSkillBuff = true
-					if !buff.ApplyNotPlayer.Or(false) {
-						buff.ApplyNotPlayer = sd("buffNotPlayer")
+					if !buff.ApplyNotPlayer {
+						buff.ApplyNotPlayer = sd.Flag("buffNotPlayer")
 					}
-					if !buff.ApplyMinions.Or(false) {
-						buff.ApplyMinions = sd("buffMinions")
+					if !buff.ApplyMinions {
+						buff.ApplyMinions = sd.Flag("buffMinions")
 					}
-					buff.ApplyAllies = sd("buffAllies")
-					buff.AllowTotemBuff = sd("allowTotemBuff")
+					buff.ApplyAllies = sd.Flag("buffAllies")
+					buff.AllowTotemBuff = sd.Flag("allowTotemBuff")
 				}
 				activeSkill.BuffListTyped = append(activeSkill.BuffListTyped, buff)
 			}

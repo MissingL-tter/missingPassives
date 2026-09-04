@@ -105,16 +105,14 @@ type ConfigInput struct {
 	ChanceToIgnoreEnemyPhysicalDamageReductionMode string
 	DoomBlastSource                                string
 
-	PvpScaling            bool
-	DisableEHPGainOnBlock bool
-	ConditionLowLife      bool
-	ExcludeCullingDPS     bool
-	EEIgnoreHitDamage     bool
-	IgnoreJewelLimits     bool
-	IgnoreItemDisablers   bool
-	// ConditionLowEnergyShield's raw value is what output.CappingES gets
-	// when neither armour nor evasion caps ES.
-	ConditionLowEnergyShield util.Opt[bool]
+	PvpScaling               bool
+	DisableEHPGainOnBlock    bool
+	ConditionLowLife         bool
+	ExcludeCullingDPS        bool
+	EEIgnoreHitDamage        bool
+	IgnoreJewelLimits        bool
+	IgnoreItemDisablers      bool
+	ConditionLowEnergyShield bool
 
 	EHPUnluckyWorstOf           util.Opt[float64]
 	EnemyCritChance             util.Opt[float64]

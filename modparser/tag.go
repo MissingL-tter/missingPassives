@@ -308,13 +308,16 @@ type GlobalEffectTag struct {
 
 // ItemCondTag conditions on an equipped item.
 type ItemCondTag struct {
-	ItemSlot      string
-	SearchCond    string
-	RarityCond    string
-	NameCond      string
-	CorruptedCond util.Opt[bool] // present-with-false matches uncorrupted items
-	ShaperCond    util.Opt[bool]
-	ElderCond     util.Opt[bool]
+	ItemSlot   string
+	SearchCond string
+	RarityCond string
+	NameCond   string
+	// CorruptedCond/ShaperCond/ElderCond: true requires the item to have
+	// that property; false is no condition (the reference reads them as
+	// truthy and only ever writes true).
+	CorruptedCond bool
+	ShaperCond    bool
+	ElderCond     bool
 	AllSlots      bool
 	BothSlots     bool
 	ExcludeSelf   bool
@@ -486,11 +489,6 @@ func (p *paramList) opt(name string, v util.Opt[float64]) {
 	}
 }
 func (p *paramList) num(name string, v float64) { *p = append(*p, Param{name, Num(v)}) }
-func (p *paramList) optBool(name string, v util.Opt[bool]) {
-	if v.Set {
-		*p = append(*p, Param{name, Bool(v.V)})
-	}
-}
 func (p *paramList) flag(name string, v bool) {
 	if v {
 		*p = append(*p, Param{name, Bool(true)})
@@ -654,9 +652,9 @@ func (t *ItemCondTag) Params() []Param {
 	p.str("searchCond", t.SearchCond)
 	p.str("rarityCond", t.RarityCond)
 	p.str("nameCond", t.NameCond)
-	p.optBool("corruptedCond", t.CorruptedCond)
-	p.optBool("shaperCond", t.ShaperCond)
-	p.optBool("elderCond", t.ElderCond)
+	p.flag("corruptedCond", t.CorruptedCond)
+	p.flag("shaperCond", t.ShaperCond)
+	p.flag("elderCond", t.ElderCond)
 	p.flag("allSlots", t.AllSlots)
 	p.flag("bothSlots", t.BothSlots)
 	p.flag("excludeSelf", t.ExcludeSelf)
@@ -815,7 +813,7 @@ func TagFromParams(kind string, params []Param) (Tag, bool) {
 			ApplyNotPlayer: r.flag("applyNotPlayer"), AllowTotemBuff: r.flag("allowTotemBuff")}
 	case TagItemCondition:
 		t = &ItemCondTag{ItemSlot: r.str("itemSlot"), SearchCond: r.str("searchCond"), RarityCond: r.str("rarityCond"), NameCond: r.str("nameCond"),
-			CorruptedCond: r.optBool("corruptedCond"), ShaperCond: r.optBool("shaperCond"), ElderCond: r.optBool("elderCond"), AllSlots: r.flag("allSlots"),
+			CorruptedCond: r.flag("corruptedCond"), ShaperCond: r.flag("shaperCond"), ElderCond: r.flag("elderCond"), AllSlots: r.flag("allSlots"),
 			BothSlots: r.flag("bothSlots"), ExcludeSelf: r.flag("excludeSelf"), Neg: r.flag("neg")}
 	case TagDistanceRamp:
 		t = &DistanceRampTag{Ramp: r.pairs("ramp")}
@@ -876,18 +874,6 @@ func (r *paramReader) flag(k string) bool {
 		r.bad = true
 	}
 	return bool(b)
-}
-
-func (r *paramReader) optBool(k string) util.Opt[bool] {
-	v, ok := r.take(k)
-	if !ok {
-		return util.Opt[bool]{}
-	}
-	b, isBool := v.(Bool)
-	if !isBool {
-		r.bad = true
-	}
-	return util.Some(bool(b))
 }
 
 // numOfParam reads a numeric param kind. Text never reaches a numeric

@@ -83,9 +83,7 @@ func projectConfig(src map[Var]Value, placeholder bool) *calc.ConfigInput {
 	flag("EEIgnoreHitDamage", &c.EEIgnoreHitDamage)
 	flag("ignoreJewelLimits", &c.IgnoreJewelLimits)
 	flag("ignoreItemDisablers", &c.IgnoreItemDisablers)
-	if v, ok := src["conditionLowEnergyShield"]; ok {
-		c.ConditionLowEnergyShield = util.Some(Truthy(v))
-	}
+	flag("conditionLowEnergyShield", &c.ConditionLowEnergyShield)
 	opt("EHPUnluckyWorstOf", &c.EHPUnluckyWorstOf)
 	opt("enemyCritChance", &c.EnemyCritChance)
 	opt("enemyCritDamage", &c.EnemyCritDamage)

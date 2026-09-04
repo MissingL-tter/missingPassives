@@ -889,19 +889,19 @@ func evalItemCondition(ctx Store, tag *modparser.ItemCondTag, cfg *Cfg) bool {
 			matches = append(matches, item.Rarity() == tag.RarityCond)
 		}
 	}
-	if tag.CorruptedCond.Set {
+	if tag.CorruptedCond {
 		for _, item := range items {
-			matches = append(matches, item.Corrupted() == tag.CorruptedCond.V)
+			matches = append(matches, item.Corrupted())
 		}
 	}
-	if tag.ShaperCond.Set {
+	if tag.ShaperCond {
 		for _, item := range items {
-			matches = append(matches, item.Shaper() == tag.ShaperCond.V)
+			matches = append(matches, item.Shaper())
 		}
 	}
-	if tag.ElderCond.Set {
+	if tag.ElderCond {
 		for _, item := range items {
-			matches = append(matches, item.Elder() == tag.ElderCond.V)
+			matches = append(matches, item.Elder())
 		}
 	}
 	if tag.NameCond != "" {

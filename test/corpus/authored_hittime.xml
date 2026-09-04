@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Witch" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="3" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemWintertideBrand" variantId="WintertideBrand" enableGlobal1="true" level="20" nameSpec="Wintertide Brand" skillId="WintertideBrand" quality="0" count="nil" skillPart="1"/>
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SupportGemSwiftbrand" variantId="SupportSwiftbrand" enableGlobal1="true" level="20" nameSpec="Swiftbrand" skillId="SupportSwiftbrand" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemWintertideBrand" variantId="WintertideBrand" enableGlobal1="true" level="20" nameSpec="Wintertide Brand" skillId="WintertideBrand" quality="0" count="nil" skillPart="2" skillStageCount="5"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Gloves" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemPenanceBrand" variantId="PenanceBrand" enableGlobal1="true" level="20" nameSpec="Penance Brand" skillId="PenanceBrand" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Boots" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemPenanceBrand" variantId="PenanceBrandAltY" enableGlobal1="true" level="20" nameSpec="Penance Brand of Conduction" skillId="PenanceBrandAltY" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemArmageddonBrand" variantId="ArmageddonBrand" enableGlobal1="true" level="20" nameSpec="Armageddon Brand" skillId="ArmageddonBrand" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 2" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemArmageddonBrand" variantId="ArmageddonBrandAltY" enableGlobal1="true" level="20" nameSpec="Armageddon Brand of Recall" skillId="ArmageddonBrandAltY" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Ring 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemStormBrand" variantId="StormBrandAltX" enableGlobal1="true" level="20" nameSpec="Storm Brand of Indecision" skillId="StormBrandAltX" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Ring 2" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemVoidSphere" variantId="VoidSphereAltX" enableGlobal1="true" level="20" nameSpec="Void Sphere of Rending" skillId="VoidSphereAltX" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Boots" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemHydrosphere" variantId="Hydrosphere" enableGlobal1="true" level="20" nameSpec="Hydrosphere" skillId="Hydrosphere" quality="0" count="nil" skillPart="1"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Belt" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemGalvanicField" variantId="GalvanicField" enableGlobal1="true" level="20" nameSpec="Galvanic Field" skillId="GalvanicField" quality="0" count="nil" skillPart="1"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Belt" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemGalvanicField" variantId="GalvanicFieldAltX" enableGlobal1="true" level="20" nameSpec="Galvanic Field of Intensity" skillId="GalvanicFieldAltX" quality="0" count="nil" skillPart="2"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemWinterOrb" variantId="WinterOrb" enableGlobal1="true" level="20" nameSpec="Winter Orb" skillId="WinterOrb" quality="0" count="nil" skillPart="1" skillStageCount="5"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Body Armour" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemOrbOfStorms" variantId="OrbOfStorms" enableGlobal1="true" level="20" nameSpec="Orb of Storms" skillId="OrbOfStorms" quality="0" count="nil"/>
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SupportGemFasterCast" variantId="SupportFasterCasting" enableGlobal1="true" level="20" nameSpec="Faster Casting" skillId="SupportFasterCasting" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemBladeVortex" variantId="BladeVortex" enableGlobal1="true" level="20" nameSpec="Blade Vortex" skillId="BladeVortex" quality="0" count="nil" skillPart="3"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Helmet" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemVaalBladeVortex" variantId="VaalBladeVortex" enableGlobal1="true" level="20" nameSpec="Vaal Blade Vortex" skillId="VaalBladeVortex" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Gloves" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemCremation" variantId="Cremation" enableGlobal1="true" level="20" nameSpec="Cremation" skillId="Cremation" quality="0" count="nil" skillPart="1"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Gloves" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemCremation" variantId="CremationAltX" enableGlobal1="true" level="20" nameSpec="Cremation of Exhuming" skillId="CremationAltX" quality="0" count="nil" skillPart="1"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Gloves" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemCremation" variantId="CremationAltY" enableGlobal1="true" level="20" nameSpec="Cremation of the Volcano" skillId="CremationAltY" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Boots" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemVortex" variantId="Vortex" enableGlobal1="true" level="20" nameSpec="Vortex" skillId="Vortex" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Boots" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemVortex" variantId="VortexAltX" enableGlobal1="true" level="20" nameSpec="Vortex of Projection" skillId="VortexAltX" quality="0" count="nil"/>
+			</Skill>
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemTornado" variantId="TornadoAltY" enableGlobal1="true" level="20" nameSpec="Tornado of Elemental Turbulence" skillId="TornadoAltY" quality="0" count="nil" skillPart="1" skillStageCount="3"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: UNIQUE
+Choir of the Storm
+Lapis Amulet
+Implicits: 1
++25 to Intelligence
+Trigger Level 30 Lightning Bolt when you deal a Critical Strike
+15% increased maximum Mana
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Amulet" itemPbURL="" itemId="1"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+			<Input name="ActiveBrands" number="3"/>
+			<Input name="BrandsAttachedToEnemy" number="2"/>
+			<Input name="customMods" string="25% increased Brand Activation frequency"/>
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

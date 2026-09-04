@@ -199,11 +199,11 @@ func (env *Env) buildSkillsStage() bool {
 			} else {
 				activeGem = &SocketGemInput{Gem: &skills.Gem{SkillID: gs.SkillID, NameSpec: gs.NameSpec, Enabled: true}}
 			}
-			activeGem.FromItem = util.Some(gs.SourceItem != nil)
+			activeGem.FromItem = gs.SourceItem != nil
 			activeGem.GemID = ""
 			activeGem.GemDataID = nil
 			activeGem.Level = gs.Level
-			activeGem.EnableGlobal1 = util.Some(true)
+			activeGem.EnableGlobal1 = true
 			activeGem.NoSupports = gs.NoSupports
 			group.NoSupports = gs.NoSupports
 			if gs.Triggered {
@@ -356,7 +356,7 @@ func (env *Env) buildSkillsStage() bool {
 			activeSet = 2
 		}
 		slotEnabled := slot == nil || slot.WeaponSet == nil || *slot.WeaponSet == activeSet
-		group.SlotEnabled = util.Some(slotEnabled)
+		group.SlotEnabled = slotEnabled
 		if !(index+1 == env.MainSocketGroup || (group.Enabled && slotEnabled)) {
 			continue
 		}
@@ -440,7 +440,7 @@ func (env *Env) buildSkillsStage() bool {
 					return
 				}
 				socketBonus := 0.0
-				if gem.MatchesSocket.V {
+				if gem.MatchesSocket {
 					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				supportEffect := &ActiveEffect{
@@ -514,7 +514,7 @@ func (env *Env) buildSkillsStage() bool {
 	// Process active skills adding the applicable supports
 	skillListsByGroup := map[*SocketGroupInput][]*ActiveSkill{}
 	for index, group := range groups {
-		if !(index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled.V)) {
+		if !(index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled)) {
 			continue
 		}
 		gc := getGroupCfg(group)
@@ -532,16 +532,16 @@ func (env *Env) buildSkillsStage() bool {
 				grantedEffectList = []*data.GrantedEffect{gem.GrantedEffect}
 			}
 			for geIndex, grantedEffect := range grantedEffectList {
-				enableGlobal := gem.EnableGlobal1.V
+				enableGlobal := gem.EnableGlobal1
 				if geIndex == 1 {
-					enableGlobal = gem.EnableGlobal2.V
+					enableGlobal = gem.EnableGlobal2
 				}
 				// (`grantedEffect.unsupported` is vestigial: no template sets it)
 				if grantedEffect.Support || (env.geHasGlobalEffect(grantedEffect) && !enableGlobal) {
 					continue
 				}
 				socketBonus := 0.0
-				if gem.MatchesSocket.V {
+				if gem.MatchesSocket {
 					socketBonus = data.Misc.MatchingSocketQualityBonus
 				}
 				activeEffect := &ActiveEffect{
@@ -671,7 +671,7 @@ func (env *Env) buildSkillsStage() bool {
 	// Process calculated active skill lists
 	for index, group := range groups {
 		socketGroupSkillList := skillListsByGroup[group]
-		if index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled.V) {
+		if index+1 == env.MainSocketGroup || (group.Enabled && group.SlotEnabled) {
 			gc := getGroupCfg(group)
 			for _, v := range env.ModDB.List(&gc.Cfg, "GroupProperty") {
 				if ref, ok := v.(modparser.PropertyModRef); ok && ref.Mod != nil {
@@ -696,7 +696,7 @@ func (env *Env) buildSkillsStage() bool {
 		// (displayLabel / displaySkillList are UI-only and skipped)
 
 		// Check for enabled energy blade to see if we need to regenerate
-		if !env.ModDB.Conditions.Get("AffectedByEnergyBlade") && group.Enabled && group.SlotEnabled.V {
+		if !env.ModDB.Conditions.Get("AffectedByEnergyBlade") && group.Enabled && group.SlotEnabled {
 			for _, gem := range group.GemList {
 				ge := gem.GrantedEffect
 				if gem.GemData != nil {

@@ -162,7 +162,8 @@ without this distinction removes error-parity behaviour.
 Comparison is byte equality first; when the text differs, `EqualWithin` walks
 both parses leaf by leaf, numbers agreeing once quantized to
 `luacanon.CompareDigits` significant figures and everything else exactly
-(§4.7). Never structural re-serialisation.
+(§4.7), except the bool keys in `luacanon.FalseIsAbsent`, where a key missing
+on one side reads as false. Never structural re-serialisation.
 
 - every table → JSON object, keys stringified and **sorted as strings** (so a
   10-element array emits `"1","10","2",…` on both sides)
@@ -468,16 +469,17 @@ determinism.
   every double whole and nothing is discarded before anything looks at it.
   When the text differs, `luacanon.EqualWithin` walks both parses leaf by
   leaf: numbers must agree once each is rendered to `CompareDigits` (14)
-  significant figures, everything else exactly. That is the same question
+  significant figures, everything else exactly (a `luacanon.FalseIsAbsent`
+  bool key missing on one side reads as false). That is the same question
   the old `%.14g` string comparison asked - "the same number, as precisely
   as the reference knows it" - but asked of the values rather than of their
   rendering, and it reports what it absorbed instead of hiding it. Fourteen
   is set by the reference, not chosen: PoB writes its data files and its
   ModCache as `%.14g` text and reads them back, so a number arriving that
   way carries 14 significant digits and no more. The calc differential
-  reports **145 variants agree, 105 values only once quantized**. Negative
+  reports **175 variants agree, 126 values only once quantized**. Negative
   control: a 1e-9 perturbation fails 10 checkpoints.
-- **The drift has a named cause.** Go's `math.Pow` is not correctly rounded
+- **The drift has two named causes.** The second, measured 2026-09-03: `export/script_skills.go:399` derives a level's `baseMultiplier` as `float64(bm)/10000 + 1`, which for -3140 lands one ulp below the double LuaJIT parses from the archive's `0.686` text; the runtime carries that value, so `PhysicalMinBase`/`PhysicalMaxBase` of any skill with such a level drift by one ulp (2 leaves in the `bow` build). The first: Go's `math.Pow` is not correctly rounded
   where the C library `pow` behind LuaJIT's `^` is. For x=0.65 LuaJIT's
   `x^3` is 0.27462500000000001; `x*x*x` and `math.Pow(x,3)` are both
   0.27462500000000006. It reaches `EffectiveSpellBlockChance`, the
@@ -585,13 +587,13 @@ and hope a build turns up:
 
 1. get an environment that reaches it — a real ladder character (`mb search`
    in the sibling tool `E:/tools/missingBuild`, not part of this repo) or a
-   hand-authored throwaway build (`test/corpus/authored_*.xml`, 10 so far);
+   hand-authored throwaway build (`test/corpus/authored_*.xml`, 20 so far);
 2. dump it (`luajit ../../tools/dump_build.lua <key> <xml>`), add it to the
    variant map **and to `test/corpus/manifest.tsv`** — a dump key absent from
    the manifest silently skips the item, spec and skills differentials;
 3. write the branch, delete the guard, confirm byte-identical.
 
-This grew the corpus 9 → 12 → 25 → 34 → 38 → 42 → 48 builds.
+This grew the corpus 9 → 12 → 25 → 34 → 38 → 42 → 48 → 58 builds.
 
 **Settling "is this dead / is this wrong on real data":** instrument the site
 to compute both candidate answers, run the full corpus, count divergences,
@@ -1217,7 +1219,7 @@ scaled to the enemy level, all written by the `enemyIsBoss` preset as it
 applies, and rewritten by `presetBossSkills` when a boss skill is named.
 
 With config in, `build.Load` fills every field of `calc.BuildInput`, and
-the calc differential runs on it: 145 variants agree with the archive from
+the calc differential runs on it: 175 variants agree with the archive from
 a build XML alone.
 
 The build corpus only sets about 32 of the 580 options, which would have
@@ -1355,10 +1357,10 @@ Parse-test flags: `-diffs=N` (how many disagreeing lines to print, default 10),
 the GGPK: `TestModCacheGeneration`, `TestTreeArtifactMatchesGGGSource`,
 `TestTattooArtifactMatchesArchive`.
 
-`test/testdata/` is 57 files / ~180 MB, committed directly (no LFS), of which
-49 are calc dumps. `test/corpus/` is 97 files / 4.6 MB — 48 build XMLs (10 of
-them `authored_*`) plus `manifest.tsv` (48 rows) and some `.json`/`.pobcode`
-import originals. The calc differential runs **145 variants over those 49 dump
+`test/testdata/` is 68 files / ~260 MB, committed directly (no LFS), of which
+59 are calc dumps. `test/corpus/` is 107 files / ~4.7 MB — 58 build XMLs (20 of
+them `authored_*`) plus `manifest.tsv` (58 rows) and some `.json`/`.pobcode`
+import originals. The calc differential runs **175 variants over those 59 dump
 files**.
 
 ### Repo skills (`.claude/skills/`)

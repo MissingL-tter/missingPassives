@@ -238,6 +238,13 @@ func (env *Env) createMinionSkills(activeSkill *ActiveSkill) {
 
 // calcSkillDuration ports CalcOffence's calcSkillDuration.
 func (env *Env) calcSkillDuration(skillModList modstore.Store, skillCfg *modstore.Cfg, skillData *SkillData, enemyDB *modstore.DB) float64 {
+	return calcSkillDurationMode(env.ModeEffective, skillModList, skillCfg, skillData, enemyDB)
+}
+
+// calcSkillDurationMode is calcSkillDuration with the env's effective mode
+// passed explicitly: Wintertide Brand's callback calls the reference with an
+// empty env, so its debuff scaling is off regardless of the real mode.
+func calcSkillDurationMode(modeEffective bool, skillModList modstore.Store, skillCfg *modstore.Cfg, skillData *SkillData, enemyDB *modstore.DB) float64 {
 	durationNames := []string{"Duration", "PrimaryDuration"}
 	if skillData.Flag("mineDurationAppliesToSkill") {
 		durationNames = append(durationNames, "MineDuration")
@@ -247,7 +254,7 @@ func (env *Env) calcSkillDuration(skillModList modstore.Store, skillCfg *modstor
 	durationBase := skillData.N("duration") + skillModList.Sum(modparser.Base, skillCfg, "Duration", "PrimaryDuration")
 	duration := durationBase * durationMod
 	debuffDurationMult := 1.0
-	if env.ModeEffective {
+	if modeEffective {
 		debuffDurationMult = 1 / math.Max(data.Misc.BuffExpirationSlowCap, Mod(enemyDB, skillCfg, "BuffExpireFaster"))
 	}
 	if skillData.Flag("debuff") {

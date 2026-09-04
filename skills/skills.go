@@ -64,27 +64,24 @@ func attrOf(attrs []xml.Attr, name string) (string, bool) {
 // are keys whose absence the reference distinguishes from a stored
 // zero/false (calc deletes them, or saves false/0 explicitly).
 type Gem struct {
-	NameSpec string
-	GemID    string
-	SkillID  string
-	ErrMsg   string
-	Level    float64
-	Quality  float64
-	Count    util.Opt[float64] // absent on calc-created granted gems
-	Enabled  bool
-	// EnableGlobal1/2 are absent on explode-source and granted gems; false
-	// is saved from the UI.
-	EnableGlobal1 util.Opt[bool]
-	EnableGlobal2 util.Opt[bool]
-	// MatchesSocket: false stored per gem; deleted when the item has fewer
-	// sockets than gems (Lua `nil and ...` assignment).
-	MatchesSocket util.Opt[bool]
-	// New/Triggered/NoSupports are only ever set to true or removed.
-	New        bool
-	Triggered  bool
-	NoSupports bool
-	// FromItem is calc-stamped on granted gems (false stored).
-	FromItem util.Opt[bool]
+	NameSpec      string
+	GemID         string
+	SkillID       string
+	ErrMsg        string
+	Level         float64
+	Quality       float64
+	Count         util.Opt[float64] // absent on calc-created granted gems
+	Enabled       bool
+	EnableGlobal1 bool
+	EnableGlobal2 bool
+	// MatchesSocket: the gem sits in a socket of its own colour (or in an
+	// item whose sockets always match).
+	MatchesSocket bool
+	New           bool
+	Triggered     bool
+	NoSupports    bool
+	// FromItem is calc-stamped on granted gems.
+	FromItem bool
 	// Requirements are (re)computed only for gem-data gems and stay stale
 	// when a gem later resolves by skill id, so presence is independent of
 	// GemData.
@@ -118,8 +115,8 @@ type Gem struct {
 // SocketGroup is one socket group (one <Skill> element).
 type SocketGroup struct {
 	Enabled          bool
-	IncludeInFullDPS util.Opt[bool] // absent on calc-created groups
-	GroupCount       float64        // 0 = not saved
+	IncludeInFullDPS bool
+	GroupCount       float64 // 0 = not saved
 	Label            string
 	Slot             string // "" = no slot
 	Source           string // "" = socketed group; else the granting item/node
@@ -130,8 +127,8 @@ type SocketGroup struct {
 	MainActiveSkillCalcs util.Opt[float64]
 	// NoSupports is calc-stamped on granted groups (true or absent).
 	NoSupports bool
-	// SlotEnabled is calc-stamped by the skills stage (false stored).
-	SlotEnabled util.Opt[bool]
+	// SlotEnabled is calc-stamped by the skills stage.
+	SlotEnabled bool
 	GemList     []*Gem
 }
 
@@ -241,9 +238,8 @@ func (t *Tab) loadSkill(node *XMLSkill, skillSetID int) {
 	active, _ := attr("active")
 	enabled, _ := attr("enabled")
 	group.Enabled = active == "true" || enabled == "true"
-	if v, ok := attr("includeInFullDPS"); ok {
-		group.IncludeInFullDPS = util.Some(v == "true")
-	}
+	fullDPS, _ := attr("includeInFullDPS")
+	group.IncludeInFullDPS = fullDPS == "true"
 	if v, ok := attr("groupCount"); ok && isNumber(v) {
 		group.GroupCount = num(v)
 	}
@@ -325,9 +321,9 @@ func (t *Tab) loadGem(child *XMLGem) *Gem {
 	en, hasEn := attr("enabled")
 	gem.Enabled = !hasEn || en == "true"
 	eg1, hasEg1 := attr("enableGlobal1")
-	gem.EnableGlobal1 = util.Some(!hasEg1 || eg1 == "true")
+	gem.EnableGlobal1 = !hasEg1 || eg1 == "true"
 	eg2, _ := attr("enableGlobal2")
-	gem.EnableGlobal2 = util.Some(eg2 == "true")
+	gem.EnableGlobal2 = eg2 == "true"
 	gem.Count = util.Some(numOr(attr("count"))(1))
 	numAttr := func(key string) util.Opt[float64] {
 		if v, ok := attr(key); ok && isNumber(v) {
@@ -518,7 +514,7 @@ func (t *Tab) UpdateSocketGroups(slotItem func(slotName string) *item.Item) {
 	slotSocketedCounts := map[string]int{}
 	for _, group := range t.SocketGroupList {
 		for _, gem := range group.GemList {
-			gem.MatchesSocket = util.Some(false)
+			gem.MatchesSocket = false
 		}
 		if group.Slot == "" || group.Granted() {
 			continue
@@ -535,22 +531,15 @@ func (t *Tab) UpdateSocketGroups(slotItem func(slotName string) *item.Item) {
 			}
 			gemIdx := gemOffset + i
 			it := slotItem(slot)
-			if it == nil || it.Sockets == nil {
+			if it == nil {
 				continue
 			}
-			if it.SocketColourAlwaysMatches {
-				gem.MatchesSocket = util.Some(true)
-			} else if gemIdx >= len(it.Sockets) {
-				// Lua: sockets[gemIdx] is nil, `nil and (...)` assigns nil --
-				// which REMOVES the key.
-				gem.MatchesSocket = util.Opt[bool]{}
-			} else {
-				var gemColour string
-				if c := int(grantedEffect.Color); c >= 1 && c <= 3 {
-					gemColour = colours[c]
-				}
-				gem.MatchesSocket = util.Some(it.Sockets[gemIdx].Color == gemColour)
+			var gemColour string
+			if c := int(grantedEffect.Color); c >= 1 && c <= 3 {
+				gemColour = colours[c]
 			}
+			gem.MatchesSocket = it.SocketColourAlwaysMatches ||
+				(gemIdx < len(it.Sockets) && it.Sockets[gemIdx].Color == gemColour)
 		}
 		slotSocketedCounts[slot] = gemOffset + len(group.GemList)
 	}

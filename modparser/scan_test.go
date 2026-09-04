@@ -2,8 +2,6 @@ package modparser
 
 import (
 	"testing"
-
-	"github.com/MissingL-tter/missingPassives/internal/util"
 )
 
 func TestScan(t *testing.T) {
@@ -61,7 +59,7 @@ func TestTagParamsRoundTrip(t *testing.T) {
 		&StatTag{StatKind: TagPercentStat, Stat: "Armour", Percent: opt(1)},
 		&SlotTag{SlotKind: TagSocketedIn, SlotName: "{SlotName}", Sockets: []float64{1, 2}},
 		&SlotTag{SlotKind: TagSocketedIn, SlotName: "{SlotName}", SocketsAll: true},
-		&ItemCondTag{ItemSlot: "Helmet", ElderCond: util.Some(false)},
+		&ItemCondTag{ItemSlot: "Helmet", ElderCond: true},
 		&DistanceRampTag{Ramp: Pairs{{35, 0}, {70, 1}}},
 		&SkillTypeTag{SkillTypeList: []SkillTypeID{SkillTypeInstant, 0, SkillTypeTriggered}},
 	}

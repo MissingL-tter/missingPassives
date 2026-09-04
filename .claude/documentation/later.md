@@ -175,6 +175,7 @@ not assumed.
 |---|---|
 | `modparser.Truthy(Value)` (`modparser/value.go`) | guards the OVERRIDE/FLAG/LIST queries in `modstore/db.go` and `modstore/list.go` where the reference tests a mod value for truthiness. A Go `!= 0` check would break an OVERRIDE of `0`. On today's tables it happens to equal `v != nil` — the only `Bool(false)` in the pattern tables is nested inside a `DataRef` — but the equality is a property of the data, not of the code. |
 | `modstore.OutValue.Truthy()` (`modstore/output.go`) | `Output.Flag(key)`. **Not** the same as `Has(key)`: the calc genuinely stores `false` at 13+ sites (`calc/ehpguard.go`, `calc/ehppools.go`, `calc/ehp.go`, `calc/defencetail.go`), so absent / present-false / present-truthy are three distinct states the reference distinguishes. |
+| `util.Opt[float64]` (`internal/util/opt.go`) | a number that may be absent, for inputs with an empty state of their own — an empty config box, an item line without `{range:}`, no item in a slot — where a reader answers differently for empty than for zero (Lua `x or default` treats a present 0 as a value). 2026-09-04: 126 mentions, 83 readers that treat absent differently from zero (73 `.Set` branches, 9 `.Or(1)`, 1 `.Or(0.5)`). The bool form was removed the same day: no reference reader tells nil from false, so every former `Opt[bool]` is a `bool` and `luacanon.FalseIsAbsent` reads a missing key as false. Each remaining site is a candidate to resolve its default at load instead. |
 
 The open string key set on `modstore.Output` is load-bearing for the same
 reason it looks lazy: `calc` composes ~220 read keys and ~189 write keys at
@@ -188,7 +189,7 @@ carry that without generating a key enum.
 
 Reference quirks reproduced deliberately. The `#EVAL` tag that marked them in
 source was removed 2026-09-03, so this table is the list, not a snapshot of
-one: 60 sites, with the reason each one exists.
+one: 61 sites, with the reason each one exists.
 
 ### calc — Lua parse-precedence and dead-branch artifacts
 
@@ -209,6 +210,7 @@ one: 60 sites, with the reason each one exists.
 | `calc/offencemisc.go:78` | `cfg` is not the pass cfg (that local died with the loop above) but an undeclared global, i.e. nil |
 | `calc/offenceselfhit.go:188` | the Forbidden Rite block iterates `ipairs({["FRDamageTaken"]=...})` — only a string key, so `ipairs` yields nothing and the block never runs |
 | `calc/offenceskilldata.go:336` | `Sum(...) or 100` — `Sum` always returns a number, so the fallback is dead and an absent mod means a 0% multiplier |
+| `calc/skillfuncs.go` `scourgeArrowPreDamageFunc` | Scourge Arrow's preDamageFunc sums its stage multiplier with `cfg`, an undeclared global, so the read carries no cfg |
 | `calc/perform.go:217` | the trailing `and Sum(...,"MaxDoom")` is a bare number, always truthy, gating nothing |
 | `calc/performbuffs.go:384` | merges the UNSCALED list here |
 | `calc/performbuffs.go:1091` | `env.player.Gloves` is never set, so this branch always marks Unencumbered |
@@ -226,6 +228,21 @@ Two entries in calc are **not** reference quirks but decisions recorded
 2026-08-29: `calc/performbuffs.go:89` (`performBuffs`, ~1,000 lines) and
 `calc/skillmods.go:200` (`buildActiveSkillModList`, ~800 lines) are straight
 transliterations of the reference bodies, left unsplit.
+
+A fourth, also 2026-09-03: Charged Dash's final-wave mod
+(`chargedDashPreDamageFunc`, `calc/skillfuncs.go`) is added untagged. The
+reference tags it `{ type = "Release Damage", skillPart = 3 }`, a tag type
+`ModStore.EvalMod` never tests, so the tag filters nothing; the dump never
+records a post-offence skill mod list, so the shape is unobservable. Not
+chosen: a no-op tag kind in the modparser to carry the reference's shape.
+
+A third, recorded 2026-09-03: `explosiveArrowFunc` (`calc/skillfuncs.go`)
+stays a by-name call from `offenceCrit`, as `CalcOffence.lua` L2974 makes it,
+and never enters the `skillFuncs` registry. The data still declares the
+`CallbackExplosiveArrow` pair, so the registry tops out at 133 of the 134
+declared pairs. Not chosen: a `CallbackExplosiveArrow` registry key with a
+wrapper routing the call through `runSkillFunc`, which would need a second
+callback signature for the pass output the function takes.
 
 ### modstore — aggregation and aliasing quirks
 

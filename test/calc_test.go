@@ -829,6 +829,36 @@ func TestCalcInitEnvAgainstReference(t *testing.T) {
 		"misc3.treeonly":        "build_misc3.jsonl",
 		"misc3.noskills":        "build_misc3.jsonl",
 		"misc3.full":            "build_misc3.jsonl",
+		"hittime.treeonly":      "build_hittime.jsonl",
+		"hittime.noskills":      "build_hittime.jsonl",
+		"hittime.full":          "build_hittime.jsonl",
+		"bow.treeonly":          "build_bow.jsonl",
+		"bow.noskills":          "build_bow.jsonl",
+		"bow.full":              "build_bow.jsonl",
+		"melee.treeonly":        "build_melee.jsonl",
+		"melee.noskills":        "build_melee.jsonl",
+		"melee.full":            "build_melee.jsonl",
+		"minion1.treeonly":      "build_minion1.jsonl",
+		"minion1.noskills":      "build_minion1.jsonl",
+		"minion1.full":          "build_minion1.jsonl",
+		"minion2.treeonly":      "build_minion2.jsonl",
+		"minion2.noskills":      "build_minion2.jsonl",
+		"minion2.full":          "build_minion2.jsonl",
+		"stagemult.treeonly":    "build_stagemult.jsonl",
+		"stagemult.noskills":    "build_stagemult.jsonl",
+		"stagemult.full":        "build_stagemult.jsonl",
+		"wand.treeonly":         "build_wand.jsonl",
+		"wand.noskills":         "build_wand.jsonl",
+		"wand.full":             "build_wand.jsonl",
+		"spellmods.treeonly":    "build_spellmods.jsonl",
+		"spellmods.noskills":    "build_spellmods.jsonl",
+		"spellmods.full":        "build_spellmods.jsonl",
+		"melee2.treeonly":       "build_melee2.jsonl",
+		"melee2.noskills":       "build_melee2.jsonl",
+		"melee2.full":           "build_melee2.jsonl",
+		"unarmed.treeonly":      "build_unarmed.jsonl",
+		"unarmed.noskills":      "build_unarmed.jsonl",
+		"unarmed.full":          "build_unarmed.jsonl",
 	}
 	checked := 0
 	// MP_ONLY=<prefix> narrows the run to one build while diagnosing a
@@ -1219,7 +1249,7 @@ func TestCalcFixtureEchoDetectsCorruption(t *testing.T) {
 	for name, mutate := range corrupt {
 		in := decodeCalcFixture(m)
 		mutate(in)
-		if luacanon.EncodeExact(in) == fixture {
+		if luacanon.SameCanon(luacanon.EncodeExact(in), fixture) {
 			t.Errorf("%s corruption not detected by the echo", name)
 		}
 	}

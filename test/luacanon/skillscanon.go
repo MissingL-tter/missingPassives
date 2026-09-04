@@ -55,12 +55,6 @@ func withExtras(key any, t map[string]any) map[string]any {
 	return t
 }
 
-func (t table) optBool(key string, v util.Opt[bool]) {
-	if v.Set {
-		t[key] = v.V
-	}
-}
-
 // GemInstanceTable is one gem instance as the reference table.
 func GemInstanceTable(g *skills.Gem) map[string]any {
 	t := table{"nameSpec": g.NameSpec, "level": g.Level, "quality": g.Quality, "enabled": g.Enabled}
@@ -68,13 +62,13 @@ func GemInstanceTable(g *skills.Gem) map[string]any {
 	t.str("skillId", g.SkillID)
 	t.str("errMsg", g.ErrMsg)
 	t.opt("count", g.Count)
-	t.optBool("enableGlobal1", g.EnableGlobal1)
-	t.optBool("enableGlobal2", g.EnableGlobal2)
-	t.optBool("matchesSocket", g.MatchesSocket)
+	t.flag("enableGlobal1", g.EnableGlobal1)
+	t.flag("enableGlobal2", g.EnableGlobal2)
+	t.flag("matchesSocket", g.MatchesSocket)
 	t.flag("new", g.New)
 	t.flag("triggered", g.Triggered)
 	t.flag("noSupports", g.NoSupports)
-	t.optBool("fromItem", g.FromItem)
+	t.flag("fromItem", g.FromItem)
 	t.opt("reqLevel", g.ReqLevel)
 	t.opt("reqStr", g.ReqStr)
 	t.opt("reqDex", g.ReqDex)
@@ -99,7 +93,7 @@ func GemInstanceTable(g *skills.Gem) map[string]any {
 // SocketGroupTable is one socket group's scalars as the reference table.
 func SocketGroupTable(g *skills.SocketGroup) map[string]any {
 	t := table{"enabled": g.Enabled, "label": g.Label}
-	t.optBool("includeInFullDPS", g.IncludeInFullDPS)
+	t.flag("includeInFullDPS", g.IncludeInFullDPS)
 	t.num("groupCount", g.GroupCount)
 	t.str("slot", g.Slot)
 	t.str("source", g.Source)
@@ -107,7 +101,7 @@ func SocketGroupTable(g *skills.SocketGroup) map[string]any {
 	t.opt("mainActiveSkill", g.MainActiveSkill)
 	t.opt("mainActiveSkillCalcs", g.MainActiveSkillCalcs)
 	t.flag("noSupports", g.NoSupports)
-	t.optBool("slotEnabled", g.SlotEnabled)
+	t.flag("slotEnabled", g.SlotEnabled)
 	return t
 }
 
@@ -140,13 +134,6 @@ func (r *tableReader) optNum(key string) util.Opt[float64] {
 	}
 	return util.Opt[float64]{}
 }
-func (r *tableReader) optBool(key string) util.Opt[bool] {
-	r.used[key] = true
-	if b, ok := r.m[key].(bool); ok {
-		return util.Some(b)
-	}
-	return util.Opt[bool]{}
-}
 func (r *tableReader) leftovers() map[string]any {
 	var out map[string]any
 	for k, v := range r.m {
@@ -173,13 +160,13 @@ func GemInstanceFromTable(m map[string]any) *skills.Gem {
 		Quality:                 r.num("quality"),
 		Count:                   r.optNum("count"),
 		Enabled:                 r.flag("enabled"),
-		EnableGlobal1:           r.optBool("enableGlobal1"),
-		EnableGlobal2:           r.optBool("enableGlobal2"),
-		MatchesSocket:           r.optBool("matchesSocket"),
+		EnableGlobal1:           r.flag("enableGlobal1"),
+		EnableGlobal2:           r.flag("enableGlobal2"),
+		MatchesSocket:           r.flag("matchesSocket"),
 		New:                     r.flag("new"),
 		Triggered:               r.flag("triggered"),
 		NoSupports:              r.flag("noSupports"),
-		FromItem:                r.optBool("fromItem"),
+		FromItem:                r.flag("fromItem"),
 		ReqLevel:                r.optNum("reqLevel"),
 		ReqStr:                  r.optNum("reqStr"),
 		ReqDex:                  r.optNum("reqDex"),
@@ -211,7 +198,7 @@ func SocketGroupFromTable(m map[string]any) *skills.SocketGroup {
 	r := &tableReader{m: m, used: map[string]bool{}}
 	g := &skills.SocketGroup{
 		Enabled:              r.flag("enabled"),
-		IncludeInFullDPS:     r.optBool("includeInFullDPS"),
+		IncludeInFullDPS:     r.flag("includeInFullDPS"),
 		GroupCount:           r.num("groupCount"),
 		Label:                r.str("label"),
 		Slot:                 r.str("slot"),
@@ -220,7 +207,7 @@ func SocketGroupFromTable(m map[string]any) *skills.SocketGroup {
 		MainActiveSkill:      r.optNum("mainActiveSkill"),
 		MainActiveSkillCalcs: r.optNum("mainActiveSkillCalcs"),
 		NoSupports:           r.flag("noSupports"),
-		SlotEnabled:          r.optBool("slotEnabled"),
+		SlotEnabled:          r.flag("slotEnabled"),
 	}
 	if extra := r.leftovers(); extra != nil {
 		Extras[g] = extra
