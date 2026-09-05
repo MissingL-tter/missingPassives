@@ -85,12 +85,12 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 	unique := mods.RowByStr("Id", "MonsterUnique5").Ivl("Stat1Value")[0]
 	uniqueAttackPenalty := mods.RowByStr("Id", "MonsterUnique8").Ivl("Stat1Value")[0]
 	rarityDamageMult := map[string]float64{
-		"Unique":       1 + float64(unique)/100,
-		"UniqueAttack": (1 + float64(unique)/100) * (1 - float64(uniqueAttackPenalty)/100),
+		"Unique":       (100 + float64(unique)) / 100,
+		"UniqueAttack": ((100 + float64(unique)) / 100) * ((100 - float64(uniqueAttackPenalty)) / 100),
 	}
 	monsterMapDifficultyMult := map[float64]float64{}
 	for row := range mapDifficulty.Rows() {
-		monsterMapDifficultyMult[float64(row.Int("AreaLevel"))] = 1 + float64(row.Int("DamagePercentIncrease"))/100
+		monsterMapDifficultyMult[float64(row.Int("AreaLevel"))] = (100 + float64(row.Int("DamagePercentIncrease"))) / 100
 	}
 	mmdm := func(level float64) (float64, bool) {
 		v, ok := monsterMapDifficultyMult[level]
@@ -230,7 +230,7 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 			addStats, addVals := statRowsAndVals(spl, "AdditionalStats", "AdditionalStatsValues")
 			for j, as := range addStats {
 				if as.Str("Id") == "active_skill_damage_+%_final" {
-					extraDamageMult[i] = 1 + float64(addVals[j])/100
+					extraDamageMult[i] = (100 + float64(addVals[j])) / 100
 					break
 				}
 			}
@@ -324,8 +324,8 @@ func buildBossData(x *Ctx) (schema.Document, error) {
 						for _, dt := range bossDamageTypes {
 							lower := strings.ToLower(dt)
 							if id == "base_"+lower+"_damage_to_deal_per_minute" {
-								baseDamages["min"+dt+suffix] = 1 + float64(baseVals[j])/60
-								baseDamages["max"+dt+suffix] = 1 + float64(baseVals[j])/60
+								baseDamages["min"+dt+suffix] = (60 + float64(baseVals[j])) / 60
+								baseDamages["max"+dt+suffix] = (60 + float64(baseVals[j])) / 60
 							}
 						}
 					}

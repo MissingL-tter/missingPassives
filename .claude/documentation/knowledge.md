@@ -477,9 +477,9 @@ determinism.
   is set by the reference, not chosen: PoB writes its data files and its
   ModCache as `%.14g` text and reads them back, so a number arriving that
   way carries 14 significant digits and no more. The calc differential
-  reports **175 variants agree, 126 values only once quantized**. Negative
+  reports **175 variants agree, 115 values only once quantized**. Negative
   control: a 1e-9 perturbation fails 10 checkpoints.
-- **The drift has two named causes.** The second, measured 2026-09-03: `export/script_skills.go:399` derives a level's `baseMultiplier` as `float64(bm)/10000 + 1`, which for -3140 lands one ulp below the double LuaJIT parses from the archive's `0.686` text; the runtime carries that value, so `PhysicalMinBase`/`PhysicalMaxBase` of any skill with such a level drift by one ulp (2 leaves in the `bow` build). The first: Go's `math.Pow` is not correctly rounded
+- **The drift has one named cause left.** A second was closed 2026-09-04: the exporter derived a level's `baseMultiplier` as `float64(bm)/10000 + 1`, two roundings, which for -3140 (Shrapnel Ballista of Steel) landed one ulp below the double LuaJIT parses from the archive's `0.686` text, and `PhysicalMinBase`/`PhysicalMaxBase` carried it (2 leaves in the `bow` build). Every percentage multiplier the exporter derives from an integer is now one division - `(10000 + float64(bm)) / 10000`, the correctly rounded double of the exact ratio, which is also the double the archive's 14-digit text round trip lands on - and the `statOrders` loop's `order += 0.1` accumulation went the same way. 2,386 numbers in `data/raw` moved (2,355 skills, 19 miscdata, 11 mods, 1 bossdata in its 16th digit), the export differential stayed at 123 files / 0 disagreements, and the quantized count fell 126 -> 115. Not touched, by measurement of the same scan: 20,262 skills values and 175 miscdata values that leave the dat files as float32 - Go holds them exactly and the archive's 14-digit text moves them - plus 2,264 products of several float steps; all agree at 14 digits. The remaining cause: Go's `math.Pow` is not correctly rounded
   where the C library `pow` behind LuaJIT's `^` is. For x=0.65 LuaJIT's
   `x^3` is 0.27462500000000001; `x*x*x` and `math.Pow(x,3)` are both
   0.27462500000000006. It reaches `EffectiveSpellBlockChance`, the

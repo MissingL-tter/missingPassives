@@ -386,8 +386,13 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 			intExtra("VaalStoredUses", "vaalStoredUses", 1)
 			intExtra("SoulGainPreventionDuration", "soulPreventionDuration", 1000)
 			// stat based level info
+			// One division, so each multiplier is the correctly rounded double of
+			// the exact ratio. float64(bm)/10000 + 1 rounds twice: for -3140
+			// (Shrapnel Ballista of Steel) it landed one ulp below the double PoB
+			// loads from its own 0.686 text, and the drift reached
+			// PhysicalMinBase/PhysicalMaxBase (knowledge.md 4.7, 2026-09-04).
 			if de := statRow.Int("DamageEffectiveness"); de != 0 {
-				level.extra["damageEffectiveness"] = float64(de)/10000 + 1
+				level.extra["damageEffectiveness"] = (10000 + float64(de)) / 10000
 			}
 			if cc := statRow.Int("AttackCritChance"); cc != 0 {
 				level.extra["critChance"] = float64(cc) / 100
@@ -396,7 +401,7 @@ func buildSkills(x *Ctx) (schema.Document, error) {
 				level.extra["critChance"] = float64(cc) / 100
 			}
 			if bm := statRow.Int("BaseMultiplier"); bm != 0 {
-				level.extra["baseMultiplier"] = float64(bm)/10000 + 1
+				level.extra["baseMultiplier"] = (10000 + float64(bm)) / 10000
 			}
 			level.interp = interpFor(statRow)
 			registerStat := func(id string, cgtm bool, first bool) {

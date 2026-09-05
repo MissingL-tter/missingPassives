@@ -528534,7 +528534,7 @@
 				"statOrders": [
 					5974,
 					5974.1,
-					5974.200000000001
+					5974.2
 				],
 				"level": 1,
 				"group": "LoseAllChargesOnMove",
@@ -528567,7 +528567,7 @@
 				"statOrders": [
 					109,
 					109.1,
-					109.19999999999999
+					109.2
 				],
 				"level": 88,
 				"group": "ConsumesSupportGemsUnique",
@@ -539573,7 +539573,7 @@
 					694,
 					694.1,
 					694.2,
-					694.3000000000001
+					694.3
 				],
 				"level": 1,
 				"group": "GrantCursePillarSkillUnique",
@@ -557515,7 +557515,7 @@
 				"statOrders": [
 					6486,
 					6486.1,
-					6486.200000000001
+					6486.2
 				],
 				"level": 1,
 				"group": "EnemiesNearCursesBlindAndExplode",
@@ -588321,7 +588321,7 @@
 				"statOrders": [
 					5974,
 					5974.1,
-					5974.200000000001
+					5974.2
 				],
 				"level": 1,
 				"group": "MinimumChargesEqualToMaximumWhileStationary",
@@ -591210,11 +591210,11 @@
 				"statOrders": [
 					7258,
 					7258.1,
-					7258.200000000001,
-					7258.300000000001,
-					7258.4000000000015,
-					7258.500000000002,
-					7258.600000000002
+					7258.2,
+					7258.3,
+					7258.4,
+					7258.5,
+					7258.6
 				],
 				"level": 62,
 				"group": "HinekoraButterflyEffect",
@@ -593108,7 +593108,7 @@
 				"statOrders": [
 					5974,
 					5974.1,
-					5974.200000000001
+					5974.2
 				],
 				"level": 1,
 				"group": "CountAsHavingMaxEnduranceFrenzyPowerCharges",

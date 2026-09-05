@@ -590,11 +590,13 @@ func (x *Ctx) DescribeStats(stats map[string]*statVal) (StatLines, error) {
 			return out, fmtErr
 		}
 		statDesc = strings.ReplaceAll(statDesc, "%%", "%")
-		order := descriptor.order
-		for _, seg := range reDescSeg.FindAllStringSubmatch(statDesc+"\\n", -1) {
+		// One division per line: `order += 0.1` accumulates error
+		// (7258.4000000000015 by the fifth line), while (order*10+i)/10 is
+		// the correctly rounded double of order + i/10 - order is always
+		// integer-valued, so the numerator is exact.
+		for i, seg := range reDescSeg.FindAllStringSubmatch(statDesc+"\\n", -1) {
 			out.Lines = append(out.Lines, seg[1])
-			out.Orders = append(out.Orders, order)
-			order += 0.1
+			out.Orders = append(out.Orders, (descriptor.order*10+float64(i))/10)
 		}
 	}
 	return out, nil

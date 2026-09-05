@@ -136,13 +136,13 @@ func buildMiscdata(x *Ctx) (schema.Document, error) {
 	for row := range mapDifficulty.Rows() {
 		m.MapLevelLifeMult = append(m.MapLevelLifeMult, schema.LevelMult{
 			Level: row.Int("AreaLevel"),
-			Mult:  1 + float64(row.Int("LifePercentIncrease"))/100,
+			Mult:  (100 + float64(row.Int("LifePercentIncrease"))) / 100,
 		})
 	}
 	for vr := range mapBossDifficulty.Rows() {
 		lvl := vr.Int("AreaLevel")
 		m.MapLevelBossLifeMult = append(m.MapLevelBossLifeMult, schema.LevelMult{
-			Level: lvl, Mult: 1 + float64(vr.Int("BossLifePercentIncrease"))/100,
+			Level: lvl, Mult: (100 + float64(vr.Int("BossLifePercentIncrease"))) / 100,
 		})
 		m.MapLevelBossAilmentMult = append(m.MapLevelBossAilmentMult, schema.LevelMult{
 			Level: lvl, Mult: (100 + float64(vr.Int("BossAilmentPercentDecrease"))) / 100,
