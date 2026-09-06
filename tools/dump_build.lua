@@ -575,16 +575,20 @@ end
 
 -- The app's load-time calc and each variant's own perform run mutate
 -- shared skill tag tables in place (e.g. warcryBuff[1].warcryPowerBonus,
--- CalcPerform L2330). That residue is perform-owned state recomputed on
--- every perform, so scrub it before capturing each variant's
--- post-initEnv checkpoints (documented divergence).
+-- CalcPerform L2330, and the div that ModStore L358 writes into a
+-- Multiplier tag carrying divVar - CalcOffence L360/L113 write it during
+-- the cache-fill buildOutput above, never initEnv, and the next
+-- evaluation reassigns it before reading it). That residue is
+-- perform-owned state recomputed on every perform, so scrub it before
+-- capturing each variant's post-initEnv checkpoints (documented
+-- divergence; later.md 6).
 local function scrubPerformResidue(t, seen)
 	if seen[t] then
 		return
 	end
 	seen[t] = true
 	for k, v in pairs(t) do
-		if k == "warcryPowerBonus" then
+		if k == "warcryPowerBonus" or (k == "div" and rawget(t, "divVar") ~= nil) then
 			t[k] = nil
 		elseif type(v) == "table" then
 			scrubPerformResidue(v, seen)

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding>
+	<Build viewMode="CALCS" ascendClassName="None" targetVersion="3_0" pantheonMajorGod="None" pantheonMinorGod="None" characterLevelAutoMode="false" mainSocketGroup="1" className="Marauder" bandit="None" level="90">
+	</Build>
+	<Tree activeSpec="1">
+		<Spec treeVersion="3_29" ascendClassId="0" classId="1" nodes="" masteryEffects="">
+		</Spec>
+	</Tree>
+	<Skills sortGemsByDPS="true" activeSkillSet="1" showSupportGemTypes="ALL" showLegacyGems="false" defaultGemLevel="normalMaximum" sortGemsByDPSField="CombinedDPS" defaultGemQuality="0">
+		<SkillSet id="1">
+			<Skill enabled="true" mainActiveSkill="1" includeInFullDPS="nil" label="" slot="Weapon 1" mainActiveSkillCalcs="1">
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SkillGemRageVortex" variantId="RageVortex" enableGlobal1="true" level="20" nameSpec="Rage Vortex" skillId="RageVortex" quality="0" count="nil" skillPart="2"/>
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SupportGemMeleePhysicalDamage" variantId="SupportMeleePhysicalDamage" enableGlobal1="true" level="20" nameSpec="Melee Physical Damage" skillId="SupportMeleePhysicalDamage" quality="0" count="nil"/>
+				<Gem enabled="true" gemId="Metadata/Items/Gems/SupportGemMultistrike" variantId="SupportMultistrike" enableGlobal1="true" level="20" nameSpec="Multistrike" skillId="SupportMultistrike" quality="0" count="nil"/>
+			</Skill>
+		</SkillSet>
+	</Skills>
+	<Items useSecondWeaponSet="nil" showStatDifferences="true" activeItemSet="1">
+		<Item id="1">Rarity: RARE
+Dread Fang
+Rusted Sword
+Implicits: 0
+</Item>
+		<ItemSet useSecondWeaponSet="nil" id="1">
+			<Slot name="Weapon 1" itemPbURL="" itemId="1"/>
+		</ItemSet>
+	</Items>
+	<Config activeConfigSet="1">
+		<ConfigSet id="1">
+			<Input name="bloodSandStance" string="BLOOD"/>
+		</ConfigSet>
+	</Config>
+</PathOfBuilding>

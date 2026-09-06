@@ -602,7 +602,17 @@ func (env *Env) buildActiveSkillModList(activeSkill *ActiveSkill) {
 	}
 
 	// Add active gem modifiers
-	activeEffect.ActorLevel = nil // actor.minionData and actor.level
+	// CalcActiveSkill L567: a minion skill's stats interpolate on the
+	// minion's level (statInterpolation 3 scales by actorLevel, 2 is linear
+	// in it). authored_spectre1: the spectre's Wrath adds 8-112 lightning at
+	// minion level 70; left nil the port scaled at level 1 and added 0-2.
+	// authored_spectre3: the Frozen Cannibal's cold-resistance aura sits
+	// between its level-1 and level-80 values at level 70.
+	activeEffect.ActorLevel = nil
+	if activeSkill.Actor.MinionData != nil {
+		lvl := activeSkill.Actor.Level
+		activeEffect.ActorLevel = &lvl
+	}
 	env.mergeSkillInstanceMods(skillModList, activeEffect, skillModList.List(activeSkill.SkillCfg, "ExtraSkillStat"))
 	activeEffect.GrantedEffectLevel = activeGrantedEffect.LevelData(activeEffect.Level)
 

@@ -225,7 +225,7 @@ with the reason it is there and whether that reason is forced:
 | `dump_build.lua:306` | `env.extraRadiusNodeList` rebuilt with keys inserted ascending before the `finishJewels` walk | yes - the reference's own walk order is per-process. Cause pinned 2026-09-01: `TreeData/<ver>/tree.lua` puts one string key, `["root"]`, in the numeric-keyed `nodes` constructor; its seeded hash slot perturbs the whole table's layout, the perturbation survives `self.nodes.root = nil`, and `pairs(tree.nodes)` (3,352 keys, measured) differs per process from index 27. `nodesInRadius` is filled from that walk (PassiveTree.lua:645), `extraRadiusNodeList` from `nodesInRadius` (CalcSetup.lua:796). Normalises layout only, at the point the dump records (later.md 4 has the alternative) |
 | `dump_build.lua:71` | table-keyed sets (`env.flasks`) ordered by item id / socket-group position | yes - keys are addresses, random per process |
 | ~~`dump_build.lua:203`~~ | ~~`mergeSkillInstanceMods` replaced by a sorted-stats replica~~ | **deleted 2026-09-01 - it was redundant.** CalcActiveSkill is a Calc module, so its own `pairs(stats)` already runs under the string-key-sorting override above; all 49 dumps are byte-identical without the copied body. A referee modification that changes nothing is still a referee modification |
-| `dump_build.lua:618` | `scrubPerformResidue` strips `warcryPowerBonus` before capture | perform-owned state, recomputed each run |
+| `dump_build.lua:621` | `scrubPerformResidue` strips `warcryPowerBonus`, and `div` from tags carrying `divVar`, before capture | perform-owned state, recomputed each run (later.md 6) |
 | `dump_gamedata.lua:117,187` | skill sources and gem lookups rebuilt in sorted id order | yes in kind (per-process random); note it decides which entry WINS a collision |
 | ~~`dump_modstore.lua:728`~~ | ~~12 records emit `"ta":"skip"`~~ | **removed 2026-09-02.** It hid an empty test: the synthetic global-limit mods read a Multiplier variable no config ever set, so both sides returned 0 in all 12 configs and the shared limit was never reached. Now fed (`Multiplier:<var>` BASE 1.5): singles 30, pair 50 - the shared cap bites at 30+20 - port agrees. `modstore_test.go` now FAILS on any `"skip"` in the dump |
 | ~~`dump_modstore.lua:474`~~ | ~~`li`/`ta` of the 1,033 `q` and 39 `eq` records as murmur digests~~ | **removed 2026-09-02** ("if PoB doesn't hash, we shouldn't"). List and Tabulate are canon text for every config; the dump is 19.2 MB (was 5.7); the port matches EXACTLY - not by hash - in all 12 configs of all 1,033 records. The cfg-1-only text fields, the `coercedRecords` allow-list and the test-side murmur went with it. With the text readable, the corpus answered which synthetic branches it already covers (later.md 5) |
@@ -477,7 +477,7 @@ determinism.
   is set by the reference, not chosen: PoB writes its data files and its
   ModCache as `%.14g` text and reads them back, so a number arriving that
   way carries 14 significant digits and no more. The calc differential
-  reports **175 variants agree, 115 values only once quantized**. Negative
+  reports **193 variants agree, 115 values only once quantized**. Negative
   control: a 1e-9 perturbation fails 10 checkpoints.
 - **The drift has one named cause left.** A second was closed 2026-09-04: the exporter derived a level's `baseMultiplier` as `float64(bm)/10000 + 1`, two roundings, which for -3140 (Shrapnel Ballista of Steel) landed one ulp below the double LuaJIT parses from the archive's `0.686` text, and `PhysicalMinBase`/`PhysicalMaxBase` carried it (2 leaves in the `bow` build). Every percentage multiplier the exporter derives from an integer is now one division - `(10000 + float64(bm)) / 10000`, the correctly rounded double of the exact ratio, which is also the double the archive's 14-digit text round trip lands on - and the `statOrders` loop's `order += 0.1` accumulation went the same way. 2,386 numbers in `data/raw` moved (2,355 skills, 19 miscdata, 11 mods, 1 bossdata in its 16th digit), the export differential stayed at 123 files / 0 disagreements, and the quantized count fell 126 -> 115. Not touched, by measurement of the same scan: 20,262 skills values and 175 miscdata values that leave the dat files as float32 - Go holds them exactly and the archive's 14-digit text moves them - plus 2,264 products of several float steps; all agree at 14 digits. The remaining cause: Go's `math.Pow` is not correctly rounded
   where the C library `pow` behind LuaJIT's `^` is. For x=0.65 LuaJIT's
@@ -587,13 +587,13 @@ and hope a build turns up:
 
 1. get an environment that reaches it — a real ladder character (`mb search`
    in the sibling tool `E:/tools/missingBuild`, not part of this repo) or a
-   hand-authored throwaway build (`test/corpus/authored_*.xml`, 20 so far);
+   hand-authored throwaway build (`test/corpus/authored_*.xml`, 26 so far);
 2. dump it (`luajit ../../tools/dump_build.lua <key> <xml>`), add it to the
    variant map **and to `test/corpus/manifest.tsv`** — a dump key absent from
    the manifest silently skips the item, spec and skills differentials;
 3. write the branch, delete the guard, confirm byte-identical.
 
-This grew the corpus 9 → 12 → 25 → 34 → 38 → 42 → 48 → 58 builds.
+This grew the corpus 9 → 12 → 25 → 34 → 38 → 42 → 48 → 58 → 64 builds.
 
 **Settling "is this dead / is this wrong on real data":** instrument the site
 to compute both candidate answers, run the full corpus, count divergences,
@@ -771,8 +771,11 @@ of it deliberately:
 
 - **Tags are pointer structs on purpose.** The evaluator writes a computed
   `div` (from `divVar`) back into the shared tag, so every later evaluation of
-  that mod sees it. Value-type tags would silently discard cross-evaluation
-  state; evaluation is not pure.
+  that mod within the same env sees it. Value-type tags would silently discard
+  cross-evaluation state; evaluation is not pure. The sharing stops at the env:
+  `mergeLevelMod` clones tags, so loaded data stays pristine, where the
+  reference's `copyTable(mod, true)` leaves the statMap's own tag table in
+  every skill list process-wide (later.md 6).
 - **`ModList:MergeMod` copies shallowly**, so the merged copy shares tag tables
   — and their mutations — with the original. Deep-copying "for safety" changes
   results.
@@ -863,7 +866,8 @@ of it deliberately:
   so each variant calls `wipeGlobalCache()` and temporarily restores the real
   stage functions for the cache fill, re-stubbing immediately.
 - The archive leaves perform residue on shared skill tables
-  (`warcryBuff[1].warcryPowerBonus`); the dump scrubs it before and after each
+  (`warcryBuff[1].warcryPowerBonus`, and the `div` offence writes into a
+  `divVar` tag — later.md 6); the dump scrubs it before and after each
   variant, or variant N's dump depends on variant N−1 having run.
 - `dump_build.lua` used to replace `mergeSkillInstanceMods` wholesale with a
   sorted-stats replica, because the original iterates `pairs(stats)` over
@@ -1219,7 +1223,7 @@ scaled to the enemy level, all written by the `enemyIsBoss` preset as it
 applies, and rewritten by `presetBossSkills` when a boss skill is named.
 
 With config in, `build.Load` fills every field of `calc.BuildInput`, and
-the calc differential runs on it: 175 variants agree with the archive from
+the calc differential runs on it: 193 variants agree with the archive from
 a build XML alone.
 
 The build corpus only sets about 32 of the 580 options, which would have
@@ -1357,10 +1361,10 @@ Parse-test flags: `-diffs=N` (how many disagreeing lines to print, default 10),
 the GGPK: `TestModCacheGeneration`, `TestTreeArtifactMatchesGGGSource`,
 `TestTattooArtifactMatchesArchive`.
 
-`test/testdata/` is 68 files / ~260 MB, committed directly (no LFS), of which
-59 are calc dumps. `test/corpus/` is 107 files / ~4.7 MB — 58 build XMLs (20 of
-them `authored_*`) plus `manifest.tsv` (58 rows) and some `.json`/`.pobcode`
-import originals. The calc differential runs **175 variants over those 59 dump
+`test/testdata/` is 74 files / ~269 MB, committed directly (no LFS), of which
+65 are calc dumps. `test/corpus/` is 113 files / ~4.7 MB — 64 build XMLs (26 of
+them `authored_*`) plus `manifest.tsv` (65 rows) and some `.json`/`.pobcode`
+import originals. The calc differential runs **193 variants over all 65 dump
 files**.
 
 ### Repo skills (`.claude/skills/`)

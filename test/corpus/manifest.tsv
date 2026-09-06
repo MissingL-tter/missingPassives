@@ -63,3 +63,7 @@ melee2	../../test/corpus/authored_melee2.xml
 unarmed	../../test/corpus/authored_unarmed.xml
 socketless	../../test/corpus/authored_socketless.xml
 socketamulet	../../test/corpus/authored_socketamulet.xml
+ragevortex	../../test/corpus/authored_ragevortex.xml
+spectre1	../../test/corpus/authored_spectre1.xml
+spectre2	../../test/corpus/authored_spectre2.xml
+spectre3	../../test/corpus/authored_spectre3.xml

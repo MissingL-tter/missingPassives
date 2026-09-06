@@ -1,6 +1,6 @@
 # Later — deferred items and reference quirks
 
-Four lists that outlive the 2026-08-29 Lua remodel
+Six lists that outlive the 2026-08-29 Lua remodel
 (`.claude/documentation/deprecated/go-remodel-plan.md`):
 
 1. **Kept Lua-derived code** — production code that reproduces the
@@ -18,6 +18,10 @@ Four lists that outlive the 2026-08-29 Lua remodel
    2026-09-02: all 11 now produce a value the port matches; what each
    needed, the two harness seams it exposed, and the 4 left inert on
    purpose.
+6. **Perform residue scrubbed from the dump** — the `div` a Multiplier
+   tag with `divVar` receives is offence residue on shared skill data,
+   inert and harness-caused; scrubbed like `warcryPowerBonus`
+   (2026-09-05, Rage Vortex).
 
 None of these is work queued. All are things to revisit when the archive
 is deleted, or when a behaviour here turns out to matter.
@@ -431,3 +435,42 @@ And one thing the port caught: skill parts are numbers (part 1, 2, 3 of a
 skill), and Go's config models them as such. A literal string part on the
 Lua side was rejected with "the config models numeric parts only" - the
 right answer, and the fixture was wrong.
+
+---
+
+## 6. Perform residue scrubbed from the dump (2026-09-05, Rage Vortex)
+
+`Classes/ModStore.lua` L357-358 writes the divisor it computes for a
+Multiplier tag carrying `divVar` back into the tag table (`tag.div = ...`),
+and L360 reads it straight back, so the stored value never changes a
+number: every later evaluation reassigns it first (the PerStat twin at
+L455-458 does the same). The tag table is the skill's own statMap entry —
+`CalcActiveSkill.lua` L32 copies a mod with `copyTable(mod, true)`, top
+level only — so one offence evaluation anywhere in the process leaves `div`
+on `data.skills` for every later initEnv to expose.
+
+Measured on Rage Vortex (`test/corpus/authored_ragevortex.xml`;
+`RagePerRadius` → 2, `RagePerDamage` → 1): a bare `calcs.initEnv` over
+clean tags writes nothing (three probe modes, 0 writes in the initEnv
+stage); the writes come from `CalcOffence.lua` L360 (`calcAreaOfEffect`)
+and L113 (`calcDamage`) inside the app's load-time `buildOutput`
+(`Build.lua` L677) and the harness's own cache-fill `buildOutput`
+(`dump_build.lua`, before its initEnv). The port clones tags per merge
+(`Mod.Clone` in `mergeLevelMod`) and keeps loaded data pristine
+(knowledge.md 6.4), so it can never carry the residue.
+
+Decision: `scrubPerformResidue` in `tools/dump_build.lua` drops `div` from
+any tag that has `divVar`, exactly as it drops `warcryPowerBonus` — the
+same class (perform-owned state recomputed on every perform), the same
+mechanism, applied before each variant's post-initEnv checkpoints. Proof it
+records nothing less: re-dumping all 61 other builds with the extended
+scrub changed no byte (61/61, 2026-09-05; none of their fixtures contains
+`divVar` at all), and only the Rage Vortex record lost its two `div` keys;
+its three variants then agree byte for byte and the `RageVortex`
+preSkillType callback is reached. Not chosen: sharing tag objects in the
+port to reproduce the residue (contradicts 6.4 and cross-build isolation),
+and masking `div` in the comparison (it would also hide the perform-stage
+writes both sides make and agree on). PoB's use of the tag as a scratch
+cell is disliked; the port's evaluator still writes `Div` on its own
+per-env clone (`modstore/eval.go`) because within one env every later
+evaluation of that mod sees it, and the perform checkpoints compare it.

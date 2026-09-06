@@ -8,6 +8,7 @@ import (
 	"github.com/MissingL-tter/missingPassives/data"
 	"math"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -107,8 +108,79 @@ func (env *Env) performBuffs(hasGuaranteedBonechill bool, nonUniqueFlasksApplyTo
 	// allyBuffs (env.partyMembers["Aura"]) is always empty for ladder
 	// replays, as are the Warcry/Link/Curse party groups.
 
-	// Spectre ally/enemy-limit mods come from build.spectreList, which
-	// ladder imports never carry; hasActiveSpectreSkill alone is inert.
+	// CalcPerform L2156-2221. An active Raise Spectre turns on the build's
+	// spectre list: every listed spectre some Raise Spectre group raises
+	// sets HaveBeastSpectre from its "beast" monster tag, raises the minion
+	// curse limit from its EnemyCurseLimit mod (the first such mod ends that
+	// spectre's scan, and a later spectre overwrites), and has its
+	// Ally/Minion/PlayerModifier lists copied into the "Spectre" buff lists
+	// stamped "Spectre:<name>". The reference appends with t_insert, not
+	// mergeBuff, and the AllyModifier copy is one table shared by both
+	// lists. Corpus: authored_spectre1 (beast, the three list kinds) and
+	// authored_spectre2 (curse limit).
+	hasActiveSpectreSkill := false
+	var activeSpectreList []string
+	for _, activeSkill := range env.PlayerActiveSkills {
+		if activeSkill.SkillFlags["disable"] {
+			continue
+		}
+		if strings.HasPrefix(activeSkill.ActiveEffect.GrantedEffect.Id, "RaiseSpectre") {
+			hasActiveSpectreSkill = true
+			if activeSkill.Minion != nil && activeSkill.Minion.Type != "" {
+				activeSpectreList = append(activeSpectreList, activeSkill.Minion.Type)
+			}
+		}
+	}
+	if hasActiveSpectreSkill {
+		listFor := func(m map[string]*modstore.List, key string) *modstore.List {
+			if m[key] == nil {
+				m[key] = modstore.NewList(nil)
+			}
+			return m[key]
+		}
+		for _, spectreID := range env.Build.SpectreList {
+			if !slices.Contains(activeSpectreList, spectreID) {
+				continue
+			}
+			spectreData := data.Minions[spectreID]
+			if !modDB.Conditions.Get("HaveBeastSpectre") && slices.Contains(spectreData.MonsterTags, "beast") {
+				modDB.Conditions.Set("HaveBeastSpectre", true)
+			}
+			source := "Spectre:" + spectreData.Name
+			// pairs(modData.value) over the {mod = ...} table: the one entry
+			// is the granted mod; any other key would make the reference's
+			// copyTable fail on a non-table, so the port refuses it too.
+			copyListMod := func(m *modparser.Mod) *modparser.Mod {
+				ref, ok := m.Value.(modparser.ModRef)
+				if !ok || ref.Mod == nil || ref.OnlyAllies || ref.FromAllies || ref.MinionType != "" {
+					panic(source + " " + m.Name + ": LIST value is not a bare {mod} table")
+				}
+				c := ref.Mod.Clone()
+				c.Source = source
+				c.SourceSet = true
+				return c
+			}
+			for _, modData := range spectreData.ModList {
+				if modData.Name == "EnemyCurseLimit" {
+					minionCursesLimit = valueNum(modData.Value) + 1
+					break
+				}
+				if modData.Type != modparser.List {
+					continue
+				}
+				switch modData.Name {
+				case "AllyModifier":
+					c := copyListMod(modData)
+					listFor(minionBuffs, "Spectre").AddMod(c)
+					listFor(buffs, "Spectre").AddMod(c)
+				case "MinionModifier":
+					listFor(minionBuffs, "Spectre").AddMod(copyListMod(modData))
+				case "PlayerModifier":
+					listFor(buffs, "Spectre").AddMod(copyListMod(modData))
+				}
+			}
+		}
+	}
 
 	// Sustainable-stage skills need cached output values
 	for _, activeSkill := range env.PlayerActiveSkills {
